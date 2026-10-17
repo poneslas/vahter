@@ -366,6 +366,28 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 
 /* ─── панель ─── */
 .panel{display:flex;flex-direction:column;gap:18px;min-width:0}
+.ptabs{display:flex;gap:4px;background:#E4E6E0;border-radius:12px;padding:3px;align-self:flex-start}
+.ptabs button{border:0;background:none;padding:8px 14px;border-radius:9px;font-size:14px;color:var(--soft)}
+.ptabs button[aria-pressed=true]{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+#lognew:not(:empty){display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--brain,#3B5BDB);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.lastlog{border:0;background:none;text-align:left;font-size:13px;color:var(--soft);padding:0;margin-top:-8px;max-width:66ch;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lastlog:empty{display:none}
+.pt{display:none;flex-direction:column;gap:18px}.pt.on{display:flex}
+.tour{border:1px solid var(--line);background:var(--paper);border-radius:16px;padding:16px 18px;max-width:560px}
+.tour h3{margin:0 0 4px;font-size:16px}.tour .tsub{margin:0 0 12px;font-size:13px;color:var(--soft)}
+.tour ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.tour li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--faint);padding:6px 8px;border-radius:10px}
+.tour li .n{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:12px;font-weight:600}
+.tour li.done{color:var(--soft)}.tour li.done .n{background:var(--soft);border-color:var(--soft);color:#fff}
+.tour li.cur{color:var(--ink);background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.tour li.cur .n{background:var(--ink);border-color:var(--ink);color:#fff}
+.tour li small{display:block;color:var(--soft);font-size:12.5px;margin-top:2px}
+.tour .tact{display:flex;gap:8px;margin-top:12px}
+.tour .tact button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px}
+.grp2{border:1px solid var(--line);border-radius:14px;background:var(--paper);margin-bottom:8px}
+.grp2 summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:600;font-size:14px;display:flex;justify-content:space-between}
+.grp2 summary::-webkit-details-marker{display:none}.grp2 summary small{font-weight:400;color:var(--soft)}
+.grp2 .presets{padding:0 10px 10px}
+.pre[aria-current=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .blk h2{font-size:13px;font-weight:600;color:var(--soft);margin:0 0 8px}
 .presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .pre{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:10px 12px}
@@ -402,11 +424,13 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
       <h1>Прототип: лист ассистента и приложение — одно и то же</h1>
       <p class="sub">Зажмите боковую кнопку. Потяните лист за ручку или нажмите «Развернуть» — он доедет до полного экрана и станет приложением с тем же разговором. Справа меняется «мир»: сеть, сервер, модель, блокировка. Пути настроек, размеры моделей и шаги подключения — по исследованиям 17.10.2026.</p>
     </div>
-    <div class="blk"><h2>Сценарии</h2><div class="presets" id="presets"></div></div>
-    <div class="blk"><h2>Сказать (вместо микрофона)</h2><p class="sub" style="margin:-4px 0 8px;font-size:13px">Кнопка ниже — «зажал, сказал, отпустил». Или зажмите микрофон на телефоне сами: тяните вверх — замочек, влево — отмена; скажется фраза, выбранная последней.</p><div class="acts" id="say"></div></div>
-    <div class="blk"><h2>Мир</h2><div class="world" id="world"></div></div>
-    <div class="blk"><h2>События снаружи</h2><div class="acts" id="events"></div></div>
-    <div class="blk"><h2>Что происходит и почему</h2><div class="trace" id="trace" aria-live="polite"></div></div>
+    <div class="ptabs" role="tablist"><button data-ptab="tour">Знакомство</button><button data-ptab="sc">Сценарии</button><button data-ptab="world">Мир</button><button data-ptab="log">Журнал <span id="lognew"></span></button></div>
+    <button class="lastlog" data-ptab="log" id="lastlog"></button>
+    <div class="pt" data-pt="tour"><div class="tour" id="tour"></div></div>
+    <div class="pt" data-pt="sc"><div id="groups"></div></div>
+    <div class="pt" data-pt="world"><div class="blk"><h2>Мир</h2><div class="world" id="world"></div></div><div class="blk"><h2>События снаружи</h2><div class="acts" id="events"></div></div></div>
+    <div class="pt" data-pt="log"><div class="blk"><div class="trace" id="trace" aria-live="polite"></div></div></div>
+    <div class="pt sayblk" data-pt="tour sc"><div class="blk"><h2>Сказать (вместо микрофона)</h2><p class="sub" style="margin:-4px 0 8px;font-size:13px">Кнопка ниже — «зажал, сказал, отпустил». Или зажмите микрофон на телефоне сами: тяните вверх — замочек, влево — отмена; скажется фраза, выбранная последней.</p><div class="acts" id="say"></div></div></div>
   </div>
 </div>
 
@@ -462,7 +486,7 @@ const MODES=[
 const fresh = () => { const o = ({
   w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
-  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[],'m-4c1e':[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true,'m-4c1e':true}, sendOnShot:{translate:false,whatsthis:true,'m-4c1e':true}, voiceOn:{main:true,translate:true,whatsthis:true,'m-4c1e':true}, stick:'30', idle:0, custom:[{id:'m-4c1e', title:'Официант', icon:I.food, sum:'Свой · сразу камера · выбор по меню', photo:true, screen:false, tools:false, custom:true, prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'}], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
+  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[],'m-4c1e':[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true,'m-4c1e':true}, sendOnShot:{translate:false,whatsthis:true,'m-4c1e':true}, voiceOn:{main:true,translate:true,whatsthis:true,'m-4c1e':true}, stick:'30', idle:0, custom:[{id:'m-4c1e', title:'Гастрогид', icon:I.food, sum:'Свой · сразу камера · выбор по меню', photo:true, screen:false, tools:false, custom:true, prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'}], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
 }); o.drafts={}; Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
   Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
@@ -471,7 +495,7 @@ const activeModes = () => allModes().filter(m=>m.id==='main'||m.custom||S.modeOn
 const curMode = () => allModes().find(m=>m.id===S.mode) || MODES[0];
 function setMode(id, why){ const was=S.mode; if (S.rec && was!==id){ recTok++; S.rec=null; pd=null; if(S.ov){ S.ov.live=''; S.ov.liveQ=false } trace('Запись отменена переключением режима — ничего не ушло. Новая запись сама не начинается: вы уже трогаете экран, микрофон рядом.','p') } S.mode=id; S.draftImg=null; S.modePick=false; if(!S.feeds[id]) S.feeds[id]=[]; if(was!==id){ const m=curMode(); trace(`${why||'Переключено'}: «${m.title}». Своя лента и своя сессия в Hermes (thread_id=${m.id==='main'?'—':m.id}); память Hermes общая.`,'p') } }
 let S = fresh(); let token = 0;
-function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove() }
+function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove(); const L=$('#lastlog'); if(L) L.innerHTML=text; if(typeof ptab!=='undefined' && ptab!=='log'){ const n=$('#lognew'); n.textContent=String((+n.textContent||0)+1) } }
 
 /* ───────── эквалайзер ───────── */
 class Eq{
@@ -737,6 +761,7 @@ function render(){
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
   document.querySelectorAll('#scr .fieldarea').forEach(grow);
+  if (typeof tourCheck==='function') tourCheck();
   document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2 });
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
@@ -1003,7 +1028,9 @@ function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true;
 
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  if (t && t.dataset.ptab){ return setPtab(t.dataset.ptab) }
+  if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
   if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }
   if (t.dataset.idle!==undefined){ S.idle=+t.dataset.idle; return render() }
@@ -1129,27 +1156,55 @@ async function event(k){
 }
 const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready'}) };
 const PRESETS=[
-  ['Первый запуск','всё с нуля',()=>{ S=fresh(); S.screen='app'; S.onboarded=false }],
-  ['Обычный день','всё готово — зажмите кнопку',()=>{ ready() }],
-  ['Серия сообщений','промежуточное, длинный Markdown, PDF, картинка, короткий текст',()=>{ ready(); S.autoSay='backup' }],
-  ['Картинки','альбом из image_generate',()=>{ ready(); S.autoSay='logo' }],
-  ['Подтверждение команды','редкий случай: Hermes сомневается',()=>{ ready(); S.autoSay='logs' }],
-  ['Уточнение','варианты и «Другое»',()=>{ ready(); S.autoSay='table' }],
-  ['Режимы: в магазине','«Что это?» и переводчик, фото',()=>{ ready(); S.mode='whatsthis'; S.screen='home' }],
-  ['Режим «Официант»','свой режим: фото меню → выбор',()=>{ ready(); S.mode='m-4c1e'; S.screen='home'; S.camSubj='menu' }],
-  ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
-  ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
-  ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
-  ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
+  ['Первый запуск','всё с нуля',()=>{ S=fresh(); S.screen='app'; S.onboarded=false },'first','start'],
+  ['Обычный день','всё готово — зажмите кнопку',()=>{ ready() },'day','day'],
+  ['Серия сообщений','промежуточное, длинный Markdown, PDF, картинка, короткий текст',()=>{ ready(); S.autoSay='backup' },'brain','series'],
+  ['Картинки','альбом из image_generate',()=>{ ready(); S.autoSay='logo' },'brain','images'],
+  ['Подтверждение команды','редкий случай: Hermes сомневается',()=>{ ready(); S.autoSay='logs' },'brain','confirm'],
+  ['Уточнение','варианты и «Другое»',()=>{ ready(); S.autoSay='table' },'day','clarify'],
+  ['Режимы: в магазине','«Что это?» и переводчик, фото',()=>{ ready(); S.mode='whatsthis'; S.screen='home' },'day','shop'],
+  ['Режим «Гастрогид»','свой режим: фото меню → выбор',()=>{ ready(); S.mode='m-4c1e'; S.screen='home'; S.camSubj='menu' },'day','gastro'],
+  ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) },'start','model'],
+  ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' },'start','noserver'],
+  ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' },'fail','nonet'],
+  ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' },'fail','locked'],
+  ['Микрофон запрещён','кнопка «Открыть настройки»',()=>{ ready(); S.w.mic='denied' },'fail','nomic'],
 ];
-function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режим «Официант»')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Официант» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
+function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; curPreset=i; openGroup=p[3]; save({k:'p',slug:p[4]}); history.replaceState(null,'','#'+p[4]); renderGroups(); p[2](); if(p[0].startsWith('Режим «Гастрогид»')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Гастрогид» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
   else if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
-$('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
+const GROUPS=[['day','Каждый день','обычный день, режимы, уточнение'],['brain','Ответы мозга','серия, картинки, подтверждение'],['start','Первый запуск','с нуля, модель, сервер'],['fail','Сбои','сеть, блокировка, микрофон']];
+let openGroup='day', curPreset=null;
+function renderGroups(){ $('#groups').innerHTML=GROUPS.map(([g,t,d])=>`<details class="grp2" data-g="${g}" ${openGroup===g?'open':''}><summary>${t}<small>${d}</small></summary><div class="presets">${PRESETS.map((p,i)=>p[3]===g?`<button class="pre" data-preset="${i}" aria-current="${curPreset===i}"><b>${p[0]}</b><span>${p[1]}</span></button>`:'').join('')}</div></details>`).join('') }
+document.addEventListener('toggle',e=>{ const d=e.target; if(!d.matches||!d.matches('.grp2')||!d.open) return; openGroup=d.dataset.g; document.querySelectorAll('.grp2').forEach(x=>{ if(x!==d) x.open=false }) },true);
+/* вкладки панели */
+let ptab='tour', seenLog=0;
+function setPtab(t){ ptab=t; document.querySelectorAll('[data-ptab]').forEach(b=>b.matches('.ptabs button')&&b.setAttribute('aria-pressed',b.dataset.ptab===t)); document.querySelectorAll('.pt').forEach(x=>x.classList.toggle('on',x.dataset.pt.split(' ').includes(t))); if(t==='log'){ seenLog=$('#trace').children.length; $('#lognew').textContent='' } $('#lastlog').style.display=t==='log'?'none':'' }
+/* знакомство */
+const meIn=(id,f)=>(S.feeds[id]||[]).some(it=>it.t==='me'&&f(it));
+const TOUR=[
+  ['Зажмите боковую кнопку','справа на корпусе телефона — откроется лист, запись пойдёт сама',()=>!!S.ov],
+  ['Скажите «Таймер на пять минут»','кнопка «Таймер» ниже — или зажмите микрофон в листе. Телефон сделает сам, без сервера',()=>meIn('main',it=>/таймер/i.test(it.x))],
+  ['Спросите Hermes «Что у меня завтра?»','ответ придёт с сервера потоком текста',()=>meIn('main',it=>/завтра/i.test(it.x))],
+  ['Внизу листа — вкладка «Гастрогид», снимите меню','большая кнопка справа — камера; спуск — и снимок уходит сам',()=>meIn('m-4c1e',it=>it.img)],
+  ['Вкладка «Что это?» — снимок экрана','значок снимка в поле, затем «Отправить»',()=>meIn('whatsthis',it=>it.img&&it.img.kind==='screen')],
+  ['«+» в конце вкладок — свой режим','надиктуйте промпт микрофоном под полем',()=>S.custom.length>1],
+];
+let tourStep=0;
+function startTour(){ token++; clearInterval(dlT); ready(); S.screen='home'; S.mode='main'; tourStep=0; curPreset=null; save({k:'tour'}); render(); renderGroups(); renderTour(); setPtab('tour'); trace('Знакомство: телефон уже настроен. Первый запуск — во вкладке «Сценарии».','p') }
+function renderTour(){ const done=tourStep>=TOUR.length;
+  $('#tour').innerHTML=`<h3>${done?'Готово — это основное':'Знакомство с Тасей'}</h3><p class="tsub">${done?'Остальное — во вкладке «Сценарии»: ответы мозга, первый запуск, сбои.':'Пара нажатий — и ответ. Шаги отмечаются сами, когда вы их делаете.'}</p>
+  <ol>${TOUR.map((t,i)=>`<li class="${i<tourStep?'done':i===tourStep?'cur':''}"><span class="n">${i<tourStep?'✓':i+1}</span><span>${t[0]}${i===tourStep?`<small>${t[1]}</small>`:''}</span></li>`).join('')}</ol>
+  <div class="tact">${done?'<button data-ptab="sc">К сценариям</button>':'<button data-tour="skip">Пропустить шаг</button>'}<button data-tour="restart">Сначала</button></div>` }
+function tourCheck(){ if(curPreset!==null) return; let moved=false; while(tourStep<TOUR.length && TOUR[tourStep][2]()){ tourStep++; moved=true } if(moved) renderTour() }
+/* запоминание */
+function save(v){ try{ localStorage.setItem('tasya-proto',JSON.stringify(v)) }catch{} }
+function restore(){ const h=decodeURIComponent(location.hash.slice(1)); const bySlug=PRESETS.findIndex(p=>p[4]===h); if(bySlug>=0) return {k:'p',slug:h}; try{ return JSON.parse(localStorage.getItem('tasya-proto')) }catch{ return null } }
 $('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
 $('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['cron','Cron: утренняя сводка'],['bg','Фоновая задача на сервере завершилась'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
-preset(0);
+renderGroups();
+{ const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i); setPtab('sc') } else startTour() }
 
 /* телефон: пропорции корпуса S24 Ultra (79 × 162 мм ≈ 1 : 2,05), масштаб — по высоте окна, не больше 90 % */
 const W=400, H=820;
