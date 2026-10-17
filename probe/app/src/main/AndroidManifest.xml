@@ -148,6 +148,9 @@
         </activity>
 
         <!-- notify/: П23 — компоненты сюда -->
+        <receiver
+            android:name=".notify.ReplyReceiver"
+            android:exported="false" />
 
         <!-- upload/: П9 -->
         <service

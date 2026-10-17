@@ -147,7 +147,7 @@ function settings(){
     <div class="lh">Уведомления</div>
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
-    ${li(I.shield,'Что мозгу можно на телефоне',`${TOOLS.length} действий · выключено ${Object.values(S.policy).filter(p=>!p.enabled).length}`,'tools')}
+    ${li(I.shield,'Что Тасе можно',`Сама — ${Object.values(S.policy).filter(p=>p==='auto').length}, спросит — ${Object.values(S.policy).filter(p=>p==='ask').length}, нельзя — ${Object.values(S.policy).filter(p=>p==='off').length}`,'tools')}
     ${li(I.list,'Журнал действий',`Сегодня — ${S.journal.filter(j=>j.day==='Сегодня').length}`,'journal')}
     <div class="divider"></div>
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
@@ -191,21 +191,10 @@ function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter
     <p class="mnote">Режимы на этом мозге: ${users.join(', ')||'нет'}. История каждого хранится на телефоне и целиком уходит с каждой репликой; одинаковое начало разговора провайдер берёт из кэша — дешевле и быстрее.</p>
   </div></div></div>` }
 function toolsPage(){
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Что мозгу можно на телефоне</b><small>правила одни для всех мозгов</small></div></div>
-  <div class="scroll"><div class="list">${TOOL_GROUPS.map(([g,t,d])=>`<div class="lh">${t}</div><p class="lsub">${d}</p>${TOOLS.filter(x=>x.group===g).map(x=>li({read:I.list,undo:I.plus,state:I.wave,clock:I.hist,handoff:I.chat}[g],x.title,toolSummary(x,S.policy[x.id])+(x.local&&S.policy[x.id].enabled?' · без сети тоже':''),'tool:'+x.id,false,S.policy[x.id].enabled?'':'<span class="offtag">выкл</span>')).join('')}`).join('')}
-  <p class="mnote" style="padding:8px 22px 20px">«Без сети тоже» — действие умеют правила телефона без мозга. Проверка — до карточки: если действие выключено, мозг получает понятный отказ.</p></div></div></div>` }
-function toolPage(){ const x=toolById(S.editTool), p=S.policy[x.id], g=TOOL_GROUPS.find(G=>G[0]===x.group);
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="tools" aria-label="Назад">${I.back}</button><div class="t"><b>${x.title}</b><small><code>${x.id}</code></small></div></div>
-  <div class="scroll"><div class="mform">
-    <div class="setcard"><div class="lirow">${li(I.shield,'Включено',p.enabled?'Мозг и правила могут это делать':'Никто не может — мозг получит отказ')}<button class="swbtn" data-act="tpolenable" role="switch" aria-checked="${p.enabled}"><span class="sw ${p.enabled?'':'off'}"></span></button></div></div>
-    ${p.enabled?`<div class="setcard">
-      ${p.brain?li(I.spark,'Если просит мозг',BRAIN_OPTS.find(o=>o[0]===p.brain)[1],'tpolbrain'):li(I.spark,'Если просит мозг','Мозгу недоступно — только ваша команда')}
-      ${li(I.btn,'Без мозга, по правилам',x.local?'Да — сразу, даже без сети':'Нет — только через мозг')}
-      ${li(I.lock,'На экране блокировки',LOCK_OPTS.find(o=>o[0]===p.lock)[1],'tpollock')}
-    </div>`:''}
-    <div><div class="lh">Отмена</div><p class="mnote">${g[2]}.</p></div>
-    <div><div class="lh">Например</div><p class="mnote">${x.example}</p></div>
-  </div></div></div>` }
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Что Тасе можно</b></div></div>
+  <div class="scroll"><div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b></span><span class="pword ${S.policy[x.id]}">${POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
+    <div class="lh">Заблокированный телефон</div>${li(I.lock,'Без разблокировки', S.settings.lockScope==='safe'?'Будильник, таймер, фонарик':'Ничего — всё после разблокировки','lockscope')}
+    <p class="mnote" style="padding:4px 22px 20px">«Спросит» — Тася покажет, что собирается сделать, и подождёт «Да». Сообщения она только готовит — отправляете вы.</p></div></div></div>` }
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Журнал действий</b><small>только на телефоне</small></div></div>
   <div class="scroll"><div class="list">${days.map(d=>`<div class="lh">${d}</div>${S.journal.filter(j=>j.day===d).map(j=>`<button class="jrow" data-jid="${j.id}" aria-expanded="${S.jopen===j.id}"><span class="jt">${j.at}</span><span class="jm"><b>${esc(j.title)}</b><small>${j.who}${j.status?' · '+j.status:''}</small></span></button>${S.jopen===j.id?`<div class="jd"><div><span>Фраза</span>«${esc(j.phrase)}»</div><div><span>Действие</span><code>${j.tool}</code> ${esc(j.params)}</div><div><span>Подтверждение</span>${j.confirm}</div><div><span>Экран</span>${j.lock?'заблокирован':'открыт'}</div>${j.undo?`<button class="tbtn" data-act="jundo" data-id="${j.id}">Отменить</button>`:''}</div>`:''}`).join('')}`).join('')}</div></div></div>` }
@@ -301,7 +290,7 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='tools'?toolsPage():S.page==='tool'?toolPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='tools'?toolsPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });

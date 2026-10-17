@@ -53,6 +53,7 @@ object PanelProbe : Probe(
     steps = listOf(
         "Пробник по очереди открывает четыре панели — сначала из своей активности, потом из листа.",
         "После каждой: закрыть панель («Назад» или «Готово») и ответить, что открылось.",
+        "Затем полные экраны Bluetooth и Wi-Fi (у Bluetooth панели нет): нужный ли экран, куда ведёт «Назад».",
     ),
 ) {
     private val panels = listOf(
@@ -60,6 +61,11 @@ object PanelProbe : Probe(
         Settings.Panel.ACTION_VOLUME to "громкость",
         Settings.Panel.ACTION_NFC to "NFC",
         Settings.Panel.ACTION_WIFI to "Wi-Fi",
+    )
+
+    private val screens = listOf(
+        Settings.ACTION_BLUETOOTH_SETTINGS to "Bluetooth (настройки)",
+        Settings.ACTION_WIFI_SETTINGS to "Wi-Fi (настройки)",
     )
 
     override suspend fun ProbeScope.run(): Status {
@@ -76,10 +82,23 @@ object PanelProbe : Probe(
             }
             Sheet.close()
         }
+        // Bluetooth в Settings.Panel нет — для «включи блютус» остаются полные экраны настроек [док].
+        val screenAnswers = mutableListOf<String>()
+        for ((action, name) in screens) {
+            log("resolve", "$name: ${resolved(ctx, Intent(action))}")
+            for (fromSheet in listOf(false, true)) {
+                val err = launchFrom(fromSheet, Intent(action))
+                if (err != null) log("error", "$name ${origin(fromSheet)}: $err")
+                val a = ask("Экран «$name» ${origin(fromSheet)}: это нужный экран? Потом «Назад» — куда вернулись (запишите в заметку, если не в пробник/лист).", listOf("Нужный экран", "Рядом", "Ничего"))
+                screenAnswers += a
+                lines += "$name ${origin(fromSheet)}: ${a.lowercase()}"
+            }
+            Sheet.close()
+        }
         summary(lines.joinToString("; "))
         return when {
-            answers.all { it == "Панель" } -> Status.PASS
-            answers.all { it == "Ничего" } -> Status.FAIL
+            answers.all { it == "Панель" } && screenAnswers.all { it == "Нужный экран" } -> Status.PASS
+            answers.all { it == "Ничего" } && screenAnswers.all { it == "Ничего" } -> Status.FAIL
             else -> Status.PARTIAL
         }
     }

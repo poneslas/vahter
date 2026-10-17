@@ -51,39 +51,38 @@ const BRAINS=[
   {id:'hermes', kind:'hermes', title:'Hermes', v2:true, caps:{vision:true,tools:true,memory:true,server:true}},
 ];
 /**
- * Действие телефона — то, что можно сделать на телефоне по правилу или по просьбе мозга (Архитектура, 7 и Б.2).
+ * Действие телефона (реестр — Архитектура, 7). Пользователю показываем только одно: делает ли Тася это сама,
+ * спрашивает или не делает. Как фраза понята (правилом или мозгом) и класс отмены — внутренняя кухня, в настройках не видны.
  * @typedef {Object} Tool
- * @property {string} id      имя в реестре: 'alarm.set'
- * @property {string} title   по-человечески
- * @property {'read'|'undo'|'state'|'clock'|'handoff'} group  класс отмены A–E
- * @property {boolean} local  поддерживается правилами без мозга
- * @property {string} example что сказать
- * Политика пользователя по действию: enabled, brain ('now'|'ask'|'full'|null — мозгу недоступно), lock ('allow'|'unlock'|'deny').
+ * @property {string} id     имя в реестре: 'alarm.set' (видно только в журнале)
+ * @property {string} title  глаголом: «Поставить будильник»
+ * @property {string} group  группа по смыслу
+ * @property {'auto'|'ask'|'off'} def  по умолчанию
+ * @property {boolean} [safe]   можно на заблокированном телефоне в режиме «только безопасное»
+ * @property {boolean} [always] всегда спрашивает (сообщения): «Сама» не предлагается
  */
-const TOOL_GROUPS=[['read','Смотреть','Отменять нечего'],['undo','Создавать','Отмена настоящая'],['state','Менять состояние телефона','Отмена возвращает как было'],['clock','Через «Часы»','Отменить нельзя или не всегда — «Часы» не дают'],['handoff','Открыть или отдать вам','Отменять нечего: дальше делаете вы']];
+const TOOL_GROUPS=['Время','Календарь','Телефон','Приложения и люди'];
 const TOOLS=[
-  ['calendar.query','Календарь: что запланировано','read',false,'«что у меня завтра?»','now','unlock'],
-  ['location.get','Где я','read',false,'«где я сейчас?»','ask','unlock'],
-  ['alarm.next','Ближайший будильник','read',true,'«когда у меня будильник?»','now','allow'],
-  ['calendar.add','Событие в календаре','undo',false,'«запиши встречу с Олей в пятницу в 15»','ask','unlock'],
-  ['place.save','Запомнить место','undo',true,'«запомни, машина у ТЦ»',null,'allow'],
-  ['note.remember','Запомнить заметку','undo',true,'«запомни: код домофона 4512»',null,'allow'],
-  ['torch.set','Фонарик','state',true,'«включи фонарик»',null,'allow'],
-  ['volume.set','Громкость','state',true,'«тише»','ask','allow'],
-  ['dnd.set','Не беспокоить','state',true,'«не беспокоить до утра»','ask','allow'],
-  ['media.control','Музыка: пауза, дальше','state',true,'«следующий трек»','ask','allow'],
-  ['timer.set','Таймер','clock',true,'«таймер на пять минут»','now','allow'],
-  ['alarm.set','Будильник','clock',true,'«будильник на семь»','now','allow'],
-  ['app.open','Открыть приложение','handoff',false,'«открой Яндекс Карты»','ask','unlock'],
-  ['settings.open','Панель настроек','handoff',true,'«покажи Wi-Fi»',null,'unlock'],
-  ['call.dial','Набрать номер','handoff',true,'«позвони маме»',null,'unlock'],
-  ['message.draft','Черновик сообщения','handoff',false,'«напиши Оле, что опоздаю»','full','unlock'],
-].map(([id,title,group,local,example,brain,lock])=>({id,title,group,local,example,def:{enabled:true,brain,lock}}));
-const BRAIN_OPTS=[['now','Сразу'],['ask','Спросить «Да»'],['full','Показать целиком и спросить']];
-const LOCK_OPTS=[['allow','Можно'],['unlock','После разблокировки'],['deny','Нельзя']];
-function toolSummary(t,p){ if(!p.enabled) return 'Выключено';
-  const b=p.brain?{now:'мозг — сразу',ask:'мозг — спросит «Да»',full:'мозг — покажет целиком'}[p.brain]:'мозгу недоступно';
-  return [b, {allow:'',unlock:'на блокировке — после разблокировки',deny:'на блокировке — нельзя'}[p.lock]].filter(Boolean).join(' · ') }
+  ['alarm.set','Поставить будильник','Время','auto',{safe:true}],
+  ['timer.set','Поставить таймер','Время','auto',{safe:true}],
+  ['alarm.next','Сказать, когда будильник','Время','auto',{safe:true}],
+  ['calendar.query','Посмотреть календарь','Календарь','auto'],
+  ['calendar.add','Добавить событие','Календарь','ask'],
+  ['torch.set','Фонарик','Телефон','auto',{safe:true}],
+  ['volume.set','Громкость','Телефон','auto'],
+  ['dnd.set','Не беспокоить','Телефон','auto'],
+  ['media.control','Музыка: пауза, дальше','Телефон','auto'],
+  ['location.get','Узнать, где я','Телефон','ask'],
+  ['place.save','Запомнить место','Телефон','auto'],
+  ['note.remember','Запомнить заметку','Телефон','auto'],
+  ['app.open','Открыть приложение','Приложения и люди','auto'],
+  ['settings.open','Открыть настройку телефона','Приложения и люди','auto'],
+  ['call.dial','Позвонить','Приложения и люди','ask'],
+  ['message.draft','Написать сообщение','Приложения и люди','ask',{always:true}],
+].map(([id,title,group,def,o])=>({id,title,group,def,...(o||{})}));
+const POLICY_OPTS=[['auto','Делать сама'],['ask','Сначала спросить меня'],['off','Не делать']];
+const POLICY_WORD={auto:'Сама',ask:'Спросит',off:'Нельзя'};
+const LOCK_SCOPE=[['safe','Будильник, таймер, фонарик — сразу; остальное после разблокировки'],['unlock','Всё — только после разблокировки']];
 
 /** Настройки приложения, которых нет у режимов. */
 const RETURN_OPTS=[['30m','Через 30 минут без дела'],['never','Никогда — открывать последний режим'],['always','Всегда — боковая кнопка открывает Ассистента']];
@@ -99,8 +98,8 @@ const fresh = () => { const o = ({
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,
-  settings:{ returnToAssistant:'30m' },
-  policy:Object.fromEntries(TOOLS.map(t=>[t.id,{...t.def}])), editTool:null, jopen:null,
+  settings:{ returnToAssistant:'30m', lockScope:'safe' },
+  policy:Object.fromEntries(TOOLS.map(t=>[t.id,t.def])), editTool:null, jopen:null,
   journal:[
     {id:'j3',day:'Сегодня',at:'09:05',tool:'calendar.add',title:'Встреча с Олей · пт 15:00',who:'DeepSeek',phrase:'запиши встречу с Олей в пятницу в 15',params:'title="Встреча с Олей", start=2026-10-23T15:00',confirm:'«Да» нажатием',lock:false,undo:true},
     {id:'j2',day:'Сегодня',at:'08:40',tool:'torch.set',title:'Фонарик · выключен',who:'по правилам',phrase:'выключи фонарик',params:'on=false',confirm:'сразу',lock:true,status:'отменено'},
@@ -112,6 +111,8 @@ const fresh = () => { const o = ({
   Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
 const modeById = id => S.modes.find(m=>m.id===id);
 const toolById = id => TOOLS.find(t=>t.id===id);
+/** Можно ли на заблокированном телефоне без разблокировки. */
+const lockOk = id => S.settings.lockScope==='safe' && !!toolById(id).safe;
 /** Строка итога в разговоре + запись в журнал действий. */
 function addAct(item, j){ S.feed.push(item); const d=new Date(); S.journal.unshift({id:'j'+Date.now(),day:'Сегодня',at:d.toTimeString().slice(0,5),title:item.x,status:item.undone?'отклонено':'',...j}) }
 const brainById = id => S.brains.find(b=>b.id===id);

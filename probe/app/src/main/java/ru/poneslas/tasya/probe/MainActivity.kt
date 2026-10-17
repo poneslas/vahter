@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity() {
      *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --es run П18
      *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --es answer Готово
      *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --ez auto true
+     *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --es set server=http://127.0.0.1:8765
      */
     private fun handle(i: Intent?) {
         i ?: return
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
             Runner.start(this, Registry.probe(id))
         }
         i.getStringExtra("answer")?.let { Human.answer(it) }
+        i.getStringExtra("set")?.split('=', limit = 2)?.takeIf { it.size == 2 }?.let { (k, v) -> Config[k] = v }
         if (i.getBooleanExtra("auto", false)) Runner.startAllAutomatic(this)
     }
 

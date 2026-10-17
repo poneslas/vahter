@@ -1,7 +1,7 @@
 /* Действия пользователя: клики, ввод, диалоги (в Android — интенты ViewModel). */
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab){ if(t.dataset.ptab==='tour' && curPreset!==null) return startTour(); return setPtab(t.dataset.ptab) }
   if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
@@ -14,8 +14,9 @@ document.addEventListener('click', async e=>{
   if (t.dataset.mprimary){ modeById(S.editMode).primary=t.dataset.mprimary; S.keepScroll=true; return render() }
   if (t.dataset.mbool){ const m=modeById(S.editMode); m[t.dataset.mbool]=!m[t.dataset.mbool]; S.keepScroll=true; return render() }
   if (t.dataset.micon){ modeById(S.editMode).icon=t.dataset.micon; S.keepScroll=true; return render() }
+  if (t.dataset.tool){ const x=toolById(t.dataset.tool); S.editTool=x.id; S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
   if (t.dataset.jid){ S.jopen = S.jopen===t.dataset.jid ? null : t.dataset.jid; S.keepScroll=true; return render() }
-  if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tbrain'){ S.policy[S.editTool].brain=t.dataset.radio; return render() } if(D.key==='__tlock'){ S.policy[S.editTool].lock=t.dataset.radio; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
+  if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tool'){ S.policy[S.editTool]=t.dataset.radio; S.keepScroll=true; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
   if (t.dataset.dlgclose!==undefined){ S.dialog=null; return render() }
   if (t.dataset.pickitem){ const v=t.dataset.pickitem; const img=S.picker==='gallery'?{kind:'photo',cls:v}:{kind:'file',name:v.split('|')[0],size:v.split('|')[1]}; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; uploadPhoto(img,'',img.kind==='file'?'файл':'фото'); trace(img.kind==='file'?'Файл из системного выбора — уходит Hermes как документ, грузится прямо в пузыре.':'Фото из галереи — так же, как со спуска камеры.','p'); return }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
@@ -34,7 +35,6 @@ document.addEventListener('click', async e=>{
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
-  if (a && a.startsWith('tool:')){ S.editTool=a.slice(5); S.page='tool'; return render() }
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.page='mode'; return render() }
   switch(a){
@@ -77,9 +77,7 @@ document.addEventListener('click', async e=>{
     case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
     case 'tools': S.page='tools'; return render();
     case 'journal': S.page='journal'; S.jopen=null; return render();
-    case 'tpolbrain': { const p=S.policy[S.editTool]; S.dialog={title:'Если просит мозг',radio:BRAIN_OPTS.filter(o=>!(S.editTool==='message.draft'&&o[0]!=='full')),cur:p.brain,key:'__tbrain'}; return render() }
-    case 'tpollock': { const p=S.policy[S.editTool]; S.dialog={title:'На экране блокировки',radio:LOCK_OPTS,cur:p.lock,key:'__tlock'}; return render() }
-    case 'tpolenable': { const p=S.policy[S.editTool]; p.enabled=!p.enabled; S.keepScroll=true; return render() }
+    case 'lockscope': S.dialog={title:'На заблокированном телефоне',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
     case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();

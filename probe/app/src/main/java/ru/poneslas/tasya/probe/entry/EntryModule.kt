@@ -16,7 +16,7 @@ import ru.poneslas.tasya.probe.core.fmt
 import ru.poneslas.tasya.probe.core.median
 
 object EntryModule : Module {
-    override val probes = listOf(EntryProbe)
+    override val probes = listOf(EntryProbe, DynamicShortcutsProbe)
 
     override fun init(ctx: Context) {
         // Вход из плитки или уведомления-приёмника: шторка остаётся открытой, закрываем её из листа (11.3, 12б).
