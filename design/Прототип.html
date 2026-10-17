@@ -79,7 +79,7 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .tbtn:hover{background:var(--server-t)}
 .banner .prog{grid-column:2;margin:6px 0 8px}
 .composer{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 18px;background:var(--paper)}
-.composer .fld{flex:1;display:flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:24px;padding:4px 4px 4px 14px;min-height:48px}
+.composer .fld{flex:1;min-width:0;display:flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:24px;padding:4px 4px 4px 14px;min-height:48px}
 .composer input{flex:1;border:0;outline:none;background:transparent;font:inherit;font-size:14.5px;min-width:0}
 .micbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .15s}
 .micbtn.off{background:#C9CFC4;color:#fff}
@@ -91,6 +91,10 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .slide{margin-left:auto;color:var(--faint);white-space:nowrap}
 .lockcue{position:absolute;right:16px;bottom:78px;width:44px;height:70px;border-radius:22px;background:var(--surf);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;font-size:15px;color:var(--soft);box-shadow:0 8px 20px -12px rgba(14,26,54,.4);animation:up .2s}
 .cwrap{position:relative;flex:none}
+.fld input{min-width:0}
+.mtabs{display:flex;justify-content:center;gap:4px;padding:0 12px 12px;margin-top:-10px;touch-action:pan-y;user-select:none}
+.mtabs button{border:0;background:none;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:500;color:var(--soft)}
+.mtabs button[aria-pressed=true]{background:var(--ink);color:#fff}
 .modes{flex:none;display:flex;gap:6px;padding:2px 12px 8px;overflow-x:auto;scrollbar-width:none}
 .modes::-webkit-scrollbar{display:none}
 .mchip{flex:none;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:6px 12px;font-size:13px;display:flex;align-items:center;gap:6px}
@@ -556,6 +560,7 @@ function liveHtml(){
 }
 function modesBar(){ return `<div class="modes" role="tablist" aria-label="Режимы">${MODES.map(m=>`<button class="mchip" role="tab" data-mode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi">${m.icon}</span>${m.title}</button>`).join('')}<button class="mchip add" data-act="modes" aria-label="Настроить режимы">+</button></div>` }
 function attDraftHtml(){ const a=S.draftImg; if(!a) return ''; return `<div class="attdraft"><i class="th ${a.cls}"></i><span>${a.kind==='screen'?'Снимок экрана':'Фото'} · можно добавить вопрос голосом или текстом</span><button class="iconbtn" data-act="dropimg" aria-label="Убрать">${I.x}</button></div>` }
+function modeTabs(){ const am=activeModes(); if(am.length<2) return ''; return `<div class="mtabs" data-swipe role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}</div>` }
 function modePill(){ const am=activeModes(); if(am.length<2) return ''; const m=curMode(); return `<button class="mpill" data-act="modepick" aria-label="Режим: ${m.title}. Нажмите — список, свайп по строке — следующий">${m.icon}</button>` }
 function modePicker(){ if(!S.modePick) return ''; return `<div class="mpicker" role="menu">${activeModes().map(m=>`<button data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi2">${m.icon}</span><span><b>${m.title}</b><small>${m.id==='main'?'обычный разговор':(S.camFirst[m.id]?'сразу камера':'голос, текст'+(m.photo?', фото':''))}</small></span></button>`).join('')}<button data-act="modes"><span class="mi2">⚙</span><span><b>Настроить режимы</b></span></button></div>` }
 function composerHtml(){
@@ -565,7 +570,7 @@ function composerHtml(){
   if (S.rec) return `<div class="cwrap"><div class="composer rec"><button class="iconbtn" data-act="reccancel" aria-label="Отменить запись">${I.x}</button><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div></div><button class="recbtn" data-act="recfield">В поле</button><button class="sendbtn" data-act="recsend" aria-label="Отправить">${I.send}</button></div></div>`;
   const m=curMode(); const tools=(m.photo?`<button class="intool" data-act="camera" aria-label="Сфотографировать">📷</button>`:'')+(m.screen?`<button class="intool" data-act="screenshot" aria-label="Снимок экрана под листом">▣</button>`:'');
   const canSend = S.draft || S.draftImg;
-  return `<div class="cwrap">${modePicker()}${attDraftHtml()}<div class="composer" data-swipe>${modePill()}<div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':(m.id==='main'?ph:m.id==='translate'?'Что перевести?':'Вопрос к фото')}" autocomplete="off">${canSend?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div></div>`;
+  return `<div class="cwrap">${modePicker()}${attDraftHtml()}<div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':(m.id==='main'?ph:m.id==='translate'?'Что перевести?':'Вопрос к фото')}" autocomplete="off">${canSend?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div>${modeTabs()}</div>`;
 }
 function chat(){
   const [d,t]=linkState();
@@ -869,9 +874,9 @@ document.addEventListener('pointerdown',e=>{ const ic=e.target.closest('[data-op
 document.addEventListener('pointerup',()=>{ clearTimeout(iconT) });
 document.addEventListener('click',e=>{ if(iconLong && e.target.closest('[data-open="app"]')){ e.stopImmediatePropagation(); iconLong=false } else if(S.shortcuts && !e.target.closest('.sc-pop')){ S.shortcuts=false; render() } }, true);
 let sw=null;
-document.addEventListener('pointerdown',e=>{ const c=e.target.closest('[data-swipe]'); if(!c||e.target.closest('[data-mic],button')) { sw=null; return } sw={x:e.clientX,y:e.clientY} });
+document.addEventListener('pointerdown',e=>{ const c=e.target.closest('[data-swipe]'); if(!c) { sw=null; return } sw={x:e.clientX,y:e.clientY} });
 document.addEventListener('pointerup',e=>{ if(!sw) return; const dx=e.clientX-sw.x, dy=e.clientY-sw.y; sw=null; if(Math.abs(dx)<50||Math.abs(dy)>40) return; const am=activeModes(); if(am.length<2) return;
-  const i=am.findIndex(m=>m.id===S.mode); const n=am[(i+(dx<0?1:-1)+am.length)%am.length]; setMode(n.id,'Свайп по строке ввода'); if (S.camFirst[S.mode] && curMode().photo) return openCamera(true); render() });
+  const i=am.findIndex(m=>m.id===S.mode); const n=am[(i+(dx<0?1:-1)+am.length)%am.length]; setMode(n.id,'Свайп по вкладкам режимов'); sw=false; S.keepScroll=true; render(); setTimeout(()=>{ if(sw===false) sw=null },0) });
 let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold') });
 document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const dy=pd.y-e.clientY, dx=pd.x-e.clientX;
@@ -955,7 +960,7 @@ function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true;
 document.addEventListener('click', async e=>{
   const t=e.target.closest('[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
-  if (t.dataset.pickmode){ setMode(t.dataset.pickmode,'Выбран режим'); if (S.camFirst[S.mode] && curMode().photo) return openCamera(true); return render() }
+  if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }
   if (t.dataset.toggle){ const [k,id]=t.dataset.toggle.split(':'); S[k][id]=!S[k][id]; if(k==='modeOn' && !S.modeOn[id] && S.mode===id) setMode('main','Режим выключен — вернулись'); S.keepScroll=true; return render() }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
   if (t.dataset.shot){ S.cam.subj=t.dataset.shot; return render() }
@@ -1086,7 +1091,7 @@ const PRESETS=[
   ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
 ];
-function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы внизу: значок слева от поля или свайп по строке; ярлыки — долгое нажатие на иконку Таси.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
+function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
