@@ -12,7 +12,7 @@ const mb = b => (b/1048576).toFixed(0);
  * @property {string}  hint        текст в пустом разговоре режима
  * @property {string}  placeholder подсказка в поле ввода
  * @property {string}  prompt      инструкция мозгу; у Ассистента пусто
- * @property {{voice:boolean, photo:boolean, screen:boolean, file:boolean}} accepts  что принимает (текст — всегда)
+ * @property {{voice:boolean, photo:boolean, file:boolean}} accepts  что принимает (текст — всегда)
  * @property {'voice'|'photo'} primary  большая кнопка и действие при входе: слушать или камера
  * @property {boolean} tools       действия телефона доступны мозгу
  * @property {boolean} builtin     встроенный: нельзя удалить; выключить можно всё, кроме Ассистента
@@ -21,16 +21,16 @@ const mb = b => (b/1048576).toFixed(0);
  * @property {'off'}   tts         озвучка ответа (v1.1)
  */
 const MODE_ICONS=['spark','transl','lens','food','cart','flight','book','star','edit'];
-const mode = o => ({hint:'', placeholder:'Вопрос или задача', prompt:'', accepts:{voice:true,photo:false,screen:false,file:false}, primary:'voice', tools:false, builtin:false, enabled:true, asr:'ru', tts:'off', ...o});
+const mode = o => ({hint:'', placeholder:'Вопрос или задача', prompt:'', accepts:{voice:true,photo:false,file:false}, primary:'voice', tools:false, builtin:false, enabled:true, asr:'ru', tts:'off', ...o});
 const BUILTIN_MODES=[
-  mode({id:'main', title:'Ассистент', icon:'spark', placeholder:'Написать Hermes', accepts:{voice:true,photo:true,screen:false,file:true}, tools:true, builtin:true}),
-  mode({id:'translate', title:'Переводчик', icon:'transl', builtin:true, hint:'Скажите или напишите — переведу. Можно сфотографировать надпись или меню.', placeholder:'Что перевести?', accepts:{voice:true,photo:true,screen:false,file:false},
+  mode({id:'main', title:'Ассистент', icon:'spark', placeholder:'Написать Hermes', accepts:{voice:true,photo:true,file:true}, tools:true, builtin:true}),
+  mode({id:'translate', title:'Переводчик', icon:'transl', builtin:true, hint:'Скажите или напишите — переведу. Можно сфотографировать надпись или меню.', placeholder:'Что перевести?', accepts:{voice:true,photo:true,file:false},
     prompt:'Всё не на русском — переведи на русский. Всё на русском — переведи на китайский, добавь пиньинь. Коротко, без вступлений. Не сохраняй это в память.'}),
-  mode({id:'whatsthis', title:'Что это?', icon:'lens', builtin:true, primary:'photo', hint:'Сфотографируйте товар, вывеску или меню — или сделайте снимок экрана. Коротко объясню, что это.', placeholder:'Вопрос к фото', accepts:{voice:true,photo:true,screen:true,file:false},
-    prompt:'Пользователь в поездке. По фото или снимку экрана коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.'}),
+  mode({id:'whatsthis', title:'Что это?', icon:'lens', builtin:true, primary:'photo', hint:'Сфотографируйте товар, вывеску или меню — коротко объясню, что это.', placeholder:'Вопрос к фото', accepts:{voice:true,photo:true,file:false},
+    prompt:'Пользователь в поездке. По фото коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.'}),
 ];
 /** Пример своего режима — как если бы его создали через «+». */
-const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', primary:'photo', hint:'Сфотографируйте меню — выберу под ваши вкусы.', placeholder:'Вопрос к меню', accepts:{voice:true,photo:true,screen:false,file:false},
+const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', primary:'photo', hint:'Сфотографируйте меню — выберу под ваши вкусы.', placeholder:'Вопрос к меню', accepts:{voice:true,photo:true,file:false},
   prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'});
 /** Настройки приложения, которых нет у режимов. */
 const RETURN_OPTS=[['30m','Через 30 минут без дела'],['never','Никогда — открывать последний режим'],['always','Всегда — боковая кнопка открывает Ассистента']];
@@ -38,7 +38,7 @@ const clone = o => JSON.parse(JSON.stringify(o));
 /** Одна строка описания режима в списке — выводится из полей, не хранится. */
 function modeSummary(m){
   if (m.id==='main') return 'Основной разговор · все действия телефона';
-  const ins=[m.accepts.photo&&'фото',m.accepts.screen&&'снимок экрана',m.accepts.file&&'файл'].filter(Boolean);
+  const ins=[m.accepts.photo&&'фото',m.accepts.file&&'файл'].filter(Boolean);
   return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
 
 const fresh = () => { const o = ({

@@ -113,7 +113,8 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 @keyframes fill{from{width:0}to{width:100%}}
 .cam2 .modeName{position:absolute;top:60px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:6px;font-size:13px;opacity:.85}.cam2 .modeName .ic{width:16px;height:16px}
 .intool{width:34px;height:34px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;flex:none;font-size:16px;color:var(--soft)}
-.intool:hover{background:#ECEEE8}
+@media (hover:hover){.intool:hover{background:#ECEEE8}}
+.intool:focus:not(:focus-visible){outline:none}
 .toolbtn{width:40px;height:40px;border-radius:50%;border:0;background:#ECEEE8;display:grid;place-items:center;flex:none;font-size:17px}
 .attdraft{display:flex;align-items:center;gap:8px;padding:0 14px 6px}
 .attdraft .th{width:52px;height:52px;border-radius:10px;flex:none}
@@ -429,3 +430,5 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .fcard .upx{top:50%;margin-top:-14px}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 4px}.pgrid button{border:0;padding:0;aspect-ratio:1;background:none}.pgrid .th{display:block;width:100%;height:100%}
 .sys .it .ic{width:24px;height:24px;color:#3E6FD8;flex:none}
+
+.fieldarea.dictating{border-color:var(--local);background:#FFFBF2}

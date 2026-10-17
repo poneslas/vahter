@@ -30,6 +30,8 @@ async function runUpload(b){
     if(b.up.st!=='up') return;
     b.up.pct=Math.min(100,Math.round((Date.now()-b.up.t0)/dur*100));
     if(speed==='fail' && b.up.pct>=60){ b.up.st='fail'; S.keepScroll=true; render(); trace('Загрузка оборвалась. Фото остаётся в разговоре: «Повторить» догрузит его, «✕» уберёт. Добавленный вопрос не потеряется.','e'); return }
+    const composing = (S.drafts[b.mode]||'').trim() || (S.rec && S.mode===b.mode);
+    if(b.up.pct>=100 && Date.now()-b.up.t0>=MIN && composing){ if(!b.up.hold){ b.up.hold=true; trace('В поле начат вопрос — вложение ждёт его и уйдёт вместе с ним.','p') } S.keepScroll=true; render(); continue }
     if(b.up.pct>=100 && Date.now()-b.up.t0>=MIN){ b.up.st='sent'; if(S.pendingUp===b) S.pendingUp=null; S.keepScroll=true; render(); return deliverMode(b.x,b.via,b.img,b) }
     S.keepScroll=true; render() } }
 async function shotGo(q){

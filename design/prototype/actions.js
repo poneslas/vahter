@@ -70,7 +70,6 @@ document.addEventListener('click', async e=>{
     case 'upcancel': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ b.up.st='cancel'; if(S.pendingUp===b) S.pendingUp=null; if(b.x){ S.draft=b.x } trace(b.x?'Отправка отменена. Фото убрано, вопрос вернулся в поле.':'Отправка отменена — ничего не ушло.','p') } S.keepScroll=true; return render() }
     case 'upretry': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ S.pendingUp=b; runUpload(b) } return }
     case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; if(S.rec){ recTok++; S.rec=null } return render();
-    case 'screenshot': uploadPhoto({kind:'screen',cls:'scrn'},'','снимок экрана'); trace('Снимок того, что под листом (onHandleScreenshot), только по нажатию. Грузится прямо в пузыре — как фото с камеры: «✕» или дописать вопрос.','p'); setTimeout(()=>$('#cin')?.focus(),50); return;
     case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
     case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();

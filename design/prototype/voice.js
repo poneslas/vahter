@@ -56,12 +56,13 @@ let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
 document.addEventListener('dragstart',e=>{ if(e.target.closest&&e.target.closest('[data-mic]')) e.preventDefault() });
 document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const k=$('#dev').getBoundingClientRect().width/W; const dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k;
-  S.rec.g={x:Math.max(0,Math.abs(dx)>Math.abs(dy)?dx:0), y:Math.max(0,Math.abs(dy)>=Math.abs(dx)?dy:0)};
+  if (!pd.axis && Math.hypot(dx,dy)>8) pd.axis = Math.abs(dy)>=Math.abs(dx) ? 'y' : 'x';   // направление выбирается один раз, как в Telegram
+  S.rec.g={x:pd.axis==='x'?Math.max(0,dx):0, y:pd.axis==='y'?Math.max(0,dy):0};
   const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;
   const lc=$('#scr .lockcue'); if(lc){ lc.style.setProperty('--ly',Math.min(S.rec.g.y,45)+'px'); lc.classList.toggle('near',S.rec.g.y>22) }
   const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-S.rec.g.x/70);
-  if (dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Дальше «Отправить» или «В поле».','p'); S.keepScroll=true; render() }
-  else if (dx>70){ pd=null; finishRec('cancel') } });
+  if (pd.axis==='y' && dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Дальше «Отправить» или «В поле».','p'); S.keepScroll=true; render() }
+  else if (pd.axis==='x' && dx>70){ pd=null; finishRec('cancel') } });
 function micRelease(){ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
   if (dt<260){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
   finishRec('release') }
