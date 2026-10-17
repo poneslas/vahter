@@ -82,7 +82,7 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .micwrap{flex:none;transition:transform .06s linear}
 [data-mic]{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}[data-mic] *{pointer-events:none}
 .lockcue.near{color:var(--ink);border-color:var(--ink)}.lockcue .arr{font-size:13px;line-height:1}
-.lockcue{position:absolute;right:16px;bottom:78px;transform:translateY(calc(var(--ly,0px) * -.4));width:44px;height:70px;border-radius:22px;background:var(--surf);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;font-size:15px;color:var(--soft);box-shadow:0 8px 20px -12px rgba(14,26,54,.4)}.lockcue.in{animation:up .2s}
+.lockcue{position:absolute;right:16px;bottom:104px;transform:translateY(calc(var(--ly,0px) * -.4));width:44px;height:70px;border-radius:22px;background:var(--surf);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;font-size:15px;color:var(--soft);box-shadow:0 8px 20px -12px rgba(14,26,54,.4)}.lockcue.in{animation:up .2s}
 .cwrap{position:relative;flex:none}
 .fld input{min-width:0}
 .seg2{display:flex;background:#ECEEE8;border-radius:12px;padding:3px}.seg2 button{flex:1;border:0;background:none;padding:9px;border-radius:10px;font-size:14px}.seg2 button[aria-pressed=true]{background:#fff;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
