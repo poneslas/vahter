@@ -1,4 +1,4 @@
-/* Лист ассистента и съёмка: открыть/закрыть, камера, загрузка фото (в Android — VoiceInteractionSession, CameraX, UploadWorker). */
+/* Лист ассистента и съёмка: открыть/закрыть, камера, загрузка фото (в Android — VoiceInteractionSession, CameraX в окне листа, загрузка корутиной в процессе, запасной путь WorkManager). */
 /* ───────── лист ───────── */
 function openOverlay(src){
   token++; S.busy=false;
@@ -18,7 +18,7 @@ function openOverlay(src){
 }
 function openCamera(first){
   S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
-  trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера: системная (ACTION_IMAGE_CAPTURE через startAssistantActivity) или своя на CameraX — решит спайк С13.','p'); render() }
+  trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера — CameraX прямо в листе: на эмуляторе видоискатель через ~320 мс после вызова (пробник). Запасной путь — своя активность, ~530 мс.','p'); render() }
 function uploadPhoto(img, q, via){
   const modeId=S.mode, F=S.feed; const b={t:'me',x:q||'',via:via||'фото',img,up:{st:S.w.net==='none'?'wait':'up',pct:0,t0:Date.now()},mode:modeId,id:'u'+Date.now()};
   F.push(b); S.pendingUp=b; render(); runUpload(b); return b }
