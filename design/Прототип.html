@@ -344,6 +344,7 @@ const I = {
   x:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   back:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
   expand:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+  down:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
   mic:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
   send:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   warn:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>',
@@ -463,7 +464,7 @@ function lock(){ return `<div class="layer lock">${statusBar(false)}<div class="
 function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
-  <div class="topbar"><div class="t"><b>Hermes</b><small><span class="ldot ${d}"></span>${t}</small></div>
+  <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>Hermes</b><small><span class="ldot ${d}"></span>${t}</small></div>
     <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
   ${bannerHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
@@ -577,7 +578,7 @@ function render(){
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
   S.keepScroll=false;
-  if (S.scrollToMsg){ const el=$('#scroll'); const tgt=el&&el.querySelector(`.ai[data-msg="${S.scrollToMsg}"]`); if(tgt){ el.scrollTop += tgt.getBoundingClientRect().top - el.getBoundingClientRect().top - 12 } S.scrollToMsg=null }
+  if (S.scrollToMsg){ const id=S.scrollToMsg; S.scrollToMsg=null; requestAnimationFrame(()=>{ const el=$('#scroll'); const tgt=el&&el.querySelector(`.ai[data-msg="${id}"]`); if(tgt){ el.scrollTop += tgt.getBoundingClientRect().top - el.getBoundingClientRect().top - 8 } }) }
   renderWorld();
 }
 
@@ -648,7 +649,7 @@ function closeOverlay(){ token++; S.busy=false; const working=S.feed.some(f=>f.t
 async function expand(msgId){
   if (!S.ov) return; S.ov.full=true; S.keepScroll=true; render();
   trace('Лист доезжает до полного экрана, затем startAssistantActivity открывает тот же разговор в экране приложения — без анимации перехода; лист закрывается, когда приложение нарисовало первый кадр. Так разворачивается Gemini.','p');
-  await wait(380); S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat'; S.scrollToMsg=msgId||null; render();
+  await wait(380); S.fromSheet={screen:S.screen==='app'?'home':S.screen}; S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat'; S.scrollToMsg=msgId||null; render();
 }
 
 /* ───────── фразы и ответы ───────── */
@@ -749,7 +750,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.ev) return event(t.dataset.ev);
   if (t.dataset.w){ let v=t.dataset.v; if(v==='true')v=true; if(v==='false')v=false; return setWorld(t.dataset.w,v) }
   if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; return render() }
-  if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
+  if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; S.fromSheet=null; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
   if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Тасечкин — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
   if (t.dataset.side){ S.sideOk=t.dataset.side==='1'; S.dismissed=null; return render() }
   if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); S.feed.push({t:'act',i:'⏰',x:'Будильник · '+t.dataset.chip,s:'на телефоне · через 21 ч',btn:'Открыть Часы',kind:'D',id:Date.now()}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
@@ -779,14 +780,16 @@ document.addEventListener('click', async e=>{
     case 'copycmd': try{ await navigator.clipboard.writeText('hermes pairing approve android K7Q2M9XD') }catch{} trace('Команда скопирована.'); return;
     case 'tochat': S.page='chat'; return render();
     case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
+    case 'home': S.fromSheet=null; S.screen='home'; return render();
     case 'about': S.page='about'; return render();
     case 'back': S.page='chat'; return render();
-    case 'home': S.screen='home'; return render();
     case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();
     case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Тасечкин обновился до 0.5.0','Что нового — в «О программе»'); return render();
     case 'updcancel': S.upd.state='available'; return render();
     case 'gear': if(S.w.locked){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы открыть настройки',opts:[['Разблокировать','unlock_set'],['Отмена','x','sec2']]}; return render() } S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; trace('Шестерёнка → настройки приложения (startAssistantActivity), лист закрывается.'); return render();
     case 'expand': return expand(t.dataset.msg);
+    case 'collapse': { const back=S.fromSheet; S.fromSheet=null; S.screen=back?.screen||'home'; openOverlay('снова — свёрнуто из приложения'); S.ov.full=true; render(); await wait(30); S.ov.full=false; S.keepScroll=false; render();
+      trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
     case 'kbd': S.ov.input=S.ov.input==='kbd'?'voice':'kbd'; S.keepScroll=true; render(); $('#kin')?.focus(); return;
