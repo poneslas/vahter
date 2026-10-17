@@ -108,8 +108,9 @@ function composerHtml(){
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
   const canAttach = A.file || A.photo;
   const tools = canAttach?`<button class="intool" data-act="attach" aria-label="Прикрепить" aria-expanded="${S.attachMenu}">${I.clip}</button>`:'';
-  const right = S.draft ? `<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>` : (photoMain&&A.voice ? `<button class="intool" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button>` : '');
-  const big = photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
+  // есть текст — большая кнопка становится «Отправить» (как в Telegram); в поле справа — только микрофон фото-режима
+  const right = S.draft ? '' : (photoMain&&A.voice ? `<button class="intool" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button>` : '');
+  const big = S.draft ? `<button class="micbtn sendmode" data-act="csend" aria-label="Отправить">${I.send}</button>` : photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
   const up = S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
   const place = up ? (S.pendingUp.img.kind==='file'?'Вопрос к файлу':'Вопрос к фото') : m.id==='main' ? ph : m.placeholder;
   return `<div class="cwrap">${attachMenu()}<div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${right}</div>${big}</div>${modeTabs()}</div>`;
