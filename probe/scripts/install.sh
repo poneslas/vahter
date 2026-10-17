@@ -9,6 +9,8 @@ PKG=ru.poneslas.tasya.probe
 
 ./gradlew :app:assembleDebug -q
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk
+# -g выдаёт всё; локальную сеть забираем — П13 меряет и без неё.
+adb shell pm revoke "$PKG" android.permission.ACCESS_LOCAL_NETWORK 2>/dev/null || true
 adb shell cmd role add-role-holder android.app.role.ASSISTANT "$PKG"
 echo "держатель роли: $(adb shell cmd role get-role-holders android.app.role.ASSISTANT | tr -d '\r')"
 if [[ "${1:-}" == "--run" ]]; then

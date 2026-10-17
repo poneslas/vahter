@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
 
     fun requestPermissions() {
         val list = mutableListOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS)
-        if (Build.VERSION.SDK_INT >= 37) list += "android.permission.ACCESS_LOCAL_NETWORK"
+        // ACCESS_LOCAL_NETWORK не просим: П13 сама меряет «без разрешения» и запрашивает его.
         permissions.launch(list.toTypedArray())
     }
 
