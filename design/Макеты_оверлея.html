@@ -199,6 +199,18 @@
   .share { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 22px 22px 0 0; padding: 12px 14px 18px; z-index: 5; box-shadow: 0 -8px 30px -12px rgba(14,26,54,.4); }
   .share .apps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; text-align: center; font-size: 10px; color: var(--ink-soft); }
   .share .apps i { display: block; width: 40px; height: 40px; border-radius: 12px; margin: 0 auto 4px; }
+  .set { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+  .set h4 { margin: 8px 2px 2px; font-size: 11px; font-weight: 600; color: var(--ink-faint); }
+  .row { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; }
+  .row .k { flex: 1; } .row .k span { display: block; font-size: 10.5px; color: var(--ink-soft); }
+  .row .v { color: var(--ink-soft); font-size: 11.5px; }
+  .ok { color: #2E7D4F; } .warn { color: var(--danger); }
+  .tog { width: 30px; height: 18px; border-radius: 9px; background: var(--ink); position: relative; flex: none; }
+  .tog::after { content: ""; position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+  .tog.off { background: #C9CFC4; } .tog.off::after { right: auto; left: 2px; }
+  .ver { text-align: center; padding: 14px 0 6px; }
+  .ver b { display: block; font-family: var(--display); font-size: 22px; font-weight: 500; }
+  .ver span { font-size: 11.5px; color: var(--ink-soft); }
   /* история */
   .search { flex: none; display: flex; align-items: center; gap: 6px; background: #ECEEE8; border-radius: 12px; padding: 7px 10px; font-size: 12px; color: var(--ink-faint); margin-bottom: 8px; }
   .search svg { width: 14px; height: 14px; }
@@ -256,6 +268,7 @@
   <defs>
     <symbol id="i-kbd" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3L5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-hist" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -294,7 +307,7 @@
         <div class="scrim" id="dScrim" style="opacity:0;transition:opacity .25s"></div>
         <div class="sheet closed" id="dSheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 4 мин</span><span class="sp"></span><button class="ib" aria-label="История"><svg><use href="#i-hist"/></svg></button></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 4 мин</span><span class="sp"></span><button class="ib" aria-label="Настройки"><svg><use href="#i-gear"/></svg></button></div>
           <div class="conv" id="dConv">
             <div class="me">Напомни, во сколько у меня завтра банк?<small>голос</small></div>
             <div class="ai">В 10:00, офис на Тверской. Возьми паспорт.</div>
@@ -340,7 +353,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="live"><span class="st p">Слушаю</span></div>
           <div class="ctl"><span class="ib"><svg><use href="#i-kbd"/></svg></span><span class="eqbtn"><div class="eq" data-mode="dots"></div></span><span class="ib"><svg><use href="#i-x"/></svg></span></div>
         </div>
@@ -354,7 +367,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="live"><span class="st p">Слушаю</span><span class="w">Найди</span> <span class="w">рецепт</span> <span class="w draft">сырников</span> <span class="w draft">без</span></div>
           <div class="ctl"><span class="ib"><svg><use href="#i-kbd"/></svg></span><span class="eqbtn"><div class="eq" data-mode="speak"></div></span><span class="ib"><svg><use href="#i-x"/></svg></span></div>
         </div>
@@ -368,7 +381,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="live"><span class="st p">Распознаю</span>Найди рецепт сырников без муки, на рисовой.</div>
           <div class="ctl"><span class="ib"><svg><use href="#i-kbd"/></svg></span><span class="eqbtn"><div class="eq" data-mode="wave"></div></span><span class="ib"><svg><use href="#i-x"/></svg></span></div>
         </div>
@@ -382,7 +395,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="me">Найди рецепт сырников без муки, на рисовой.<small>голос</small></div>
             <details class="acc"><summary><span class="shimmer">Ищу рецепты…</span><svg class="chev" width="14" height="14"><use href="#i-chev"/></svg></summary></details></div>
           <div class="live quiet"><span class="st h">Hermes думает</span></div>
@@ -398,7 +411,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="me">Найди рецепт сырников без муки, на рисовой.<small>голос</small></div>
             <details class="acc"><summary>2 шага · 5 с<svg class="chev" width="14" height="14"><use href="#i-chev"/></svg></summary></details></div>
           <div class="live reply"><span class="st h">Hermes отвечает</span><span class="w past">Нашёл</span> <span class="w past">простой:</span> <span class="w past">500 г</span> <span class="w say">творога,</span> <span class="w fut">2 яйца,</span> <span class="w fut">3 ложки рисовой муки…</span></div>
@@ -414,7 +427,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · новая сессия</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="me">Найди рецепт сырников без муки, на рисовой.<small>голос</small></div>
             <div class="ai">Нашёл простой: 500 г творога, 2 яйца, 3 ложки рисовой муки, ложка сахара. <span class="more">Жарить по 3 минуты с каждой стороны на среднем огне…</span></div></div>
           <div class="live quiet"><span class="st">Пауза · нажмите, чтобы говорить</span></div>
@@ -438,7 +451,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 2 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 2 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="ai">В 10:00, офис на Тверской. Возьми паспорт.</div></div>
           <div class="field"><span class="v">Перенеси банк на пятницу<span class="caret"></span></span><span class="mini"><svg><use href="#i-mic"/></svg></span><span class="mini send"><svg><use href="#i-send"/></svg></span></div>
           <div class="kbd"><div><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div><b></b><b class="sp"></b><b></b></div></div>
@@ -453,7 +466,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 2 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 2 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="ai">В 10:00, офис на Тверской. Возьми паспорт.</div></div>
           <div class="field" style="border-color:var(--local)"><span class="v">Перенеси банк на пятницу <span style="opacity:.45">и напиши Оле что</span></span><span class="mini" style="background:var(--local-tint);color:var(--local-deep)"><div class="eq" data-mode="speak" data-n="5" style="height:18px;gap:2px"></div></span><span class="mini send"><svg><use href="#i-send"/></svg></span></div>
           <div class="kbd"><div><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div><b></b><b class="sp"></b><b></b></div></div>
@@ -468,7 +481,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 3 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 3 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me" style="box-shadow:0 0 0 2px var(--ink)">Напиши Оле что опаздываю на пятнадцать минут<small>голос</small></div>
             <div class="chips" style="justify-content:flex-end"><span class="chip">Исправить</span><span class="chip">Копировать</span><span class="chip">Повторить</span></div>
@@ -494,7 +507,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot off"></span><span>Нет связи с Hermes · локальный режим</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot off"></span><span>Нет связи с Hermes · локальный режим</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Таймер на пять минут<small>голос</small></div>
             <div class="act"><span class="ic"><svg><use href="#i-timer"/></svg></span><span class="tx"><b>Таймер · 5:00</b><span>на телефоне</span></span><button class="lnk">Отменить</button></div>
@@ -512,7 +525,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 1 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 1 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Поставь будильник<small>голос</small></div>
             <div class="ph">На когда?</div>
@@ -531,7 +544,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 1 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 1 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Поставь будильник<small>голос</small></div>
             <div class="ph">На когда?</div>
@@ -552,7 +565,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot off"></span><span>Нет связи с Hermes · локальный режим</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot off"></span><span>Нет связи с Hermes · локальный режим</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Запомни, машина на парковке у ТЦ, второй уровень<small>голос</small></div>
             <div class="act"><span class="ic"><svg><use href="#i-note"/></svg></span><span class="tx"><b>Место «машина» сохранено</b><span>на телефоне · с геометкой</span></span><button class="lnk">Отменить</button></div>
@@ -579,7 +592,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 6 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 6 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Что важного в почте за утро?<small>голос</small></div>
             <details class="acc"><summary><span class="shimmer">Смотрю почту · 14 писем</span><svg class="chev" width="14" height="14"><use href="#i-chev"/></svg></summary></details>
@@ -597,7 +610,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 6 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 6 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Что важного в почте за утро?<small>голос</small></div>
             <details class="acc" open><summary>4 шага · 11 с<svg class="chev" width="14" height="14"><use href="#i-chev"/></svg></summary>
@@ -617,7 +630,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 7 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 7 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Что важного в почте за утро?<small>голос</small></div>
             <details class="acc"><summary>4 шага · 11 с<svg class="chev" width="14" height="14"><use href="#i-chev"/></svg></summary></details>
@@ -644,7 +657,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 8 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 8 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Перенеси банк на пятницу на то же время<small>голос</small></div>
             <div class="card"><div class="who h">Hermes просит · календарь</div>
@@ -666,7 +679,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 8 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 8 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Перенеси банк на пятницу на то же время<small>голос</small></div>
             <div class="act"><span class="ic"><svg><use href="#i-cal"/></svg></span><span class="tx"><b>Банк → пт, 19 окт, 10:00</b><span class="src"><span class="h">Hermes</span> → телефон</span></span><button class="lnk">Отменить</button></div>
@@ -685,7 +698,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 9 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 9 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Да, и Оле скажи, что договор подпишу в среду<small>голос</small></div>
             <div class="card"><div class="who h">Hermes подготовил черновик</div>
@@ -735,7 +748,7 @@
         <div class="scrim"></div>
         <div class="sheet tall">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 9 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 9 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Напомни, во сколько у меня завтра банк?<small>голос</small></div>
             <div class="ai">В 10:00, офис на Тверской. Возьми паспорт.</div>
@@ -798,7 +811,7 @@
         <div class="scrim"></div>
         <div class="sheet tall">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 9 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 9 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me">Найди рецепт сырников без муки<small>голос</small></div>
             <div class="ai" style="background:var(--server-tint);border-radius:10px;padding:6px 8px 6px 18px">Нашёл простой: 500 г творога, 2 яйца, 3 ложки рисовой муки, ложка сахара. Жарить по 3 минуты с каждой стороны.</div>
@@ -817,7 +830,82 @@
   </div>
 </section>
 
-<!-- ═════════ 8. Ошибки и пустые ═════════ -->
+<!-- ═════════ 8. Настройки и обновления ═════════ -->
+<section class="sc">
+  <div class="wrap"><h2>Настройки и обновления</h2>
+  <p>Шестерёнка в шапке листа открывает обычное приложение: настройки, журнал действий и «О программе». Обновления — по модели Гига Писаря: проверка при запуске, каждые 6 часов и по кнопке, прогресс загрузки, «Что нового». Бета ставится с Mac через <code>adb</code> и ничего не публикует.</p></div>
+  <div class="rail">
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="sheet full">
+          <div class="hdr" style="font-size:13px;color:var(--ink)"><span class="ib"><svg><use href="#i-back"/></svg></span><b style="font-weight:600">Настройки</b><span class="sp"></span></div>
+          <div class="set">
+            <h4>Связь</h4>
+            <div class="row"><span class="k">Сервер<span>hermes.example.ru · Hermes 0.22.2</span></span><span class="v ok">на связи</span></div>
+            <div class="row"><span class="k">Кнопка ассистента<span>долгое нажатие боковой кнопки</span></span><span class="v ok">наша</span></div>
+            <h4>Разговор</h4>
+            <div class="row"><span class="k">Слушать 6 с после ответа</span><span class="tog"></span></div>
+            <h4>Действия</h4>
+            <div class="row"><span class="k">Что можно телефону и мозгу<span>16 действий · подтверждения</span></span><span class="v">›</span></div>
+            <div class="row"><span class="k">Журнал действий<span>сегодня 7</span></span><span class="v">›</span></div>
+            <h4>Приложение</h4>
+            <div class="row"><span class="k">О программе<span>0.4.0 · доступна 0.5.0</span></span><span class="v warn">●</span></div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption><span class="n">1</span><b>Настройки</b>Открываются шестерёнкой из листа. Сверху — то, что ломается чаще всего: связь с сервером и кнопка ассистента. Точка у «О программе» — есть обновление.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="sheet full">
+          <div class="hdr" style="font-size:13px;color:var(--ink)"><span class="ib"><svg><use href="#i-back"/></svg></span><b style="font-weight:600">О программе</b><span class="sp"></span></div>
+          <div class="set">
+            <div class="ver"><b>0.4.0</b><span>стабильный канал · сборка 40</span></div>
+            <div class="card"><div class="who p">Доступна версия 0.5.0</div>
+              <div class="bd" style="font-size:12px"><ul style="margin:0;padding-left:16px"><li>Пуш, когда мозг ответил</li><li>Карточка пачки действий</li><li>Быстрее открывается лист</li></ul></div>
+              <div class="btns"><span class="btn pri">Обновить</span><span class="btn ghost">Позже</span></div></div>
+            <div class="row"><span class="k">Проверить обновления<span>проверено 5 минут назад</span></span><span class="v">↻</span></div>
+            <h4>Модели</h4>
+            <div class="row"><span class="k">Распознавание GigaAM v3<span>214 МБ · версия 1</span></span><span class="v ok">актуальна</span></div>
+            <div class="row"><span class="k">Определение речи (VAD)<span>2 МБ</span></span><span class="v ok">актуальна</span></div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption><span class="n">2</span><b>Есть новая версия</b>«Что нового» из манифеста. Ручная проверка отвечает всегда: «у тебя последняя», «не удалось проверить» или «доступна версия».</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="sheet full">
+          <div class="hdr" style="font-size:13px;color:var(--ink)"><span class="ib"><svg><use href="#i-back"/></svg></span><b style="font-weight:600">О программе</b><span class="sp"></span></div>
+          <div class="set">
+            <div class="ver"><b>0.4.0</b><span>стабильный канал · сборка 40</span></div>
+            <div class="card"><div class="who p">Качаю версию 0.5.0</div>
+              <div class="bd"><div class="prog"><i style="width:43%"></i></div><div style="font-size:11px;color:var(--ink-soft)">43 % · 9,1 из 21 МБ · проверю подпись и поставлю</div></div>
+              <div class="btns"><span class="btn">Отменить</span></div>
+              <div class="hint">Установка подождёт, пока лист ассистента закрыт</div></div>
+            <div class="row"><span class="k">Проверить обновления</span><span class="v">↻</span></div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption><span class="n">3</span><b>Загрузка</b>Прогресс здесь и в уведомлении, можно отменить. Подпись проверяет сам Android: обновление с чужим ключом не встанет.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="sheet full">
+          <div class="hdr" style="font-size:13px;color:var(--ink)"><span class="ib"><svg><use href="#i-back"/></svg></span><b style="font-weight:600">О программе</b><span class="sp"></span></div>
+          <div class="set">
+            <div class="ver"><b>0.5.0-beta.3</b><span>бета · поставлена с компьютера</span></div>
+            <div class="row"><span class="k">Проверить обновления<span>стабильная 0.5.0 старше беты — не предлагаю</span></span><span class="v">↻</span></div>
+            <div class="err" style="color:var(--ink);background:var(--local-tint)">Кнопка ассистента сбросилась после установки<span class="btn" style="color:var(--local-deep)">Вернуть</span></div>
+          </div>
+        </div>
+      </div></div>
+      <figcaption><span class="n">4</span><b>Бета с компьютера</b><code>scripts/beta.sh</code> собирает и ставит поверх по USB или Wi-Fi. Данные сохраняются. Если Android сбросил роль ассистента — вернуть в одно нажатие.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ═════════ 9. Ошибки и пустые ═════════ -->
 <section class="sc">
   <div class="wrap"><h2>Первый запуск, ошибки, тёмная тема</h2>
   <p>Ошибки говорят, что случилось и что сделать. Пустой разговор — приглашение попробовать. Тёмная тема — по системе, с альфами из Windows-версии Писаря.</p></div>
@@ -829,7 +917,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · подключён</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · подключён</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="ph" style="color:var(--ink-soft)">Скажите или нажмите:</div>
             <div class="chips"><span class="chip">Поставь таймер на 10 минут</span><span class="chip">Что у меня завтра?</span><span class="chip">Почисти загрузки</span></div></div>
           <div class="live"><span class="st p">Слушаю</span></div>
@@ -845,7 +933,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 1 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot"></span><span>Hermes · сессия идёт 1 мин</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="live"><span class="st e">Микрофон отдаёт тишину</span><span style="font-size:14px;font-weight:400;color:var(--ink-soft)">Проверьте гарнитуру: сейчас звук идёт с «Buds Pro».</span></div>
           <div class="ctl"><span class="ib"><svg><use href="#i-kbd"/></svg></span><span class="eqbtn"><div class="eq e" data-mode="err"></div></span><span class="ib"><svg><use href="#i-x"/></svg></span></div>
         </div>
@@ -859,7 +947,7 @@
         <div class="scrim"></div>
         <div class="sheet">
           <div class="grab"></div>
-          <div class="hdr"><span class="dot off"></span><span>Сервер обновился</span><span class="sp"></span><span class="ib"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr"><span class="dot off"></span><span>Сервер обновился</span><span class="sp"></span><span class="ib"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv"><div class="err">Канал с Hermes не работает после обновления сервера<span class="btn">Подробнее</span></div>
             <div class="ph" style="color:var(--ink-soft)">Локальные команды работают. Вопросы Hermes лягут в очередь.</div></div>
           <div class="live"><span class="st p">Слушаю</span></div>
@@ -875,7 +963,7 @@
         <div class="scrim" style="background:rgba(0,0,0,.45)"></div>
         <div class="sheet" style="background:rgba(44,44,44,.95);color:rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(255,255,255,.15)">
           <div class="grab" style="background:#555"></div>
-          <div class="hdr" style="color:#A9B0BE"><span class="dot" style="background:#7C93FF"></span><span>Hermes · сессия идёт 2 мин</span><span class="sp"></span><span class="ib" style="color:#A9B0BE"><svg><use href="#i-hist"/></svg></span></div>
+          <div class="hdr" style="color:#A9B0BE"><span class="dot" style="background:#7C93FF"></span><span>Hermes · сессия идёт 2 мин</span><span class="sp"></span><span class="ib" style="color:#A9B0BE"><svg><use href="#i-gear"/></svg></span></div>
           <div class="conv">
             <div class="me" style="background:#3A3A3A">Будильник на семь<small style="color:#8C93A0">голос</small></div>
             <div class="act" style="background:#333;border-color:#444"><span class="ic" style="background:#4A3B14;color:#F2C14E"><svg><use href="#i-alarm"/></svg></span><span class="tx"><b>Будильник · 7:00</b><span style="color:#A9B0BE">на телефоне · через 7 ч 46 мин</span></span><button class="lnk" style="color:#F2C14E">Отменить</button></div>
