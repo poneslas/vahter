@@ -9,35 +9,36 @@
 <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --page:#DFE3DA;--paper:#F7F8F4;--ink:#0E1A36;--soft:#4A5670;--faint:#8A93A6;--line:#D3D8CE;
+  --page:#DFE3DA;--paper:#F7F8F4;--surf:#FFFFFF;--ink:#0E1A36;--soft:#4A5670;--faint:#8A93A6;--line:#D3D8CE;
   --local:#E8A317;--local-d:#9A6A00;--local-t:#FBEFD2;
   --server:#2F4BE8;--server-d:#2238B8;--server-t:#E1E6FD;
   --danger:#C2412D;--danger-t:#F8E1DC;--ok:#2E7D4F;--ok-t:#DCEFE3;
-  --display:"Unbounded","Arial Black",sans-serif;--text:"Golos Text","Segoe UI",system-ui,sans-serif;
+  --display:"Unbounded","Arial Black",sans-serif;--text:"Golos Text","Segoe UI",system-ui,sans-serif;--mono:ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--page);color:var(--ink);font-family:var(--text);font-size:15px;line-height:1.45}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--server);outline-offset:2px}
-.layout{display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;max-width:1300px;margin:0 auto;padding:28px 32px 48px;align-items:start}
+.layout{display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;max-width:1320px;margin:0 auto;padding:28px 32px 48px;align-items:start}
 @media(max-width:980px){.layout{grid-template-columns:1fr;justify-items:center}}
-h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font-weight:700;max-width:22ch}
-.sub{color:var(--soft);margin:0 0 18px;max-width:64ch}
+h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font-weight:700;max-width:24ch}
+.sub{color:var(--soft);margin:0 0 18px;max-width:66ch}
 
 /* ─── телефон ─── */
-.dev{position:sticky;top:20px;width:390px;height:836px;border-radius:52px;background:#1B1F2A;padding:10px;box-shadow:0 30px 60px -28px rgba(14,26,54,.6)}
+.devw{position:sticky;top:20px;padding-bottom:44px}
+.dev{position:relative;width:390px;height:836px;border-radius:52px;background:#1B1F2A;padding:10px;box-shadow:0 30px 60px -28px rgba(14,26,54,.6)}
 .side{position:absolute;right:-7px;top:220px;width:7px;height:86px;border-radius:0 4px 4px 0;background:#2A3046;border:0;padding:0}
 .side.hold{background:var(--local);box-shadow:0 0 18px var(--local)}
-.side-l{position:absolute;left:0;right:0;bottom:-40px;text-align:center;font-size:12.5px;color:var(--soft)}
-.dev{margin-bottom:48px}
 .vol{position:absolute;right:-6px;top:140px;width:6px;height:52px;border-radius:0 3px 3px 0;background:#2A3046}
+.side-l{text-align:center;font-size:12.5px;color:var(--soft);margin-top:12px}
 .scr{position:relative;width:100%;height:100%;border-radius:43px;overflow:hidden;background:#000}
 .layer{position:absolute;inset:0}
 .sb{position:absolute;top:0;left:0;right:0;height:34px;display:flex;justify-content:space-between;align-items:center;padding:6px 26px 0;font-size:12.5px;font-weight:600;z-index:30;pointer-events:none}
 .sb.l{color:#fff}.sb.d{color:#1d2333}
 .punch{position:absolute;top:12px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#000;z-index:31}
+.ic{width:20px;height:20px;flex:none}
 
-/* домашний экран */
+/* домашний экран и блокировка */
 .home{background:linear-gradient(165deg,#36506B 0%,#1F2E44 55%,#141C2B 100%);color:#fff}
 .home .clk{position:absolute;top:70px;left:28px;font-size:56px;font-weight:300;letter-spacing:-.02em}
 .home .dt{position:absolute;top:136px;left:30px;font-size:14px;opacity:.8}
@@ -50,71 +51,93 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .ours i{position:relative;z-index:1;display:flex;gap:3px;align-items:center}
 .ours i b{display:block;width:3.5px;border-radius:2px;background:#F5C35A}
 .ours i b:nth-child(n+3){background:#7C93FF}
-
-/* блокировка */
 .lock{background:linear-gradient(170deg,#26324F,#0E1A36 70%);color:#E8ECF6}
 .lock .clk{position:absolute;top:110px;width:100%;text-align:center;font-size:76px;font-weight:300;letter-spacing:-.03em}
 .lock .dt{position:absolute;top:208px;width:100%;text-align:center;font-size:15px;color:#AEB8D0}
 .lock .unl{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:999px;padding:10px 18px;font-size:13px}
 
-/* приложение */
+/* ─── приложение ─── */
 .appv{background:var(--paper);color:var(--ink);display:flex;flex-direction:column}
-.bar{display:flex;align-items:center;gap:8px;padding:44px 16px 8px;font-weight:600;font-size:17px}
-.bar .bk{width:34px;height:34px;border-radius:50%;border:0;background:transparent;font-size:20px}
-.body{flex:1;overflow:auto;padding:4px 16px 20px;scrollbar-width:none}
-.body::-webkit-scrollbar{display:none}
-.hint{font-size:12.5px;color:var(--soft)}
-.h2{font-family:var(--display);font-size:22px;font-weight:500;line-height:1.15;margin:10px 0 8px}
-.lead{color:var(--soft);font-size:14px;margin:0 0 14px}
-.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:600;background:#E7EAE2}
-.btn.pri{background:var(--ink);color:#fff}
-.btn.ghost{background:transparent;color:var(--soft)}
-.btn.w{width:100%}
-.btn:disabled{opacity:.45;cursor:default}
-.stack{display:flex;flex-direction:column;gap:8px}
-.row{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:10px;font-size:13.5px;text-align:left;width:100%}
-.row .k{flex:1;min-width:0}.row .k small{display:block;font-size:11.5px;color:var(--soft);margin-top:1px}
-.row .v{font-size:12px;color:var(--soft);white-space:nowrap}
-.row .v.ok{color:var(--ok)}.row .v.bad{color:var(--danger)}.row .v.wait{color:var(--local-d)}
-.dot{width:9px;height:9px;border-radius:50%;flex:none}
-.sec{font-size:11.5px;font-weight:600;color:var(--faint);margin:16px 2px 6px}
-.steps{display:flex;gap:4px;margin:6px 0 4px}.steps i{flex:1;height:4px;border-radius:2px;background:#DDE1D8}.steps i.on{background:var(--ink)}
-.big{font-family:var(--display);font-size:30px;letter-spacing:.06em;text-align:center;margin:14px 0 6px}
-.prog{height:8px;border-radius:4px;background:#E7EAE2;overflow:hidden}.prog>i{display:block;height:100%;background:var(--local);border-radius:4px;transition:width .3s}
-.checks{display:flex;flex-direction:column;gap:2px;margin:10px 0}
-.ck{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:7px 4px}
+.topbar{display:flex;align-items:center;gap:6px;padding:40px 8px 6px 8px;min-height:92px;flex:none}
+.topbar .t{flex:1;min-width:0;padding-left:6px}
+.topbar .t b{display:block;font-size:19px;font-weight:600;line-height:1.2}
+.topbar .t small{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft)}
+.iconbtn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;color:var(--ink)}
+.iconbtn:hover{background:rgba(14,26,54,.06)}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--server);flex:none}
+.ldot.off{background:transparent;border:1.5px dashed var(--faint)}
+.ldot.loc{background:var(--local)}
+.scroll{flex:1;overflow:auto;scrollbar-width:none;min-height:0;display:flex;flex-direction:column}
+.scroll::-webkit-scrollbar{display:none}
+.banner{margin:2px 12px 6px;background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:12px 14px 6px;display:grid;grid-template-columns:24px 1fr;gap:4px 12px;flex:none}
+.banner .bi{grid-row:span 2;padding-top:2px;color:var(--local-d)}
+.banner.e .bi{color:var(--danger)}
+.banner p{margin:0;font-size:13.5px}
+.banner .ba{display:flex;justify-content:flex-end;gap:2px;grid-column:2}
+.tbtn{border:0;background:transparent;color:var(--server-d);font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:999px}
+.tbtn:hover{background:var(--server-t)}
+.banner .prog{grid-column:2;margin:6px 0 8px}
+.composer{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 18px;background:var(--paper)}
+.composer .fld{flex:1;display:flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:24px;padding:4px 4px 4px 14px;min-height:48px}
+.composer input{flex:1;border:0;outline:none;background:transparent;font:inherit;font-size:14.5px;min-width:0}
+.micbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
+.sendbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
+
+/* настройки */
+.list{padding:4px 0 20px}
+.lh{font-size:13px;font-weight:600;color:var(--server-d);padding:16px 22px 6px}
+.li{display:flex;align-items:center;gap:16px;padding:12px 22px;border:0;background:transparent;width:100%;text-align:left;min-height:64px}
+.li:hover{background:rgba(14,26,54,.04)}
+.li .lic{width:24px;height:24px;color:var(--soft);flex:none;display:grid;place-items:center}
+.li .lt{flex:1;min-width:0}
+.li .lt b{display:block;font-weight:500;font-size:15.5px}
+.li .lt small{display:block;font-size:13px;color:var(--soft);margin-top:1px}
+.li.warn .lic,.li.warn small{color:var(--danger)}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--ink);position:relative;flex:none}
+.sw::after{content:"";position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:50%;background:#fff}
+.sw.off{background:#C9CFC4}.sw.off::after{right:auto;left:4px;width:16px;height:16px;top:8px;background:#7A8090}
+.divider{height:1px;background:var(--line);margin:4px 22px}
+
+/* первый запуск */
+.onb{display:flex;flex-direction:column;height:100%;padding:56px 24px 22px}
+.onb .art{flex:1;display:grid;place-items:center;min-height:120px}
+.onb h2{font-family:var(--display);font-size:24px;line-height:1.15;font-weight:500;margin:0 0 10px}
+.onb p{color:var(--soft);margin:0 0 12px;font-size:15px}
+.onb .nav{display:flex;justify-content:space-between;align-items:center;padding-top:14px;flex:none}
+.dots{display:flex;gap:6px}.dots i{width:7px;height:7px;border-radius:50%;background:#C9CFC4}.dots i.on{background:var(--ink);width:20px;border-radius:4px}
+.fbtn{border:0;border-radius:999px;padding:12px 22px;font-weight:600;background:var(--ink);color:#fff}
+.setcard{background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:4px 0;margin-bottom:6px}
+.prog{height:6px;border-radius:3px;background:#E7EAE2;overflow:hidden}.prog>i{display:block;height:100%;background:var(--local);border-radius:3px;transition:width .3s}
+.checks{display:flex;flex-direction:column;margin:8px 0}
+.ck{display:flex;align-items:center;gap:12px;font-size:14px;padding:7px 2px}
 .ck .s{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;flex:none;border:1.5px solid var(--line);color:transparent}
 .ck.ok .s{background:var(--ok);border-color:var(--ok);color:#fff}
 .ck.run .s{border-color:var(--local);border-top-color:transparent;animation:spin .8s linear infinite}
 .ck.bad .s{background:var(--danger);border-color:var(--danger);color:#fff}
-.ck.wait .s{border-style:dashed}
-.ck small{display:block;color:var(--soft);font-size:11.5px}
+.ck small{display:block;color:var(--soft);font-size:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.field{width:100%;border:1.5px solid var(--ink);border-radius:14px;padding:11px 12px;font:inherit;background:#fff}
+.field{width:100%;border:1.5px solid var(--ink);border-radius:12px;padding:12px;font:inherit;background:#fff}
 .field.err{border-color:var(--danger)}
-.note{font-size:12px;border-radius:12px;padding:9px 11px;background:var(--local-t);color:#5B4300}
-.note.bad{background:var(--danger-t);color:var(--danger)}
-.note.ok{background:var(--ok-t);color:var(--ok)}
-code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#EEF0EA;border-radius:6px;padding:1px 5px}
+.note{font-size:13px;border-radius:14px;padding:10px 12px;background:var(--local-t);color:#5B4300}
+.note.bad{background:var(--danger-t);color:var(--danger)}.note.ok{background:var(--ok-t);color:var(--ok)}
+.big{font-family:var(--display);font-size:30px;letter-spacing:.06em;text-align:center;margin:10px 0 4px}
+code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6px;padding:1px 5px}
+.h2{font-family:var(--display);font-size:22px;font-weight:500;margin:6px 0 8px}
 
 /* системные окна */
 .scrim{position:absolute;inset:0;background:rgba(10,14,24,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center;padding:14px;animation:fade .2s}
 .dlg{background:#FAFAFC;color:#14171f;border-radius:30px;padding:22px 20px 14px;width:100%;text-align:center;box-shadow:0 20px 40px -20px rgba(0,0,0,.5);animation:up .25s cubic-bezier(.2,.9,.3,1.1)}
-.dlg h3{margin:6px 0 8px;font-size:17px;font-weight:600}
-.dlg p{margin:0 0 12px;font-size:13.5px;color:#555b6b}
-.dlg .ic{font-size:26px}
+.dlg h3{margin:6px 0 8px;font-size:17px;font-weight:600}.dlg p{margin:0 0 12px;font-size:13.5px;color:#555b6b}
+.dlg .di{font-size:26px}
 .dlg .opt{display:block;width:100%;border:0;background:#EEF0F4;border-radius:22px;padding:12px;margin-top:8px;font-weight:600;font-size:14px;color:#1d4ed8}
 .dlg .opt.sec2{background:transparent;color:#444}
-@keyframes up{from{transform:translateY(40px);opacity:0}}
-@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}@keyframes fade{from{opacity:0}}
 .sys{background:#F4F4F7;color:#111}
-.sys .bar{font-size:20px;font-weight:600;padding-top:50px}
+.sys .sbar{font-size:20px;font-weight:600;padding:50px 14px 8px;display:flex;align-items:center;gap:8px}
 .sys .grp{background:#fff;border-radius:22px;margin:8px 14px;overflow:hidden}
 .sys .it{display:flex;align-items:center;gap:12px;padding:15px 18px;border:0;background:#fff;width:100%;text-align:left;font-size:15px}
 .sys .it+.it{border-top:1px solid #EEE}
-.sys .it small{display:block;color:#3E6FD8;font-size:12.5px}
-.rad{width:20px;height:20px;border-radius:50%;border:2px solid #9AA0AA;flex:none}
-.rad.on{border:6px solid #3E6FD8}
+.rad{width:20px;height:20px;border-radius:50%;border:2px solid #9AA0AA;flex:none}.rad.on{border:6px solid #3E6FD8}
 .tg{background:#E6EBEE}
 .tg .top{background:#517DA2;color:#fff;padding:44px 14px 12px;display:flex;align-items:center;gap:10px}
 .tg .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--server),#7C93FF);display:grid;place-items:center;font-weight:700}
@@ -124,81 +147,128 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#EEF0EA
 .bub a{color:#2481CC;word-break:break-all;cursor:pointer;text-decoration:underline}
 .compose{position:absolute;left:0;right:0;bottom:0;background:#fff;display:flex;gap:8px;padding:10px 12px 18px;align-items:center}
 .compose .in{flex:1;background:#F1F3F5;border-radius:18px;padding:9px 12px;font-size:14px}
-.qr{width:120px;height:120px;margin-top:6px;background:#fff;display:grid;grid-template-columns:repeat(12,1fr);gap:0;padding:6px;border-radius:6px}
-.qr i{display:block;aspect-ratio:1}
+.qr{width:110px;height:110px;margin-top:6px;background:#fff;display:grid;grid-template-columns:repeat(12,1fr);padding:6px;border-radius:6px}.qr i{display:block;aspect-ratio:1}
 .cam{background:#0b0d12;color:#fff}
 .cam .frame{position:absolute;top:200px;left:70px;width:230px;height:230px;border:3px solid rgba(255,255,255,.85);border-radius:24px}
-.cam .scanline{position:absolute;left:8px;right:8px;height:2px;background:var(--local);top:10px;animation:scan 1.4s ease-in-out infinite alternate}
-@keyframes scan{to{top:210px}}
-
-/* уведомление */
-.toast{position:absolute;top:44px;left:10px;right:10px;z-index:50;background:rgba(250,250,252,.97);color:#111;border-radius:22px;padding:11px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 14px 30px -14px rgba(0,0,0,.5);animation:drop .3s cubic-bezier(.2,.9,.3,1.1);border:0;text-align:left;width:auto}
-.toast .ico{width:34px;height:34px;border-radius:10px;font-size:14px;box-shadow:none}
-.toast .ico::after{inset:6px;border-radius:6px}
+.cam .scanline{position:absolute;left:8px;right:8px;height:2px;background:var(--local);top:10px;animation:scan 1.4s ease-in-out infinite alternate}@keyframes scan{to{top:210px}}
+.toast{position:absolute;top:44px;left:10px;right:10px;z-index:50;background:rgba(250,250,252,.97);color:#111;border-radius:22px;padding:11px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 14px 30px -14px rgba(0,0,0,.5);animation:drop .3s cubic-bezier(.2,.9,.3,1.1);border:0;text-align:left}
+.toast .ico{width:34px;height:34px;border-radius:10px;font-size:14px;box-shadow:none}.toast .ico::after{inset:6px;border-radius:6px}
 .toast b{display:block;font-size:13px}.toast span{font-size:12.5px;color:#444}
 @keyframes drop{from{transform:translateY(-30px);opacity:0}}
 
-/* ─── лист ассистента ─── */
-.ov{position:absolute;inset:0;z-index:20}
-.ov .dim{position:absolute;inset:0;background:rgba(14,26,54,.32)}
-.sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--paper);border-radius:30px;display:flex;flex-direction:column;padding:8px 14px 12px;max-height:calc(100% - 50px);box-shadow:0 -8px 30px -12px rgba(14,26,54,.4);transform-origin:50% 100%}
-.sheet.tall{top:46px}
-.sheet.pop{animation:pop .42s cubic-bezier(.34,1.45,.64,1) both}
-@keyframes pop{from{transform:scale(.35);opacity:0}30%{opacity:1}}
-.grab{width:36px;height:4px;border-radius:2px;background:#CBD0C6;margin:0 auto 8px;flex:none}
-.hdr{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--soft);padding:0 2px 6px;flex:none}
-.hdr .sp{flex:1}
-.hdr .gear{width:32px;height:32px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;color:var(--soft)}
-.ldot{width:8px;height:8px;border-radius:50%;background:var(--server)}
-.ldot.off{background:transparent;border:1.5px dashed var(--faint)}
-.ldot.loc{background:var(--local)}
-.conv{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0;font-size:14px;line-height:1.38;scrollbar-width:none;flex:0 1 auto}
-.conv::-webkit-scrollbar{display:none}
-.conv>:first-child{margin-top:auto}
-.me{align-self:flex-end;max-width:84%;background:#E7EAE2;border-radius:16px 16px 4px 16px;padding:7px 11px}
+/* ─── лента разговора: одна на лист и приложение ─── */
+.feed{display:flex;flex-direction:column;gap:10px;padding:6px 14px 12px;font-size:14.5px;line-height:1.45;margin-top:auto}
+.me{align-self:flex-end;max-width:84%;background:#E7EAE2;border-radius:18px 18px 4px 18px;padding:8px 12px}
 .me small{display:block;font-size:10.5px;color:var(--faint);text-align:right}
-.ai,.ph{position:relative;padding-left:15px;max-width:95%}
-.ai::before,.ph::before{content:"";position:absolute;left:1px;top:7px;width:7px;height:7px;border-radius:50%}
+.ai,.ph{position:relative;padding-left:16px;max-width:100%;min-width:0}
+.ai::before,.ph::before{content:"";position:absolute;left:1px;top:8px;width:7px;height:7px;border-radius:50%}
 .ai::before{background:var(--server)}.ph::before{background:var(--local)}
-.act{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:8px 10px}
-.act .ai2{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--local-t);color:var(--local-d);flex:none;font-size:14px}
-.act .tx{flex:1;min-width:0}.act .tx b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.act .tx span{font-size:11px;color:var(--soft)}
-.act .ln{border:0;background:none;color:var(--local-d);font-weight:600;font-size:11.5px;padding:4px 2px;flex:none}
+.act{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:9px 11px}
+.act .ai2{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--local-t);color:var(--local-d);flex:none;font-size:15px}
+.act .tx{flex:1;min-width:0}.act .tx b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act .tx span{font-size:11.5px;color:var(--soft)}
+.act .ln{border:0;background:none;color:var(--local-d);font-weight:600;font-size:12px;padding:4px 2px;flex:none}
 .act.undone{opacity:.55}
-.card{background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden;font-size:13px}
-.card .who{font-size:11px;font-weight:600;padding:6px 11px}
-.who.h{background:var(--server-t);color:var(--server-d)}.who.p{background:var(--local-t);color:var(--local-d)}.who.d{background:var(--danger-t);color:var(--danger)}
-.card .bd{padding:9px 11px 4px}
-.card .tt{font-size:15px;font-weight:600}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:7px 0 4px;font-size:12px}.kv dt{color:var(--faint)}.kv dd{margin:0}
-.btns{display:flex;gap:6px;padding:6px 11px 11px;flex-wrap:wrap}
-.cb{border:0;border-radius:11px;padding:8px 12px;font-size:12.5px;font-weight:600;background:#ECEEE8}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:16px;overflow:hidden;font-size:13.5px}
+.card .who{font-size:11.5px;font-weight:600;padding:7px 12px}
+.who.h{background:var(--server-t);color:var(--server-d)}.who.p{background:var(--local-t);color:var(--local-d)}
+.card .bd{padding:10px 12px 4px}.card .tt{font-size:15.5px;font-weight:600}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:7px 0 4px;font-size:12.5px}.kv dt{color:var(--faint)}.kv dd{margin:0}
+.btns{display:flex;gap:6px;padding:6px 12px 12px;flex-wrap:wrap}
+.cb{border:0;border-radius:12px;padding:8px 13px;font-size:13px;font-weight:600;background:#ECEEE8}
 .cb.pri{background:var(--ink);color:#fff}.cb.gh{background:transparent;color:var(--soft)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12.5px}
-.queued{border:1.5px dashed var(--faint);border-radius:14px;padding:8px 11px;font-size:12.5px}.queued span{display:block;font-size:11px;color:var(--soft)}
-.acc{border-radius:11px;background:var(--server-t);color:var(--server-d);font-size:12px;padding:6px 10px}
+.chip{border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:6px 12px;font-size:13px}
+.queued{border:1.5px dashed var(--faint);border-radius:14px;padding:8px 12px;font-size:13px}.queued span{display:block;font-size:11.5px;color:var(--soft)}
+.empty{padding:24px 8px;color:var(--soft);font-size:14.5px}
+
+/* шаги мозга */
+.steps{border-radius:14px;background:var(--server-t);color:var(--server-d);font-size:12.5px;overflow:hidden}
+.steps>button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;color:inherit;padding:8px 12px;text-align:left;font-weight:500}
+.steps>button .chev{margin-left:auto;transition:transform .2s}
+.steps.open>button .chev{transform:rotate(180deg)}
+.steps .sl{display:none;padding:0 8px 8px}
+.steps.open .sl{display:block}
+.sitem{background:var(--surf);border-radius:10px;margin-top:6px;color:var(--ink)}
+.sitem>div:first-child{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px}
+.sitem .si{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--server-t);font-size:12px;flex:none}
+.sitem.phone .si{background:var(--local-t)}
+.sitem .sd{padding:0 10px 9px 40px;font-size:12px;color:var(--soft)}
+.src{display:flex;align-items:center;gap:6px;padding:2px 0}
+.src i{width:14px;height:14px;border-radius:3px;flex:none}
+.term{font-family:var(--mono);font-size:11px;background:#10182B;color:#C9D4F1;border-radius:8px;padding:8px 10px;white-space:pre;overflow:auto}
+.plan{padding:0 12px 8px;font-size:12.5px}
+.plan div{display:flex;gap:8px;align-items:center;padding:2px 0}
+.plan .b{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--server-d);flex:none;display:grid;place-items:center;font-size:9px}
+.plan .done .b{background:var(--server-d);color:#fff}.plan .done span{opacity:.6}
 .shim{background:linear-gradient(90deg,var(--server-d) 0 35%,#9AAAFF 47%,#B9C5FF 50%,#9AAAFF 53%,var(--server-d) 65% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 1.5s linear infinite}
 @keyframes sh{from{background-position:100% 0}to{background-position:0 0}}
-.live{flex:none;min-height:64px;padding:10px 4px 6px;font-size:21px;line-height:1.27;font-weight:500}
+
+/* разметка ответа */
+.md{font-size:14.5px;line-height:1.5;min-width:0}
+.md h3{font-size:16.5px;margin:2px 0 6px;font-weight:600;line-height:1.3}.md h4{font-size:14.5px;margin:12px 0 4px;font-weight:600}
+.md p{margin:0 0 8px}.md ul,.md ol{margin:0 0 8px;padding-left:20px}.md li{margin:2px 0}
+.md blockquote{margin:0 0 10px;padding:7px 12px;border-left:3px solid var(--server);background:var(--server-t);border-radius:0 10px 10px 0;color:var(--server-d);font-size:13.5px}
+.md .code{background:#10182B;color:#E3E8F6;border-radius:12px;margin:0 0 10px;overflow:hidden}
+.md .code .ch{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;font-size:11px;color:#8FA0C8;background:#17213A}
+.md .code .ch button{border:0;background:transparent;color:#C9D4F1;font-size:11.5px}
+.md .code pre{margin:0;padding:10px 12px;font-family:var(--mono);font-size:12px;overflow:auto;white-space:pre}
+.md .tbl{overflow:auto;margin:0 0 10px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(90deg,var(--surf) 30%,rgba(255,255,255,0)) left/40px 100% no-repeat local,linear-gradient(270deg,var(--surf) 30%,rgba(255,255,255,0)) right/40px 100% no-repeat local,linear-gradient(90deg,rgba(14,26,54,.12),transparent) left/12px 100% no-repeat scroll,linear-gradient(270deg,rgba(14,26,54,.12),transparent) right/12px 100% no-repeat scroll,var(--surf)}
+.md table td,.md table th{background:transparent}.md th{background:rgba(238,240,234,.9)}
+.md table{border-collapse:collapse;font-size:12.5px;min-width:100%;white-space:nowrap}
+.md th,.md td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}.md th{background:#EEF0EA;font-weight:600}
+.md .src-row{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+.md .cite{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--surf);color:var(--soft)}
+.clip{position:relative;max-height:240px;overflow:hidden}
+.clip::after{content:"";position:absolute;left:0;right:0;bottom:0;height:80px;background:linear-gradient(rgba(247,248,244,0),var(--paper))}
+.more{align-self:flex-start;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;margin:-4px 0 0 16px}
+.ansact{display:flex;gap:2px;margin:-4px 0 0 10px}
+.ansact button{border:0;background:transparent;color:var(--faint);font-size:12px;padding:4px 6px;border-radius:8px}
+.ansact button:hover{color:var(--ink)}
+
+/* вложения */
+.att{display:flex;flex-direction:column;gap:6px;margin-left:16px}
+.imgs{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;border-radius:14px;overflow:hidden}
+.imgs i{display:block;aspect-ratio:4/3;background:linear-gradient(135deg,#9DB59A,#5E7E6A)}
+.imgs i:nth-child(2){background:linear-gradient(135deg,#C9B07E,#8E6E3E)}
+.imgs i:nth-child(3){background:linear-gradient(135deg,#8FA9C9,#4E6286)}
+.imgs i:nth-child(4){background:linear-gradient(135deg,#D7C2B0,#9A7A60);position:relative}
+.imgs .more4{position:absolute;inset:0;display:grid;place-items:center;background:rgba(14,26,54,.45);color:#fff;font-weight:600;font-size:18px;font-style:normal}
+.file{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:9px 11px}
+.file .fi{width:36px;height:44px;border-radius:6px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;flex:none}
+.file .ft{flex:1;min-width:0}.file .ft b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file .ft span{font-size:11.5px;color:var(--soft)}
+.file .fa{border:0;background:transparent;color:var(--server-d);font-weight:600;font-size:12.5px}
+.chart{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.chart svg{display:block;width:100%;height:100px}
+.chart .lg{display:flex;gap:12px;font-size:11.5px;color:var(--soft);margin-top:4px}
+.chart .lg i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+
+/* ─── лист ассистента ─── */
+.ov{position:absolute;inset:0;z-index:20}
+.ov .dim{position:absolute;inset:0;background:rgba(14,26,54,.32);transition:opacity .3s}
+.sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--paper);border-radius:30px;display:flex;flex-direction:column;padding:8px 0 12px;height:auto;max-height:calc(100% - 50px);box-shadow:0 -8px 30px -12px rgba(14,26,54,.4);transform-origin:50% 100%;transition:left .35s cubic-bezier(.3,.8,.3,1),right .35s cubic-bezier(.3,.8,.3,1),bottom .35s cubic-bezier(.3,.8,.3,1),max-height .35s cubic-bezier(.3,.8,.3,1),border-radius .35s}
+.sheet.pop{animation:pop .42s cubic-bezier(.34,1.45,.64,1) both}
+@keyframes pop{from{transform:scale(.35);opacity:0}30%{opacity:1}}
+.sheet.full{left:0;right:0;bottom:0;max-height:100%;height:100%;border-radius:43px;padding-top:40px}
+.grab{width:36px;height:4px;border-radius:2px;background:#CBD0C6;margin:0 auto 4px;flex:none;border:0;padding:0;cursor:pointer}
+.hdr{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft);padding:0 6px 0 14px;flex:none}
+.hdr .sp{flex:1}
+.hdr .iconbtn{width:36px;height:36px;color:var(--soft)}
+.live{flex:none;min-height:56px;padding:6px 16px 2px;font-size:21px;line-height:1.27;font-weight:500}
+.live:empty{min-height:0;padding:0}
 .live .st{display:block;font-size:11.5px;font-weight:500;color:var(--soft);margin-bottom:3px}
 .st.p{color:var(--local-d)!important}.st.h{color:var(--server-d)!important}.st.e{color:var(--danger)!important}
 .live .dr{opacity:.42}
 .live.q{font-size:14.5px;font-weight:400;color:var(--soft)}
-.ctl{flex:none;display:flex;align-items:center;justify-content:space-between;padding-top:6px}
-.ctl .rb{width:44px;height:44px;border-radius:50%;border:0;background:#ECEEE8;display:grid;place-items:center;font-size:17px}
+.ctl{flex:none;display:flex;align-items:center;justify-content:space-between;padding:6px 12px 0}
+.ctl .rb{width:44px;height:44px;border-radius:50%;border:0;background:#ECEEE8;display:grid;place-items:center}
 .eqb{width:150px;height:56px;border-radius:28px;border:0;background:#ECEEE8;display:grid;place-items:center}
 .eq{display:flex;align-items:center;justify-content:center;gap:4px;height:38px}
 .eq i{display:block;width:5px;min-height:5px;height:5px;border-radius:3px;background:linear-gradient(var(--local),#C98500)}
 .eq.h i{background:linear-gradient(#6F86FF,var(--server))}
 .eq.off i{background:var(--faint);opacity:.55}
-.eq.e i{background:var(--danger)}
-.dlstat{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;font-size:13px}
-.dlstat .prog{flex:1}
-.kbd{flex:none;display:flex;gap:6px;align-items:center;border:1.5px solid var(--ink);border-radius:20px;padding:5px 5px 5px 12px;margin-top:6px;background:#fff}
-.kbd input{flex:1;border:0;font:inherit;font-size:14px;outline:none;background:transparent}
-.kbd button{width:34px;height:34px;border-radius:50%;border:0;background:var(--ink);color:#fff}
+.kbd{flex:none;display:flex;gap:6px;align-items:center;border:1.5px solid var(--ink);border-radius:22px;padding:5px 5px 5px 12px;margin:6px 12px 0;background:#fff}
+.kbd input{flex:1;border:0;font:inherit;font-size:14px;outline:none;background:transparent;min-width:0}
 
 /* ─── панель ─── */
 .panel{display:flex;flex-direction:column;gap:18px;min-width:0}
@@ -215,7 +285,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#EEF0EA
 .acts{display:flex;flex-wrap:wrap;gap:6px}
 .acts button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px}
 .acts button:disabled{opacity:.4;cursor:default}
-.trace{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px;max-height:260px;overflow:auto;font-size:13px}
+.trace{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px;max-height:280px;overflow:auto;font-size:13px}
 .trace p{margin:0 0 7px;padding-left:12px;border-left:3px solid var(--line)}
 .trace p.p{border-color:var(--local)}.trace p.h{border-color:var(--server)}.trace p.e{border-color:var(--danger)}.trace p.i{border-color:var(--ok)}
 .trace p:first-child{font-weight:500}
@@ -224,21 +294,23 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#EEF0EA
 </head>
 <body>
 <div class="layout">
-  <div class="dev" id="dev">
-    <div class="vol"></div>
-    <button class="side" id="side" aria-label="Боковая кнопка: зажмите"></button>
+  <div class="devw">
+    <div class="dev" id="dev">
+      <div class="vol"></div>
+      <button class="side" id="side" aria-label="Боковая кнопка: зажмите"></button>
+      <div class="scr" id="scr"></div>
+    </div>
     <div class="side-l">Боковая кнопка справа: <b>зажать</b> — ассистент, нажать — блокировка</div>
-    <div class="scr" id="scr"></div>
   </div>
 
   <div class="panel">
     <div>
-      <h1>Прототип: от первого запуска до обычного дня</h1>
-      <p class="sub">Телефон слева живой. Зажмите боковую кнопку, нажимайте на экраны. Справа — «мир»: сеть, сервер, модель, блокировка. Меняйте его в любой момент и смотрите, как приложение отвечает на каждое состояние. Пути настроек, размеры моделей и шаги подключения — по исследованиям 17.10.2026.</p>
+      <h1>Прототип: лист ассистента и приложение — одно и то же</h1>
+      <p class="sub">Зажмите боковую кнопку. Потяните лист за ручку или нажмите «Развернуть» — он доедет до полного экрана и станет приложением с тем же разговором. Справа меняется «мир»: сеть, сервер, модель, блокировка. Пути настроек, размеры моделей и шаги подключения — по исследованиям 17.10.2026.</p>
     </div>
     <div class="blk"><h2>Сценарии</h2><div class="presets" id="presets"></div></div>
+    <div class="blk"><h2>Сказать (вместо микрофона)</h2><div class="acts" id="say"></div></div>
     <div class="blk"><h2>Мир</h2><div class="world" id="world"></div></div>
-    <div class="blk"><h2>Сказать в лист (вместо микрофона)</h2><div class="acts" id="say"></div></div>
     <div class="blk"><h2>События снаружи</h2><div class="acts" id="events"></div></div>
     <div class="blk"><h2>Что происходит и почему</h2><div class="trace" id="trace" aria-live="polite"></div></div>
   </div>
@@ -249,579 +321,492 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#EEF0EA
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const wait = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 120) : ms));
+
+const I = {
+  gear:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3L5.5 5.5"/></svg>',
+  kbd:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10"/></svg>',
+  x:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  back:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  expand:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+  mic:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+  send:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  warn:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>',
+  info:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>',
+  dl:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  btn:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M17.5 8v3"/></svg>',
+  wave:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12h2l3-6 4 12 3-6h4"/></svg>',
+  srv:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>',
+  bell:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+  chat:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  qr:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2z"/></svg>',
+  pen:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  shield:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>',
+  list:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  chev:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="chev"><path d="M6 9l6 6 6-6"/></svg>',
+  ok:'<span style="color:var(--ok);font-weight:700">✓</span>',
+};
 
 /* ───────── состояние ───────── */
+const MODEL_TOTAL = 225539522 + 24110855;
+const mb = b => (b/1048576).toFixed(0);
 const fresh = () => ({
-  w: { net: 'wifi', server: 'none', model: 'none', locked: false, role: 'gemini', mic: 'ask', notif: 'ask', autoblock: 'off' },
-  modelPct: 0, modelBytes: 0,
-  screen: 'home',              // home | lock | app | tg | cam | sysrole | sysside
-  page: 'onb1', onboarded: false,
-  dialog: null, toast: null,
-  ov: null,                    // лист: {phase, live, feed[], tall, input, worker, pop}
-  pair: null,                  // подключение: {via, checks[], code, err}
-  upd: { state: 'none', pct: 0, ver: '0.4.0', next: '0.5.0' },
-  tg: [],
-  failNext: null,              // сбой при подключении: dns | tls | plugin | expired
-  pendingPush: [],
+  w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
+  sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
+  dialog:null, toast:null, ov:null, pair:null, feed:[], tg:[], failNext:null,
+  upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, notifAsked:false, ret:null, dismissed:null,
 });
-let S = fresh();
-let token = 0;                  // отмена «длинных» сценариев
-const wait = (ms) => new Promise(r => setTimeout(r, RM ? Math.min(ms, 120) : ms));
+let S = fresh(); let token = 0;
+function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove() }
 
-/* ───────── журнал ───────── */
-function trace(text, kind = '') {
-  const t = $('#trace'); const p = document.createElement('p');
-  p.className = kind; p.innerHTML = text; t.prepend(p);
-  while (t.children.length > 40) t.lastChild.remove();
-}
-
-/* ───────── эквалайзер (Гига Писарь, mac) ───────── */
-class Eq {
-  constructor(el){ this.el=el; this.n=13; el.innerHTML='<i></i>'.repeat(13); this.b=[...el.children]; this.h=Array(13).fill(0); this.g=Array(13).fill(1); this.lag=Array(13).fill(0); this.L=0; this.pv=0; this.ph=0; this.f=0; this.t=0; this.syl=0; this.end=0; }
+/* ───────── эквалайзер ───────── */
+class Eq{
+  constructor(el){ this.el=el; el.innerHTML='<i></i>'.repeat(13); this.b=[...el.children]; this.n=13; this.h=Array(13).fill(0); this.g=Array(13).fill(1); this.lag=Array(13).fill(0); this.L=0; this.pv=0; this.ph=0; this.f=0; this.t=0; this.syl=0; this.end=0 }
   shape(i){ return .72+.28*Math.sin(Math.PI*(i+.5)/13) }
-  reroll(L){ for(let i=0;i<13;i++){ const lo=.75-.55*L; this.g[i]=lo+Math.random()*(1-lo); this.lag[i]=Math.floor(Math.random()*(Math.max(3,9-6*L)+1)); } }
+  reroll(L){ for(let i=0;i<13;i++){ const lo=.75-.55*L; this.g[i]=lo+Math.random()*(1-lo); this.lag[i]=Math.floor(Math.random()*(Math.max(3,9-6*L)+1)) } }
   voice(dt){ this.t+=dt; if(this.t>this.end){ this.t=0; this.end=120+Math.random()*140; this.syl=Math.random()<.18?.05:.35+Math.random()*.6 } return this.syl*(.4+.6*Math.sin(Math.PI*Math.min(1,this.t/this.end))) }
   step(dt){
-    const m=this.el.dataset.mode, H=38-5; this.f++;
+    const m=this.el.dataset.mode, H=33; this.f++;
     if(m==='dots'){ this.b.forEach(b=>b.style.height='5px'); return }
-    if(m==='err'){ const z=[13,4,13,4,13]; this.b.forEach((b,i)=>b.style.height=(5+H*z[i%5]/13*.8)+'px'); return }
     if(m==='wave'){ this.ph+=.28*dt/16.7; this.b.forEach((b,i)=>{ const s=.5+.5*Math.sin(this.ph-i*.55); b.style.height=(5+H*(.18+.32*s))+'px' }); return }
     const inp=this.voice(dt); this.L+=(inp-this.L)*(inp>this.L?.75:.13); const L=this.L;
     if(inp-this.pv>.1) this.reroll(L); else if(L>.35&&this.f%Math.max(4,Math.round(18-15*L))===0) this.reroll(L); this.pv=inp;
     for(let i=0;i<13;i++){ if(this.lag[i]>0){this.lag[i]--;continue} const tg=L*this.shape(i)*this.g[i]; this.h[i]+=(tg-this.h[i])*(tg>this.h[i]?.75:.13+.45*L); this.b[i].style.height=(5+H*Math.min(1,this.h[i]))+'px' }
   }
 }
-let eqs = [];
-let last = performance.now();
-function loop(now){ const dt=Math.min(50,now-last); last=now; eqs.forEach(e=>e.step(dt)); requestAnimationFrame(loop) }
-requestAnimationFrame(loop);
+let eqs=[]; let last=performance.now();
+(function loop(now){ const dt=Math.min(50,now-last); last=now; eqs.forEach(e=>e.step(dt)); requestAnimationFrame(loop) })(last);
 
-/* ───────── отрисовка экрана ───────── */
-function statusBar(dark){
-  const n = S.w.net==='wifi' ? 'Wi-Fi ▂▄▆' : S.w.net==='cell' ? '5G ▂▄▆' : '✈';
-  return `<div class="sb ${dark?'d':'l'}"><span>9:41</span><span>${n} &nbsp;82%</span></div><div class="punch"></div>`;
+/* ───────── общие куски ───────── */
+function statusBar(dark){ const n=S.w.net==='wifi'?'Wi-Fi ▂▄▆':S.w.net==='cell'?'5G ▂▄▆':'✈'; return `<div class="sb ${dark?'d':'l'}"><span>9:41</span><span>${n} &nbsp;82%</span></div><div class="punch"></div>` }
+function oursIcon(st=''){ return `<span class="ico ours" style="${st}"><i><b style="height:8px"></b><b style="height:16px"></b><b style="height:22px"></b><b style="height:12px"></b></i></span>` }
+const brainOk = () => S.w.server==='paired' && S.w.net!=='none';
+function linkState(){
+  if (S.w.server==='none') return ['loc','только команды телефона'];
+  if (S.w.net==='none') return ['off','нет связи · команды телефона работают'];
+  if (S.w.server==='down') return ['off','сервер не отвечает'];
+  return ['','на связи'];
 }
-function oursIcon(){ return `<span class="ico ours"><i><b style="height:8px"></b><b style="height:16px"></b><b style="height:22px"></b><b style="height:12px"></b></i></span>` }
+function issue(){
+  if (S.w.mic==='denied') return {k:'e',t:'Нет доступа к микрофону. Пока можно писать.',a:[['Разрешить','askmic']]};
+  if (S.w.model==='broken') return {k:'e',t:'Файл распознавания повреждён.',a:[['Скачать заново','dl']]};
+  if (S.w.model==='loading') return {k:'p',t:S.w.net==='none'?`Распознавание: ${S.modelPct} % — ждёт сеть`:`Распознавание качается: ${S.modelPct} % из ${mb(MODEL_TOTAL)} МБ`,prog:S.modelPct};
+  if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
+  if (S.w.role!=='ours'||!S.sideOk) return {k:'p',t:S.w.role!=='ours'?`Боковая кнопка открывает ${S.w.role==='bixby'?'Bixby':'Gemini'}.`:'Боковая кнопка ещё не вызывает помощника.',a:[['Не сейчас','dismiss'],['Настроить',S.w.role!=='ours'?'sysrole':'sysside']]};
+  if (S.w.server==='none') return {k:'p',t:'Сервер не подключён — работают только команды телефона.',a:[['Не сейчас','dismiss'],['Подключить','connect']]};
+  return null;
+}
+function bannerHtml(){ const b=issue(); if(!b||S.dismissed===b.t) return ''; return `<div class="banner ${b.k==='e'?'e':''}"><span class="bi">${b.k==='e'?I.warn:I.info}</span><p>${b.t}</p>${b.prog!=null?`<div class="prog"><i style="width:${b.prog}%"></i></div>`:''}${b.a?`<div class="ba">${b.a.map(x=>`<button class="tbtn" data-act="${x[1]}">${x[0]}</button>`).join('')}</div>`:''}</div>` }
 
+/* ───────── лента ───────── */
+function feedHtml(inSheet){
+  if (!S.feed.length) return inSheet ? '<div class="feed"></div>' : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
+  return `<div class="feed">${S.feed.map(it=>itemHtml(it,inSheet)).join('')}</div>`;
+}
+function itemHtml(it,inSheet){
+  if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
+  if (it.t==='ai'){
+    const clip = it.long && inSheet;
+    return `<div class="ai"><div class="md ${clip?'clip':''}">${it.x}</div></div>${clip&&it.done?`<button class="more" data-act="expand">Развернуть ответ</button>`:''}${it.att&&!clip?attHtml(it.att):''}${clip&&it.att?`<div class="ph" style="font-size:12.5px;color:var(--soft)">и ${it.att.length} ${it.att.length===1?'вложение':'вложения'} — в развёрнутом ответе</div>`:''}${it.done&&!clip?`<div class="ansact"><button>Копировать</button><button>Поделиться</button><button>Выделить текст</button></div>`:''}`;
+  }
+  if (it.t==='ph') return `<div class="ph">${it.x}</div>`;
+  if (it.t==='steps') return stepsHtml(it);
+  if (it.t==='q') return `<div class="queued">${it.x}<span>${it.s}</span></div>`;
+  if (it.t==='chips') return `<div class="chips">${it.c.map(c=>`<button class="chip" data-chip="${c}">${c}</button>`).join('')}</div>`;
+  if (it.t==='act') return `<div class="act ${it.undone?'undone':''}"><span class="ai2">${it.i}</span><span class="tx"><b>${it.x}</b><span>${it.s}</span></span>${it.btn&&!it.undone?`<button class="ln" data-undo="${it.id}" data-kind="${it.kind}">${it.btn}</button>`:''}</div>`;
+  if (it.t==='card') return `<div class="card"><div class="who ${it.who}">${it.head}</div><div class="bd"><div class="tt">${it.title}</div>${it.kv?`<dl class="kv">${it.kv.map(k=>`<dt>${k[0]}</dt><dd>${k[1]}</dd>`).join('')}</dl>`:''}${it.text?`<p style="margin:6px 0 2px;font-size:13px;color:var(--soft)">${it.text}</p>`:''}</div><div class="btns">${it.btns.map(b=>`<button class="cb ${b[2]||''}" data-cardbtn="${b[1]}">${b[0]}</button>`).join('')}</div></div>`;
+  return '';
+}
+function stepsHtml(it){
+  const n=it.items.length; const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с`;
+  return `<div class="steps ${it.open?'open':''}"><button data-act="togglesteps" data-id="${it.id}">${head}${I.chev}</button>
+  ${it.plan?`<div class="plan">${it.plan.map(p=>`<div class="${p[1]?'done':''}"><span class="b">${p[1]?'✓':''}</span><span>${p[0]}</span></div>`).join('')}</div>`:''}
+  <div class="sl">${it.items.map(s=>`<div class="sitem ${s.phone?'phone':''}"><div><span class="si">${s.i}</span><span>${s.t}</span><span style="margin-left:auto;color:var(--faint);font-size:11px">${s.ms||''}</span></div>${s.d?`<div class="sd">${s.d}</div>`:''}</div>`).join('')}</div></div>`;
+}
+function attHtml(a){
+  return `<div class="att">${a.map(x=>{
+    if (x.k==='imgs') return `<div class="imgs"><i></i><i></i><i></i><i>${x.more?`<em class="more4">+${x.more}</em>`:''}</i></div>`;
+    if (x.k==='chart') return `<div class="chart"><div style="font-size:12px;color:var(--soft);margin-bottom:4px">${x.title}</div><svg viewBox="0 0 300 100" preserveAspectRatio="none"><polyline fill="none" stroke="#2F4BE8" stroke-width="2.5" points="0,80 40,72 80,76 120,56 160,58 200,38 240,42 300,18"/><polyline fill="none" stroke="#E8A317" stroke-width="2.5" stroke-dasharray="6 4" points="0,86 60,82 120,78 180,74 240,70 300,66"/></svg><div class="lg"><span><i style="background:#2F4BE8"></i>занято сейчас</span><span><i style="background:#E8A317"></i>с бэкапами, прогноз</span></div></div>`;
+    const col={PDF:'#C2412D',XLSX:'#2E7D4F',ZIP:'#4A5670'}[x.type]||'#4A5670';
+    return `<div class="file"><span class="fi" style="background:${col}">${x.type}</span><span class="ft"><b>${x.name}</b><span>${x.meta}</span></span><button class="fa" data-act="openfile" data-name="${x.name}">${x.btn||'Открыть'}</button></div>`;
+  }).join('')}</div>`;
+}
+
+/* ───────── экраны ───────── */
 function home(){
-  const apps=[['📞','#2F9E5B','Телефон'],['💬','#3B82F6','Сообщения'],['✈️','#2AABEE','Telegram','tg'],['📷','#555','Камера','cam'],['⏰','#1F2937','Часы'],['📅','#E05D44','Календарь'],['⚙️','#6B7280','Настройки'],['ours','','Тасечкин','app']];
+  const apps=[['📞','#2F9E5B','Телефон'],['💬','#3B82F6','Сообщения'],['✈️','#2AABEE','Telegram','tg'],['📷','#555','Камера'],['⏰','#1F2937','Часы'],['📅','#E05D44','Календарь'],['⚙️','#6B7280','Настройки'],['ours','','Тасечкин','app']];
   return `<div class="layer home">${statusBar(false)}<div class="clk">9:41</div><div class="dt">пятница, 17 октября</div>
   <div class="grid">${apps.map(a=>`<button class="app" data-open="${a[3]||''}">${a[0]==='ours'?oursIcon():`<span class="ico" style="background:${a[1]}">${a[0]}</span>`}${a[2]}</button>`).join('')}</div>
   <div class="dock"><span class="ico" style="background:#2F9E5B">📞</span><span class="ico" style="background:#3B82F6">💬</span><span class="ico" style="background:#F59E0B">🌐</span><span class="ico" style="background:#555">📷</span></div></div>`;
 }
 function lock(){ return `<div class="layer lock">${statusBar(false)}<div class="clk">9:41</div><div class="dt">пятница, 17 октября</div><button class="unl" data-act="unlock">Разблокировать отпечатком</button></div>` }
 
-/* ── приложение: первый запуск ── */
-const ONB = ['onb1','onb2','onb3','onb4','onb5','onb6','onb7'];
-function stepsBar(p){ const i=ONB.indexOf(p); return `<div class="steps">${ONB.map((_,j)=>`<i class="${j<=i?'on':''}"></i>`).join('')}</div>` }
-function mb(b){ return (b/1048576).toFixed(0) }
-const MODEL_TOTAL = 225539522 + 24110855; // GigaAM e2e_ctc + tokens + Silero VAD + потоковая модель
-
-function appPage(){
-  const p = S.page;
-  let bar = '', body = '';
-  if (p==='onb1') { body = `${stepsBar(p)}<div style="height:40px"></div>${oursIcon().replace('ico ours','ico ours" style="width:72px;height:72px;border-radius:22px')}
-    <div class="h2">Зажал кнопку — сказал — готово</div>
-    <p class="lead">Таймеры, будильники, фонарик и громкость телефон делает сам, даже без интернета. Остальное отвечает ваш агент на сервере. Голос не покидает телефон: распознавание идёт прямо здесь.</p>
-    <p class="hint">Понадобится: микрофон, кнопка ассистента, модель распознавания ~240 МБ и адрес вашего сервера. Каждый шаг кроме микрофона можно пропустить.</p>
-    <div style="height:24px"></div><button class="btn pri w" data-act="next">Начать</button>`; }
-  if (p==='onb2') { const st=S.w.mic; body = `${stepsBar(p)}<div class="h2">Микрофон</div>
-    <p class="lead">Нужен, только пока открыт лист ассистента. Запись не ведётся в фоне и не уходит с телефона.</p>
-    ${st==='ok'?'<div class="note ok">Доступ есть</div>':st==='denied'?'<div class="note bad">Доступ запрещён. Без него остаётся ввод с клавиатуры. Вернуть можно в «Готовности».</div>':''}
-    <div style="height:18px"></div>
-    ${st==='ok'?'<button class="btn pri w" data-act="next">Дальше</button>':`<button class="btn pri w" data-act="askmic">Разрешить микрофон</button><div style="height:8px"></div><button class="btn ghost w" data-act="next">Без голоса, только клавиатура</button>`}`; }
-  if (p==='onb3') { const ok=S.w.role==='ours'; body = `${stepsBar(p)}<div class="h2">Кнопка ассистента</div>
-    <p class="lead">Android не даёт приложениям спросить это окном — только в настройках. Два шага, я открою нужные экраны.</p>
-    <div class="stack">
-      <button class="row" data-act="sysrole"><span class="k">1. Сделать Тасечкин цифровым помощником<small>Приложения → Выбор приложений по умолчанию → Цифровой помощник</small></span><span class="v ${ok?'ok':''}">${ok?'готово ✓':'открыть ›'}</span></button>
-      <button class="row" data-act="sysside"><span class="k">2. Боковая кнопка → «Цифровой помощник»<small>Дополнительные функции → Боковая кнопка → Нажатие и удержание</small></span><span class="v ${S.sideOk?'ok':''}">${S.sideOk?'готово ✓':'открыть ›'}</span></button>
-    </div>
-    <p class="hint" style="margin-top:10px">Свайп из угла экрана Samsung убрал в One UI 7. Запасные входы: плитка в шторке и виджет.</p>
-    <div style="height:14px"></div><button class="btn pri w" data-act="next">${ok&&S.sideOk?'Дальше':'Пропустить пока'}</button>`; }
-  if (p==='onb4') { body = `${stepsBar(p)}<div class="h2">Модель распознавания</div>
-    <p class="lead">Один раз, ${mb(MODEL_TOTAL)} МБ. GigaAM v3 для чистового текста с пунктуацией и маленькая потоковая модель, чтобы слова бежали по мере речи.</p>
-    ${modelBlock(true)}
-    <div style="height:16px"></div>
-    ${S.w.model==='none'?`<button class="btn pri w" data-act="dl">Скачать ${mb(MODEL_TOTAL)} МБ</button><div style="height:8px"></div><button class="btn ghost w" data-act="next">Позже</button>`:`<button class="btn pri w" data-act="next">${S.w.model==='ready'?'Дальше':'Дальше, пусть качается'}</button>`}`; }
-  if (p==='onb5' || p==='connect') { bar = p==='connect' ? 'Подключение к серверу' : ''; body = (p==='onb5'?stepsBar(p):'') + connectBody(p==='onb5'); }
-  if (p==='onb6') { const st=S.w.notif; body = `${stepsBar(p)}<div class="h2">Уведомления</div>
-    <p class="lead">Если закрыть лист, не дождавшись ответа, вы узнаете о нём уведомлением. Без них ответ увидите при следующем открытии листа.</p>
-    ${S.w.server==='paired'?'<div class="note">На Samsung доставку держит приложение ntfy. Добавьте его и Тасечкин в «Приложения, которые никогда не спят» — я покажу где в «Готовности».</div>':''}
-    <div style="height:18px"></div>${st==='ok'?'<button class="btn pri w" data-act="next">Дальше</button>':`<button class="btn pri w" data-act="asknotif">Разрешить уведомления</button><div style="height:8px"></div><button class="btn ghost w" data-act="next">Не сейчас</button>`}`; }
-  if (p==='onb7') { body = `${stepsBar(p)}<div style="height:30px"></div><div class="h2">Готово</div>
-    <p class="lead">${S.w.role==='ours'&&S.sideOk?'Зажмите боковую кнопку и скажите: «Таймер на минуту».':'Кнопка ассистента ещё не настроена. Пока лист открывается из этого приложения или плитки в шторке.'}</p>
-    ${readiness()}
-    <div style="height:14px"></div><button class="btn pri w" data-act="finish">Открыть приложение</button>`; }
-  if (p==='main') { bar='Тасечкин'; body = `
-    ${S.upd.state==='available'?`<button class="row" data-act="about" style="border-color:var(--local)"><span class="dot" style="background:var(--local)"></span><span class="k">Доступна версия ${S.upd.next}<small>Что нового и установка — в «О программе»</small></span><span class="v">›</span></button>`:''}
-    <div class="sec">Готовность</div>${readiness()}
-    <div class="sec">Настройки</div>
-    <div class="stack">
-      <button class="row" data-act="connectpage"><span class="k">Сервер<small>${S.w.server==='paired'?'hermes.example.ru · Hermes 0.22.2':'не подключён'}</small></span><span class="v">›</span></button>
-      <div class="row"><span class="k">Слушать 6 с после ответа</span><span class="v">вкл</span></div>
-      <div class="row"><span class="k">Что можно телефону и мозгу<small>16 действий · подтверждения</small></span><span class="v">›</span></div>
-      <div class="row"><span class="k">Журнал действий</span><span class="v">›</span></div>
-      <button class="row" data-act="about"><span class="k">О программе<small>${S.upd.ver}${S.upd.state==='available'?' · доступна '+S.upd.next:''}</small></span><span class="v">›</span></button>
-    </div>
-    <div style="height:14px"></div><button class="btn w" data-act="openov">Открыть лист ассистента</button>`; }
-  if (p==='about') { bar='О программе'; const u=S.upd; body = `
-    <div style="text-align:center;padding:14px 0 8px"><div style="font-family:var(--display);font-size:26px">${u.ver}</div><div class="hint">стабильный канал · сборка ${u.ver==='0.4.0'?40:50}</div></div>
-    ${u.state==='available'?`<div class="card"><div class="who p">Доступна версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Пуш, когда мозг ответил</li><li>Карточка пачки действий</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`:''}
-    ${u.state==='dl'?`<div class="card"><div class="who p">Качаю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div class="hint" style="margin:6px 0">${u.pct} % · проверю контрольную сумму и поставлю</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>`:''}
-    ${u.state==='checking'?'<div class="note">Проверяю обновления…</div>':''}
-    ${u.state==='latest'?'<div class="note ok">У вас последняя версия</div>':''}
-    ${u.state==='fail'?'<div class="note bad">Не удалось проверить: сервер не ответил. Попробуйте позже.</div>':''}
-    <div style="height:8px"></div>
-    <button class="row" data-act="check"><span class="k">Проверить обновления<small>автоматически — при запуске и каждые 6 часов</small></span><span class="v">↻</span></button>
-    <div class="sec">Модели</div>${modelBlock(false)}
-    <p class="hint" style="margin-top:12px">Бета ставится с компьютера: <code>scripts/beta.sh</code> собирает и ставит поверх по USB или Wi-Fi. Данные и кнопка ассистента сохраняются.</p>`; }
-  return `<div class="layer appv">${statusBar(true)}${bar?`<div class="bar"><button class="bk" data-act="back" aria-label="Назад">‹</button>${bar}</div>`:'<div style="height:40px"></div>'}<div class="body">${body}</div></div>`;
+function chat(){
+  const [d,t]=linkState();
+  return `<div class="layer appv">${statusBar(true)}
+  <div class="topbar"><div class="t"><b>Hermes</b><small><span class="ldot ${d}"></span>${t}</small></div>
+    <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
+  ${bannerHtml()}
+  <div class="scroll" id="scroll">${feedHtml(false)}</div>
+  <div class="composer"><div class="fld"><input id="cin" placeholder="${S.w.server==='paired'?'Написать Hermes':'Команда телефону'}" autocomplete="off"><button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button></div>
+  <button class="micbtn" data-act="micfromapp" aria-label="Говорить">${I.mic}</button></div></div>`;
+}
+function li(icon,title,sum,act,warn,trail){ return `<button class="li ${warn?'warn':''}" ${act?`data-act="${act}"`:''}><span class="lic">${warn?I.warn:icon}</span><span class="lt"><b>${title}</b>${sum?`<small>${sum}</small>`:''}</span>${trail||''}</button>` }
+function settings(){
+  const w=S.w;
+  return `<div class="layer appv">${statusBar(true)}
+  <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>Настройки</b></div></div>
+  <div class="scroll"><div class="list">
+    <div class="lh">Вызов</div>
+    ${li(I.btn,'Цифровой помощник', w.role==='ours'?'Тасечкин':`Сейчас ${w.role==='bixby'?'Bixby':'Gemini'}`,'sysrole',w.role!=='ours')}
+    ${li(I.btn,'Боковая кнопка', S.sideOk?'Зажатие вызывает помощника':'Зажатие открывает меню выключения','sysside',!S.sideOk)}
+    <div class="lh">Голос</div>
+    ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
+    ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
+    ${li(I.wave,'Слушать после ответа','6 секунд без нажатия','',false,'<span class="sw"></span>')}
+    <div class="lh">Сервер</div>
+    ${li(I.srv,'Подключение', w.server==='paired'?'hermes.example.ru':w.server==='down'?'hermes.example.ru — не отвечает':'Не подключено','connect',w.server!=='paired')}
+    ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда Hermes ответил, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
+    <div class="lh">Действия</div>
+    ${li(I.shield,'Что можно телефону и Hermes','16 действий')}
+    ${li(I.list,'Журнал действий','Сегодня — 3')}
+    <div class="divider"></div>
+    ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
+  </div></div></div>`;
+}
+function about(){
+  const u=S.upd;
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>О программе</b></div></div>
+  <div class="scroll"><div style="padding:0 16px">
+    <div style="text-align:center;padding:10px 0 14px">${oursIcon('width:64px;height:64px;border-radius:20px;margin:0 auto')}<div style="font-family:var(--display);font-size:24px;margin-top:10px">${u.ver}</div><div style="color:var(--soft);font-size:13px">стабильная версия</div></div>
+    ${u.state==='available'?`<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`:''}
+    ${u.state==='dl'?`<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>`:''}
+    ${u.state==='checking'?'<div class="note">Проверяю…</div>':''}${u.state==='latest'?'<div class="note ok">Это последняя версия</div>':''}${u.state==='fail'?'<div class="note bad">Не удалось проверить: нет связи</div>':''}
+  </div>
+  <div class="list">
+    ${li(I.dl,'Проверить обновления','Сами проверяем при запуске и раз в 6 часов','check')}
+    ${li(I.wave,'Модели распознавания', S.w.model==='ready'?'GigaAM v3 · потоковая · определение речи':'Не скачаны','dl')}
+  </div></div></div>`;
 }
 
-function modelBlock(onb){
-  const m=S.w.model, pct=S.modelPct;
-  if (m==='ready') return `<div class="row"><span class="dot" style="background:var(--ok)"></span><span class="k">Распознавание готово<small>GigaAM v3 e2e · потоковая модель · определение речи</small></span><span class="v ok">${mb(MODEL_TOTAL)} МБ</span></div>`;
-  if (m==='loading') { const paused = S.w.net==='none';
-    return `<div class="dlstat"><span>${paused?'⏸':'↓'}</span><div class="prog"><i style="width:${pct}%"></i></div><span>${pct} %</span></div>
-    <p class="hint" style="margin:6px 2px">${paused?'Ждёт сеть — продолжит с того же места.':`${mb(MODEL_TOTAL*pct/100)} из ${mb(MODEL_TOTAL)} МБ · с нашего сервера, запасные — Hugging Face и GitHub. Можно закрыть приложение: прогресс в уведомлении.`}</p>`; }
-  if (m==='broken') return `<div class="note bad">Файл модели повреждён (не сошлась контрольная сумма). <button class="cb" data-act="dl" style="margin-left:6px">Скачать заново</button></div>`;
-  return `<div class="row"><span class="dot" style="background:var(--faint)"></span><span class="k">Не скачана<small>${mb(MODEL_TOTAL)} МБ · свободно 118 ГБ</small></span>${onb?'':'<button class="cb" data-act="dl">Скачать</button>'}</div>`;
+/* первый запуск: 5 шагов, Material-навигация внизу */
+const ONB=['welcome','button','voice','server','done'];
+function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
+function onb(){
+  const st=ONB[S.onbStep];
+  if (st==='server') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${connectBody(true)}</div>${navBar(S.pair?.stage==='done'?null:['Позже','onbnext'], S.pair?.stage==='done'?['Далее','onbnext']:null)}</div></div>`;
+  let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
+  if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает ваш агент на сервере.'; skip=null; primary=['Начать','onbnext'] }
+  if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
+    extra=`<div class="setcard">${li(I.btn,'Цифровой помощник',S.w.role==='ours'?'Тасечкин':'Сейчас '+(S.w.role==='bixby'?'Bixby':'Gemini'),'sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка → помощник',S.sideOk?'Готово':'Зажатие и удержание','sysside',false,S.sideOk?I.ok:'')}</div>`; if(ok) skip=null }
+  if (st==='voice'){ art='<div style="font-size:64px;letter-spacing:-4px">▂▅▇▅▂</div>'; h='Голос на телефоне'; p=`Один раз скачать ${mb(MODEL_TOTAL)} МБ. Голос не уходит с телефона и работает без интернета.`;
+    if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
+    else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
+    if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
+  if (st==='done'){ art='<div style="font-size:64px">✓</div>'; h='Готово'; p = S.w.role==='ours'&&S.sideOk ? 'Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».' : 'Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».'; primary=['Открыть','onbdone']; skip=null }
+  return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
-
-function readiness(){
-  const R=[
-    ['Микрофон', S.w.mic==='ok', S.w.mic==='ok'?'есть':'Разрешить', 'askmic'],
-    ['Кнопка ассистента', S.w.role==='ours'&&S.sideOk, S.w.role!=='ours'?(S.w.role==='bixby'?'у Bixby · Вернуть':'у Gemini · Настроить'):(S.sideOk?'наша':'боковая кнопка ›'), S.w.role!=='ours'?'sysrole':'sysside'],
-    ['Распознавание', S.w.model==='ready', S.w.model==='ready'?'готово':S.w.model==='loading'?S.modelPct+' %':'Скачать', 'dl'],
-    ['Сервер', S.w.server==='paired', S.w.server==='paired'?'на связи':S.w.server==='down'?'не отвечает':'Подключить', 'connectpage'],
-    ['Уведомления', S.w.notif==='ok', S.w.notif==='ok'?'есть':'Разрешить', 'asknotif'],
-    ['Auto Blocker выключен', S.w.autoblock==='off', S.w.autoblock==='off'?'да':'мешает обновлениям', 'autob'],
-  ];
-  return `<div class="stack">${R.map(r=>`<button class="row" data-act="${r[1]?'':r[3]}"><span class="dot" style="background:${r[1]?'var(--ok)':r[0]==='Распознавание'&&S.w.model==='loading'?'var(--local)':'var(--danger)'}"></span><span class="k">${r[0]}</span><span class="v ${r[1]?'ok':'wait'}">${r[2]}</span></button>`).join('')}</div>`;
-}
-
-/* ── подключение ── */
+function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
+const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
 function connectBody(onb){
   const P=S.pair;
-  if (!P) return `<div class="h2">Сервер</div>
-    <p class="lead">Ваш агент живёт на сервере. Без подключения работают только команды телефона.</p>
-    <div class="stack">
-      <button class="row" data-act="viatg"><span class="k">Ссылка из Telegram<small>Напишите боту /android_pair и нажмите ссылку — всё заполнится само</small></span><span class="v">›</span></button>
-      <button class="row" data-act="viaqr"><span class="k">QR с экрана компьютера<small>Та же команда в CLI на сервере покажет QR</small></span><span class="v">›</span></button>
-      <button class="row" data-act="viaaddr"><span class="k">Ввести адрес вручную<small>Владелец сервера подтвердит код</small></span><span class="v">›</span></button>
-    </div>
-    ${onb?'<div style="height:12px"></div><button class="btn ghost w" data-act="next">Пропустить — только команды телефона</button>':''}`;
-  if (P.via==='addr' && P.stage==='input') return `<div class="h2">Адрес сервера</div>
+  if (!P) return `<div class="h2">Ваш сервер</div><p style="color:var(--soft);margin:0 0 12px">Hermes отвечает на всё, что сложнее команд телефона.</p>
+    <div class="setcard">${li(I.chat,'Ссылка из Telegram','Напишите боту /android_pair','viatg')}${li(I.qr,'QR с экрана компьютера','Та же команда на сервере','viaqr')}${li(I.pen,'Ввести адрес','Владелец подтвердит код','viaaddr')}</div>`;
+  if (P.via==='addr'&&P.stage==='input') return `<div class="h2">Адрес сервера</div>
     <input class="field ${P.err?'err':''}" id="addr" value="${esc(P.addr||'hermes.example.ru')}" autocomplete="off" spellcheck="false">
-    ${P.err?`<p class="hint" style="color:var(--danger)">${P.err}</p>`:'<p class="hint">Например, hermes.example.ru. Через Tailscale — имя машины в сети.</p>'}
-    <div style="height:12px"></div><button class="btn pri w" data-act="addrgo">Подключиться</button><div style="height:8px"></div><button class="btn ghost w" data-act="pairreset">Другой способ</button>`;
-  const ck = P.checks.map(c=>`<div class="ck ${c.s}"><span class="s">${c.s==='ok'?'✓':c.s==='bad'?'!':''}</span><span>${c.t}${c.d?`<small>${c.d}</small>`:''}</span></div>`).join('');
+    <p style="font-size:12.5px;color:${P.err?'var(--danger)':'var(--soft)'}">${P.err||'Например, hermes.example.ru'}</p>
+    <div style="display:flex;justify-content:flex-end;gap:6px"><button class="tbtn" data-act="pairreset">Назад</button><button class="fbtn" data-act="addrgo">Подключиться</button></div>`;
+  const ck=P.checks.map(c=>`<div class="ck ${c.s}"><span class="s">${c.s==='ok'?'✓':c.s==='bad'?'!':''}</span><span>${c.t}${c.d?`<small>${c.d}</small>`:''}</span></div>`).join('');
   let tail='';
-  if (P.stage==='code') tail = `<div class="card" style="margin-top:6px"><div class="who h">Ждёт подтверждения владельца сервера</div><div class="bd">
-      <div class="big">${P.code}</div>
-      <p class="hint" style="text-align:center;margin:0 0 6px">Код живёт 1 час. На сервере выполните:</p>
-      <p style="text-align:center;margin:0"><code>hermes pairing approve android ${P.code.replace('-','')}</code></p></div>
-      <div class="btns" style="justify-content:center"><button class="cb pri" data-act="copycmd">Скопировать команду</button><button class="cb gh" data-act="pairreset">Отмена</button></div></div>
-      <p class="hint">Я жду на открытом соединении и сам перейду дальше.</p>`;
-  if (P.stage==='fail') tail = `<div class="note bad" style="margin-top:6px">${P.err}</div><div style="height:10px"></div><button class="btn pri w" data-act="${P.retry||'pairreset'}">${P.retryLabel||'Попробовать снова'}</button><div style="height:8px"></div><button class="btn ghost w" data-act="pairreset">Другой способ</button>`;
-  if (P.stage==='done') tail = `<div class="note ok" style="margin-top:6px">Подключено к Hermes 0.22.2 на hermes.example.ru. Это устройство видно на сервере как «S24 Ultra».</div><div style="height:12px"></div><button class="btn pri w" data-act="${onb?'next':'back'}">${onb?'Дальше':'Готово'}</button>`;
+  if (P.stage==='code') tail=`<div class="card"><div class="who h">Ждёт подтверждения</div><div class="bd"><div class="big">${P.code}</div><p style="text-align:center;font-size:12.5px;color:var(--soft);margin:0 0 6px">Код живёт час. На сервере:</p><p style="text-align:center;margin:0"><code>hermes pairing approve android ${P.code.replace('-','')}</code></p></div><div class="btns" style="justify-content:center"><button class="cb pri" data-act="copycmd">Скопировать команду</button><button class="cb gh" data-act="pairreset">Отмена</button></div></div>`;
+  if (P.stage==='fail') tail=`<div class="note bad">${P.err}</div><div style="display:flex;justify-content:flex-end;gap:6px;margin-top:10px"><button class="tbtn" data-act="pairreset">Другой способ</button><button class="fbtn" data-act="${P.retry}">${P.retryLabel}</button></div>`;
+  if (P.stage==='done') tail=`<div class="note ok">Подключено. На сервере этот телефон виден как «S24 Ultra».</div>${onb?'':'<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="fbtn" data-act="tochat">К разговору</button></div>'}`;
   return `<div class="h2">${P.stage==='done'?'Подключено':'Подключаюсь'}</div><div class="checks">${ck}</div>${tail}`;
 }
-
-/* ── системные экраны Samsung и Telegram ── */
-function sysRole(){
-  const opts=[['gemini','Gemini','Google'],['bixby','Bixby','Samsung'],['ours','Тасечкин','']];
-  return `<div class="layer sys">${statusBar(true)}<div class="bar"><button class="bk" data-act="sysback">‹</button>Цифровой помощник</div>
-  <p style="margin:0 22px 6px;font-size:13px;color:#666">Приложения → Выбор приложений по умолчанию</p>
-  <div class="grp">${opts.map(o=>`<button class="it" data-role="${o[0]}"><span class="rad ${S.w.role===o[0]?'on':''}"></span><span>${o[1]}${o[2]?`<small style="color:#888">${o[2]}</small>`:''}</span></button>`).join('')}</div>
-  <p style="margin:10px 22px;font-size:12.5px;color:#666">Приложение помощника может читать информацию об используемых приложениях на экране.</p></div>`;
-}
-function sysSide(){
-  return `<div class="layer sys">${statusBar(true)}<div class="bar"><button class="bk" data-act="sysback">‹</button>Боковая кнопка</div>
-  <p style="margin:0 22px 6px;font-size:13px;color:#666">Дополнительные функции → Боковая кнопка</p>
-  <div class="sec" style="margin:14px 24px 6px">Нажатие и удержание</div>
-  <div class="grp"><button class="it" data-side="1"><span class="rad ${S.sideOk?'on':''}"></span><span>Цифровой помощник<small>${S.w.role==='ours'?'Тасечкин':S.w.role==='bixby'?'Bixby':'Gemini'}</small></span></button>
-  <button class="it" data-side="0"><span class="rad ${S.sideOk?'':'on'}"></span><span>Меню выключения</span></button></div></div>`;
-}
-function tg(){
-  return `<div class="layer tg">${statusBar(false)}<div class="top"><button class="bk" data-act="home" style="background:none;border:0;color:#fff;font-size:20px">‹</button><span class="av">H</span><span><b>Hermes</b><br><small style="opacity:.8">бот</small></span></div>
-  <div class="msgs" id="msgs">${S.tg.map(m=>`<div class="bub ${m.me?'me':''}">${m.html}</div>`).join('')}</div>
-  <div class="compose"><span class="in">${S.tg.length?'Сообщение':'/android_pair'}</span><button class="cb pri" data-act="tgsend" ${S.tg.length?'disabled':''}>➤</button></div></div>`;
-}
-function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p><button class="unl btn" data-act="home" style="position:absolute;bottom:50px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.15);color:#fff">Отмена</button></div>` }
+function sysRole(){ const o=[['gemini','Gemini'],['bixby','Bixby'],['ours','Тасечкин']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }
+function sysSide(){ return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Боковая кнопка</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Дополнительные функции → Боковая кнопка</p><p style="margin:14px 24px 4px;font-size:13px;color:#3E6FD8;font-weight:600">Нажатие и удержание</p><div class="grp"><button class="it" data-side="1"><span class="rad ${S.sideOk?'on':''}"></span>Цифровой помощник</button><button class="it" data-side="0"><span class="rad ${S.sideOk?'':'on'}"></span>Меню выключения</button></div></div>` }
+function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"><button class="iconbtn" data-act="home" style="color:#fff">${I.back}</button><span class="av">H</span><span><b>Hermes</b><br><small style="opacity:.8">бот</small></span></div><div class="msgs" id="msgs">${S.tg.map(m=>`<div class="bub ${m.me?'me':''}">${m.html}</div>`).join('')}</div><div class="compose"><span class="in">${S.tg.length?'Сообщение':'/android_pair'}</span><button class="cb pri" data-act="tgsend" ${S.tg.length?'disabled':''}>➤</button></div></div>` }
+function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
 function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i%12; const f=(r<3&&c<3)||(r<3&&c>8)||(r>8&&c<3); s+=`<i style="background:${f||((r*7+c*13+r*c)%3===0)?'#111':'#fff'}"></i>` } return `<div class="qr">${s}</div>` }
 
-/* ── лист ассистента ── */
 function overlay(){
-  const O=S.ov; if(!O) return '';
-  const linkTxt = S.w.server==='none' ? 'Только команды телефона' : S.w.net==='none' ? 'Нет связи · команды телефона работают' : S.w.server==='down' ? 'Сервер не отвечает' : 'Hermes · сессия идёт 4 мин';
-  const dot = S.w.server==='paired'&&S.w.net!=='none' ? '' : S.w.server==='none' ? 'loc' : 'off';
-  const feed = O.feed.map(itemHtml).join('');
-  let live='';
-  if (O.live) live = O.live;
-  const input = O.input==='kbd' ? `<div class="kbd"><input id="kin" placeholder="${S.w.server==='paired'?'Написать Hermes':'Команда телефону'}" autocomplete="off"><button data-act="ksend" aria-label="Отправить">↑</button></div>` : '';
-  return `<div class="ov"><div class="dim" data-act="dim"></div><div class="sheet ${O.tall?'tall':''} ${O.pop?'pop':''}">
-    <div class="grab"></div>
-    <div class="hdr"><span class="ldot ${dot}"></span><span>${linkTxt}</span><span class="sp"></span><button class="gear" data-act="gear" aria-label="Настройки"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3L5.5 5.5"/></svg></button></div>
-    <div class="conv" id="conv">${feed}</div>
-    <div class="live ${O.liveQ?'q':''}">${live}</div>
-    ${input}
-    <div class="ctl"><button class="rb" data-act="kbd" aria-label="Клавиатура"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10"/></svg></button><button class="eqb" data-act="eqtap" aria-label="Эквалайзер"><div class="eq ${O.eqc||''}" data-mode="${O.eq||'dots'}"></div></button><button class="rb" data-act="close" aria-label="Закрыть"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  const O=S.ov; if(!O) return ''; const [d,t]=linkState();
+  return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
+    <button class="grab" data-act="expand" aria-label="Развернуть"></button>
+    <div class="hdr"><span class="ldot ${d}"></span><span>Hermes · ${t}</span><span class="sp"></span>
+      <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
+      <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button></div>
+    <div class="scroll" id="oscroll">${feedHtml(true)}</div>
+    <div class="live ${O.liveQ?'q':''}">${O.live||''}</div>
+    ${O.input==='kbd'?`<div class="kbd"><input id="kin" placeholder="${S.w.server==='paired'?'Написать Hermes':'Команда телефону'}" autocomplete="off"><button class="sendbtn" data-act="ksend" aria-label="Отправить">${I.send}</button></div>`:''}
+    <div class="ctl"><button class="rb" data-act="kbd" aria-label="Клавиатура">${I.kbd}</button><button class="eqb" data-act="eqtap" aria-label="Эквалайзер"><div class="eq ${O.eqc||''}" data-mode="${O.eq||'dots'}"></div></button><button class="rb" data-act="close" aria-label="Закрыть">${I.x}</button></div>
   </div></div>`;
 }
-function itemHtml(it){
-  if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
-  if (it.t==='ai') return `<div class="ai">${it.x}</div>`;
-  if (it.t==='ph') return `<div class="ph">${it.x}</div>`;
-  if (it.t==='steps') return `<div class="acc">${it.run?`<span class="shim">${it.x}</span>`:it.x}</div>`;
-  if (it.t==='q') return `<div class="queued">${it.x}<span>${it.s}</span></div>`;
-  if (it.t==='chips') return `<div class="chips">${it.c.map(c=>`<button class="chip" data-chip="${c}">${c}</button>`).join('')}</div>`;
-  if (it.t==='act') return `<div class="act ${it.undone?'undone':''}"><span class="ai2">${it.i}</span><span class="tx"><b>${it.x}</b><span>${it.s}</span></span>${it.btn&&!it.undone?`<button class="ln" data-undo="${it.id}" data-kind="${it.kind}">${it.btn}</button>`:''}</div>`;
-  if (it.t==='card') return `<div class="card"><div class="who ${it.who}">${it.head}</div><div class="bd"><div class="tt">${it.title}</div>${it.kv?`<dl class="kv">${it.kv.map(k=>`<dt>${k[0]}</dt><dd>${k[1]}</dd>`).join('')}</dl>`:''}</div><div class="btns">${it.btns.map(b=>`<button class="cb ${b[2]||''}" data-cardbtn="${b[1]}">${b[0]}</button>`).join('')}</div></div>`;
-  return '';
-}
-
-function dialog(){
-  const D=S.dialog; if(!D) return '';
-  return `<div class="scrim"><div class="dlg"><div class="ic">${D.ic||''}</div><h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>`;
-}
-function toast(){
-  const T=S.toast; if(!T) return '';
-  return `<button class="toast" data-act="toast">${oursIcon().replace('ico ours','ico ours')}<span><b>${T.title}</b><span>${T.text}</span></span></button>`;
-}
+function dialog(){ const D=S.dialog; if(!D) return ''; return `<div class="scrim"><div class="dlg"><div class="di">${D.ic||''}</div><h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
+function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toast" data-act="toast">${oursIcon()}<span><b>${T.title}</b><span>${T.text}</span></span></button>` }
 
 function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base=appPage();
-  else if (S.screen==='tg') base=tg();
-  else if (S.screen==='cam') base=cam();
-  else if (S.screen==='sysrole') base=sysRole();
-  else if (S.screen==='sysside') base=sysSide();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='about'?about():S.page==='connect'?connectPage():chat();
+  else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam();
+  else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide();
+  const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   $('#scr').innerHTML = base + overlay() + dialog() + toast();
   if (S.ov) S.ov.pop=false;
-  eqs = [...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
-  const c=$('#conv'); if(c) c.scrollTop=c.scrollHeight;
-  const m=$('#msgs'); if(m) m.scrollTop=m.scrollHeight;
+  eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
+  ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
+  S.keepScroll=false;
+  if (S.scrollToLong){ const el=$('#scroll'); const tgt=el&&el.querySelector('.md h3'); if(tgt){ el.scrollTop += tgt.getBoundingClientRect().top - el.getBoundingClientRect().top - 12 } S.scrollToLong=false }
   renderWorld();
 }
 
-/* ───────── панель «мир» ───────── */
-const WORLD = [
-  ['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],
-  ['server','Сервер',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],
-  ['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],
-  ['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],
-  ['role','Ассистент',[['gemini','Gemini'],['bixby','Bixby'],['ours','Тасечкин']]],
-  ['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]],
-];
+/* ───────── мир ───────── */
+const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['server','Сервер',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Помощник',[['gemini','Gemini'],['bixby','Bixby'],['ours','Тасечкин']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
 function renderWorld(){
-  $('#world').innerHTML = WORLD.map(([k,l,opts])=>`<label>${l}</label><div class="seg">${opts.map(o=>`<button data-w="${k}" data-v="${o[0]}" aria-pressed="${S.w[k]===o[0]}">${o[1]}</button>`).join('')}</div>`).join('')
-    + `<label>Сбой подключения</label><div class="seg">${[['','нет'],['dns','адрес'],['tls','сертификат'],['plugin','нет плагина'],['expired','ссылка устарела']].map(o=>`<button data-fail="${o[0]}" aria-pressed="${(S.failNext||'')===o[0]}">${o[1]}</button>`).join('')}</div>`;
-  const listening = S.ov && (S.ov.eq==='speak'||S.ov.eq==='dots') && !S.busy;
-  document.querySelectorAll('#say button').forEach(b=>b.disabled=!S.ov||S.busy);
+  $('#world').innerHTML=WORLD.map(([k,l,o])=>`<label>${l}</label><div class="seg">${o.map(x=>`<button data-w="${k}" data-v="${x[0]}" aria-pressed="${S.w[k]===x[0]}">${x[1]}</button>`).join('')}</div>`).join('')
+   +`<label>Сбой подключения</label><div class="seg">${[['','нет'],['dns','адрес'],['tls','сертификат'],['plugin','нет плагина'],['expired','ссылка устарела']].map(x=>`<button data-fail="${x[0]}" aria-pressed="${(S.failNext||'')===x[0]}">${x[1]}</button>`).join('')}</div>`;
+  const canSay = !S.busy && (S.ov || (S.screen==='app'&&S.onboarded&&S.page==='chat'));
+  document.querySelectorAll('#say button').forEach(b=>b.disabled=!canSay);
 }
 function setWorld(k,v){
-  const was=S.w[k]; S.w[k]=v;
-  if (k==='model'){ if(v==='loading'&&was!=='loading'){ S.modelPct=S.modelPct||12; startDl(true) } if(v==='ready') S.modelPct=100; if(v==='none') S.modelPct=0 }
-  if (k==='role' && v==='ours') S.sideOk = S.sideOk ?? false;
-  const why={
-    net:{wifi:'Wi-Fi есть: соединение с сервером восстанавливается, очередь уходит по порядку.',cell:'Мобильная сеть: всё работает, но модель 240 МБ без спроса качать не будем.',none:'Сети нет. Локальные команды работают, реплики мозгу ложатся в очередь с исходным временем. Загрузка модели встаёт на паузу и докачается с того же места.'},
-    server:{none:'Сервер не подключён: вопросы мозгу предлагают подключиться, локальное работает.',paired:'Подключено. Вход — подписью ключа устройства из Keystore, без паролей.',down:'Сервер не отвечает: переподключение с паузами 0,5→8 с, реплики в очередь.'},
-    model:{none:'Модели нет. Лист всё равно открывается мгновенно: клавиатура вместо голоса.',loading:'Модель качается: лист показывает процент и предлагает клавиатуру.',ready:'Модель готова: голос работает без сети.',broken:'Контрольная сумма не сошлась — файл не используется, предлагаем перекачать.'},
-    locked:{true:'Экран заблокирован: вопросы можно, действия с данными — через разблокировку. Прошлые сессии скрыты.',false:'Экран разблокирован.'},
-    role:{gemini:'Помощник по умолчанию — Gemini: боковая кнопка откроет его, не нас.',bixby:'Кнопку снова забрал Bixby. Приложение заметит это при запуске и предложит вернуть.',ours:'Тасечкин — цифровой помощник. Роль держится и после обновлений, потому что объявлен RecognitionService.'},
-    mic:{ask:'Доступ к микрофону ещё не спрашивали.',ok:'Микрофон разрешён.',denied:'Микрофон запрещён: лист работает с клавиатуры и предлагает разрешить.',call:'Идёт звонок: микрофон занят, лист честно говорит об этом.'},
-  };
-  trace(why[k]?.[String(v)]||'', k==='net'&&v==='none'||v==='down'||v==='denied'||v==='broken'?'e':'');
-  if (k==='net' && v!=='none' && S.w.server==='paired') flushQueue();
-  if (k==='locked' && v) { S.screen='lock' } if (k==='locked' && !v && S.screen==='lock') S.screen='home';
+  S.w[k]=v; S.dismissed=null;
+  if (k==='model'){ if(v==='loading'){ if(!S.modelPct||S.modelPct>=100) S.modelPct=12; startDl(true) } if(v==='ready') S.modelPct=100; if(v==='none') S.modelPct=0 }
+  const why={net:{wifi:'Wi-Fi: соединение восстанавливается, очередь уходит по порядку.',cell:'Мобильная сеть: всё работает, но 240 МБ без спроса не качаем.',none:'Нет сети: команды телефона работают, вопросы Hermes ждут в очереди, загрузка модели на паузе.'},server:{none:'Сервер не подключён: в разговоре баннер «Подключить».',paired:'Подключено: вход подписью ключа телефона.',down:'Сервер не отвечает: переподключение с паузами, вопросы в очереди.'},model:{none:'Модели нет: лист открывается, вместо голоса — клавиатура, в разговоре — баннер.',loading:'Модель качается: прогресс в баннере.',ready:'Модель готова.',broken:'Не сошлась контрольная сумма — файл не используем.'},locked:{true:'Экран заблокирован: вопросы да, действия с данными — через разблокировку.',false:'Разблокировано.'},role:{gemini:'Помощник — Gemini.',bixby:'Помощник — Bixby.',ours:'Помощник — Тасечкин; держится после обновлений (объявлен RecognitionService).'},mic:{ask:'Микрофон спросим при первом открытии листа.',ok:'Микрофон разрешён.',denied:'Микрофон запрещён: клавиатура и баннер «Разрешить».',call:'Идёт звонок: микрофон занят.'}};
+  trace(why[k]?.[String(v)]||'', (v==='none'&&k==='net')||v==='down'||v==='denied'||v==='broken'?'e':'');
+  if (k==='net'&&v!=='none'&&S.w.server==='paired') flushQueue();
+  if (k==='locked'){ S.screen = v ? 'lock' : (S.screen==='lock'?'home':S.screen); if(v) S.ov=null }
   render();
 }
 
-/* ───────── загрузка модели ───────── */
-let dlTimer=null;
+/* ───────── модель ───────── */
+let dlT=null;
 function startDl(skipAsk){
-  if (S.w.net==='cell' && !skipAsk) { S.dialog={ic:'📶',title:`Скачать ${mb(MODEL_TOTAL)} МБ по мобильной сети?`,text:'Модель распознавания нужна один раз. Можно дождаться Wi-Fi — загрузка начнётся сама.',opts:[['Скачать сейчас','dlnow'],['Дождаться Wi-Fi','dlwifi','sec2']]}; render(); return }
-  S.w.model='loading'; trace(`Загрузка: ${mb(MODEL_TOTAL)} МБ, файлы без архива, с докачкой по Range и проверкой sha256. Первым — наш сервер, запасные — Hugging Face и GitHub (GitHub в 2026 бывал недоступен из России).`,'p');
-  clearInterval(dlTimer);
-  dlTimer=setInterval(()=>{
-    if (S.w.model!=='loading'){ clearInterval(dlTimer); return }
-    if (S.w.net==='none') { render(); return }
-    S.modelPct=Math.min(100,S.modelPct+ (RM?25:3));
-    if (S.modelPct>=100){ clearInterval(dlTimer); S.w.model='ready'; trace('Модель скачана, sha256 сошлась, файлы переименованы атомарно. Голос работает без сети.','i'); showToast('Распознавание готово','Зажмите боковую кнопку и говорите'); }
-    render();
-  }, 300);
+  if (S.w.net==='cell'&&!skipAsk){ S.dialog={ic:'📶',title:`Скачать ${mb(MODEL_TOTAL)} МБ по мобильной сети?`,text:'Можно дождаться Wi-Fi — загрузка начнётся сама.',opts:[['Скачать сейчас','dlnow'],['Дождаться Wi-Fi','x','sec2']]}; return render() }
+  S.w.model='loading'; if(!S.modelPct||S.modelPct>=100) S.modelPct=1;
+  trace(`Загрузка ${mb(MODEL_TOTAL)} МБ: файлы без архива, докачка по Range, проверка sha256. Сначала наш сервер, запасные — Hugging Face и GitHub.`,'p');
+  clearInterval(dlT); dlT=setInterval(()=>{ if(S.w.model!=='loading'){clearInterval(dlT);return} if(S.w.net==='none'){ S.keepScroll=true; render(); return } S.modelPct=Math.min(100,S.modelPct+(RM?25:4)); if(S.modelPct>=100){ clearInterval(dlT); S.w.model='ready'; trace('Модель готова: голос работает без сети.','i'); showToast('Распознавание готово','Зажмите боковую кнопку и говорите') } S.keepScroll=true; render() },300);
   render();
 }
 
 /* ───────── подключение ───────── */
-const CHECKS = [
-  ['addr','Адрес','hermes.example.ru'],
-  ['net','Соединение','DNS и TCP'],
-  ['tls','Сертификат','TLS, Let’s Encrypt'],
-  ['plugin','Плагин android на сервере','путь /android'],
-  ['proto','Версия протокола','сервер 1 · приложение 1'],
-  ['key','Ключ устройства','создан в Android Keystore'],
-  ['admit','Допуск к агенту',''],
-];
 async function runPair(via){
-  const my=++token;
-  S.pair={via, stage:'checks', checks:CHECKS.map(c=>({id:c[0],t:c[1],d:'',s:'wait'}))};
-  if (S.screen!=='app'){ S.screen='app'; S.page = S.onboarded?'connect':'onb5' }
+  const my=++token; S.pair={via,stage:'checks',checks:CHECKS.map(c=>({id:c[0],t:c[1],d:'',s:'wait'}))};
+  S.screen='app'; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server');
   render();
-  const fail = S.failNext;
-  const map={dns:'net',tls:'tls',plugin:'plugin',expired:'admit'};
-  for (let i=0;i<CHECKS.length;i++){
-    const c=S.pair.checks[i]; c.s='run'; render(); await wait(450); if(my!==token) return;
-    if (S.w.net==='none' && c.id==='net'){ return pairFail(c,'Нет интернета на телефоне. Подключусь, как только появится сеть.','Повторить') }
-    if (S.w.server==='down' && c.id==='net'){ return pairFail(c,'Сервер не отвечает. Проверьте адрес и что Hermes запущен.','Повторить') }
-    if (fail && map[fail]===c.id){
-      const msg={dns:'Имя hermes.example.ru не найдено. Проверьте адрес.',tls:'Сертификат сервера недействителен (истёк или выдан другому имени). Продолжить нельзя — это защита от подмены.',plugin:'Сервер ответил, но плагина android на нём нет. Установите плагин: hermes plugins enable android.',expired:'Ссылка устарела или уже использована. Попросите новую: /android_pair.'}[fail];
-      S.failNext=null; return pairFail(c,msg, fail==='expired'?'Открыть Telegram':'Повторить', fail==='expired'?'viatg':null);
-    }
-    c.s='ok'; c.d=CHECKS[i][2];
+  const map={dns:'net',tls:'tls',plugin:'plugin',expired:'admit'}; const fail=S.failNext;
+  for (const c of S.pair.checks){
+    c.s='run'; render(); await wait(400); if(my!==token) return;
+    if ((S.w.net==='none'||S.w.server==='down')&&c.id==='net') return pairFail(c,S.w.net==='none'?'Нет интернета на телефоне.':'Сервер не отвечает. Проверьте адрес и что Hermes запущен.','Повторить');
+    if (fail&&map[fail]===c.id){ S.failNext=null; const m={dns:'Сервер hermes.example.ru не найден. Проверьте адрес.',tls:'Сертификат сервера недействителен. Подключаться нельзя — это защита от подмены.',plugin:'Hermes отвечает, но плагина android на нём нет: hermes plugins enable android.',expired:'Ссылка устарела или уже использована. Попросите новую: /android_pair.'}[fail]; return pairFail(c,m,fail==='expired'?'Открыть Telegram':'Повторить',fail==='expired'?'viatg':null) }
+    c.s='ok'; c.d={addr:'hermes.example.ru',net:'отвечает',tls:'действителен до 12.01.2027',plugin:'android 0.4 · Hermes 0.22.2',proto:'1',key:'в защищённом хранилище',admit:''}[c.id];
     if (c.id==='admit'){
-      if (via==='addr'){ c.s='run'; c.d='неизвестное устройство — Hermes выдал код сопряжения'; S.pair.stage='code'; S.pair.code='K7Q2-M9XD'; render();
-        trace('Hermes ответил неизвестному устройству кодом: 8 символов без 0/O/1/I, живёт 1 час. Штатный механизм Hermes, работает и для плагина — если явно задано unauthorized_dm_behavior: pair (иначе при GATEWAY_ALLOWED_USERS Hermes молчит).','h'); return }
-      c.d='по одноразовой ссылке: плагин сам вызвал PairingStore.approve';
+      if (via==='addr'){ c.s='run'; c.d='Hermes выдал код'; S.pair.stage='code'; S.pair.code='K7Q2-M9XD'; trace('Неизвестный телефон получил код — штатный механизм Hermes (8 символов, 1 час). Нужно явно unauthorized_dm_behavior: pair — иначе при GATEWAY_ALLOWED_USERS Hermes промолчит.','h'); return render() }
+      c.d='по одноразовой ссылке';
     }
     render();
   }
   pairDone();
 }
-function pairFail(c,msg,label,retry){ c.s='bad'; S.pair.stage='fail'; S.pair.err=msg; S.pair.retryLabel=label; S.pair.retry=retry||('re-'+S.pair.via); trace(msg,'e'); render() }
-function pairDone(){
-  const c=S.pair.checks.find(x=>x.id==='admit'); c.s='ok'; if(!c.d) c.d='владелец подтвердил код';
-  S.pair.stage='done'; S.w.server='paired'; trace('Устройство допущено и записано в штатный список Hermes. Дальше каждое подключение — подпись случайной строки ключом устройства.','i');
-  render();
-}
+function pairFail(c,msg,label,retry){ c.s='bad'; Object.assign(S.pair,{stage:'fail',err:msg,retryLabel:label,retry:retry||('re-'+S.pair.via)}); trace(msg,'e'); render() }
+function pairDone(){ const c=S.pair.checks.find(x=>x.id==='admit'); c.s='ok'; c.d=c.d||'владелец подтвердил'; S.pair.stage='done'; S.w.server='paired'; S.dismissed=null; trace('Телефон допущен штатным PairingStore Hermes. Дальше вход — подписью ключа.','i'); render() }
 
-/* ───────── лист: открыть, сказать, ответить ───────── */
-function openOverlay(source){
+/* ───────── лист ───────── */
+function openOverlay(src){
   token++; S.busy=false;
-  if (S.screen==='app'||S.screen==='sysrole'||S.screen==='sysside'||S.screen==='tg'||S.screen==='cam'){}
-  const O={feed:[],pop:true,eq:'dots',input:'voice'};
-  if (S.w.model!=='ready'){
-    O.live = S.w.model==='loading' ? `<span class="st p">Распознавание качается: ${S.modelPct} %</span><span style="font-size:15px;font-weight:400;color:var(--soft)">Пока можно написать с клавиатуры. Команды телефона и вопросы работают и так.</span>` :
-      `<span class="st e">Модель распознавания не скачана</span><span style="font-size:15px;font-weight:400;color:var(--soft)">${mb(MODEL_TOTAL)} МБ, один раз. Пока — клавиатура.</span>`;
-    O.input='kbd'; O.eq='dots'; O.eqc='off';
-    if (S.w.model!=='loading') O.feed.push({t:'card',who:'p',head:'Голос недоступен',title:'Скачать распознавание',kv:[['Размер',mb(MODEL_TOTAL)+' МБ'],['Сеть',S.w.net==='wifi'?'Wi-Fi':S.w.net==='cell'?'мобильная — спрошу':'нет']],btns:[['Скачать','dl','pri']]});
-    trace('Лист открылся быстрее 300 мс даже без модели: вместо пустоты — процент загрузки и клавиатура.','p');
-  } else if (S.w.mic==='denied' || S.w.mic==='ask'){
-    O.live=`<span class="st e">Нет доступа к микрофону</span><span style="font-size:15px;font-weight:400;color:var(--soft)">Разрешите — или пишите с клавиатуры.</span>`; O.input='kbd'; O.eqc='off';
-    O.feed.push({t:'card',who:'p',head:'Микрофон',title:'Разрешить запись, пока открыт лист',btns:[['Разрешить','askmic','pri']]});
-  } else if (S.w.mic==='call'){
-    O.live=`<span class="st e">Микрофон занят звонком</span><span style="font-size:15px;font-weight:400;color:var(--soft)">После звонка — снова голосом. Сейчас можно с клавиатуры.</span>`; O.input='kbd'; O.eqc='off';
-  } else {
-    O.live='<span class="st p">Слушаю</span>'; O.eq='dots';
-    trace(`Лист открыт (${source}). Микрофон пишет с пре-роллом 0,5 с — слово, сказанное вместе с нажатием, не теряется. Foreground-сервис не нужен: пока лист показан, система держит процесс видимым.`,'p');
-  }
-  if (S.w.server==='none') O.feed.unshift({t:'ph',x:'Сервер не подключён — работают команды телефона. <a style="color:var(--local-d);font-weight:600;cursor:pointer" data-act="gear">Подключить</a>'});
-  if (S.pendingPush.length){ S.pendingPush.forEach(x=>O.feed.push(x)); S.pendingPush=[] }
+  const O={pop:true,eq:'dots',input:'voice'};
+  const sub=s=>`<span style="font-size:15px;font-weight:400;color:var(--soft)">${s}</span>`;
+  if (S.w.model!=='ready'){ O.input='kbd'; O.eqc='off'; O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — с клавиатуры. Команды и вопросы работают.')}` }
+  else if (S.w.mic==='ask'){ O.live='<span class="st p">Нужен микрофон</span>'; O.eqc='off'; S.ov=O; S.dialog={ic:'🎙',title:'Разрешить приложению «Тасечкин» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; trace('Микрофон спрашиваем в момент, когда он нужен, — не на экране настройки. Это штатный паттерн Android.','p'); return render() }
+  else if (S.w.mic==='denied'){ O.input='kbd'; O.eqc='off'; O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пишите — или разрешите в настройках.')}` }
+  else if (S.w.mic==='call'){ O.input='kbd'; O.eqc='off'; O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — с клавиатуры.')}` }
+  else { O.live='<span class="st p">Слушаю</span>'; trace(`Лист открыт ${src}. Пре-ролл 0,5 с.`,'p') }
   S.ov=O; render();
 }
-function closeOverlay(){ token++; S.busy=false; S.ov=null; trace('Лист закрыт. Работа мозга продолжается на сервере — ответ придёт уведомлением.'); render() }
+function closeOverlay(){ token++; S.busy=false; const working=S.feed.some(f=>f.t==='steps'&&f.run); S.ov=null; render();
+  if (working&&S.w.notif!=='ok'&&!S.notifAsked&&S.w.server==='paired'){ S.notifAsked=true; S.dialog={ic:'🔔',title:'Сообщить, когда Hermes ответит?',text:'Тогда ответ придёт уведомлением, даже если лист закрыт.',opts:[['Разрешить уведомления','notif_ok'],['Не нужно','x','sec2']]}; trace('Уведомления спрашиваем, когда они нужны: лист закрыли, не дождавшись ответа.','p'); render() } }
+async function expand(){
+  if (!S.ov) return; S.ov.full=true; S.keepScroll=true; render();
+  trace('Лист доезжает до полного экрана, затем startAssistantActivity открывает тот же разговор в экране приложения — без анимации перехода; лист закрывается, когда приложение нарисовало первый кадр. Так разворачивается Gemini.','p');
+  await wait(380); S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat'; S.scrollToLong=S.feed.some(f=>f.long); render();
+}
 
-const PHR = {
-  timer:{t:'Таймер на пять минут',words:['таймер','на','пять','минут'],fin:'Таймер на 5 минут.'},
-  ask:{t:'Что у меня завтра?',words:['что','у','меня','завтра'],fin:'Что у меня завтра?'},
-  alarm:{t:'Поставь будильник',words:['поставь','будильник'],fin:'Поставь будильник.'},
-  move:{t:'Перенеси банк на пятницу',words:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
-  car:{t:'Запомни, машина у ТЦ',words:['запомни','машина','у','тц','второй','уровень'],fin:'Запомни: машина у ТЦ, второй уровень.'},
+/* ───────── фразы и ответы ───────── */
+const PHR={
+  timer:{t:'Таймер на пять минут',w:['таймер','на','пять','минут'],fin:'Таймер на 5 минут.'},
+  ask:{t:'Что у меня завтра?',w:['что','у','меня','завтра'],fin:'Что у меня завтра?'},
+  backup:{t:'Как настроить бэкап сервера?',w:['как','настроить','бэкап','сервера'],fin:'Как настроить бэкап сервера?'},
+  photos:{t:'Пришли фото с дачи',w:['пришли','фото','с','дачи'],fin:'Пришли фото с дачи.'},
+  move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
+  alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
 };
-async function say(key, typed){
-  const O=S.ov; if(!O || S.busy) return; const ph=PHR[key]; const my=++token; S.busy=true;
-  if (!typed){
-    if (S.w.model!=='ready' || S.w.mic!=='ok'){ trace('Голос сейчас недоступен — фраза введена как с клавиатуры.','e'); }
-    else {
-      O.eq='speak'; O.eqc=''; O.liveQ=false;
-      for (let i=1;i<=ph.words.length;i++){ const fixed=Math.max(0,i-2); O.live='<span class="st p">Слушаю</span>'+ph.words.slice(0,i).map((w,j)=>`<span class="${j>=fixed?'dr':''}">${w}</span>`).join(' '); render(); await wait(330); if(my!==token) return; }
-      trace('Черновик — потоковая модель 24 МБ: слова бегут по мере речи, хвост полупрозрачный. Перезапускать GigaAM каждые 350 мс на телефоне нельзя — уже с 3–5 с речи прогон длиннее шага.','p');
-      O.eq='wave'; O.live='<span class="st p">Распознаю</span>'+esc(ph.fin); render(); await wait(450); if(my!==token) return;
-      trace('Конец фразы (пауза 0,7 с) → чистовик GigaAM e2e: пунктуация, заглавные, числа цифрами.','p');
-    }
+async function say(key,typed){
+  if (S.busy) return; const ph=PHR[key]; const my=++token; S.busy=true; const O=S.ov;
+  if (O&&!typed&&S.w.model==='ready'&&S.w.mic==='ok'){
+    O.eq='speak'; O.eqc=''; O.liveQ=false;
+    for (let i=1;i<=ph.w.length;i++){ const fx=Math.max(0,i-2); O.live='<span class="st p">Слушаю</span>'+ph.w.slice(0,i).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '); render(); await wait(300); if(my!==token) return }
+    O.eq='wave'; O.live='<span class="st p">Распознаю</span>'+esc(ph.fin); render(); await wait(420); if(my!==token) return;
   }
-  O.feed.push({t:'me',x:ph.fin,via:typed?'клавиатура':'голос'}); O.live=''; render();
+  S.feed.push({t:'me',x:ph.fin,via:typed?'клавиатура':'голос'}); if(O) O.live=''; render();
   await route(key,my);
-  S.busy=false; if(my===token){ if(S.ov){ S.ov.live = S.ov.input==='kbd'?'':'<span class="st p">Слушаю продолжение</span>'; S.ov.liveQ=true; S.ov.eq = S.ov.input==='kbd'?'dots':'dots'; } render() }
+  S.busy=false; if (my===token&&S.ov){ S.ov.live='<span class="st p">Слушаю продолжение</span>'; S.ov.liveQ=true; S.ov.eq='dots'; S.ov.eqc='' } render();
 }
-const brainOk = () => S.w.server==='paired' && S.w.net!=='none';
+async function think(my,steps,plan){
+  if (S.ov){ S.ov.eq='wave'; S.ov.eqc='h'; S.ov.live='<span class="st h">Hermes думает</span>'; S.ov.liveQ=true }
+  const st={t:'steps',id:Date.now(),run:true,cur:steps[0].t+'…',items:[],plan:plan?plan.map(p=>[p,false]):null,sec:0}; S.feed.push(st); render();
+  for (let i=0;i<steps.length;i++){ st.cur=steps[i].t+'…'; st.items.push(steps[i]); if(st.plan&&st.plan[i]) st.plan[i][1]=true; render(); await wait(steps[i].wait||800); if(my!==token) return false }
+  st.run=false; st.sec=Math.max(1,Math.round(steps.reduce((a,s)=>a+(s.wait||800),0)/1000)); if(st.plan) st.plan.forEach(p=>p[1]=true); return true;
+}
+async function stream(my,html,opts={}){
+  const blocks=html.split('<!--b-->'); const msg={t:'ai',x:'',long:opts.long,att:null,done:false}; S.feed.push(msg);
+  if (S.ov){ S.ov.eqc=''; S.ov.live='' }
+  for (const b of blocks){ msg.x+=b; render(); await wait(opts.fast?120:280); if(my!==token) return }
+  msg.att=opts.att||null; msg.done=true; render();
+}
 async function route(key,my){
-  const O=S.ov;
-  if (key==='timer'){
-    await wait(120);
-    O.feed.push({t:'act',i:'⏱',x:'Таймер · 5:00',s:'на телефоне · правило',btn:'Открыть таймеры',kind:'D',id:Date.now()});
-    trace('Правило узнало фразу: «таймер на {длительность}». Выполнено за ~0,1 с, без сети. Отмены нет: у Android нет API, чтобы отменить таймер «Часов», поэтому кнопка честная — «Открыть таймеры».','p'); render(); return;
-  }
-  if (key==='alarm'){
-    O.feed.push({t:'ph',x:'На когда?'}); O.feed.push({t:'chips',c:['7:00','7:30','8:00']});
-    trace('Шаблон совпал, а времени нет → «На когда?». Варианты не от модели: уже стоящие будильники, обычный подъём по журналу, первая встреча минус час.','p'); render(); return;
-  }
-  if (key==='car'){
-    O.feed.push({t:'act',i:'📍',x:'Место «машина» сохранено',s:'на телефоне · с геометкой',btn:'Отменить',kind:'B',id:Date.now()});
-    if (brainOk()) { O.feed.push({t:'ph',x:'Передал Hermes в память.'}); trace('Место сохранено локально, копия ушла мозгу «в память».','p') }
-    else { O.feed.push({t:'q',x:'Передам Hermes в память, когда будет связь',s:'в очереди · 1'}); trace('Локальная половина сделана сразу, «в память» мозгу — в очереди с исходным временем.','p') }
-    render(); return;
-  }
-  // вопросы мозгу
-  if (S.w.server==='none'){ O.feed.push({t:'card',who:'h',head:'Это вопрос для агента на сервере',title:'Сервер не подключён',btns:[['Подключить','connect','pri'],['Отмена','x','gh']]}); trace('Правила не узнали фразу → нужен мозг, а сервера нет. Не молчим и не очередим в пустоту — предлагаем подключить.','e'); render(); return }
-  if (!brainOk()){ O.feed.push({t:'q',x:'Нет связи с Hermes. Передам, когда появится',s:'в очереди · Отменить отправку'}); trace('Сеть или сервер недоступны → реплика в очереди (Room). Уйдёт фоновой задачей, даже если лист закрыть.','e'); render(); return }
-  O.eq='wave'; O.eqc='h'; O.live='<span class="st h">Hermes думает</span>'; O.liveQ=true;
-  const st={t:'steps',x:'Смотрю календарь…',run:true}; O.feed.push(st); render(); await wait(1100); if(my!==token) return;
-  if (key==='ask'){
-    st.run=false; st.x='2 шага · 2 с'; O.feed.push({t:'ai',x:'Завтра две встречи: в 10:00 банк, в 15:30 созвон с Олей. Утро свободно.'});
-    trace('Ответ пришёл потоком (send + edit_message). Шаги — из хуков pre/post_tool_call, текстовый прогресс Hermes для канала выключен.','h'); O.eqc=''; render(); return;
-  }
-  if (key==='move'){
-    st.run=false; st.x='1 шаг · 1 с';
-    O.feed.push({t:'card',who:'h',head:'Hermes просит · календарь',title:'Встреча с банком',kv:[['Было','чт, 18 окт, 10:00'],['Станет','пт, 19 окт, 10:00–10:30']],btns:S.w.locked?[['Разблокировать и перенести','unlockmove','pri'],['Отмена','x','gh']]:[['Перенести','move','pri'],['Изменить','x'],['Отмена','x','gh']]});
-    trace(S.w.locked?'Экран заблокирован: действие с календарём ждёт разблокировки и потом выполнится само.':'Мозг вызвал phone.calendar.add — уровень П1, карточка. Hermes не может понизить уровень: политика на телефоне.','h'); O.eqc=''; render(); return;
-  }
+  if (key==='timer'){ S.feed.push({t:'act',i:'⏱',x:'Таймер · 5:00',s:'на телефоне',btn:'Открыть таймеры',kind:'D',id:Date.now()}); trace('Правило: «таймер на {длительность}» — без сети. Отменить таймер «Часов» Android не даёт — кнопка честная: «Открыть таймеры».','p'); return }
+  if (key==='alarm'){ S.feed.push({t:'ph',x:'На когда?'}); S.feed.push({t:'chips',c:['7:00','7:30','8:00']}); trace('Не хватает времени → варианты без модели: стоящие будильники, обычный подъём, первая встреча минус час.','p'); return }
+  if (S.w.server==='none'){ S.feed.push({t:'card',who:'h',head:'Нужен агент на сервере',title:'Сервер не подключён',text:'Команды телефона работают и так.',btns:[['Подключить','connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
+  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи с Hermes — передам, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
+  if (key==='ask'){ if(!await think(my,[{i:'📅',t:'Смотрю календарь',phone:true,d:'phone.calendar.query · завтра · 2 события',ms:'0,3 с'}])) return;
+    await stream(my,'<p>Завтра две встречи: в <b>10:00</b> банк, в <b>15:30</b> созвон с Олей. Утро свободно.</p>',{fast:true}); return }
+  if (key==='move'){ if(!await think(my,[{i:'📅',t:'Ищу встречу с банком',phone:true,d:'phone.calendar.query',ms:'0,2 с'}])) return;
+    S.feed.push({t:'card',who:'h',head:'Hermes просит · календарь',title:'Встреча с банком',kv:[['Было','чт, 18 окт, 10:00'],['Станет','пт, 19 окт, 10:00–10:30']],btns:S.w.locked?[['Разблокировать и перенести','unlockmove','pri'],['Отмена','x','gh']]:[['Перенести','move','pri'],['Изменить','x'],['Отмена','x','gh']]}); return }
+  if (key==='backup'){
+    if(!await think(my,[
+      {i:'🔎',t:'Ищу в интернете',d:'<div class="src"><i style="background:#E05D44"></i>restic.readthedocs.io</div><div class="src"><i style="background:#2F9E5B"></i>wiki.archlinux.org</div><div class="src"><i style="background:#2238B8"></i>habr.com</div>',ms:'2,1 с',wait:1000},
+      {i:'⌨',t:'Смотрю сервер',d:'<div class="term">$ df -h /srv\nFilesystem  Size  Used Avail Use%\n/dev/sda1   200G  121G   79G  61%\n$ which restic\n/usr/bin/restic</div>',ms:'0,8 с',wait:900},
+      {i:'📄',t:'Делаю памятку PDF',d:'backup-plan.pdf · 2 страницы',ms:'1,4 с',wait:900},
+    ],['Узнать, что уже стоит на сервере','Выбрать инструмент','Расписать шаги','Сделать памятку'])) return;
+    await stream(my,LONG_MD,{long:true,att:[{k:'file',type:'PDF',name:'backup-plan.pdf',meta:'2 страницы · 84 КБ'},{k:'chart',title:'Место на диске, ГБ'}]});
+    trace('Длинный ответ в листе: первые ~240 px с затуханием и «Развернуть ответ». Кнопка разворачивает лист в приложение и ставит прокрутку на начало ответа. В приложении — вся разметка: заголовки, списки, код с «Копировать», таблица с горизонтальной прокруткой, цитата, источники, вложения.','h'); return }
+  if (key==='photos'){
+    if(!await think(my,[{i:'🖼',t:'Ищу фото',d:'41 фото за август, «дача»',ms:'0,6 с'}])) return;
+    await stream(my,'<p>Вот несколько с дачи. Всего 41 — все отправил в Telegram: там их удобнее листать и сохранять.</p>',{fast:true,att:[{k:'imgs',more:37},{k:'file',type:'ZIP',name:'dacha-august.zip',meta:'41 фото · 186 МБ',btn:'В Telegram'}]});
+    trace('Много файлов: в разговоре — превью 4 картинок и «+37», целиком — в Telegram. Ни с кем не конкурируем: там это уже удобно.','h'); return }
 }
-async function flushQueue(){
-  if (!S.ov) return; let n=0; S.ov.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло Hermes из очереди'; n++ } });
-  if (n) trace(`Связь есть: очередь (${n}) ушла по порядку, дубли отсекает клиентский id реплики.`,'i');
-}
+const LONG_MD=`<h3>Бэкап сервера на restic — за 15 минут</h3><!--b--><p>На сервере уже стоит <code>restic</code>, свободно 79 ГБ. Предлагаю шифрованный бэкап в S3 раз в сутки: храним 7 дней, 4 недели и 6 месяцев.</p><!--b--><h4>Шаги</h4><ol><li>Создайте бакет и ключ доступа в хранилище.</li><li>Подготовьте репозиторий:</li></ol><!--b--><div class="code"><div class="ch"><span>bash</span><button>Копировать</button></div><pre>export RESTIC_REPOSITORY=s3:s3.example.ru/backup
+export RESTIC_PASSWORD_FILE=/root/.restic-pass
+restic init</pre></div><!--b--><ol start="3"><li>Добавьте запуск по расписанию:</li></ol><div class="code"><div class="ch"><span>ini</span><button>Копировать</button></div><pre>[Timer]
+OnCalendar=*-*-* 03:30
+Persistent=true</pre></div><!--b--><h4>Сколько стоит</h4><div class="tbl"><table><tr><th>Вариант</th><th>Место</th><th>В месяц</th><th>Восстановление</th></tr><tr><td>S3, стандарт</td><td>~140 ГБ</td><td>~280 ₽</td><td>минуты</td></tr><tr><td>S3, холодное</td><td>~140 ГБ</td><td>~90 ₽</td><td>часы</td></tr><tr><td>Второй сервер</td><td>200 ГБ</td><td>~450 ₽</td><td>минуты</td></tr></table></div><!--b--><blockquote>Пароль от репозитория храните отдельно от сервера: без него бэкап не открыть.</blockquote><!--b--><p>Все команды — в памятке ниже.</p><div class="src-row"><span class="cite">restic.readthedocs.io</span><span class="cite">wiki.archlinux.org</span><span class="cite">habr.com</span></div>`;
+function flushQueue(){ let n=0; S.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло Hermes из очереди'; n++ } }); if(n) trace(`Связь есть — очередь (${n}) ушла по порядку.`,'i') }
 
-/* ───────── уведомления ───────── */
 let toastT=null;
-function showToast(title,text,act){ S.toast={title,text,act}; render(); clearTimeout(toastT); toastT=setTimeout(()=>{S.toast=null;render()},4200) }
+function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true; render(); clearTimeout(toastT); toastT=setTimeout(()=>{S.toast=null;S.keepScroll=true;render()},4200) }
 
-/* ───────── обработчики ───────── */
+/* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev]');
-  if(!t) return;
-  if (t.dataset.preset!==undefined) return preset(t.dataset.preset);
+  const t=e.target.closest('[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
   if (t.dataset.say) return say(t.dataset.say);
+  if (t.dataset.saytext){ const k=Object.keys(PHR).find(k=>PHR[k].t===t.dataset.saytext); return say(k,true) }
   if (t.dataset.ev) return event(t.dataset.ev);
   if (t.dataset.w){ let v=t.dataset.v; if(v==='true')v=true; if(v==='false')v=false; return setWorld(t.dataset.w,v) }
-  if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; trace(S.failNext?`Следующее подключение упадёт на шаге «${{dns:'Соединение',tls:'Сертификат',plugin:'Плагин',expired:'Допуск'}[S.failNext]}».`:'Сбоев при подключении нет.'); return render() }
-  if (t.dataset.open!==undefined){ const o=t.dataset.open; if(o==='app'){ S.screen='app'; if(S.onboarded&&ONB.includes(S.page)) S.page='main'; roleCheckOnLaunch() } else if(o==='tg') S.screen='tg'; else if(o==='cam'){ S.screen='cam'; } else return; return render() }
-  if (t.dataset.role){ S.w.role=t.dataset.role; trace(t.dataset.role==='ours'?'Тасечкин — помощник по умолчанию. Диалогом это не запросить (requestable=false), поэтому — переход в настройки.':'Выбран другой помощник.'); return render() }
-  if (t.dataset.side){ S.sideOk=t.dataset.side==='1'; trace(S.sideOk?'Боковая кнопка: нажатие и удержание → цифровой помощник. Теперь зажатие открывает тот, кто выбран помощником.':'Боковая кнопка открывает меню выключения.'); return render() }
-  if (t.dataset.chip){ S.ov.feed=S.ov.feed.filter(f=>f.t!=='chips'); S.ov.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); S.ov.feed.push({t:'act',i:'⏰',x:'Будильник · '+t.dataset.chip,s:'на телефоне · через 21 ч',btn:'Открыть Часы',kind:'D',id:Date.now()}); trace('Будильник поставлен интентом «Часов» (нужно разрешение SET_ALARM). Отмена — только через «Часы», и это зависит от Samsung: кнопка «Открыть Часы», а не «Отменить».','p'); return render() }
-  if (t.dataset.cardbtn){ return cardBtn(t.dataset.cardbtn, t) }
-  if (t.dataset.undo){ const it=S.ov.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Класс B: объект создали мы и знаем его id — отмена настоящая.','i') } else { trace('Класс D: открываю «Часы». Отменить таймер или будильник сами мы не можем — так устроен Android.','e') } return render() }
+  if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; return render() }
+  if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
+  if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Тасечкин — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
+  if (t.dataset.side){ S.sideOk=t.dataset.side==='1'; S.dismissed=null; return render() }
+  if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); S.feed.push({t:'act',i:'⏰',x:'Будильник · '+t.dataset.chip,s:'на телефоне · через 21 ч',btn:'Открыть Часы',kind:'D',id:Date.now()}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
+  if (t.dataset.cardbtn) return cardBtn(t.dataset.cardbtn);
+  if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
   switch(a){
-    case 'next': { const i=ONB.indexOf(S.page); if (S.page==='onb5') S.pair=null; S.page=ONB[Math.min(i+1,ONB.length-1)]; return render() }
-    case 'finish': S.onboarded=true; S.page='main'; return render();
-    case 'askmic': S.dialog={ic:'🎙',title:'Разрешить приложению «Тасечкин» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
-    case 'asknotif': S.dialog={ic:'🔔',title:'Разрешить приложению «Тасечкин» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','notif_no','sec2']]}; return render();
-    case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.screen='sysrole'; S.ov=null; trace('Открыл системный экран «Цифровой помощник»: ACTION_VOICE_INPUT_SETTINGS.'); return render();
-    case 'sysside': S.ret={screen:S.screen,page:S.page}; S.screen='sysside'; trace('Открыл настройки боковой кнопки Samsung.'); return render();
+    case 'onbnext': if (ONB[S.onbStep]==='server'&&S.pair?.stage!=='done') S.pair=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
+    case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
+    case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
+    case 'sysside': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysside'; return render();
     case 'sysback': S.screen=S.ret?.screen||'app'; S.page=S.ret?.page||S.page; return render();
-    case 'dl': if(S.ov){ S.ov=null } return startDl();
-    case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; trace('Ссылка-приглашение: команда /android_pair у бота Hermes. Вызвать её может только уже допущенный к Hermes пользователь.','h'); return render();
-    case 'tgsend': S.tg.push({me:true,html:'/android_pair'}); render(); await wait(700);
-      S.tg.push({html:`Ссылка для подключения телефона. Действует 10 минут, одноразовая:<br><a data-act="tglink">https://hermes.example.ru/android/pair#k7Q2m9xD…</a>${qrSvg()}<br><small style="color:#888">Или отсканируйте QR с экрана компьютера.</small>`}); trace('Плагин сгенерировал одноразовый токен (хранится в файле под HERMES_HOME — команда из CLI работает в другом процессе) и прислал QR картинкой через MEDIA:.','h'); return render();
-    case 'tglink': trace('App Links: https-ссылка открывает приложение, если оно стоит; иначе — страницу «Установите приложение».'); return runPair('link');
-    case 'viaqr': S.pair=null; S.screen='cam'; render(); await wait(1600); if (S.screen==='cam') return runPair('qr'); return;
+    case 'dismiss': S.dismissed=issue()?.t; return render();
+    case 'dl': S.ov=null; if(S.w.model==='loading'||S.w.model==='ready'){ S.screen='app'; if(S.onboarded) S.page='about'; return render() } return startDl();
+    case 'askmic': S.dialog={ic:'🎙',title:'Разрешить приложению «Тасечкин» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
+    case 'asknotif': S.dialog={ic:'🔔',title:'Разрешить приложению «Тасечкин» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
+    case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
+    case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
+    case 'tgsend': S.tg.push({me:true,html:'/android_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/android/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
+    case 'tglink': return runPair('link');
+    case 'viaqr': S.pair=null; S.screen='cam'; render(); await wait(1500); if(S.screen==='cam') return runPair('qr'); return;
     case 'viaaddr': S.pair={via:'addr',stage:'input',checks:[]}; return render();
-    case 'addrgo': { const v=($('#addr')?.value||'').trim(); if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v.replace(/^https?:\/\//,'').replace(/\/.*$/,''))){ S.pair.err='Адрес вида hermes.example.ru'; S.pair.addr=v; return render() } return runPair('addr') }
+    case 'addrgo': { const v=($('#addr')?.value||'').trim().replace(/^https?:\/\//,'').replace(/\/.*$/,''); if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v)){ S.pair.err='Нужен адрес вида hermes.example.ru'; S.pair.addr=v; return render() } return runPair('addr') }
     case 're-addr': case 're-link': case 're-qr': return runPair(a.slice(3));
     case 'pairreset': token++; S.pair=null; return render();
-    case 'copycmd': try{ await navigator.clipboard.writeText('hermes pairing approve android K7Q2M9XD') }catch{} trace('Команда скопирована: hermes pairing approve android K7Q2M9XD'); return;
-    case 'connectpage': S.ov=null; S.screen='app'; S.page = S.onboarded?'connect':'onb5'; if(S.w.server!=='paired') S.pair=null; return render();
+    case 'copycmd': try{ await navigator.clipboard.writeText('hermes pairing approve android K7Q2M9XD') }catch{} trace('Команда скопирована.'); return;
+    case 'tochat': S.page='chat'; return render();
+    case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'about': S.page='about'; return render();
-    case 'back': S.page='main'; S.pair=S.w.server==='paired'?S.pair:null; return render();
+    case 'back': S.page='chat'; return render();
     case 'home': S.screen='home'; return render();
-    case 'check': S.upd.state='checking'; render(); await wait(900); S.upd.state = S.w.net==='none'?'fail': (S.upd.ver==='0.4.0'?'available':'latest'); trace(S.upd.state==='available'?'Манифест update.json на нашем сервере: версия, APK, sha256, «Что нового». Ручная проверка отвечает всегда — и «последняя», и «не удалось».':S.upd.state==='fail'?'Нет сети — честно «не удалось проверить».':'Последняя версия.'); return render();
-    case 'upd': S.upd.state='dl'; S.upd.pct=0; render();
-      while(S.upd.state==='dl' && S.upd.pct<100){ await wait(140); S.upd.pct+=7; render() }
-      if (S.upd.state!=='dl') return;
-      S.upd.pct=100; render(); await wait(400);
-      if (S.ov){ trace('Обновление ждёт, пока лист закрыт: посреди разговора не ставим.','e') }
-      S.upd.ver=S.upd.next; S.upd.state='none'; trace('Установка через PackageInstaller без окна: приложение обновляет само себя, есть UPDATE_PACKAGES_WITHOUT_USER_ACTION. Подпись проверил Android. Роль ассистента на месте — объявлен RecognitionService.','i'); showToast('Тасечкин обновился до 0.5.0','Что нового — в «О программе»'); return render();
+    case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();
+    case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Тасечкин обновился до 0.5.0','Что нового — в «О программе»'); return render();
     case 'updcancel': S.upd.state='available'; return render();
-    case 'autob': S.w.autoblock='off'; return render();
-    case 'openov': return openOverlay('из приложения');
-    case 'gear': if (S.w.locked){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы открыть настройки',opts:[['Разблокировать','unlock_gear'],['Отмена','x','sec2']]}; return render() }
-      S.ov=null; S.screen='app'; S.page=S.onboarded?'main':S.page; trace('Шестерёнка: startAssistantActivity → настройки приложения, лист закрывается.'); return render();
-    case 'close': case 'dim': if(a==='dim'){ trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно. Закрыть: свайп вниз или ✕.'); return } return closeOverlay();
-    case 'kbd': if(!S.ov) return; S.ov.input = S.ov.input==='kbd'?'voice':'kbd'; render(); $('#kin')?.focus(); trace(S.ov.input==='kbd'?'Клавиатура в окне ассистента работает (окно с takesFocus=true, ADJUST_RESIZE). Окно продолжения выключено до конца сессии.':'Снова голос.'); return;
-    case 'ksend': { const v=($('#kin')?.value||'').toLowerCase(); const k = /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/запомни|машин/.test(v)?'car':'ask'; return say(k,true) }
-    case 'eqtap': if(S.ov&&S.ov.eq==='speak'){ trace('Нажатие на эквалайзер — фраза закончена сейчас, без ожидания паузы.') } return;
-    case 'unlock': S.w.locked=false; S.screen='home'; trace('Разблокировано.'); return render();
-    case 'toast': { const T=S.toast; S.toast=null; if(T?.act==='push'){ S.screen = S.w.locked?'lock':S.screen; openOverlay('из уведомления'); } else render(); return }
+    case 'gear': if(S.w.locked){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы открыть настройки',opts:[['Разблокировать','unlock_set'],['Отмена','x','sec2']]}; return render() } S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; trace('Шестерёнка → настройки приложения (startAssistantActivity), лист закрывается.'); return render();
+    case 'expand': return expand();
+    case 'close': return closeOverlay();
+    case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
+    case 'kbd': S.ov.input=S.ov.input==='kbd'?'voice':'kbd'; S.keepScroll=true; render(); $('#kin')?.focus(); return;
+    case 'ksend': case 'csend': { const v=(($(a==='ksend'?'#kin':'#cin')?.value)||'').toLowerCase(); if(!v) return; const k=/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/фото/.test(v)?'photos':'ask'; return say(k,true) }
+    case 'micfromapp': return openOverlay('из приложения');
+    case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
+    case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;
+    case 'eqtap': return;
+    case 'unlock': S.w.locked=false; S.screen='home'; return render();
+    case 'toast': { const T=S.toast; S.toast=null; if(T?.act==='push') openOverlay('из уведомления'); else render(); return }
   }
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.id==='kin'){ document.querySelector('[data-act=ksend]').click() } if(e.key==='Enter' && e.target.id==='addr'){ document.querySelector('[data-act=addrgo]').click() } });
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='kin') $('[data-act=ksend]').click(); if(e.target.id==='cin') $('[data-act=csend]').click(); if(e.target.id==='addr') $('[data-act=addrgo]').click() } });
 
-function cardBtn(b, el){
-  const O=S.ov;
-  if (b==='dl'){ S.ov=null; return startDl() }
-  if (b==='askmic'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тасечкин» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render() }
-  if (b==='connect'){ S.ov=null; S.screen='app'; S.page=S.onboarded?'connect':'onb5'; S.pair=null; return render() }
-  const idx=O.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]===b));
-  if (b==='x'){ if(idx>=0){ const wasCal=/календарь/.test(O.feed[idx].head); O.feed.splice(idx,1); if(wasCal){ O.feed.push({t:'act',i:'📅',x:'Банк · не перенесено',s:'отклонено',kind:'',id:1,undone:true}); trace('Отклонено. Hermes получил отказ пользователя и не переспрашивает.') } } return render() }
-  if (b==='unlockmove'){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы перенести встречу',text:'startAssistantActivity → прозрачный экран → requestDismissKeyguard. После разблокировки действие выполнится само.',opts:[['Разблокировать отпечатком','unlock_move'],['Отмена','x','sec2']]}; return render() }
-  if (b==='move'){ if(idx>=0) O.feed.splice(idx,1); O.feed.push({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:'Hermes → телефон · нажатие',btn:'Отменить',kind:'B',id:Date.now()}); O.feed.push({t:'ai',x:'Перенёс на пятницу, 10:00.'}); trace('Событие вставлено напрямую через CalendarContract в видимый Google-календарь: его видят и Google, и Samsung Calendar. Мы знаем event_id — отмена настоящая.','i'); return render() }
+function cardBtn(b){
+  if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
+  const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]===b));
+  if (b==='x'){ if(idx>=0){ const cal=/календарь/.test(S.feed[idx].head); S.feed.splice(idx,1); if(cal){ S.feed.push({t:'act',i:'📅',x:'Банк · не перенесено',s:'отклонено',undone:true}); trace('Отклонено — Hermes получил отказ и не переспрашивает.') } } return render() }
+  if (b==='unlockmove'){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы перенести встречу',text:'После разблокировки перенесу сам.',opts:[['Разблокировать','unlock_move'],['Отмена','x','sec2']]}; return render() }
+  if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:'Hermes → телефон',btn:'Отменить',kind:'B',id:Date.now()}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
 }
 async function dlgAct(k){
-  if (k==='mic_ok'){ S.w.mic='ok'; trace('Микрофон разрешён «при использовании» — этого хватает: запись только пока лист открыт.','i'); if(S.ov){ openOverlay('снова') } return render() }
-  if (k==='mic_no'){ S.w.mic='denied'; trace('Запрещено. Голоса нет, клавиатура остаётся. Дважды «Не разрешать» — и Android перестанет спрашивать: дальше только через настройки.','e'); return render() }
-  if (k==='notif_ok'){ S.w.notif='ok'; trace('Уведомления разрешены (Android 13+ спрашивает отдельно).','i'); return render() }
-  if (k==='notif_no'){ S.w.notif='denied'; return render() }
-  if (k==='dlnow'){ S.w.model='loading'; return startDl(true) }
-  if (k==='dlwifi'){ trace('Ждём Wi-Fi: WorkManager с условием «сеть без тарификации».'); return render() }
-  if (k==='unlock_gear'){ S.w.locked=false; S.ov=null; S.screen='app'; S.page=S.onboarded?'main':S.page; return render() }
-  if (k==='unlock_move'){ S.w.locked=false; S.screen='home'; render(); await wait(300); cardBtn('move'); return }
+  if (k==='mic_ok'){ S.w.mic='ok'; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='mic_no'){ S.w.mic='denied'; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='notif_ok'){ S.w.notif='ok'; trace('Уведомления разрешены.','i'); return render() }
+  if (k==='dlnow') return startDl(true);
+  if (k==='unlock_set'){ S.w.locked=false; S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render() }
+  if (k==='unlock_move'){ S.w.locked=false; S.screen='home'; render(); await wait(300); return cardBtn('move') }
   render();
 }
-function roleCheckOnLaunch(){
-  if (S.onboarded && S.w.role!=='ours'){ trace(`Проверка при запуске: RoleManager.isRoleHeld = false — кнопку держит ${S.w.role==='bixby'?'Bixby':'Gemini'}. Плашка «Вернуть» в «Готовности».`,'e') }
-}
+function roleCheck(){ if(S.onboarded&&S.w.role!=='ours') trace(`При запуске: isRoleHeld = false — кнопку держит ${S.w.role==='bixby'?'Bixby':'Gemini'}. Одним баннером в разговоре, не экраном с галочками.`,'e') }
 
-/* боковая кнопка: зажатие */
-let holdT=null;
-const side=$('#side');
-const down=()=>{ side.classList.add('hold'); holdT=setTimeout(()=>{ side.classList.remove('hold'); longPress() },450) };
-const up=()=>{ if(holdT){ clearTimeout(holdT); holdT=null; if(side.classList.contains('hold')){ side.classList.remove('hold'); if(S.screen!=='lock'){ S.w.locked=true; S.screen='lock'; S.ov=null; trace('Короткое нажатие — экран заблокирован.'); render() } else { S.screen='lock'; render() } } } };
-side.addEventListener('pointerdown',down); side.addEventListener('pointerup',up); side.addEventListener('pointerleave',()=>{ if(holdT){clearTimeout(holdT);holdT=null;side.classList.remove('hold')} });
+let holdT=null; const side=$('#side');
+side.addEventListener('pointerdown',()=>{ side.classList.add('hold'); holdT=setTimeout(()=>{ holdT=null; side.classList.remove('hold'); longPress() },450) });
+side.addEventListener('pointerup',()=>{ if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold'); S.ov=null; S.w.locked=true; S.screen='lock'; render() } });
+side.addEventListener('pointerleave',()=>{ if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold') } });
 side.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); longPress() } });
 function longPress(){
-  if (!S.sideOk){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Боковая кнопка ещё не переназначена на цифрового помощника.',opts:[['Понятно','x']]}; trace('Зажатие открыло меню выключения: в настройках Samsung не выбрано «Цифровой помощник».','e'); return render() }
-  if (S.w.role!=='ours'){ const who=S.w.role==='bixby'?'Bixby':'Gemini'; S.dialog={ic:'✦',title:who,text:`Открылся ${who}: помощником по умолчанию выбран он.`,opts:[['Закрыть','x']]}; trace(`Кнопка открыла ${who}. Наше приложение узнает об этом при следующем запуске (isRoleHeld) и предложит вернуть.`,'e'); return render() }
+  if (!S.sideOk){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Боковая кнопка ещё не настроена на помощника.',opts:[['Понятно','x']]}; return render() }
+  if (S.w.role!=='ours'){ const who=S.w.role==='bixby'?'Bixby':'Gemini'; S.dialog={ic:'✦',title:who,text:`Открылся ${who}: он выбран помощником.`,opts:[['Закрыть','x']]}; return render() }
   openOverlay(S.w.locked?'поверх экрана блокировки':'боковой кнопкой');
 }
-
-/* ───────── события снаружи ───────── */
 async function event(k){
-  if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец выполнил hermes pairing approve android K7Q2M9XD.','h'); return pairDone() } trace('Сейчас нет ожидающего кода.'); return }
-  if (k==='push'){
-    if (S.w.server!=='paired'){ trace('Сервер не подключён — пушей нет.'); return }
-    if (S.ov){ S.ov.feed.push({t:'ai',x:'Готово: нашёл три рецепта сырников без муки, лучший — на рисовой.'}); trace('Лист открыт — ответ приходит прямо в ленту, без пуша.','h'); return render() }
-    S.pendingPush.push({t:'ai',x:'Готово: нашёл три рецепта сырников без муки, лучший — на рисовой.'});
-    if (S.w.notif!=='ok'){ trace('Ответ пришёл, но уведомления запрещены — увидите при следующем открытии листа.','e'); return }
-    trace('Мозг ответил, пока лист закрыт → плагин шлёт пуш через свой ntfy без содержимого (только seq). Телефон просыпается, забирает текст по WSS и сам показывает уведомление.','h');
-    return showToast('Hermes','Готово: нашёл три рецепта сырников без муки…','push');
-  }
-  if (k==='roleloss'){ S.w.role='bixby'; trace('Кнопку забрал Bixby (например, после сброса настроек). Приложение увидит это при запуске.','e'); return render() }
-  if (k==='update'){ S.upd.state='available'; trace('Фоновая проверка (каждые 6 часов) нашла 0.5.0 — одно уведомление, дальше отметка в «О программе».','i'); showToast('Доступна версия 0.5.0','Что нового — в «О программе»'); return render() }
+  if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец: hermes pairing approve android K7Q2M9XD','h'); return pairDone() } return }
+  if (k==='push'){ if(S.w.server!=='paired') return; S.feed.push({t:'ai',x:'<p>Готово: нашёл три рецепта сырников без муки, лучший — на рисовой.</p>',done:true}); if(S.ov||(S.screen==='app'&&S.page==='chat')) return render(); if(S.w.notif!=='ok'){ trace('Ответ пришёл, уведомления выключены — увидите при открытии.','e'); return } trace('Пуш без содержимого через свой ntfy → телефон забирает текст и сам показывает уведомление.','h'); return showToast('Hermes','Готово: нашёл три рецепта сырников…','push') }
+  if (k==='update'){ S.upd.state='available'; showToast('Есть версия 0.5.0','Что нового — в «О программе»'); return render() }
 }
-
-/* ───────── сценарии ───────── */
-const PRESETS = [
-  ['Первый запуск','всё с нуля: кнопка у Gemini, модели и сервера нет', ()=>{ S=fresh(); S.screen='app'; S.page='onb1'; S.sideOk=false }],
-  ['Модель ещё качается','настроено, но распознавание на 43 %', ()=>{ S=fresh(); S.onboarded=true; S.page='main'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'loading'}); S.modelPct=43; startDl(true) }],
-  ['Сервер не подключён','голос есть, мозга нет', ()=>{ S=fresh(); S.onboarded=true; S.page='main'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'none',model:'ready'}) }],
-  ['Обычный день','всё готово — зажмите кнопку', ()=>{ S=fresh(); S.onboarded=true; S.page='main'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready'}) }],
-  ['Нет сети','режим полёта: команды да, мозг в очередь', ()=>{ S=fresh(); S.onboarded=true; S.page='main'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready',net:'none'}) }],
-  ['Экран заблокирован','вопросы да, календарь — через разблокировку', ()=>{ S=fresh(); S.onboarded=true; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready',locked:true}); S.screen='lock' }],
-  ['Кнопку забрал Bixby','как приложение это замечает', ()=>{ S=fresh(); S.onboarded=true; S.page='main'; S.sideOk=true; Object.assign(S.w,{role:'bixby',mic:'ok',notif:'ok',server:'paired',model:'ready'}) }],
-  ['Вышло обновление','проверка, «Что нового», установка', ()=>{ S=fresh(); S.onboarded=true; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready'}); S.screen='app'; S.page='about'; S.upd.state='available' }],
+const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready'}) };
+const PRESETS=[
+  ['Первый запуск','всё с нуля',()=>{ S=fresh(); S.screen='app'; S.onboarded=false }],
+  ['Обычный день','всё готово — зажмите кнопку',()=>{ ready() }],
+  ['Длинный ответ','разметка, таблица, код, файлы, шаги',()=>{ ready(); S.autoSay='backup' }],
+  ['Много файлов','превью и «остальное в Telegram»',()=>{ ready(); S.autoSay='photos' }],
+  ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
+  ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
+  ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
+  ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
 ];
-function preset(i){ token++; clearInterval(dlTimer); const p=PRESETS[+i]; p[2](); if(S.screen!=='lock'&&S.screen!=='app') S.screen='home'; if(PRESETS[+i][0]==='Модель ещё качается') startDl(true); $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render() }
-$('#presets').innerHTML = PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
-$('#say').innerHTML = Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
-$('#events').innerHTML = [['approve','Владелец подтвердил код'],['push','Мозг ответил, пока лист закрыт'],['update','Вышла новая версия'],['roleloss','Кнопку забрал Bixby']].map(e=>`<button data-ev="${e[0]}">${e[1]}</button>`).join('');
-
+function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
+  if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('боковой кнопкой'); setTimeout(()=>say(k),350) } }
+$('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
+$('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
+$('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 preset(0);
-trace('Начните с «Начать» на экране телефона. Или выберите сценарий справа.');
 })();
 </script>
 </body>
