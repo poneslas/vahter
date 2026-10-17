@@ -67,6 +67,11 @@
         </activity>
 
         <!-- perm/: П19, П20 — компоненты сюда -->
+        <activity
+            android:name=".perm.PermTrampolineActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- assist/: помощник -->
         <service

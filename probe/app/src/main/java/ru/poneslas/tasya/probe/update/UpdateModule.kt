@@ -66,6 +66,12 @@ object SelfUpdateProbe : Probe(
             summary("На сервере не новее текущей ($current) — bump.sh N --serve с бо́льшим N")
             return Status.FAIL
         }
+        // Шаг-опыт: что отвечает PackageInstaller при включённом Auto Blocker (статус и текст ошибки).
+        val autoBlocker = ask(
+            "Auto Blocker сейчас? Для опыта включите его (Безопасность → Auto Blocker) — посмотрим статус установки. Не забудьте потом выключить.",
+            listOf("Выключен", "Включён (опыт)"),
+        ) == "Включён (опыт)"
+        InstallLog.add(ctx, "autoblocker", if (autoBlocker) "on" else "off")
         val withSheet = ask("Ставить с открытым листом (шаг 3)?", listOf("Нет", "С листом")) == "С листом"
         if (withSheet) log("sheet", "открыт=${Sheet.open() != null}")
         install(apk, info.longVersionCode, withSheet)
@@ -155,7 +161,12 @@ object SelfUpdateProbe : Probe(
         inst.forEach { log("install_log", "${it.tag}: ${it.text}") }
         repl.forEach { log("replaced", "${it.versionName} (${it.versionCode}) ${it.stage}: роль=${it.roleHeld} vis=${it.visActive} installer=${it.installer}") }
         val commits = inst.filter { it.tag == "commit" }
-        val statuses = inst.filter { it.tag == "status" }
+        // Статусы установок при включённом Auto Blocker — отдельный опыт, в общий итог не идут.
+        val abMarks = inst.filter { it.tag == "autoblocker" }
+        val (abStatuses, statuses) = inst.filter { it.tag == "status" }
+            .partition { s -> abMarks.lastOrNull { it.wall <= s.wall }?.text == "on" }
+        abStatuses.forEach { log("autoblocker_status", it.text) }
+        if (abStatuses.isNotEmpty()) metric("autoblocker_installs", abStatuses.size)
         val silent = statuses.count { it.text.startsWith("SUCCESS") }
         val askedUser = statuses.count { it.text.startsWith("PENDING_USER_ACTION") }
         val failed = statuses.filter { it.text.startsWith("FAILURE") }
@@ -172,7 +183,8 @@ object SelfUpdateProbe : Probe(
         summary(
             "установок ${commits.size}: без окна $silent, с окном $askedUser, ошибок ${failed.size}" +
                 (failed.firstOrNull()?.let { " (${it.text})" } ?: "") +
-                "; замен пакета ${late.size}, роль слетела в $roleLost; installer: ${repl.map { it.installer }.distinct().joinToString()}",
+                "; замен пакета ${late.size}, роль слетела в $roleLost; installer: ${repl.map { it.installer }.distinct().joinToString()}" +
+                (if (abStatuses.isNotEmpty()) "; с Auto Blocker: ${abStatuses.joinToString { it.text }}" else ""),
         )
         return when {
             commits.isEmpty() -> Status.NOT_RUN
