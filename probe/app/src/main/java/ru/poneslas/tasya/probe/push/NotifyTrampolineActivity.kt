@@ -1,11 +1,6 @@
 package ru.poneslas.tasya.probe.push
 
-import android.app.Activity
-import android.os.Bundle
+import ru.poneslas.tasya.probe.entry.EntryTrampoline
 
-class NotifyTrampolineActivity : Activity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        finish()
-    }
-}
+/** 12а (via=service) и 12в (via=showAssist): уведомление → прозрачная активность → лист. */
+class NotifyTrampolineActivity : EntryTrampoline("notify")
