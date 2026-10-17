@@ -44,6 +44,9 @@
         <intent><action android:name="android.settings.VOICE_INPUT_SETTINGS" /></intent>
         <intent><action android:name="android.settings.MANAGE_DEFAULT_APPS_SETTINGS" /></intent>
         <intent><action android:name="org.unifiedpush.android.distributor.REGISTER" /></intent>
+        <!-- П22: мессенджеры для ACTION_SEND с пакетом -->
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.whatsapp" />
     </queries>
 
     <application
