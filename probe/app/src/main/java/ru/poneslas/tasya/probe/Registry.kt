@@ -37,7 +37,10 @@ object Registry {
 
     fun init(ctx: Context) {
         modules.forEach { it.init(ctx) }
-        probes = modules.flatMap { it.probes }.sortedBy { it.id.drop(1).toIntOrNull() ?: 99 }
+        // «П3ч» встаёт сразу за «П3»: сортируем по номеру, потом по суффиксу.
+        probes = modules.flatMap { it.probes }.sortedWith(
+            compareBy({ Regex("\\d+").find(it.id)?.value?.toInt() ?: 99 }, { it.id }),
+        )
         sheetActions = modules.flatMap { it.actions }
     }
 
