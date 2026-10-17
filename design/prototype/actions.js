@@ -77,7 +77,7 @@ document.addEventListener('click', async e=>{
     case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
     case 'tools': S.page='tools'; return render();
     case 'journal': S.page='journal'; S.jopen=null; return render();
-    case 'lockscope': S.dialog={title:'На заблокированном телефоне',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
+    case 'lockscope': S.dialog={title:'Без разблокировки',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
     case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();

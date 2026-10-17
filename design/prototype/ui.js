@@ -193,7 +193,7 @@ function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter
 function toolsPage(){
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Разрешения</b><small>что Тася делает на телефоне</small></div></div>
   <div class="scroll"><div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b></span><span class="pword ${S.policy[x.id]}">${POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
-    <div class="lh">Заблокированный телефон</div>${li(I.lock,'Без разблокировки', S.settings.lockScope==='safe'?'Будильник, таймер, фонарик':'Ничего — всё после разблокировки','lockscope')}
+    <div class="lh">Экран блокировки</div>${li(I.lock,'Без разблокировки', S.settings.lockScope==='safe'?'Будильник, таймер, фонарик':'Ничего','lockscope')}
     <p class="mnote" style="padding:4px 22px 20px">«Разрешено» — Тася делает сразу и показывает в разговоре, что сделала. «Спрашивать» — сначала покажет и подождёт «Да». Сообщения Тася только готовит — отправляете вы.</p></div></div></div>` }
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Журнал действий</b><small>только на телефоне</small></div></div>
