@@ -675,8 +675,7 @@ function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i
 function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen==='cam2';
   return `<div class="layer cam2">${statusBar(false)}
   <div class="modeName">${m.icon} ${m.title}</div>
-  <div class="pick" style="top:86px">${[['tea','Товар'],['menu','Меню']].map(x=>`<button data-shot="${x[0]}" aria-pressed="${c.subj===x[0]}">${x[1]}</button>`).join('')}</div>
-  <div class="vf" style="top:124px"><i class="th ${c.subj}"></i></div>
+  <div class="vf" style="top:96px"><i class="th ${c.subj}"></i></div>
   ${qrec?`<div class="q">${PHR[S.rec.key].w.slice(0,S.rec.n).join(' ')||'…'}</div>`:''}
   ${c.sending?`<div class="sending"><span>Отправляю${c.q?' с вопросом':''}…</span><div class="bar"><i></i></div><button class="recbtn" data-act="shotcancel" style="background:rgba(255,255,255,.18);color:#fff">Отмена</button></div>`
    : c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`
@@ -720,6 +719,7 @@ function render(){
 const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['server','Сервер',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Помощник',[['gemini','Gemini'],['bixby','Bixby'],['ours','Тася']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
 function renderWorld(){
   $('#world').innerHTML=WORLD.map(([k,l,o])=>`<label>${l}</label><div class="seg">${o.map(x=>`<button data-w="${k}" data-v="${x[0]}" aria-pressed="${S.w[k]===x[0]}">${x[1]}</button>`).join('')}</div>`).join('')
+    + `<label>В кадре камеры</label><div class="seg">${[['tea','Товар'],['menu','Меню']].map(x=>`<button data-shot="${x[0]}" aria-pressed="${(S.cam?S.cam.subj:S.camSubj||'tea')===x[0]}">${x[1]}</button>`).join('')}</div>`
    +`<label>Сбой подключения</label><div class="seg">${[['','нет'],['dns','адрес'],['tls','сертификат'],['plugin','нет плагина'],['expired','ссылка устарела']].map(x=>`<button data-fail="${x[0]}" aria-pressed="${(S.failNext||'')===x[0]}">${x[1]}</button>`).join('')}</div>`;
   const canSay = !S.busy && (S.ov || (S.screen==='app'&&S.onboarded&&S.page==='chat'));
   document.querySelectorAll('#say button').forEach(b=>b.disabled=!canSay);
@@ -780,7 +780,7 @@ function openOverlay(src){
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function openCamera(first){
-  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.mode==='translate'?'menu':'tea',taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
+  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'?'menu':'tea'),taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
   trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера: системная (ACTION_IMAGE_CAPTURE через startAssistantActivity) или своя на CameraX — решит спайк С13.','p'); render() }
 async function shotGo(q){
   const c=S.cam; c.q=q||''; if (!S.sendOnShot[S.mode] && !q){ c.taken=true; return render() }
@@ -963,7 +963,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }
   if (t.dataset.toggle){ const [k,id]=t.dataset.toggle.split(':'); S[k][id]=!S[k][id]; if(k==='modeOn' && !S.modeOn[id] && S.mode===id) setMode('main','Режим выключен — вернулись'); S.keepScroll=true; return render() }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
-  if (t.dataset.shot){ S.cam.subj=t.dataset.shot; return render() }
+  if (t.dataset.shot){ S.camSubj=t.dataset.shot; if(S.cam) S.cam.subj=t.dataset.shot; return render() }
   if (t.dataset.say) return quickSay(t.dataset.say);
   if (t.dataset.saytext) return deliver(t.dataset.saytext,'нажатие');
   if (t.dataset.ev) return event(t.dataset.ev);
