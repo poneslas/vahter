@@ -8,6 +8,9 @@
   GET /status                — JSON: все загрузки (id, байты, ожидалось, готово, длительность).
   GET /apk/next.apk          — probe/serve/next.apk (кладёт scripts/bump.sh N --serve).
   GET /apk/next.sha256       — sha256 этого файла, hex.
+  GET /sse?seconds=N&interval=ms — поток SSE (П23): событие раз в interval мс (по умолчанию 1000)
+                               с номером и временем отправки, через N с (по умолчанию 90) — event: done.
+  POST /reply?text=…         — ответ из уведомления (П23, RemoteInput): эхо и время сервера.
 
 Из эмулятора Mac виден как 10.0.2.2, с телефона — по адресу Mac в Wi-Fi
 (впишите его в «Отчёт и настройки → Тестовый сервер»).
@@ -46,6 +49,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/status":
             with lock:
                 return self.send_json(200, list(uploads.values()))
+        if path == "/sse":
+            return self.sse(parse_qs(urlparse(self.path).query))
         if path in ("/apk/next.apk", "/apk/next.sha256"):
             apk = SERVE_DIR / "next.apk"
             if not apk.exists():
@@ -64,10 +69,42 @@ class Handler(BaseHTTPRequestHandler):
             return
         self.send_json(404, {"error": "нет такого пути"})
 
+    def sse(self, q):
+        seconds = float(q.get("seconds", ["90"])[0])
+        interval = float(q.get("interval", ["1000"])[0]) / 1000
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+        t0 = time.time()
+        n = 0
+        try:
+            while time.time() - t0 < seconds:
+                n += 1
+                msg = json.dumps({"n": n, "sent": int(time.time() * 1000)})
+                self.wfile.write(f"data: {msg}\n\n".encode())
+                self.wfile.flush()
+                time.sleep(interval)
+            done = json.dumps({"n": n, "sent": int(time.time() * 1000)})
+            self.wfile.write(f"event: done\ndata: {done}\n\n".encode())
+            self.wfile.flush()
+            print("sse: отдано", n, "событий", flush=True)
+        except (ConnectionError, TimeoutError) as e:
+            print("sse: обрыв на", n, repr(e), flush=True)
+
     def do_PUT(self):
         self.receive()
 
     def do_POST(self):
+        u = urlparse(self.path)
+        if u.path == "/reply":
+            n = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(n).decode(errors="replace") if n else ""
+            text = parse_qs(u.query).get("text", [body])[0]
+            print("reply:", text, flush=True)
+            return self.send_json(200, {"echo": text, "server": int(time.time() * 1000)})
         self.receive()
 
     def receive(self):
