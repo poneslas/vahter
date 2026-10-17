@@ -446,3 +446,5 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .jd span{display:block;font-size:11.5px;color:var(--faint)}.jd .tbtn{align-self:flex-start;border:0;background:none;color:var(--brain,#3B5BDB);font-weight:600;padding:4px 0}
 
 .prow{min-height:52px}.pword{font-size:13.5px;color:var(--soft);flex:none}.pword.ask{color:var(--local)}.pword.off{color:var(--danger)}
+
+.nask{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--soft)}.nask .ic{width:18px;height:18px;flex:none}.nask span{flex:1}.nask .tbtn{border:0;background:none;color:var(--brain,#3B5BDB);font-weight:600}

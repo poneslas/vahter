@@ -95,8 +95,8 @@ function modeSummary(m){
   return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
 
 const fresh = () => { const o = ({
-  w:{ net:'wifi', key:'none', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
-  sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
+  w:{ net:'wifi', key:'none', server:'none', side:'power', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
+  modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,
   settings:{ returnToAssistant:'30m', lockScope:'safe' },
@@ -108,7 +108,9 @@ const fresh = () => { const o = ({
     {id:'j4',day:'Вчера',at:'22:30',tool:'alarm.set',title:'Будильник · 7:00',who:'по правилам',phrase:'будильник на семь',params:'time=07:00',confirm:'сразу',lock:false},
   ],
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
-}); Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] ??= [] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
+}); /* роль «Цифровой помощник» (w.role) и действие боковой кнопки Samsung (w.side) — два разных состояния */
+  Object.defineProperty(o,'sideOk',{get(){ return this.w.side==='assistant' }, set(v){ this.w.side=v?'assistant':'power' }, enumerable:false});
+  Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] ??= [] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
   Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
 const modeById = id => S.modes.find(m=>m.id===id);
 const toolById = id => TOOLS.find(t=>t.id===id);

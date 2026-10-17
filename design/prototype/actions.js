@@ -29,7 +29,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; S.fromSheet=null; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
   if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Тася — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
   if (t.dataset.micperm){ S.w.mic=t.dataset.micperm; return render() }
-  if (t.dataset.side){ S.sideOk=t.dataset.side==='1'; S.dismissed=null; return render() }
+  if (t.dataset.side){ S.w.side=t.dataset.side; S.dismissed=null; return render() }
   if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); addAct({t:'act',i:'⏰',x:'Будильник · '+t.dataset.chip,s:'на телефоне · через 21 ч',btn:'Открыть Часы',kind:'D',id:Date.now()},{tool:'alarm.set',who:'по правилам',phrase:'поставь будильник → '+t.dataset.chip,params:'time='+t.dataset.chip,confirm:'выбор варианта',lock:S.w.locked}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
   if (t.dataset.cardbtn) return cardBtn(t.dataset.cardbtn);
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
@@ -47,6 +47,7 @@ document.addEventListener('click', async e=>{
     case 'dismiss': S.dismissed=issue()?.t; return render();
     case 'dl': S.ov=null; if(S.w.model==='loading'||S.w.model==='ready'){ S.screen='app'; if(S.onboarded) S.page='about'; return render() } return startDl();
     case 'askmic': if (S.w.mic==='denied'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() } S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
+    case 'notifno': S.feed=S.feed.filter(f=>f.t!=='notifask'); S.keepScroll=true; return render();
     case 'asknotif': S.dialog={ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
@@ -133,11 +134,11 @@ async function dlgAct(k){
   if (k==='restart_ok'){ S.feeds[S.restartId]=[]; trace('Разговор режима стёрт с телефона — следующая реплика уйдёт мозгу без истории.','p'); return render() }
   if (k==='brainsetup') { S.dialog=null; return }
   if (k==='delmode_ok'){ const id=S.editMode, m=modeById(id); S.modes=S.modes.filter(x=>x.id!==id); delete S.feeds[id]; delete S.drafts[id]; if(S.mode===id) S.mode='main'; S.page='settings'; trace(`Режим «${esc(m.title)}» удалён с телефона. Сессия ${id} в Hermes осталась — удалять её телефон не умеет и не должен.`,'p'); return render() }
-  if (k==='notif_ok'){ S.w.notif='ok'; trace('Уведомления разрешены.','i'); return render() }
+  if (k==='notif_ok'){ S.w.notif='ok'; S.feeds && Object.keys(S.feeds).forEach(id=>S.feeds[id]=S.feeds[id].filter(f=>f.t!=='notifask')); trace('Уведомления разрешены.','i'); return render() }
   if (k==='dlnow') return startDl(true);
   if (k==='unlock_set'){ S.w.locked=false; S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render() }
   if (k==='unlock_move'){ S.w.locked=false; S.screen='home'; render(); await wait(300); return cardBtn('move') }
   render();
 }
-function roleCheck(){ if(S.onboarded&&S.w.role!=='ours') trace(`При запуске: isRoleHeld = false — кнопку держит ${S.w.role==='bixby'?'Bixby':'Gemini'}. Одним баннером в разговоре, не экраном с галочками.`,'e') }
+function roleCheck(){ if(S.onboarded&&S.w.role!=='ours') trace(`При запуске: isRoleHeld = false — роль помощника у Gemini. Одним баннером в разговоре, не экраном с галочками.`,'e') }
 

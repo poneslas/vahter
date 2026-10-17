@@ -37,7 +37,7 @@ async function deliverModeIn(text, via, img, bubble){
   if (!brainReady()){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:'Мозг не подключён',text:'Без него режим не ответит. Команды телефона работают и так.',btns:[['Подключить','brainsetup','pri']]}); S.busy=false; return render() }
   if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи. Отправлю, когда появится',s:'в очереди'}); S.busy=false; return render() }
   const B=brainOf(m); if (B.kind==='api') trace(`Запрос в ${B.title}: промпт режима «${esc(m.title)}» + вся история режима (${S.feed.filter(x=>x.t==='me'||x.t==='ai').length} сообщ., фото тоже) + новая реплика. Начало совпадает с прошлым запросом — провайдер берёт его из кэша.${m.tools?' Действия телефона переданы как функции.':' Действий телефона у режима нет.'}`,'h'); else trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
-  if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true } render();
+  maybeAskNotif(); if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
   if (m.id==='main' && img && img.kind==='file')
     await stream(my,`<p><b>${esc(img.name)}</b>: договор аренды на 11 месяцев, 45 000 ₽ в месяц, залог — одна оплата.</p><ul><li>Расторжение — за 30 дней письменно.</li><li>Ремонт за счёт арендатора — п. 4.3, стоит обсудить.</li></ul>`,{fast:true});
@@ -71,6 +71,7 @@ async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиа�
 
 
 async function think(my,steps){
+  maybeAskNotif();
   if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true }
   const st={t:'steps',id:Date.now(),run:true,cur:'Думаю…',items:[],plan:null,sec:0}; S.feed.push(st); render(); let ms=0;
   for (const s of steps){

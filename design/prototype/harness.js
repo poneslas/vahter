@@ -1,6 +1,6 @@
 /* Обвязка демо, в Android не переносится: «мир», боковая кнопка корпуса, сценарии, знакомство, масштаб телефона. */
 /* ───────── мир ───────── */
-const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Помощник',[['gemini','Gemini'],['bixby','Bixby'],['ours','Тася']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
+const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Цифровой помощник',[['gemini','Gemini'],['ours','Тася']]],['side','Боковая кнопка',[['power','Выключение'],['bixby','Bixby'],['assistant','Помощник']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
 function renderWorld(){
   $('#world').innerHTML=WORLD.map(([k,l,o])=>`<label>${l}</label><div class="seg">${o.map(x=>`<button data-w="${k}" data-v="${x[0]}" aria-pressed="${S.w[k]===x[0]}">${x[1]}</button>`).join('')}</div>`).join('')
     + `<label>Без дела</label><div class="seg">${[[0,'только что'],[31,'31 мин']].map(x=>`<button data-idle="${x[0]}" aria-pressed="${(S.idle>=30?31:0)===x[0]}">${x[1]}</button>`).join('')}</div>`
@@ -27,8 +27,9 @@ side.addEventListener('pointerup',()=>{ if(holdT){ clearTimeout(holdT); holdT=nu
 side.addEventListener('pointerleave',()=>{ if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold') } });
 side.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); longPress() } });
 function longPress(){
-  if (!S.sideOk){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Боковая кнопка ещё не настроена на помощника.',opts:[['Понятно','x']]}; return render() }
-  if (S.w.role!=='ours'){ const who=S.w.role==='bixby'?'Bixby':'Gemini'; S.dialog={ic:'✦',title:who,text:`Открылся ${who}: он выбран помощником.`,opts:[['Закрыть','x']]}; return render() }
+  if (S.w.side==='power'){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Боковая кнопка настроена на меню выключения.',opts:[['Понятно','x']]}; return render() }
+  if (S.w.side==='bixby'){ S.dialog={ic:'✦',title:'Bixby',text:'Боковая кнопка настроена на Bixby — это настройка Samsung, не роль помощника.',opts:[['Закрыть','x']]}; return render() }
+  if (S.w.role!=='ours'){ S.dialog={ic:'✦',title:'Gemini',text:'Кнопка открывает цифрового помощника, а помощник — Gemini.',opts:[['Закрыть','x']]}; return render() }
   openOverlay('side');
 }
 async function event(k){
@@ -40,7 +41,7 @@ async function event(k){
   if (k==='rate'){ S.feed.push({t:'err',x:'Сервис модели ограничивает запросы. Попробуйте через минуту.'}); trace('Ошибки провайдера приходят как финальный ответ («⏱️ The AI model service is rate-limiting…»), без отдельного маркера. Распознаём по словарю известных строк Hermes → красная плашка по-русски. Незнакомые — показываем исходный текст.','e'); return render() }
   if (k==='update'){ S.upd.state='available'; showToast('Есть версия 0.5.0','Что нового — в «О программе»'); return render() }
 }
-const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',key:'ok',model:'ready'}) };
+const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.w.side='assistant'; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',key:'ok',model:'ready'}) };
 /** Ассистент на Hermes. */
 const readyH=()=>{ ready(); S.w.server='paired'; modeById('main').brain='hermes' };
 const PRESETS=[
