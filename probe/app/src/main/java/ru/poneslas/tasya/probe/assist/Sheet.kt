@@ -86,6 +86,9 @@ object Sheet {
 
     /** Ставится в onPrepareToShowSession, снимается при onShow. */
     @Volatile var pendingPrepare: Long? = null
+    /** Вызываются в onPrepareToShowSession — самая ранняя точка открытия (П4: ранний старт микрофона). */
+    val prepareHooks = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+
     /** Ставится перед showSession из пробника — так открытие помечается как «вызвал пробник». */
     @Volatile var pendingCall: Long? = null
     var seq = 0

@@ -24,6 +24,7 @@ class ProbeAssistService : VoiceInteractionService() {
     /** Самая ранняя точка в нашем коде при открытии (API 33). */
     override fun onPrepareToShowSession(args: Bundle, showFlags: Int) {
         Sheet.pendingPrepare = SystemClock.uptimeMillis()
+        Sheet.prepareHooks.forEach { runCatching(it) }
         Log.i(TAG, "VIS onPrepareToShowSession flags=0x${Integer.toHexString(showFlags)} [${showFlags(showFlags)}] args=${args.keySet()}")
     }
 

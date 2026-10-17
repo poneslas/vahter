@@ -23,10 +23,14 @@ data class MicStats(
     val silenced: Boolean?,
     val samples: Int,
     val recordingState: Int,
+    /** Первые 300 мс звука (4800 сэмплов): не пустые ли — важно для «сразу пишет». */
+    val first300Rms: Double = 0.0,
+    val first300Zeros: Double = 1.0,
 ) {
     fun describe() = if (!ok) "ошибка: $error" else
         "rms=${"%.1f".format(rms)} нулей=${"%.1f".format(zeroFraction * 100)}% сэмплов=$samples " +
-            "первый буфер через ${tFirstBuffer?.let { it - tStart } ?: "—"} мс, silenced=$silenced, recordingState=$recordingState"
+            "первый буфер через ${tFirstBuffer?.let { it - tStart } ?: "—"} мс, первые 300 мс: rms=${"%.1f".format(first300Rms)} нулей=${"%.0f".format(first300Zeros * 100)}%, " +
+            "silenced=$silenced, recordingState=$recordingState"
 }
 
 /** Запись 16 кГц моно [ms] миллисекунд. Блокирующее чтение — на IO. */
@@ -56,6 +60,9 @@ suspend fun recordFor(ctx: Context, ms: Long): MicStats = withContext(Dispatcher
         var zeros = 0L
         var total = 0L
         var silenced: Boolean? = null
+        var sum300 = 0.0
+        var zeros300 = 0L
+        var total300 = 0L
         val end = tStart + ms
         while (SystemClock.uptimeMillis() < end) {
             val n = rec.read(buf, 0, buf.size)
@@ -65,6 +72,11 @@ suspend fun recordFor(ctx: Context, ms: Long): MicStats = withContext(Dispatcher
                 val v = buf[i].toDouble()
                 sum += v * v
                 if (buf[i].toInt() == 0) zeros++
+                if (total + i < 4800) {
+                    sum300 += v * v
+                    if (buf[i].toInt() == 0) zeros300++
+                    total300++
+                }
             }
             total += n
             if (silenced == null && SystemClock.uptimeMillis() - tStart > 500) {
@@ -74,7 +86,11 @@ suspend fun recordFor(ctx: Context, ms: Long): MicStats = withContext(Dispatcher
         }
         val state = rec.recordingState
         rec.stop()
-        MicStats(true, null, tStart, first, if (total > 0) sqrt(sum / total) else 0.0, if (total > 0) zeros.toDouble() / total else 1.0, silenced, total.toInt(), state)
+        MicStats(
+            true, null, tStart, first, if (total > 0) sqrt(sum / total) else 0.0, if (total > 0) zeros.toDouble() / total else 1.0,
+            silenced, total.toInt(), state,
+            if (total300 > 0) sqrt(sum300 / total300) else 0.0, if (total300 > 0) zeros300.toDouble() / total300 else 1.0,
+        )
     } finally {
         rec.release()
     }
