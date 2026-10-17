@@ -166,6 +166,13 @@
             android:name=".push.NotifyReceiver"
             android:exported="false" />
 
+        <!-- net/: П13 -->
+        <activity
+            android:name=".net.PermissionActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- update/: П14 и П1 -->
         <receiver
             android:name=".update.InstallStatusReceiver"
