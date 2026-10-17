@@ -5,3 +5,4 @@ upstream/
 # локальные настройки Claude Code
 .claude/settings.local.json
 .DS_Store
+.claude/worktrees/
