@@ -8,11 +8,12 @@ function statusBar(dark){
   const net = S.w.net==='none' ? plane : (S.w.net==='wifi' ? wifi : '') + cell;
   return `<div class="sb ${dark?'d':'l'}"><span>9:41</span><span class="sbi">${net}<span>82%</span>${bat}</span></div><div class="punch"></div>` }
 function oursIcon(st=''){ return `<span class="ico ours" style="${st}"><i><b style="height:8px"></b><b style="height:16px"></b><b style="height:22px"></b><b style="height:12px"></b></i></span>` }
-const brainOk = () => S.w.server==='paired' && S.w.net!=='none';
+const brainOk = () => brainReady() && S.w.net!=='none' && !(brainOf().kind==='hermes'&&S.w.server==='down');
 function linkState(){
-  if (S.w.server==='none') return ['loc','только команды телефона'];
+  const B=brainOf();
+  if (!brainReady(B)) return ['loc', B.kind==='api'?'нет ключа · только команды телефона':'сервер не подключён'];
   if (S.w.net==='none') return ['off','нет связи · команды телефона работают'];
-  if (S.w.server==='down') return ['off','сервер не отвечает'];
+  if (B.kind==='hermes'&&S.w.server==='down') return ['off','сервер не отвечает'];
   return ['','на связи'];
 }
 function issue(){
@@ -21,7 +22,7 @@ function issue(){
   if (S.w.model==='loading') return {k:'p',t:S.w.net==='none'?`Распознавание: ${S.modelPct} % — ждёт сеть`:`Распознавание качается: ${S.modelPct} % из ${mb(MODEL_TOTAL)} МБ`,prog:S.modelPct};
   if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
   if (S.w.role!=='ours'||!S.sideOk) return {k:'p',t:S.w.role!=='ours'?`Боковая кнопка открывает ${S.w.role==='bixby'?'Bixby':'Gemini'}.`:'Боковая кнопка ещё не вызывает помощника.',a:[['Не сейчас','dismiss'],['Настроить',S.w.role!=='ours'?'sysrole':'sysside']]};
-  if (S.w.server==='none') return {k:'p',t:'Сервер не подключён — работают только команды телефона.',a:[['Не сейчас','dismiss'],['Подключить','connect']]};
+  if (!brainReady()) return {k:'p',t:brainOf().kind==='api'?'Мозг не подключён — работают только команды телефона.':'Hermes не подключён — работают только команды телефона.',a:[['Не сейчас','dismiss'],['Подключить',brainOf().kind==='api'?'brainsetup':'connect']]};
   return null;
 }
 function bannerHtml(){ const b=issue(); if(!b||S.dismissed===b.t) return ''; return `<div class="banner ${b.k==='e'?'e':''}"><span class="bi">${b.k==='e'?I.warn:I.info}</span><p>${b.t}</p>${b.prog!=null?`<div class="prog"><i style="width:${b.prog}%"></i></div>`:''}${b.a?`<div class="ba">${b.a.map(x=>`<button class="tbtn" data-act="${x[1]}">${x[0]}</button>`).join('')}</div>`:''}</div>` }
@@ -63,7 +64,7 @@ function stepsHtml(it){
   const n=it.items.length; const pd=it.plan?it.plan.items.filter(p=>p.st==='completed').length:0;
   const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с${it.plan?` · план ${pd} из ${it.plan.items.length}`:''}`;
   return `<div class="steps ${it.open?'open':''}"><button data-act="togglesteps" data-id="${it.id}">${head}${I.chev}</button>
-  ${it.plan&&(it.run||it.open)?`<div class="plan"><div class="ph2"><span>План Hermes</span><span>ревизия ${it.plan.rev}</span></div>${it.plan.items.map(p=>`<div class="pi ${p.st} ${it.run?'now':''}"><span class="b">${p.st==='completed'?'✓':''}</span><span>${p.c}</span></div>`).join('')}</div>`:''}
+  ${it.plan&&(it.run||it.open)?`<div class="plan"><div class="ph2"><span>План</span><span>ревизия ${it.plan.rev}</span></div>${it.plan.items.map(p=>`<div class="pi ${p.st} ${it.run?'now':''}"><span class="b">${p.st==='completed'?'✓':''}</span><span>${p.c}</span></div>`).join('')}</div>`:''}
   <div class="sl">${it.items.map(s=>`<div class="sitem ${s.phone?'phone':''}"><div><span class="si">${s.i}</span><span>${s.t}</span><span style="margin-left:auto;color:var(--faint);font-size:11px">${s.ms||''}</span></div>${s.d?`<div class="sd">${s.d}</div>`:''}</div>`).join('')}</div></div>`;
 }
 function attHtml(a){
@@ -98,7 +99,7 @@ function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accep
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
   return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
 function composerHtml(){
-  const ph=S.w.server==='paired'?'Написать Hermes':'Команда телефону';
+  const ph=brainReady()?curMode().placeholder:'Команда телефону';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${modeTabs()}</div>` }
@@ -118,7 +119,7 @@ function composerHtml(){
 function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
-  <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>Hermes · ${t}</small></div>
+  <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div>
     <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
   ${bannerHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
@@ -140,11 +141,13 @@ function settings(){
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
-    <div class="lh">Сервер</div>
-    ${li(I.srv,'Подключение', w.server==='paired'?'hermes.example.ru':w.server==='down'?'hermes.example.ru — не отвечает':'Не подключено','connect',w.server!=='paired')}
-    ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда Hermes ответил, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
+    <div class="lh">Мозги</div>
+    ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title+(b.v2?' · версия 2':''), b.kind==='api'?(S.w.key==='ok'?`${b.model} · ключ есть`:S.w.key==='bad'?'Ключ не принимается':'Нет ключа'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Свой сервер: память, поиск, Telegram'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
+    ${li(I.plus,'Добавить мозг','Любой OpenAI-совместимый API: адрес, модель, ключ','addbrain')}
+    <div class="lh">Уведомления</div>
+    ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
-    ${li(I.shield,'Что можно телефону и Hermes','16 действий')}
+    ${li(I.shield,'Что мозгу можно на телефоне','16 действий')}
     ${li(I.list,'Журнал действий','Сегодня — 3')}
     <div class="divider"></div>
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
@@ -168,8 +171,24 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
     <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('file','Файл',I.doc)}</div></div>
     ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки и ярлыка — сразу видоискатель. Спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки и ярлыка — сразу слушает.'}</p></div>`:''}
     <div class="setcard">${main?li(I.shield,'Действия телефона','Все — таймер, календарь, будильник…'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены — таймер, календарь, будильник…':'Выключены — меньше инструментов, ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для режима','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
-    <p class="mnote">В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход — сброс сессии его не теряет.</p>
+    <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(brainOf(m).v2?' · версия 2':'')+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}${li(I.hist,'Начать заново',(S.feeds[m.id]||[]).length?`Стереть разговор режима — ${(S.feeds[m.id]||[]).length} сообщ.`:'Разговор пуст','restart')}</div>
+    <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
     ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
+  </div></div></div>` }
+function keyBody(onb){ const K=S.keyCheck, b=brainById('deepseek');
+  const ck=K?K.checks.map(c=>`<div class="ck ${c.s}"><span class="s">${c.s==='ok'?'✓':c.s==='bad'?'!':''}</span><span>${c.t}${c.d?`<small>${c.d}</small>`:''}</span></div>`).join(''):'';
+  return `<div class="h2">${onb?'Мозг':'Ключ DeepSeek'}</div><p style="color:var(--soft);margin:0 0 12px">${onb?'Отвечать будет DeepSeek — нужен ключ API с platform.deepseek.com. Ключ хранится в защищённом хранилище телефона.':'Хранится в защищённом хранилище телефона (Keystore).'}</p>
+    <input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="sk-…" autocomplete="off" spellcheck="false">
+    <div style="display:flex;justify-content:flex-end;gap:6px;margin:8px 0 12px"><button class="tbtn" data-act="keypaste">Вставить</button><button class="fbtn" data-act="keycheck">Проверить</button></div>
+    ${K?`<div class="checks">${ck}</div>`:''}${K&&K.stage==='bad'?`<div class="note bad">${K.err}</div>`:''}${S.w.key==='ok'&&K&&K.stage==='done'?'<div class="note ok">Готово. Режимы отвечают через DeepSeek.</div>':''}
+    ${onb?'<p style="font-size:12.5px;color:var(--soft)">Свой сервер Hermes — с памятью, поиском и Telegram — подключается в версии 2.</p>':''}` }
+function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title);
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
+  <div class="scroll"><div class="mform">
+    <div class="setcard">${li(I.srv,'Адрес',b.url)}${li(I.spark,'Модель',b.model)}</div>
+    ${keyBody(false)}
+    <div><div class="lh">Умеет</div><div class="chips">${[['vision','Фото'],['tools','Действия телефона'],['memory','Память'],['server','Сервер, поиск']].map(([k,t])=>`<span class="mchip" aria-pressed="${b.caps[k]}" style="cursor:default">${t}</span>`).join('')}</div></div>
+    <p class="mnote">Режимы на этом мозге: ${users.join(', ')||'нет'}. История каждого хранится на телефоне и целиком уходит с каждой репликой; одинаковое начало разговора провайдер берёт из кэша — дешевле и быстрее.</p>
   </div></div></div>` }
 function about(){
   const u=S.upd;
@@ -187,13 +206,13 @@ function about(){
 }
 
 /* первый запуск: 5 шагов, Material-навигация внизу */
-const ONB=['welcome','button','voice','server','done'];
+const ONB=['welcome','button','voice','brain','done'];
 function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
 function onb(){
   const st=ONB[S.onbStep];
-  if (st==='server') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${connectBody(true)}</div>${navBar(S.pair?.stage==='done'?null:['Позже','onbnext'], S.pair?.stage==='done'?['Далее','onbnext']:null)}</div></div>`;
+  if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${keyBody(true)}</div>${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Далее','onbnext']:null)}</div></div>`;
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
-  if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает ваш агент на сервере.'; skip=null; primary=['Начать','onbnext'] }
+  if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
     extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Тася':'Сейчас '+(S.w.role==='bixby'?'Bixby':'Gemini'),'sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка → помощник',S.sideOk?'Готово':'Зажатие и удержание','sysside',false,S.sideOk?I.ok:'')}</div>`; if(ok) skip=null }
   if (st==='voice'){ art='<div style="font-size:64px;letter-spacing:-4px">▂▅▇▅▂</div>'; h='Голос на телефоне'; p=`Один раз скачать ${mb(MODEL_TOTAL)} МБ. Голос не уходит с телефона и работает без интернета.`;
@@ -263,7 +282,7 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });

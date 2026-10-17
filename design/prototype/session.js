@@ -40,7 +40,7 @@ async function shotGo(q){
   trace(q?'Снимок и вопрос: сразу обратно в разговор, фото грузится в пузыре.':'Спуск — сразу обратно в разговор. Фото грузится прямо в пузыре: пока грузится (не меньше 2 секунд), можно нажать «✕» или дописать вопрос — уйдёт вместе с фото.','p');
   if(!q) setTimeout(()=>$('#cin')?.focus(),50); }
 function closeOverlay(){ token++; S.busy=false; const working=S.feed.some(f=>f.t==='steps'&&f.run); S.ov=null; render();
-  if (working&&S.w.notif!=='ok'&&!S.notifAsked&&S.w.server==='paired'){ S.notifAsked=true; S.dialog={ic:'🔔',title:'Сообщить, когда Hermes ответит?',text:'Тогда ответ придёт уведомлением, даже если лист закрыт.',opts:[['Разрешить уведомления','notif_ok'],['Не нужно','x','sec2']]}; trace('Уведомления спрашиваем, когда они нужны: лист закрыли, не дождавшись ответа.','p'); render() } }
+  if (working&&S.w.notif!=='ok'&&!S.notifAsked&&brainReady()){ S.notifAsked=true; S.dialog={ic:'🔔',title:'Сообщить, когда придёт ответ?',text:'Тогда ответ придёт уведомлением, даже если лист закрыт.',opts:[['Разрешить уведомления','notif_ok'],['Не нужно','x','sec2']]}; trace('Уведомления спрашиваем, когда они нужны: лист закрыли, не дождавшись ответа.','p'); render() } }
 async function expand(msgId){
   if (!S.ov) return; S.ov.full=true; S.keepScroll=true; render();
   trace('Лист доезжает до полного экрана, затем startAssistantActivity открывает тот же разговор в экране приложения — без анимации перехода; лист закрывается, когда приложение нарисовало первый кадр. Так разворачивается Gemini.','p');

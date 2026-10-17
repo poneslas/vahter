@@ -14,7 +14,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.mprimary){ modeById(S.editMode).primary=t.dataset.mprimary; S.keepScroll=true; return render() }
   if (t.dataset.mbool){ const m=modeById(S.editMode); m[t.dataset.mbool]=!m[t.dataset.mbool]; S.keepScroll=true; return render() }
   if (t.dataset.micon){ modeById(S.editMode).icon=t.dataset.micon; S.keepScroll=true; return render() }
-  if (t.dataset.radio){ const D=S.dialog; S.dialog=null; S.settings[D.key]=t.dataset.radio; return render() }
+  if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
   if (t.dataset.dlgclose!==undefined){ S.dialog=null; return render() }
   if (t.dataset.pickitem){ const v=t.dataset.pickitem; const img=S.picker==='gallery'?{kind:'photo',cls:v}:{kind:'file',name:v.split('|')[0],size:v.split('|')[1]}; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; uploadPhoto(img,'',img.kind==='file'?'файл':'фото'); trace(img.kind==='file'?'Файл из системного выбора — уходит Hermes как документ, грузится прямо в пузыре.':'Фото из галереи — так же, как со спуска камеры.','p'); return }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
@@ -33,9 +33,10 @@ document.addEventListener('click', async e=>{
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
+  if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.page='mode'; return render() }
   switch(a){
-    case 'onbnext': if (ONB[S.onbStep]==='server'&&S.pair?.stage!=='done') S.pair=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
+    case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
     case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
     case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
     case 'sysside': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysside'; return render();
@@ -60,7 +61,18 @@ document.addEventListener('click', async e=>{
     case 'home': S.fromSheet=null; S.screen='home'; return render();
     case 'about': S.page='about'; return render();
     case 'addmode': { S.ov=null; S.screen='app'; S.onboarded=true; const id='m-'+Math.random().toString(16).slice(2,6); S.modes.push(mode({id,title:'Новый режим',icon:'star',hint:'',prompt:''})); S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); render(); $('[data-mfield=title]')?.select(); return }
-    case 'delmode': { const m=modeById(S.editMode); S.dialog={title:`Удалить режим «${esc(m.title)}»?`,text:'Разговор этого режима пропадёт с телефона. В Hermes его сессия останется.',opts:[['Удалить','delmode_ok','danger'],['Отмена','x','sec2']]}; return render() }
+    case 'delmode': { const m=modeById(S.editMode); S.dialog={title:`Удалить режим «${esc(m.title)}»?`,text:brainOf(m).kind==='api'?'Разговор этого режима сотрётся — он хранится только на телефоне.':'Разговор пропадёт с телефона. В Hermes его сессия останется.',opts:[['Удалить','delmode_ok','danger'],['Отмена','x','sec2']]}; return render() }
+    case 'brainsetup': S.ov=null; S.screen='app'; S.keyCheck=null; if(S.onboarded){ S.editBrain='deepseek'; S.page='brain' } else S.onbStep=ONB.indexOf('brain'); return render();
+    case 'keypaste': { const el=$('#apikey'); if(el) el.value='sk-••••••••••••••••3f9a'; return }
+    case 'keycheck': { const K=S.keyCheck={stage:'run',checks:[{id:'fmt',t:'Формат ключа',s:''},{id:'net',t:'api.deepseek.com',s:''},{id:'auth',t:'Ключ принят',s:''},{id:'model',t:'Модель отвечает',s:''},{id:'vision',t:'Понимает фото',s:''}]}; render();
+      for (const c of K.checks){ c.s='run'; render(); await wait(350); if(S.keyCheck!==K) return;
+        if (c.id==='net' && S.w.net==='none'){ c.s='bad'; K.stage='bad'; K.err='Нет интернета на телефоне.'; return render() }
+        if (c.id==='auth' && S.w.key==='bad'){ c.s='bad'; K.stage='bad'; K.err='Ключ не принят (401). Проверьте, что скопирован целиком и не отозван.'; return render() }
+        c.s='ok'; c.d={fmt:'sk-…, 35 символов',net:'отвечает',auth:'баланс есть',model:'deepseek-chat · 0,6 с',vision:'да — фото-режимы доступны'}[c.id] }
+      K.stage='done'; S.w.key='ok'; S.dismissed=null; trace('Ключ проверен пробным запросом и сохранён в Keystore. Дальше приложение говорит с DeepSeek напрямую — без своего сервера.','i'); return render() }
+    case 'addbrain': S.dialog={title:'Добавить мозг',text:'Любой OpenAI-совместимый API: адрес, имя модели, ключ. После проверки он появится в выборе мозга у режимов.',opts:[['Понятно','x']]}; return render();
+    case 'brainpick': { const m=modeById(S.editMode); const ok=S.brains.filter(b=>!m.accepts.photo||b.caps.vision); S.dialog={title:'Мозг режима',radio:ok.map(b=>[b.id,b.title+(b.v2?' · версия 2':'')]),cur:m.brain,key:'__brain'}; return render() }
+    case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
     case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();
     case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace(a==='file'?'Файл: системный выбор (ACTION_OPEN_DOCUMENT) из листа через startAssistantActivity — проверяется спайком; лист после выбора возвращается.':'Галерея: системный Photo Picker — разрешение на все фото не нужно.','p'); return render();
@@ -96,6 +108,8 @@ document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfi
   if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
+  if (b==='brainsetup'){ S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; return render() }
+  if (b==='restart'){ S.feed=[]; trace('Разговор режима начат заново.','p'); return render() }
   if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
   const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]===b));
   if (b==='x'){ if(idx>=0){ const cal=/календарь/.test(S.feed[idx].head); S.feed.splice(idx,1); if(cal){ S.feed.push({t:'act',i:'📅',x:'Банк · не перенесено',s:'отклонено',undone:true}); trace('Отклонено — Hermes получил отказ и не переспрашивает.') } } return render() }
@@ -103,11 +117,13 @@ function cardBtn(b){
   if (b==='apr_once'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'sys',x:'Разрешено один раз'}); (async()=>{ const my=++token; S.busy=true; if(!await think(my,[{i:'⌨',t:'Команда на сервере',d:'<div class="term">$ rm -rf /var/log/app/*.gz\n(exit 0)</div>',ms:'0,3 с'}])) return; await stream(my,'<p>Удалил старые логи, освободилось 4,1 ГБ.</p>',{fast:true}); S.busy=false; render() })(); return render() }
   if (b==='apr_no'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'sys',x:'Отклонено — команда не выполнена'}); return render() }
   if (b==='clar'||b==='clar_other'){ if(idx>=0) S.feed.splice(idx,1); if(b==='clar_other'){ S.feed.push({t:'sys',x:'Напишите свой ответ'}); render(); $('#cin')?.focus(); return } S.feed.push({t:'me',x:'4',via:'нажатие'}); (async()=>{ const my=++token; S.busy=true; await stream(my,'<p>Забронировал на субботу, 19:00, на четверых. Подтверждение придёт на почту.</p>',{fast:true}); S.busy=false; render() })(); return render() }
-  if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:'Hermes → телефон',btn:'Отменить',kind:'B',id:Date.now()}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
+  if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:brainOf().title+' → телефон',btn:'Отменить',kind:'B',id:Date.now()}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
 }
 async function dlgAct(k){
   if (k==='mic_ok'){ S.w.mic='ok'; if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
   if (k==='mic_no'){ S.w.mic='denied'; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='restart_ok'){ S.feeds[S.restartId]=[]; trace('Разговор режима стёрт с телефона — следующая реплика уйдёт мозгу без истории.','p'); return render() }
+  if (k==='brainsetup') { S.dialog=null; return }
   if (k==='delmode_ok'){ const id=S.editMode, m=modeById(id); S.modes=S.modes.filter(x=>x.id!==id); delete S.feeds[id]; delete S.drafts[id]; if(S.mode===id) S.mode='main'; S.page='settings'; trace(`Режим «${esc(m.title)}» удалён с телефона. Сессия ${id} в Hermes осталась — удалять её телефон не умеет и не должен.`,'p'); return render() }
   if (k==='notif_ok'){ S.w.notif='ok'; trace('Уведомления разрешены.','i'); return render() }
   if (k==='dlnow') return startDl(true);

@@ -8,13 +8,14 @@ const PHR={
   logs:{t:'Почисти старые логи на сервере',w:['почисти','старые','логи','на','сервере'],fin:'Почисти старые логи на сервере.'},
   table:{t:'Забронируй столик на субботу',w:['забронируй','столик','на','субботу'],fin:'Забронируй столик на субботу.'},
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
+  alarmfz:{t:'Поставь мне алярмер на семь',w:['поставь','мне','алярмер','на','семь'],fin:'Поставь мне алярмер на семь.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
   price:{t:'Сколько это в рублях?',w:['сколько','это','в','рублях'],fin:'Сколько это в рублях?'},
   spicy:{t:'А что здесь не острое?',w:['а','что','здесь','не','острое'],fin:'А что здесь не острое?'},
   pr:{t:'(диктовка промпта)',w:['если','есть','рыба','на','гриле','—','советуй','её','первой'],fin:'Если есть рыба на гриле — советуй её первой.'},
   toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
-const guessKey = v => { v=v.toLowerCase(); return /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
+const guessKey = v => { v=v.toLowerCase(); return /алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
   const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
   if (S.mode!=='main') return deliverMode(text, via);
@@ -33,9 +34,10 @@ async function deliverMode(text, via, img, bubble){
 async function deliverModeIn(text, via, img, bubble){
   const m=curMode(); const my=++token; S.busy=true;
   if(!bubble) S.feed.push({t:'me',x:text||'',via:img?(text?via+' · с фото':'фото'):via,img}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();
-  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи с Hermes. Передам, когда появится',s:'в очереди'}); S.busy=false; return render() }
-  trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
-  if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true } render();
+  if (!brainReady()){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:'Мозг не подключён',text:'Без него режим не ответит. Команды телефона работают и так.',btns:[['Подключить','brainsetup','pri']]}); S.busy=false; return render() }
+  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи. Отправлю, когда появится',s:'в очереди'}); S.busy=false; return render() }
+  const B=brainOf(m); if (B.kind==='api') trace(`Запрос в ${B.title}: промпт режима «${esc(m.title)}» + вся история режима (${S.feed.filter(x=>x.t==='me'||x.t==='ai').length} сообщ., фото тоже) + новая реплика. Начало совпадает с прошлым запросом — провайдер берёт его из кэша.${m.tools?' Действия телефона переданы как функции.':' Действий телефона у режима нет.'}`,'h'); else trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
+  if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
   if (m.id==='main' && img && img.kind==='file')
     await stream(my,`<p><b>${esc(img.name)}</b>: договор аренды на 11 месяцев, 45 000 ₽ в месяц, залог — одна оплата.</p><ul><li>Расторжение — за 30 дней письменно.</li><li>Ремонт за счёт арендатора — п. 4.3, стоит обсудить.</li></ul>`,{fast:true});
@@ -69,7 +71,7 @@ async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиа�
 
 
 async function think(my,steps){
-  if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true }
+  if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true }
   const st={t:'steps',id:Date.now(),run:true,cur:'Думаю…',items:[],plan:null,sec:0}; S.feed.push(st); render(); let ms=0;
   for (const s of steps){
     if (s.todo){ // вызов todo_list: в шагах не показываем, обновляем план целиком по ответу инструмента
@@ -88,8 +90,16 @@ async function sendAtt(my,a,cap){ await wait(450); if(my!==token) return false; 
 async function route(key,my){
   if (key==='timer'){ S.feed.push({t:'act',i:'⏱',x:'Таймер · 5:00',s:'на телефоне',btn:'Открыть таймеры',kind:'D',id:Date.now()}); trace('Правило: «таймер на {длительность}» — без сети. Отменить таймер «Часов» Android не даёт — кнопка честная: «Открыть таймеры».','p'); return }
   if (key==='alarm'){ S.feed.push({t:'ph',x:'На когда?'}); S.feed.push({t:'chips',c:['7:00','7:30','8:00']}); trace('Не хватает времени → варианты без модели: стоящие будильники, обычный подъём, первая встреча минус час.','p'); return }
-  if (S.w.server==='none'){ S.feed.push({t:'card',who:'h',head:'Нужен агент на сервере',title:'Сервер не подключён',text:'Команды телефона работают и так.',btns:[['Подключить','connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
-  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи с Hermes — передам, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
+  const B=brainOf();
+  if (!brainReady(B)){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:B.kind==='api'?'Мозг не подключён':'Hermes не подключён',text:'Команды телефона работают и так.',btns:[['Подключить',B.kind==='api'?'brainsetup':'connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
+  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи — отправлю, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
+  if (key==='alarmfz'){ if(!await think(my,[{i:'⏰',t:'Ставлю будильник',phone:true,d:'phone.alarm.set · time="07:00"',ms:'0,2 с'}])) return;
+    S.feed.push({t:'act',i:'⏰',x:'Будильник · 7:00',s:'на телефоне · через 9 ч',btn:'Открыть Часы',kind:'D',id:Date.now()});
+    await stream(my,'<p>Поставил на 7:00.</p>',{fast:true}); trace(`Правила на телефоне слова «алярмер» не знают — фраза ушла ${B.title}. Модель поняла смысл и вместо текста вернула вызов функции phone.alarm.set(time="07:00"). Приложение проверило аргументы по схеме и поставило будильник интентом «Часов»; результат вернулся модели, она ответила коротко.`,'h'); return }
+  if (B.kind==='api' && key==='logo'){ await stream(my,'<p>Картинки рисовать не умею. Это сможет Hermes на своём сервере — во второй версии.</p>',{fast:true}); trace('У прямого API нет генерации картинок — честный отказ. Hermes (v2) рисует через image_generate.','h'); return }
+  if (B.kind==='api' && key==='logs'){ await stream(my,'<p>Доступа к серверу у меня нет — могу подсказать команду: <code>find /var/log/app -name "*.gz" -mtime +30 -delete</code>. Выполнять её на сервере сможет Hermes во второй версии.</p>',{fast:true}); trace('Сервера у прямого API нет: только совет. Команды на сервере — Hermes (v2).','h'); return }
+  if (B.kind==='api' && key==='table'){ await stream(my,'<p>Забронировать не смогу — у меня нет поиска и доступа к сайтам ресторанов. Могу подсказать, что спросить, когда будете звонить.</p>',{fast:true}); trace('Без поиска и браузера бронь недоступна. Это Hermes (v2).','h'); return }
+  if (B.kind==='api' && key==='backup'){ if(!await stream(my,LONG_MD.split('<!--b-->').slice(0,6).join('<!--b-->'),{long:true})) return; trace(`${B.title} отвечает по своим знаниям: без поиска, без захода на сервер, без плана и PDF. Длинный ответ — одно сообщение, в листе — начало и «Развернуть». Поиск и команды на сервере — Hermes (v2).`,'h'); return }
   if (key==='ask'){ if(!await think(my,[{i:'📅',t:'Смотрю календарь',phone:true,d:'phone.calendar.query · завтра · 2 события',ms:'0,3 с'}])) return;
     await stream(my,'<p>Завтра две встречи: в <b>10:00</b> банк, в <b>15:30</b> созвон с Олей. Утро свободно.</p>',{fast:true}); trace('Короткий ответ — одно сообщение, целиком в листе.','h'); return }
   if (key==='move'){ if(!await think(my,[{i:'📅',t:'Ищу встречу с банком',phone:true,d:'phone.calendar.query',ms:'0,2 с'}])) return;
@@ -130,7 +140,7 @@ export RESTIC_PASSWORD_FILE=/root/.restic-pass
 restic init</pre></div><!--b--><ol start="3"><li>Добавьте запуск по расписанию:</li></ol><div class="code"><div class="ch"><span>ini</span><button>Копировать</button></div><pre>[Timer]
 OnCalendar=*-*-* 03:30
 Persistent=true</pre></div><!--b--><h4>Сколько стоит</h4><div class="tbl"><table><tr><th>Вариант</th><th>Место</th><th>В месяц</th><th>Восстановление</th></tr><tr><td>S3, стандарт</td><td>~140 ГБ</td><td>~280 ₽</td><td>минуты</td></tr><tr><td>S3, холодное</td><td>~140 ГБ</td><td>~90 ₽</td><td>часы</td></tr><tr><td>Второй сервер</td><td>200 ГБ</td><td>~450 ₽</td><td>минуты</td></tr></table></div><!--b--><blockquote>Пароль от репозитория храните отдельно от сервера: без него бэкап не открыть.</blockquote><!--b--><p>Все команды — в памятке ниже. Если хотите, могу сам создать бакет и включить таймер — понадобится ваше «да».</p><div class="src-row"><span class="cite">restic.readthedocs.io</span><span class="cite">wiki.archlinux.org</span><span class="cite">habr.com</span></div>`;
-function flushQueue(){ let n=0; S.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло Hermes из очереди'; n++ } }); if(n) trace(`Связь есть — очередь (${n}) ушла по порядку.`,'i') }
+function flushQueue(){ let n=0; S.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло из очереди'; n++ } }); if(n) trace(`Связь есть — очередь (${n}) ушла по порядку.`,'i') }
 
 let toastT=null;
 function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true; render(); clearTimeout(toastT); toastT=setTimeout(()=>{S.toast=null;S.keepScroll=true;render()},4200) }
