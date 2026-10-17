@@ -50,6 +50,41 @@ const BRAINS=[
   {id:'deepseek', kind:'api', title:'DeepSeek', url:'https://api.deepseek.com', model:'deepseek-chat', caps:{vision:true,tools:true,memory:false,server:false}},
   {id:'hermes', kind:'hermes', title:'Hermes', v2:true, caps:{vision:true,tools:true,memory:true,server:true}},
 ];
+/**
+ * Действие телефона — то, что можно сделать на телефоне по правилу или по просьбе мозга (Архитектура, 7 и Б.2).
+ * @typedef {Object} Tool
+ * @property {string} id      имя в реестре: 'alarm.set'
+ * @property {string} title   по-человечески
+ * @property {'read'|'undo'|'state'|'clock'|'handoff'} group  класс отмены A–E
+ * @property {boolean} local  поддерживается правилами без мозга
+ * @property {string} example что сказать
+ * Политика пользователя по действию: enabled, brain ('now'|'ask'|'full'|null — мозгу недоступно), lock ('allow'|'unlock'|'deny').
+ */
+const TOOL_GROUPS=[['read','Смотреть','Отменять нечего'],['undo','Создавать','Отмена настоящая'],['state','Менять состояние телефона','Отмена возвращает как было'],['clock','Через «Часы»','Отменить нельзя или не всегда — «Часы» не дают'],['handoff','Открыть или отдать вам','Отменять нечего: дальше делаете вы']];
+const TOOLS=[
+  ['calendar.query','Календарь: что запланировано','read',false,'«что у меня завтра?»','now','unlock'],
+  ['location.get','Где я','read',false,'«где я сейчас?»','ask','unlock'],
+  ['alarm.next','Ближайший будильник','read',true,'«когда у меня будильник?»','now','allow'],
+  ['calendar.add','Событие в календаре','undo',false,'«запиши встречу с Олей в пятницу в 15»','ask','unlock'],
+  ['place.save','Запомнить место','undo',true,'«запомни, машина у ТЦ»',null,'allow'],
+  ['note.remember','Запомнить заметку','undo',true,'«запомни: код домофона 4512»',null,'allow'],
+  ['torch.set','Фонарик','state',true,'«включи фонарик»',null,'allow'],
+  ['volume.set','Громкость','state',true,'«тише»','ask','allow'],
+  ['dnd.set','Не беспокоить','state',true,'«не беспокоить до утра»','ask','allow'],
+  ['media.control','Музыка: пауза, дальше','state',true,'«следующий трек»','ask','allow'],
+  ['timer.set','Таймер','clock',true,'«таймер на пять минут»','now','allow'],
+  ['alarm.set','Будильник','clock',true,'«будильник на семь»','now','allow'],
+  ['app.open','Открыть приложение','handoff',false,'«открой Яндекс Карты»','ask','unlock'],
+  ['settings.open','Панель настроек','handoff',true,'«покажи Wi-Fi»',null,'unlock'],
+  ['call.dial','Набрать номер','handoff',true,'«позвони маме»',null,'unlock'],
+  ['message.draft','Черновик сообщения','handoff',false,'«напиши Оле, что опоздаю»','full','unlock'],
+].map(([id,title,group,local,example,brain,lock])=>({id,title,group,local,example,def:{enabled:true,brain,lock}}));
+const BRAIN_OPTS=[['now','Сразу'],['ask','Спросить «Да»'],['full','Показать целиком и спросить']];
+const LOCK_OPTS=[['allow','Можно'],['unlock','После разблокировки'],['deny','Нельзя']];
+function toolSummary(t,p){ if(!p.enabled) return 'Выключено';
+  const b=p.brain?{now:'мозг — сразу',ask:'мозг — спросит «Да»',full:'мозг — покажет целиком'}[p.brain]:'мозгу недоступно';
+  return [b, {allow:'',unlock:'на блокировке — после разблокировки',deny:'на блокировке — нельзя'}[p.lock]].filter(Boolean).join(' · ') }
+
 /** Настройки приложения, которых нет у режимов. */
 const RETURN_OPTS=[['30m','Через 30 минут без дела'],['never','Никогда — открывать последний режим'],['always','Всегда — боковая кнопка открывает Ассистента']];
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -65,10 +100,20 @@ const fresh = () => { const o = ({
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,
   settings:{ returnToAssistant:'30m' },
+  policy:Object.fromEntries(TOOLS.map(t=>[t.id,{...t.def}])), editTool:null, jopen:null,
+  journal:[
+    {id:'j3',day:'Сегодня',at:'09:05',tool:'calendar.add',title:'Встреча с Олей · пт 15:00',who:'DeepSeek',phrase:'запиши встречу с Олей в пятницу в 15',params:'title="Встреча с Олей", start=2026-10-23T15:00',confirm:'«Да» нажатием',lock:false,undo:true},
+    {id:'j2',day:'Сегодня',at:'08:40',tool:'torch.set',title:'Фонарик · выключен',who:'по правилам',phrase:'выключи фонарик',params:'on=false',confirm:'сразу',lock:true,status:'отменено'},
+    {id:'j1',day:'Сегодня',at:'07:12',tool:'alarm.next',title:'Ближайший будильник · 7:00',who:'по правилам',phrase:'когда у меня будильник?',params:'—',confirm:'сразу',lock:false},
+    {id:'j4',day:'Вчера',at:'22:30',tool:'alarm.set',title:'Будильник · 7:00',who:'по правилам',phrase:'будильник на семь',params:'time=07:00',confirm:'сразу',lock:false},
+  ],
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
 }); Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] ??= [] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
   Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
 const modeById = id => S.modes.find(m=>m.id===id);
+const toolById = id => TOOLS.find(t=>t.id===id);
+/** Строка итога в разговоре + запись в журнал действий. */
+function addAct(item, j){ S.feed.push(item); const d=new Date(); S.journal.unshift({id:'j'+Date.now(),day:'Сегодня',at:d.toTimeString().slice(0,5),title:item.x,status:item.undone?'отклонено':'',...j}) }
 const brainById = id => S.brains.find(b=>b.id===id);
 const brainOf = (m=curMode()) => brainById(m.brain) || S.brains[0];
 /** Мозг готов ответить: у API — есть ключ и сеть; у Hermes — сервер подключён и есть сеть. */
