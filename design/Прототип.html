@@ -198,9 +198,15 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .src i{width:14px;height:14px;border-radius:3px;flex:none}
 .term{font-family:var(--mono);font-size:11px;background:#10182B;color:#C9D4F1;border-radius:8px;padding:8px 10px;white-space:pre;overflow:auto}
 .plan{padding:0 12px 8px;font-size:12.5px}
-.plan div{display:flex;gap:8px;align-items:center;padding:2px 0}
-.plan .b{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--server-d);flex:none;display:grid;place-items:center;font-size:9px}
-.plan .done .b{background:var(--server-d);color:#fff}.plan .done span{opacity:.6}
+.plan .ph2{font-size:11px;font-weight:600;opacity:.75;padding:2px 0 3px;display:flex;justify-content:space-between}
+.plan div.pi{display:flex;gap:8px;align-items:center;padding:2px 0}
+.plan .b{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--server-d);flex:none;display:grid;place-items:center;font-size:9px}
+.plan .completed .b{background:var(--server-d);color:#fff}.plan .completed span{opacity:.6}
+.plan .in_progress .b{border-color:var(--server-d)}
+.plan .in_progress .b::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--server-d)}
+.plan .in_progress.now .b{border-top-color:transparent;animation:spin .9s linear infinite}
+.plan .in_progress.now .b::after{display:none}
+.plan .cancelled span{text-decoration:line-through;opacity:.5}.plan .cancelled .b{border-style:dashed}
 .shim{background:linear-gradient(90deg,var(--server-d) 0 35%,#9AAAFF 47%,#B9C5FF 50%,#9AAAFF 53%,var(--server-d) 65% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 1.5s linear infinite}
 @keyframes sh{from{background-position:100% 0}to{background-position:0 0}}
 
@@ -223,6 +229,10 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .clip::after{content:"";position:absolute;left:0;right:0;bottom:0;height:80px;background:linear-gradient(rgba(247,248,244,0),var(--paper))}
 .more{align-self:flex-start;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;margin:-4px 0 0 16px}
 .ansact{display:flex;gap:2px;margin:-4px 0 0 10px}
+.ai.interim .md{color:var(--soft)}
+.msgatt{display:flex;flex-direction:column;gap:4px}
+.msgatt .att{margin-left:16px}
+.msgatt .cap{margin-left:16px;font-size:12.5px;color:var(--soft)}
 .ansact button{border:0;background:transparent;color:var(--faint);font-size:12px;padding:4px 6px;border-radius:8px}
 .ansact button:hover{color:var(--ink)}
 
@@ -407,8 +417,9 @@ function itemHtml(it,inSheet){
   if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
   if (it.t==='ai'){
     const clip = it.long && inSheet;
-    return `<div class="ai"><div class="md ${clip?'clip':''}">${it.x}</div></div>${clip&&it.done?`<button class="more" data-act="expand">Развернуть ответ</button>`:''}${it.att&&!clip?attHtml(it.att):''}${clip&&it.att?`<div class="ph" style="font-size:12.5px;color:var(--soft)">и ${it.att.length} ${it.att.length===1?'вложение':'вложения'} — в развёрнутом ответе</div>`:''}${it.done&&!clip?`<div class="ansact"><button>Копировать</button><button>Поделиться</button><button>Выделить текст</button></div>`:''}`;
+    return `<div class="ai ${it.interim?'interim':''}" data-msg="${it.id||''}"><div class="md ${clip?'clip':''}">${it.x}</div></div>${clip&&it.done?`<button class="more" data-act="expand" data-msg="${it.id}">Развернуть сообщение</button>`:''}${it.done&&it.long&&!clip?`<div class="ansact"><button>Копировать</button><button>Поделиться</button><button>Выделить текст</button></div>`:''}`;
   }
+  if (it.t==='att') return `<div class="msgatt">${attHtml(it.a)}${it.cap?`<div class="cap">${it.cap}</div>`:''}</div>`;
   if (it.t==='ph') return `<div class="ph">${it.x}</div>`;
   if (it.t==='steps') return stepsHtml(it);
   if (it.t==='q') return `<div class="queued">${it.x}<span>${it.s}</span></div>`;
@@ -418,9 +429,10 @@ function itemHtml(it,inSheet){
   return '';
 }
 function stepsHtml(it){
-  const n=it.items.length; const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с`;
+  const n=it.items.length; const pd=it.plan?it.plan.items.filter(p=>p.st==='completed').length:0;
+  const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с${it.plan?` · план ${pd} из ${it.plan.items.length}`:''}`;
   return `<div class="steps ${it.open?'open':''}"><button data-act="togglesteps" data-id="${it.id}">${head}${I.chev}</button>
-  ${it.plan?`<div class="plan">${it.plan.map(p=>`<div class="${p[1]?'done':''}"><span class="b">${p[1]?'✓':''}</span><span>${p[0]}</span></div>`).join('')}</div>`:''}
+  ${it.plan&&(it.run||it.open)?`<div class="plan"><div class="ph2"><span>План Hermes</span><span>ревизия ${it.plan.rev}</span></div>${it.plan.items.map(p=>`<div class="pi ${p.st} ${it.run?'now':''}"><span class="b">${p.st==='completed'?'✓':''}</span><span>${p.c}</span></div>`).join('')}</div>`:''}
   <div class="sl">${it.items.map(s=>`<div class="sitem ${s.phone?'phone':''}"><div><span class="si">${s.i}</span><span>${s.t}</span><span style="margin-left:auto;color:var(--faint);font-size:11px">${s.ms||''}</span></div>${s.d?`<div class="sd">${s.d}</div>`:''}</div>`).join('')}</div></div>`;
 }
 function attHtml(a){
@@ -558,7 +570,7 @@ function render(){
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
   S.keepScroll=false;
-  if (S.scrollToLong){ const el=$('#scroll'); const tgt=el&&el.querySelector('.md h3'); if(tgt){ el.scrollTop += tgt.getBoundingClientRect().top - el.getBoundingClientRect().top - 12 } S.scrollToLong=false }
+  if (S.scrollToMsg){ const el=$('#scroll'); const tgt=el&&el.querySelector(`.ai[data-msg="${S.scrollToMsg}"]`); if(tgt){ el.scrollTop += tgt.getBoundingClientRect().top - el.getBoundingClientRect().top - 12 } S.scrollToMsg=null }
   renderWorld();
 }
 
@@ -626,10 +638,10 @@ function openOverlay(src){
 }
 function closeOverlay(){ token++; S.busy=false; const working=S.feed.some(f=>f.t==='steps'&&f.run); S.ov=null; render();
   if (working&&S.w.notif!=='ok'&&!S.notifAsked&&S.w.server==='paired'){ S.notifAsked=true; S.dialog={ic:'🔔',title:'Сообщить, когда Hermes ответит?',text:'Тогда ответ придёт уведомлением, даже если лист закрыт.',opts:[['Разрешить уведомления','notif_ok'],['Не нужно','x','sec2']]}; trace('Уведомления спрашиваем, когда они нужны: лист закрыли, не дождавшись ответа.','p'); render() } }
-async function expand(){
+async function expand(msgId){
   if (!S.ov) return; S.ov.full=true; S.keepScroll=true; render();
   trace('Лист доезжает до полного экрана, затем startAssistantActivity открывает тот же разговор в экране приложения — без анимации перехода; лист закрывается, когда приложение нарисовало первый кадр. Так разворачивается Gemini.','p');
-  await wait(380); S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat'; S.scrollToLong=S.feed.some(f=>f.long); render();
+  await wait(380); S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat'; S.scrollToMsg=msgId||null; render();
 }
 
 /* ───────── фразы и ответы ───────── */
@@ -652,39 +664,55 @@ async function say(key,typed){
   await route(key,my);
   S.busy=false; if (my===token&&S.ov){ S.ov.live='<span class="st p">Слушаю продолжение</span>'; S.ov.liveQ=true; S.ov.eq='dots'; S.ov.eqc='' } render();
 }
-async function think(my,steps,plan){
+async function think(my,steps){
   if (S.ov){ S.ov.eq='wave'; S.ov.eqc='h'; S.ov.live='<span class="st h">Hermes думает</span>'; S.ov.liveQ=true }
-  const st={t:'steps',id:Date.now(),run:true,cur:steps[0].t+'…',items:[],plan:plan?plan.map(p=>[p,false]):null,sec:0}; S.feed.push(st); render();
-  for (let i=0;i<steps.length;i++){ st.cur=steps[i].t+'…'; st.items.push(steps[i]); if(st.plan&&st.plan[i]) st.plan[i][1]=true; render(); await wait(steps[i].wait||800); if(my!==token) return false }
-  st.run=false; st.sec=Math.max(1,Math.round(steps.reduce((a,s)=>a+(s.wait||800),0)/1000)); if(st.plan) st.plan.forEach(p=>p[1]=true); return true;
+  const st={t:'steps',id:Date.now(),run:true,cur:'Думаю…',items:[],plan:null,sec:0}; S.feed.push(st); render(); let ms=0;
+  for (const s of steps){
+    if (s.todo){ // вызов todo_list: в шагах не показываем, обновляем план целиком по ответу инструмента
+      st.plan={rev:s.rev,items:s.todo.map(([c,stt])=>({c,st:stt}))}; render(); await wait(350); if(my!==token) return false; continue }
+    st.cur=s.t+'…'; st.items.push(s); render(); await wait(s.wait||800); ms+=s.wait||800; if(my!==token) return false }
+  st.run=false; st.sec=Math.max(1,Math.round(ms/1000)); return true;   // в конце хода ничего не досчитываем за модель
 }
+let msgSeq=0;
 async function stream(my,html,opts={}){
-  const blocks=html.split('<!--b-->'); const msg={t:'ai',x:'',long:opts.long,att:null,done:false}; S.feed.push(msg);
+  const blocks=html.split('<!--b-->'); const msg={t:'ai',id:'m'+(++msgSeq),x:'',long:opts.long,interim:opts.interim,done:false}; S.feed.push(msg);
   if (S.ov){ S.ov.eqc=''; S.ov.live='' }
-  for (const b of blocks){ msg.x+=b; render(); await wait(opts.fast?120:280); if(my!==token) return }
-  msg.att=opts.att||null; msg.done=true; render();
+  for (const b of blocks){ msg.x+=b; render(); await wait(opts.fast?120:280); if(my!==token) return false }
+  msg.done=true; render(); return true;
 }
+async function sendAtt(my,a,cap){ await wait(450); if(my!==token) return false; S.feed.push({t:'att',a,cap}); render(); return true }
 async function route(key,my){
   if (key==='timer'){ S.feed.push({t:'act',i:'⏱',x:'Таймер · 5:00',s:'на телефоне',btn:'Открыть таймеры',kind:'D',id:Date.now()}); trace('Правило: «таймер на {длительность}» — без сети. Отменить таймер «Часов» Android не даёт — кнопка честная: «Открыть таймеры».','p'); return }
   if (key==='alarm'){ S.feed.push({t:'ph',x:'На когда?'}); S.feed.push({t:'chips',c:['7:00','7:30','8:00']}); trace('Не хватает времени → варианты без модели: стоящие будильники, обычный подъём, первая встреча минус час.','p'); return }
   if (S.w.server==='none'){ S.feed.push({t:'card',who:'h',head:'Нужен агент на сервере',title:'Сервер не подключён',text:'Команды телефона работают и так.',btns:[['Подключить','connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
   if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи с Hermes — передам, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
   if (key==='ask'){ if(!await think(my,[{i:'📅',t:'Смотрю календарь',phone:true,d:'phone.calendar.query · завтра · 2 события',ms:'0,3 с'}])) return;
-    await stream(my,'<p>Завтра две встречи: в <b>10:00</b> банк, в <b>15:30</b> созвон с Олей. Утро свободно.</p>',{fast:true}); return }
+    await stream(my,'<p>Завтра две встречи: в <b>10:00</b> банк, в <b>15:30</b> созвон с Олей. Утро свободно.</p>',{fast:true}); trace('Короткий ответ — одно сообщение, целиком в листе.','h'); return }
   if (key==='move'){ if(!await think(my,[{i:'📅',t:'Ищу встречу с банком',phone:true,d:'phone.calendar.query',ms:'0,2 с'}])) return;
     S.feed.push({t:'card',who:'h',head:'Hermes просит · календарь',title:'Встреча с банком',kv:[['Было','чт, 18 окт, 10:00'],['Станет','пт, 19 окт, 10:00–10:30']],btns:S.w.locked?[['Разблокировать и перенести','unlockmove','pri'],['Отмена','x','gh']]:[['Перенести','move','pri'],['Изменить','x'],['Отмена','x','gh']]}); return }
   if (key==='backup'){
+    if(!await stream(my,'<p>Посмотрю, что уже стоит на сервере, и соберу план.</p>',{fast:true,interim:true})) return;
+    trace('Сообщение 1 — промежуточное (on_interim_message): короткое, приглушённое.','h');
     if(!await think(my,[
+      {todo:[['Узнать, что уже стоит на сервере','in_progress'],['Выбрать инструмент','pending'],['Расписать шаги','pending'],['Сделать памятку','pending']],rev:1},
       {i:'🔎',t:'Ищу в интернете',d:'<div class="src"><i style="background:#E05D44"></i>restic.readthedocs.io</div><div class="src"><i style="background:#2F9E5B"></i>wiki.archlinux.org</div><div class="src"><i style="background:#2238B8"></i>habr.com</div>',ms:'2,1 с',wait:1000},
-      {i:'⌨',t:'Смотрю сервер',d:'<div class="term">$ df -h /srv\nFilesystem  Size  Used Avail Use%\n/dev/sda1   200G  121G   79G  61%\n$ which restic\n/usr/bin/restic</div>',ms:'0,8 с',wait:900},
-      {i:'📄',t:'Делаю памятку PDF',d:'backup-plan.pdf · 2 страницы',ms:'1,4 с',wait:900},
-    ],['Узнать, что уже стоит на сервере','Выбрать инструмент','Расписать шаги','Сделать памятку'])) return;
-    await stream(my,LONG_MD,{long:true,att:[{k:'file',type:'PDF',name:'backup-plan.pdf',meta:'2 страницы · 84 КБ'},{k:'chart',title:'Место на диске, ГБ'}]});
-    trace('Длинный ответ в листе: первые ~240 px с затуханием и «Развернуть ответ». Кнопка разворачивает лист в приложение и ставит прокрутку на начало ответа. В приложении — вся разметка: заголовки, списки, код с «Копировать», таблица с горизонтальной прокруткой, цитата, источники, вложения.','h'); return }
+      {i:'⌨',t:'Команда на сервере',d:'<div class="term">$ df -h /srv\nFilesystem  Size  Used Avail Use%\n/dev/sda1   200G  121G   79G  61%\n$ which restic\n/usr/bin/restic</div>',ms:'0,8 с',wait:900},
+      {todo:[['Узнать, что уже стоит на сервере','completed'],['Выбрать инструмент','completed'],['Расписать шаги','in_progress'],['Сделать памятку','pending']],rev:2},
+      {i:'⚙',t:'Выполняю код',d:'execute_code · python · 38 строк → backup-plan.pdf',ms:'1,4 с',wait:900},
+      {todo:[['Узнать, что уже стоит на сервере','completed'],['Выбрать инструмент','completed'],['Расписать шаги','completed'],['Сделать памятку','completed']],rev:3},
+    ])) return;
+    trace('План — это вызовы todo_list самой модели (ревизии 1→2→3), не шаги. Между вызовами план может отставать от работы — показываем как есть. Если модель не отметит пункт, после хода он останется «в работе» без анимации; досчитывать за неё не будем.','h');
+    if(!await stream(my,LONG_MD,{long:true})) return;
+    trace('Сообщение 2 — финальный текст, длинный Markdown. В листе — первые ~240 px с затуханием и «Развернуть сообщение» именно у этого сообщения.','h');
+    if(!await sendAtt(my,[{k:'file',type:'PDF',name:'backup-plan.pdf',meta:'2 страницы · 84 КБ'}])) return;
+    if(!await sendAtt(my,[{k:'chart',title:'Место на диске, ГБ'}],'disk-forecast.png')) return;
+    if(!await stream(my,'<p>Если хотите, могу сам создать бакет и включить таймер — понадобится ваше «да».</p>',{fast:true})) return;
+    trace('Сообщения 3 и 4 — файлы: Hermes шлёт их отдельными вызовами (send_document, send_image_file) после текста, пути из текста вырезает. Сообщение 5 — короткий текст. Каждое сообщение рисуется по своему виду; связи «один ход — одно сообщение» нет.','h'); return }
   if (key==='photos'){
     if(!await think(my,[{i:'🖼',t:'Ищу фото',d:'41 фото за август, «дача»',ms:'0,6 с'}])) return;
-    await stream(my,'<p>Вот несколько с дачи. Всего 41 — все отправил в Telegram: там их удобнее листать и сохранять.</p>',{fast:true,att:[{k:'imgs',more:37},{k:'file',type:'ZIP',name:'dacha-august.zip',meta:'41 фото · 186 МБ',btn:'В Telegram'}]});
-    trace('Много файлов: в разговоре — превью 4 картинок и «+37», целиком — в Telegram. Ни с кем не конкурируем: там это уже удобно.','h'); return }
+    if(!await sendAtt(my,[{k:'imgs',more:37}],'4 из 41')) return;
+    if(!await stream(my,'<p>Все 41 отправил в Telegram — там их удобнее листать и сохранять.</p>',{fast:true})) return;
+    trace('Альбом пришёл одним сообщением (send_multiple_images), текст — отдельным. Целиком фото — в Telegram: ни с кем не конкурируем.','h'); return }
 }
 const LONG_MD=`<h3>Бэкап сервера на restic — за 15 минут</h3><!--b--><p>На сервере уже стоит <code>restic</code>, свободно 79 ГБ. Предлагаю шифрованный бэкап в S3 раз в сутки: храним 7 дней, 4 недели и 6 месяцев.</p><!--b--><h4>Шаги</h4><ol><li>Создайте бакет и ключ доступа в хранилище.</li><li>Подготовьте репозиторий:</li></ol><!--b--><div class="code"><div class="ch"><span>bash</span><button>Копировать</button></div><pre>export RESTIC_REPOSITORY=s3:s3.example.ru/backup
 export RESTIC_PASSWORD_FILE=/root/.restic-pass
@@ -742,7 +770,7 @@ document.addEventListener('click', async e=>{
     case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Тасечкин обновился до 0.5.0','Что нового — в «О программе»'); return render();
     case 'updcancel': S.upd.state='available'; return render();
     case 'gear': if(S.w.locked){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы открыть настройки',opts:[['Разблокировать','unlock_set'],['Отмена','x','sec2']]}; return render() } S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; trace('Шестерёнка → настройки приложения (startAssistantActivity), лист закрывается.'); return render();
-    case 'expand': return expand();
+    case 'expand': return expand(t.dataset.msg);
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
     case 'kbd': S.ov.input=S.ov.input==='kbd'?'voice':'kbd'; S.keepScroll=true; render(); $('#kin')?.focus(); return;
@@ -794,7 +822,7 @@ const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.sideOk=true; Obj
 const PRESETS=[
   ['Первый запуск','всё с нуля',()=>{ S=fresh(); S.screen='app'; S.onboarded=false }],
   ['Обычный день','всё готово — зажмите кнопку',()=>{ ready() }],
-  ['Длинный ответ','разметка, таблица, код, файлы, шаги',()=>{ ready(); S.autoSay='backup' }],
+  ['Серия сообщений','промежуточное, длинный Markdown, PDF, картинка, короткий текст',()=>{ ready(); S.autoSay='backup' }],
   ['Много файлов','превью и «остальное в Telegram»',()=>{ ready(); S.autoSay='photos' }],
   ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
   ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
