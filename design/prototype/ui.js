@@ -147,7 +147,7 @@ function settings(){
     <div class="lh">Уведомления</div>
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
-    ${li(I.shield,'Что Тасе можно',`Сама — ${Object.values(S.policy).filter(p=>p==='auto').length}, спросит — ${Object.values(S.policy).filter(p=>p==='ask').length}, нельзя — ${Object.values(S.policy).filter(p=>p==='off').length}`,'tools')}
+    ${li(I.shield,'Разрешения',`Разрешено ${Object.values(S.policy).filter(p=>p==='auto').length}, спрашивать ${Object.values(S.policy).filter(p=>p==='ask').length}, не разрешено ${Object.values(S.policy).filter(p=>p==='off').length}`,'tools')}
     ${li(I.list,'Журнал действий',`Сегодня — ${S.journal.filter(j=>j.day==='Сегодня').length}`,'journal')}
     <div class="divider"></div>
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
@@ -191,10 +191,10 @@ function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter
     <p class="mnote">Режимы на этом мозге: ${users.join(', ')||'нет'}. История каждого хранится на телефоне и целиком уходит с каждой репликой; одинаковое начало разговора провайдер берёт из кэша — дешевле и быстрее.</p>
   </div></div></div>` }
 function toolsPage(){
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Что Тасе можно</b></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Разрешения</b><small>что Тася делает на телефоне</small></div></div>
   <div class="scroll"><div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b></span><span class="pword ${S.policy[x.id]}">${POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
     <div class="lh">Заблокированный телефон</div>${li(I.lock,'Без разблокировки', S.settings.lockScope==='safe'?'Будильник, таймер, фонарик':'Ничего — всё после разблокировки','lockscope')}
-    <p class="mnote" style="padding:4px 22px 20px">«Спросит» — Тася покажет, что собирается сделать, и подождёт «Да». Сообщения она только готовит — отправляете вы.</p></div></div></div>` }
+    <p class="mnote" style="padding:4px 22px 20px">«Разрешено» — Тася делает сразу и показывает в разговоре, что сделала. «Спрашивать» — сначала покажет и подождёт «Да». Сообщения Тася только готовит — отправляете вы.</p></div></div></div>` }
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Журнал действий</b><small>только на телефоне</small></div></div>
   <div class="scroll"><div class="list">${days.map(d=>`<div class="lh">${d}</div>${S.journal.filter(j=>j.day===d).map(j=>`<button class="jrow" data-jid="${j.id}" aria-expanded="${S.jopen===j.id}"><span class="jt">${j.at}</span><span class="jm"><b>${esc(j.title)}</b><small>${j.who}${j.status?' · '+j.status:''}</small></span></button>${S.jopen===j.id?`<div class="jd"><div><span>Фраза</span>«${esc(j.phrase)}»</div><div><span>Действие</span><code>${j.tool}</code> ${esc(j.params)}</div><div><span>Подтверждение</span>${j.confirm}</div><div><span>Экран</span>${j.lock?'заблокирован':'открыт'}</div>${j.undo?`<button class="tbtn" data-act="jundo" data-id="${j.id}">Отменить</button>`:''}</div>`:''}`).join('')}`).join('')}</div></div></div>` }
