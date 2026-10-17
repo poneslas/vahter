@@ -675,6 +675,8 @@ function connectBody(onb){
   return `<div class="h2">${P.stage==='done'?'Подключено':'Подключаюсь'}</div><div class="checks">${ck}</div>${tail}`;
 }
 function sysRole(){ const o=[['gemini','Gemini'],['bixby','Bixby'],['ours','Тася']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }
+function sysMic(){ const o=(v,t)=>`<button class="it" data-micperm="${v}"><span class="rad ${S.w.mic===v?'on':''}"></span>${t}</button>`;
+  return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Микрофон</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Приложения → Тася → Разрешения → Микрофон</p><div class="grp">${o('ok','Разрешить только во время использования приложения')}${o('ask','Спрашивать каждый раз')}${o('denied','Запретить')}</div></div>` }
 function sysSide(){ return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Боковая кнопка</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Дополнительные функции → Боковая кнопка</p><p style="margin:14px 24px 4px;font-size:13px;color:#3E6FD8;font-weight:600">Нажатие и удержание</p><div class="grp"><button class="it" data-side="1"><span class="rad ${S.sideOk?'on':''}"></span>Цифровой помощник</button><button class="it" data-side="0"><span class="rad ${S.sideOk?'':'on'}"></span>Меню выключения</button></div></div>` }
 function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"><button class="iconbtn" data-act="home" style="color:#fff">${I.back}</button><span class="av">H</span><span><b>Hermes</b><br><small style="opacity:.8">бот</small></span></div><div class="msgs" id="msgs">${S.tg.map(m=>`<div class="bub ${m.me?'me':''}">${m.html}</div>`).join('')}</div><div class="compose"><span class="in">${S.tg.length?'Сообщение':'/tasya_pair'}</span><button class="cb pri" data-act="tgsend" ${S.tg.length?'disabled':''}>➤</button></div></div>` }
 function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
@@ -710,7 +712,7 @@ function render(){
   else if (S.screen==='home') base=home();
   else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
-  else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide();
+  else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
@@ -787,7 +789,7 @@ function openOverlay(src){
   const sub=s=>`<span style="font-size:14.5px;font-weight:400;color:var(--soft)">${s}</span>`;
   if (S.w.model!=='ready'){ O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — пишите. Команды и вопросы работают.')}`; return render() }
   if (S.w.mic==='ask'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; S.pendingSide = src==='side'; trace('Микрофон спрашиваем в момент, когда он нужен, — не на экране настройки.','p'); return render() }
-  if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пишите — или разрешите в настройках.')}`; return render() }
+  if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пока можно писать. Чтобы говорить, разрешите микрофон в настройках.')}<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>`; return render() }
   if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }
   if (S.voiceOn[S.mode]===false){ O.live=`<span class="st">Режим без голоса</span>${sub('Пишите или пришлите фото.')}`; return render() }
   if ((isSide||src==='ярлык') && S.sideAuto){ render(); trace('Боковая кнопка (настройка по умолчанию): лист сразу пишет без рук — само нажатие и есть намерение. Отпускание боковой кнопки приложению недоступно, поэтому не «рация», а замочек: «Отправить» или «В поле».','p'); return startRec('locked') }
@@ -887,7 +889,7 @@ async function finishRec(how){
 function micUnavailable(){
   if (S.w.mic==='ask'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render() }
   const why = S.w.model==='loading'?`распознавание ещё качается (${S.modelPct} %)`:S.w.model!=='ready'?'распознавание не скачано':S.w.mic==='denied'?'нет доступа к микрофону':'микрофон занят звонком';
-  trace(`Микрофон недоступен: ${why}. Поле ввода работает.`,'e'); if(S.ov){ S.ov.live=`<span class="st e">Голос недоступен</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">${why[0].toUpperCase()+why.slice(1)}.</span>` } render();
+  trace(`Микрофон недоступен: ${why}. Поле ввода работает.`,'e'); if(S.ov){ S.ov.live=`<span class="st e">Голос недоступен</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">${why[0].toUpperCase()+why.slice(1)}.</span>${S.w.mic==='denied'?'<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>':''}` } render();
 }
 let iconT=null, iconLong=false;
 document.addEventListener('pointerdown',e=>{ const ic=e.target.closest('[data-open="app"]'); if(!ic) return; iconLong=false; iconT=setTimeout(()=>{ iconLong=true; S.shortcuts=true; render() },500) });
@@ -978,7 +980,7 @@ function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true;
 
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
   if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }
   if (t.dataset.idle!==undefined){ S.idle=+t.dataset.idle; return render() }
@@ -993,6 +995,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; return render() }
   if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; S.fromSheet=null; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
   if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Тася — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
+  if (t.dataset.micperm){ S.w.mic=t.dataset.micperm; return render() }
   if (t.dataset.side){ S.sideOk=t.dataset.side==='1'; S.dismissed=null; return render() }
   if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); S.feed.push({t:'act',i:'⏰',x:'Будильник · '+t.dataset.chip,s:'на телефоне · через 21 ч',btn:'Открыть Часы',kind:'D',id:Date.now()}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
   if (t.dataset.cardbtn) return cardBtn(t.dataset.cardbtn);
@@ -1005,10 +1008,11 @@ document.addEventListener('click', async e=>{
     case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
     case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
     case 'sysside': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysside'; return render();
-    case 'sysback': S.screen=S.ret?.screen||'app'; S.page=S.ret?.page||S.page; return render();
+    case 'sysmic': S.ret={screen:S.screen,page:S.page,ov:S.ov}; S.ov=null; S.screen='sysmic'; trace('Android больше не покажет окно разрешения после двух отказов — ведём прямо в системный экран разрешений приложения (ACTION_APPLICATION_DETAILS_SETTINGS).','p'); return render();
+    case 'sysback': { const R=S.ret; S.screen=R?.screen||'app'; S.page=R?.page||S.page; if(R?.ov){ S.ov=R.ov; S.ov.live = S.w.mic==='ok' ? '<span class="st">Микрофон разрешён — зажмите и говорите</span>' : S.ov.live } return render() }
     case 'dismiss': S.dismissed=issue()?.t; return render();
     case 'dl': S.ov=null; if(S.w.model==='loading'||S.w.model==='ready'){ S.screen='app'; if(S.onboarded) S.page='about'; return render() } return startDl();
-    case 'askmic': S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
+    case 'askmic': if (S.w.mic==='denied'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() } S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
     case 'asknotif': S.dialog={ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
