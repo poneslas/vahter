@@ -73,7 +73,7 @@ document.addEventListener('click', async e=>{
         c.s='ok'; c.d={fmt:'sk-…, 35 символов',net:'отвечает',auth:'баланс есть',model:'deepseek-chat · 0,6 с',vision:'да — фото-режимы доступны'}[c.id] }
       K.stage='done'; S.w.key='ok'; S.dismissed=null; trace('Ключ проверен пробным запросом и сохранён в Keystore. Дальше приложение говорит с DeepSeek напрямую — без своего сервера.','i'); return render() }
     case 'addbrain': S.dialog={title:'Добавить мозг',text:'Любой OpenAI-совместимый API: адрес, имя модели, ключ. После проверки он появится в выборе мозга у режимов.',opts:[['Понятно','x']]}; return render();
-    case 'brainpick': { const m=modeById(S.editMode); const ok=S.brains.filter(b=>!m.accepts.photo||b.caps.vision); S.dialog={title:'Мозг режима',radio:ok.map(b=>[b.id,b.title+(b.v2?' · версия 2':'')]),cur:m.brain,key:'__brain'}; return render() }
+    case 'brainpick': { const m=modeById(S.editMode); const ok=S.brains.filter(b=>!m.accepts.photo||b.caps.vision); S.dialog={title:'Мозг режима',radio:ok.map(b=>[b.id,b.title]),cur:m.brain,key:'__brain'}; return render() }
     case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
     case 'tools': S.page='tools'; return render();
     case 'journal': S.page='journal'; S.jopen=null; return render();

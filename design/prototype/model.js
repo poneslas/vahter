@@ -35,8 +35,9 @@ const BUILTIN_MODES=[
 const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', primary:'photo', hint:'Сфотографируйте меню — выберу под ваши вкусы.', placeholder:'Вопрос к меню', accepts:{voice:true,photo:true,file:false},
   prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'});
 /**
- * Мозг — кто отвечает. v1: прямой API любого OpenAI-совместимого провайдера (цикл вызова инструментов — в приложении).
- * v2: Hermes на своём сервере (память, поиск, сервер, расписание, Telegram).
+ * Мозг — кто отвечает. Два вида, абстракции общие с первого дня: прямой API любого OpenAI-совместимого провайдера
+ * (цикл вызова инструментов — в приложении) и Hermes на своём сервере (память, поиск, сервер, расписание, Telegram).
+ * Порядок реализации: сначала API, следом Hermes (Архитектура, 17).
  * @typedef {Object} Brain
  * @property {string} id
  * @property {'api'|'hermes'} kind
@@ -44,11 +45,10 @@ const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', 
  * @property {string} [url]   адрес API (kind=api)
  * @property {string} [model] имя модели (kind=api)
  * @property {{vision:boolean, tools:boolean, memory:boolean, server:boolean}} caps
- * @property {boolean} [v2]   ещё не в первой версии
  */
 const BRAINS=[
   {id:'deepseek', kind:'api', title:'DeepSeek', url:'https://api.deepseek.com', model:'deepseek-chat', caps:{vision:true,tools:true,memory:false,server:false}},
-  {id:'hermes', kind:'hermes', title:'Hermes', v2:true, caps:{vision:true,tools:true,memory:true,server:true}},
+  {id:'hermes', kind:'hermes', title:'Hermes', caps:{vision:true,tools:true,memory:true,server:true}},
 ];
 /**
  * Действие телефона (реестр — Архитектура, 7). Пользователю показываем только одно: делает ли Тася это сама,

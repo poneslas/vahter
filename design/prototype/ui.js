@@ -142,7 +142,7 @@ function settings(){
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
     <div class="lh">Мозги</div>
-    ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title+(b.v2?' · версия 2':''), b.kind==='api'?(S.w.key==='ok'?`${b.model} · ключ есть`:S.w.key==='bad'?'Ключ не принимается':'Нет ключа'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Свой сервер: память, поиск, Telegram'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
+    ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title, b.kind==='api'?(S.w.key==='ok'?`${b.model} · ключ есть`:S.w.key==='bad'?'Ключ не принимается':'Нет ключа'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Свой сервер: память, поиск, Telegram'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
     ${li(I.plus,'Добавить мозг','Любой OpenAI-совместимый API: адрес, модель, ключ','addbrain')}
     <div class="lh">Уведомления</div>
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
@@ -171,7 +171,7 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
     <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('file','Файл',I.doc)}</div></div>
     ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки и ярлыка — сразу видоискатель. Спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки и ярлыка — сразу слушает.'}</p></div>`:''}
     <div class="setcard">${main?li(I.shield,'Действия телефона','Все — таймер, календарь, будильник…'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены — таймер, календарь, будильник…':'Выключены — меньше инструментов, ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для режима','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
-    <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(brainOf(m).v2?' · версия 2':'')+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}${li(I.hist,'Начать заново',(S.feeds[m.id]||[]).length?`Стереть разговор режима — ${(S.feeds[m.id]||[]).length} сообщ.`:'Разговор пуст','restart')}</div>
+    <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}${li(I.hist,'Начать заново',(S.feeds[m.id]||[]).length?`Стереть разговор режима — ${(S.feeds[m.id]||[]).length} сообщ.`:'Разговор пуст','restart')}</div>
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
     ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
   </div></div></div>` }
@@ -181,7 +181,7 @@ function keyBody(onb){ const K=S.keyCheck, b=brainById('deepseek');
     <input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="sk-…" autocomplete="off" spellcheck="false">
     <div style="display:flex;justify-content:flex-end;gap:6px;margin:8px 0 12px"><button class="tbtn" data-act="keypaste">Вставить</button><button class="fbtn" data-act="keycheck">Проверить</button></div>
     ${K?`<div class="checks">${ck}</div>`:''}${K&&K.stage==='bad'?`<div class="note bad">${K.err}</div>`:''}${S.w.key==='ok'&&K&&K.stage==='done'?'<div class="note ok">Готово. Режимы отвечают через DeepSeek.</div>':''}
-    ${onb?'<p style="font-size:12.5px;color:var(--soft)">Свой сервер Hermes — с памятью, поиском и Telegram — подключается в версии 2.</p>':''}` }
+    ${onb?'<p style="font-size:12.5px;color:var(--soft)">Свой сервер Hermes — с памятью, поиском и Telegram — можно подключить потом: Настройки → «Мозги».</p>':''}` }
 function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title);
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
   <div class="scroll"><div class="mform">

@@ -1,6 +1,6 @@
 /* Обвязка демо, в Android не переносится: «мир», боковая кнопка корпуса, сценарии, знакомство, масштаб телефона. */
 /* ───────── мир ───────── */
-const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes (v2)',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Помощник',[['gemini','Gemini'],['bixby','Bixby'],['ours','Тася']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
+const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Помощник',[['gemini','Gemini'],['bixby','Bixby'],['ours','Тася']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
 function renderWorld(){
   $('#world').innerHTML=WORLD.map(([k,l,o])=>`<label>${l}</label><div class="seg">${o.map(x=>`<button data-w="${k}" data-v="${x[0]}" aria-pressed="${S.w[k]===x[0]}">${x[1]}</button>`).join('')}</div>`).join('')
     + `<label>Без дела</label><div class="seg">${[[0,'только что'],[31,'31 мин']].map(x=>`<button data-idle="${x[0]}" aria-pressed="${(S.idle>=30?31:0)===x[0]}">${x[1]}</button>`).join('')}</div>`
@@ -41,7 +41,7 @@ async function event(k){
   if (k==='update'){ S.upd.state='available'; showToast('Есть версия 0.5.0','Что нового — в «О программе»'); return render() }
 }
 const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',key:'ok',model:'ready'}) };
-/** Версия 2: Ассистент на Hermes. */
+/** Ассистент на Hermes. */
 const readyH=()=>{ ready(); S.w.server='paired'; modeById('main').brain='hermes' };
 const PRESETS=[
   ['Первый запуск','всё с нуля',()=>{ S=fresh(); S.screen='app'; S.onboarded=false },'start','first'],
@@ -64,7 +64,7 @@ function preset(i,restored){ token++; clearInterval(dlT); const p=PRESETS[i]; cu
   else if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoEv){ const k=S.autoEv; S.autoEv=null; openOverlay('из сценария'); setTimeout(()=>event(k),350) }
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
-const GROUPS=[['day','Каждый день','обычный день, режимы, кривая команда'],['start','Первый запуск','с нуля, модель, ключ'],['fail','Сбои','сеть, блокировка, микрофон, контекст'],['brain','Hermes · версия 2','серия, картинки, подтверждение, уточнение']];
+const GROUPS=[['day','Каждый день','обычный день, режимы, кривая команда'],['start','Первый запуск','с нуля, модель, ключ'],['fail','Сбои','сеть, блокировка, микрофон, контекст'],['brain','Hermes','серия, картинки, подтверждение, уточнение']];
 let openGroup='day', curPreset=null;
 function renderGroups(){ $('#groups').innerHTML=GROUPS.map(([g,t,d])=>`<details class="grp2" data-g="${g}" ${openGroup===g?'open':''}><summary>${t}<small>${d}</small></summary><div class="presets">${PRESETS.map((p,i)=>p[3]===g?`<button class="pre" data-preset="${i}" aria-current="${curPreset===i}"><b>${p[0]}</b><span>${p[1]}</span></button>`:'').join('')}</div></details>`).join('') }
 document.addEventListener('toggle',e=>{ const d=e.target; if(!d.matches||!d.matches('.grp2')||!d.open) return; openGroup=d.dataset.g; document.querySelectorAll('.grp2').forEach(x=>{ if(x!==d) x.open=false }) },true);
@@ -93,7 +93,7 @@ function save(v){ try{ localStorage.setItem('tasya-proto',JSON.stringify(v)) }ca
 function restore(){ const h=decodeURIComponent(location.hash.slice(1)); const bySlug=PRESETS.findIndex(p=>p[4]===h); if(bySlug>=0) return {k:'p',slug:h}; try{ return JSON.parse(localStorage.getItem('tasya-proto')) }catch{ return null } }
 $('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
 $('#say').insertAdjacentHTML('beforeend','');
-$('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Ответ пришёл, пока лист закрыт'],['ctx','Разговор упёрся в предел модели'],['cron','Hermes (v2): утренняя сводка'],['bg','Hermes (v2): фоновая задача'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
+$('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Ответ пришёл, пока лист закрыт'],['ctx','Разговор упёрся в предел модели'],['cron','Hermes: утренняя сводка'],['bg','Hermes: фоновая задача'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 renderGroups();
 { const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i,true); setPtab('sc') } else startTour() }
 
