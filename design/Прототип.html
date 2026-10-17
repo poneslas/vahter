@@ -90,6 +90,42 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .slide{margin-left:auto;color:var(--faint);white-space:nowrap}
 .lockcue{position:absolute;right:16px;bottom:78px;width:44px;height:70px;border-radius:22px;background:var(--surf);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;font-size:15px;color:var(--soft);box-shadow:0 8px 20px -12px rgba(14,26,54,.4);animation:up .2s}
 .cwrap{position:relative;flex:none}
+.modes{flex:none;display:flex;gap:6px;padding:2px 12px 8px;overflow-x:auto;scrollbar-width:none}
+.modes::-webkit-scrollbar{display:none}
+.mchip{flex:none;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:6px 12px;font-size:13px;display:flex;align-items:center;gap:6px}
+.mchip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mchip .mi{font-size:13px;line-height:1}
+.mchip.add{color:var(--soft);padding:6px 10px}
+.toolbtn{width:40px;height:40px;border-radius:50%;border:0;background:#ECEEE8;display:grid;place-items:center;flex:none;font-size:17px}
+.attdraft{display:flex;align-items:center;gap:8px;padding:0 14px 6px}
+.attdraft .th{width:52px;height:52px;border-radius:10px;flex:none}
+.attdraft span{font-size:12.5px;color:var(--soft);flex:1}
+.meimg{align-self:flex-end;max-width:72%;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.meimg .th{width:170px;height:128px;border-radius:14px}
+.th{container-type:size}
+.th.tea{background:linear-gradient(160deg,#2E6B4F 0 35%,#E9DFC6 35% 100%);position:relative;overflow:hidden}
+.th.tea::after{content:"茉莉花茶\A 250g ¥38";white-space:pre;position:absolute;left:10%;top:44%;font-size:13px;line-height:1.3;color:#2E3B2F;font-weight:700}
+.th.menu{background:repeating-linear-gradient(180deg,#F4EEDF 0 18px,#E7DDC7 18px 19px);position:relative}
+.th.menu::after{content:"宫保鸡丁 ¥48\A 麻婆豆腐 ¥36\A 酸辣汤 ¥22";white-space:pre;position:absolute;left:10%;top:16%;font-size:12px;line-height:1.55;color:#4a3a1e;font-weight:600}
+.th.scrn{background:linear-gradient(180deg,#fff 0 22%,#EEF1F5 22% 100%);border:1px solid var(--line);position:relative}
+.th.scrn::after{content:"Siemens EQ.6 plus\A ¥ 6 299";white-space:pre;position:absolute;left:10%;top:30%;font-size:11px;line-height:1.5;color:#222;font-weight:600}
+.cam2{background:#0b0d12;color:#fff}
+.cam2 .vf{position:absolute;top:110px;left:40px;right:40px;height:420px;border-radius:18px;overflow:hidden}
+.cam2 .vf .th{display:block;width:100%;height:100%;border-radius:0}
+.cam2 .shut{position:absolute;bottom:70px;left:50%;margin-left:-36px;width:72px;height:72px;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.25)}
+.cam2 .cx{position:absolute;bottom:88px;left:40px;background:none;border:0;color:#fff;font-size:15px}
+.cam2 .pick{position:absolute;top:62px;left:0;right:0;display:flex;gap:6px;justify-content:center}
+.cam2 .pick button{border:0;border-radius:999px;padding:5px 11px;font-size:12px;background:rgba(255,255,255,.15);color:#fff}
+.cam2 .pick button[aria-pressed=true]{background:#fff;color:#111}
+.cam2 .after{position:absolute;bottom:56px;left:20px;right:20px;display:flex;gap:8px;justify-content:center}
+.cam2 .after button{border:0;border-radius:999px;padding:12px 16px;font-weight:600;font-size:14px;background:rgba(255,255,255,.18);color:#fff}
+.cam2 .after button.pri{background:#fff;color:#111}
+.sc-pop{position:absolute;right:16px;bottom:200px;width:220px;background:rgba(250,250,252,.98);color:#111;border-radius:18px;padding:6px;box-shadow:0 18px 40px -16px rgba(0,0,0,.6);z-index:45;animation:up .18s}
+.sc-pop button{display:flex;gap:10px;align-items:center;width:100%;border:0;background:none;padding:10px 12px;font-size:14px;border-radius:12px;text-align:left}
+.sc-pop button:hover{background:#EEF0F4}
+.sc-pop small{display:block;padding:4px 12px 2px;color:#777;font-size:11.5px}
+.speak{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--faint);margin:4px 0 0 16px;background:none}
+.fieldarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;background:#fff;min-height:96px;resize:none}
 .recbtn{border:0;border-radius:999px;padding:9px 14px;font-weight:600;font-size:13px;background:#ECEEE8;flex:none}
 .sendbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
 
@@ -377,12 +413,18 @@ const I = {
 /* ───────── состояние ───────── */
 const MODEL_TOTAL = 225539522 + 24110855;
 const mb = b => (b/1048576).toFixed(0);
-const fresh = () => ({
+const MODES=[
+  {id:'main', title:'Ассистент', icon:'✦', photo:false, screen:false, tools:true, prompt:''},
+  {id:'translate', title:'Переводчик', icon:'🌐', photo:true, screen:false, tools:false, prompt:'Всё не на русском — переведи на русский. Всё на русском — переведи на китайский, добавь пиньинь. Коротко, без вступлений. Не сохраняй это в память.'},
+  {id:'whatsthis', title:'Что это?', icon:'🔍', photo:true, screen:true, tools:false, prompt:'Пользователь в поездке. По фото или снимку экрана коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.'},
+];
+const fresh = () => { const o = ({
   w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
-  dialog:null, toast:null, ov:null, pair:null, feed:[], tg:[], failNext:null,
+  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[]}, mode:'main', draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, draft:'', sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
-});
+}); Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] }, set(v){ this.feeds[this.mode]=v }, enumerable:false}); return o };
+const curMode = () => MODES.find(m=>m.id===S.mode);
 let S = fresh(); let token = 0;
 function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove() }
 
@@ -427,11 +469,14 @@ function bannerHtml(){ const b=issue(); if(!b||S.dismissed===b.t) return ''; ret
 
 /* ───────── лента ───────── */
 function feedHtml(inSheet){
+  if (!S.feed.length && S.mode!=='main') return `<div class="feed"><div class="empty" style="padding:10px 4px">${S.mode==='translate'?'Скажите или напишите — переведу. Можно сфотографировать надпись или меню.':'Сфотографируйте товар, вывеску или меню — или сделайте снимок экрана. Коротко объясню, что это.'}</div></div>`;
   if (!S.feed.length) return inSheet ? '<div class="feed"></div>' : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
   return `<div class="feed">${S.feed.map(it=>itemHtml(it,inSheet)).join('')}</div>`;
 }
 function itemHtml(it,inSheet){
+  if (it.t==='me' && it.img) return `<div class="meimg"><i class="th ${it.img.cls}"></i>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
   if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
+  if (it.t==='ai' && it.speak) return `<div class="ai"><div class="md">${it.x}</div></div><button class="speak" data-act="speaksoon" aria-disabled="true">🔊 Озвучить · скоро</button>`;
   if (it.t==='ai'){
     const clip = it.long && inSheet;
     return `<div class="ai ${it.interim?'interim':''}" data-msg="${it.id||''}"><div class="md ${clip?'clip':''}">${it.x}</div></div>${clip&&it.done?`<button class="more" data-act="expand" data-msg="${it.id}">Развернуть сообщение</button>`:''}${it.done&&it.long&&!clip?`<div class="ansact"><button>Копировать</button><button>Поделиться</button><button>Выделить текст</button></div>`:''}`;
@@ -481,19 +526,23 @@ function liveHtml(){
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
+function modesBar(){ return `<div class="modes" role="tablist" aria-label="Режимы">${MODES.map(m=>`<button class="mchip" role="tab" data-mode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi">${m.icon}</span>${m.title}</button>`).join('')}<button class="mchip add" data-act="modes" aria-label="Настроить режимы">+</button></div>` }
+function attDraftHtml(){ const a=S.draftImg; if(!a) return ''; return `<div class="attdraft"><i class="th ${a.cls}"></i><span>${a.kind==='screen'?'Снимок экрана':'Фото'} · можно добавить вопрос голосом или текстом</span><button class="iconbtn" data-act="dropimg" aria-label="Убрать">${I.x}</button></div>` }
 function composerHtml(){
   const ph=S.w.server==='paired'?'Написать Hermes':'Команда телефону';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold') return `<div class="cwrap"><div class="lockcue">🔒<span style="font-size:12px">↑</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide">‹ влево — отмена</span></div>${mic}</div></div>`;
   if (S.rec) return `<div class="cwrap"><div class="composer rec"><button class="iconbtn" data-act="reccancel" aria-label="Отменить запись">${I.x}</button><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div></div><button class="recbtn" data-act="recfield">В поле</button><button class="sendbtn" data-act="recsend" aria-label="Отправить">${I.send}</button></div></div>`;
-  return `<div class="cwrap"><div class="composer"><div class="fld"><input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':ph}" autocomplete="off">${S.draft?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div></div>`;
+  const m=curMode(); const tools=(m.photo?`<button class="toolbtn" data-act="camera" aria-label="Сфотографировать">📷</button>`:'')+(m.screen?`<button class="toolbtn" data-act="screenshot" aria-label="Снимок экрана под листом">▣</button>`:'');
+  const canSend = S.draft || S.draftImg;
+  return `<div class="cwrap">${attDraftHtml()}<div class="composer">${tools}<div class="fld"><input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':(m.id==='main'?ph:m.id==='translate'?'Что перевести?':'Вопрос к фото')}" autocomplete="off">${canSend?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div></div>`;
 }
 function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
-  <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>Hermes</b><small><span class="ldot ${d}"></span>${t}</small></div>
+  <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>Hermes · ${t}</small></div>
     <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
-  ${bannerHtml()}
+  ${modesBar()}${bannerHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
   ${S.ov?'':liveHtml()}${S.ov?'':composerHtml()}</div>`;
 }
@@ -507,6 +556,8 @@ function settings(){
     ${li(I.btn,'Цифровой помощник', w.role==='ours'?'Тася':`Сейчас ${w.role==='bixby'?'Bixby':'Gemini'}`,'sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.sideOk?'Зажатие вызывает помощника':'Зажатие открывает меню выключения','sysside',!S.sideOk)}
     ${li(I.mic,'Лист по боковой кнопке', S.sideAuto?'Сразу записывает — без рук':'Ждёт, пока зажмёте микрофон','sideauto',false,`<span class="sw ${S.sideAuto?'':'off'}"></span>`)}
+    <div class="lh">Режимы</div>
+    ${MODES.map(m=>li(`<span style="font-size:15px">${m.icon}</span>`,m.title,m.id==='main'?'Основной разговор, все действия телефона':(m.prompt.slice(0,46)+'…'),'editmode:'+m.id)).join('')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
@@ -520,6 +571,15 @@ function settings(){
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
   </div></div></div>`;
 }
+function modePage(){ const m=MODES.find(x=>x.id===S.editMode);
+  const chip=(on,t)=>`<span class="mchip" aria-pressed="${on}" style="cursor:default">${t}</span>`;
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${m.icon} ${m.title}</b><small>отдельный разговор в Hermes</small></div></div>
+  <div class="scroll"><div style="padding:0 18px 20px;display:flex;flex-direction:column;gap:12px">
+    <div><div class="lh" style="padding:4px 0">Что делать</div>${m.id==='main'?'<p style="margin:0;color:var(--soft);font-size:13.5px">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea">${m.prompt}</textarea>`}</div>
+    <div><div class="lh" style="padding:4px 0">Принимает</div><div class="chips">${chip(true,'🎙 Голос')}${chip(true,'⌨ Текст')}${chip(m.photo,'📷 Фото')}${chip(m.screen,'▣ Снимок экрана')}</div></div>
+    <div class="setcard">${li(I.shield,'Действия телефона',m.tools?'Все — таймер, календарь, будильник…':'Выключены — режиму не нужны, ответы быстрее','',false,`<span class="sw ${m.tools?'':'off'}"></span>`)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже','',false,'')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для каждого режима','',false,'<span class="sw off"></span>')}</div>
+    <p style="margin:0;font-size:12.5px;color:var(--soft)">В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;:${m.id==='main'?'':m.id}</code>. Промпт подмешивается в каждый ход — сброс сессии его не теряет.</p>
+  </div></div></div>` }
 function about(){
   const u=S.upd;
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>О программе</b></div></div>
@@ -575,14 +635,20 @@ function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"
 function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
 function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i%12; const f=(r<3&&c<3)||(r<3&&c>8)||(r>8&&c<3); s+=`<i style="background:${f||((r*7+c*13+r*c)%3===0)?'#111':'#fff'}"></i>` } return `<div class="qr">${s}</div>` }
 
+function cam2(){ const c=S.cam; return `<div class="layer cam2">${statusBar(false)}
+  <div class="pick">${[['tea','Товар'],['menu','Меню']].map(x=>`<button data-shot="${x[0]}" aria-pressed="${c.subj===x[0]}">${x[1]}</button>`).join('')}</div>
+  <div class="vf"><i class="th ${c.subj}"></i></div>
+  ${c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`:`<button class="cx" data-act="camcancel">Отмена</button><button class="shut" data-act="shoot" aria-label="Снять"></button>`}</div>` }
+function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${MODES.map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;text-align:center">${m.icon}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
     <button class="grab" data-act="expand" aria-label="Развернуть"></button>
-    <div class="hdr"><span class="ldot ${d}"></span><span>Hermes · ${t}</span><span class="sp"></span>
+    <div class="hdr"><span class="ldot ${d}"></span><span><b style="color:var(--ink);font-weight:600">${curMode().title}</b> · ${t}</span><span class="sp"></span>
       <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
       <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button>
       <button class="iconbtn" data-act="close" aria-label="Закрыть">${I.x}</button></div>
+    ${modesBar()}
     <div class="scroll" id="oscroll">${feedHtml(true)}</div>
     ${liveHtml()}${composerHtml()}
   </div></div>`;
@@ -594,12 +660,12 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='about'?about():S.page==='connect'?connectPage():chat();
-  else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
+  else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
-  $('#scr').innerHTML = base + overlay() + dialog() + toast();
+  $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
@@ -689,15 +755,35 @@ const PHR={
   table:{t:'Забронируй столик на субботу',w:['забронируй','столик','на','субботу'],fin:'Забронируй столик на субботу.'},
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
+  toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
 const guessKey = v => { v=v.toLowerCase(); return /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
+  const img=S.draftImg; S.draftImg=null;
+  if (S.mode!=='main' || img) return deliverMode(text, via, img);
   const key=guessKey(text);
   if (S.busy){ S.feed.push({t:'me',x:text,via:via+' · учтено'}); trace('Мозг ещё работает — реплика учтена в идущей работе (как в Telegram).','h'); return render() }
   const my=++token; S.busy=true;
   S.feed.push({t:'me',x:text,via}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();
   await route(key,my);
   S.busy=false; if (my===token&&S.ov){ S.ov.live='' } render();
+}
+async function deliverMode(text, via, img){
+  const m=curMode(); const my=++token; S.busy=true;
+  S.feed.push({t:'me',x:text||'',via:img?(text?via+' · с фото':'фото'):via,img}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();
+  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи с Hermes. Передам, когда появится',s:'в очереди'}); S.busy=false; return render() }
+  trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
+  if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true } render();
+  await wait(img?1300:900); if(my!==token) return;
+  if (m.id==='translate' && img && img.cls==='menu')
+    await stream(my,`<div class="tbl"><table><tr><th>В меню</th><th>Перевод</th><th>Что это</th></tr><tr><td>宫保鸡丁 ¥48</td><td>Курица гунбао</td><td>острая, с арахисом</td></tr><tr><td>麻婆豆腐 ¥36</td><td>Тофу мапо</td><td>очень острое, с фаршем</td></tr><tr><td>酸辣汤 ¥22</td><td>Кисло-острый суп</td><td>с грибами и яйцом</td></tr></table></div><p>Если не любите острое — скажите «不要辣» (bú yào là).</p>`,{fast:true});
+  else if (m.id==='translate')
+    { if(!await stream(my,`<p><b>${text&&/туалет/i.test(text)?'洗手间在哪里？':'请给我看一下菜单。'}</b><br><span style="color:var(--soft)">${text&&/туалет/i.test(text)?'Xǐshǒujiān zài nǎlǐ? — Где здесь туалет?':'Qǐng gěi wǒ kàn yīxià càidān. — Покажите, пожалуйста, меню.'}</span></p>`,{fast:true})) return;
+      const last=S.feed[S.feed.length-1]; last.speak=true; trace('Озвучка ответа — v1.1 (системный синтез Android умеет китайский). Кнопка заложена в режим заранее.','p') }
+  else
+    await stream(my, img&&img.cls==='scrn' ? `<p><b>Кофемашина Siemens EQ.6 plus</b> — автоматическая, с капучинатором.</p><ul><li>¥6 299 ≈ 77 000 ₽ — нормальная цена для Китая, в России дороже.</li><li>Проверьте вилку: китайская версия — 220 В, но вилка другая.</li></ul>`
+      : `<p><b>Жасминовый чай</b> (茉莉花茶), 250 г, ¥38 ≈ 470 ₽.</p><ul><li>Зелёный чай с цветами жасмина — классика, пьют без сахара.</li><li>Цена обычная для супермаркета.</li><li>Заваривать 80 °C, 2–3 минуты.</li></ul>`, {fast:true});
+  S.busy=false; if(S.ov) S.ov.live=''; render();
 }
 async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиатура':'голос') }   // для сценариев
 
@@ -725,6 +811,10 @@ function micUnavailable(){
   const why = S.w.model==='loading'?`распознавание ещё качается (${S.modelPct} %)`:S.w.model!=='ready'?'распознавание не скачано':S.w.mic==='denied'?'нет доступа к микрофону':'микрофон занят звонком';
   trace(`Микрофон недоступен: ${why}. Поле ввода работает.`,'e'); if(S.ov){ S.ov.live=`<span class="st e">Голос недоступен</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">${why[0].toUpperCase()+why.slice(1)}.</span>` } render();
 }
+let iconT=null, iconLong=false;
+document.addEventListener('pointerdown',e=>{ const ic=e.target.closest('[data-open="app"]'); if(!ic) return; iconLong=false; iconT=setTimeout(()=>{ iconLong=true; S.shortcuts=true; render() },500) });
+document.addEventListener('pointerup',()=>{ clearTimeout(iconT) });
+document.addEventListener('click',e=>{ if(iconLong && e.target.closest('[data-open="app"]')){ e.stopImmediatePropagation(); iconLong=false } else if(S.shortcuts && !e.target.closest('.sc-pop')){ S.shortcuts=false; render() } }, true);
 let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold') });
 document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const dy=pd.y-e.clientY, dx=pd.x-e.clientX;
@@ -806,8 +896,11 @@ function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true;
 
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('.mchip,[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
+  if (t.dataset.mode && t.classList.contains('mchip')){ const was=S.mode; S.mode=t.dataset.mode; S.draftImg=null; if(was!==S.mode){ const m=curMode(); trace(`Переключено на «${m.title}». У режима своя лента и своя сессия в Hermes (thread_id=${m.id==='main'?'—':m.id}); память Hermes общая.`,'p') } return render() }
+  if (t.dataset.shortcut){ S.shortcuts=false; S.mode=t.dataset.shortcut; trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
+  if (t.dataset.shot){ S.cam.subj=t.dataset.shot; return render() }
   if (t.dataset.say) return quickSay(t.dataset.say);
   if (t.dataset.saytext) return deliver(t.dataset.saytext,'нажатие');
   if (t.dataset.ev) return event(t.dataset.ev);
@@ -821,6 +914,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
+  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.page='mode'; return render() }
   switch(a){
     case 'onbnext': if (ONB[S.onbStep]==='server'&&S.pair?.stage!=='done') S.pair=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
     case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
@@ -845,6 +939,15 @@ document.addEventListener('click', async e=>{
     case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'home': S.fromSheet=null; S.screen='home'; return render();
     case 'about': S.page='about'; return render();
+    case 'modes': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
+    case 'camera': S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.mode==='translate'?'menu':'tea',taken:false}; S.screen='cam2'; trace('Камера из листа: штатно — системная камера через startAssistantActivity (ACTION_IMAGE_CAPTURE) или своя на CameraX; выбор — спайком. Фото уходит Hermes как картинка, он понимает их так же, как фото из Telegram.','p'); return render();
+    case 'shoot': S.cam.taken=true; return render();
+    case 'retake': S.cam.taken=false; return render();
+    case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; return render();
+    case 'sendshot': case 'addq': { S.draftImg={kind:'photo',cls:S.cam.subj}; S.screen=S.camRet.screen; S.ov=S.camRet.ov; render(); if(a==='sendshot') return deliver('', 'фото'); $('#cin')?.focus(); trace('Фото прикреплено к полю: можно сказать или написать вопрос и отправить вместе.','p'); return }
+    case 'screenshot': S.draftImg={kind:'screen',cls:'scrn'}; trace('Снимок того, что под листом: окно ассистента получает его штатно (onHandleScreenshot), только по нажатию. Уходит Hermes как картинка.','p'); return render();
+    case 'dropimg': S.draftImg=null; return render();
+    case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
     case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();
     case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Тася обновился до 0.5.0','Что нового — в «О программе»'); return render();
@@ -855,7 +958,7 @@ document.addEventListener('click', async e=>{
       trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
-    case 'csend': { const v=(S.draft||'').trim(); if(!v) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
+    case 'csend': { const v=(S.draft||'').trim(); if(!v && !S.draftImg) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
     case 'recsend': return finishRec('send');
     case 'recfield': return finishRec('field');
     case 'reccancel': return finishRec('cancel');
@@ -916,15 +1019,17 @@ const PRESETS=[
   ['Картинки','альбом из image_generate',()=>{ ready(); S.autoSay='logo' }],
   ['Подтверждение команды','редкий случай: Hermes сомневается',()=>{ ready(); S.autoSay='logs' }],
   ['Уточнение','варианты и «Другое»',()=>{ ready(); S.autoSay='table' }],
+  ['Режимы: в магазине','«Что это?» и переводчик, фото',()=>{ ready(); S.mode='whatsthis'; S.screen='home' }],
   ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
   ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
   ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
 ];
-function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
+function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открывает последний режим. Нажмите 📷, чтобы сфотографировать товар, или ▣ — снимок экрана под листом. Переключение режимов — чипы над лентой; долгое нажатие на иконку Таси — ярлыки режимов.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
+$('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['cron','Cron: утренняя сводка'],['bg','Фоновая задача на сервере завершилась'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 preset(0);
 
