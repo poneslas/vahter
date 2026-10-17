@@ -80,7 +80,17 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .composer{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 18px;background:var(--paper)}
 .composer .fld{flex:1;display:flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:24px;padding:4px 4px 4px 14px;min-height:48px}
 .composer input{flex:1;border:0;outline:none;background:transparent;font:inherit;font-size:14.5px;min-width:0}
-.micbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
+.micbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .15s}
+.micbtn.off{background:#C9CFC4;color:#fff}
+.micbtn.big{transform:scale(1.35);background:var(--local);box-shadow:0 0 0 8px rgba(232,163,23,.18)}
+.composer.rec .fld{gap:8px;color:var(--soft);font-size:13px;padding-right:12px}
+.rdot{width:9px;height:9px;border-radius:50%;background:var(--danger);flex:none;animation:blinkr 1s ease-in-out infinite}
+@keyframes blinkr{50%{opacity:.25}}
+.tm{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500}
+.slide{margin-left:auto;color:var(--faint);white-space:nowrap}
+.lockcue{position:absolute;right:16px;bottom:78px;width:44px;height:70px;border-radius:22px;background:var(--surf);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;font-size:15px;color:var(--soft);box-shadow:0 8px 20px -12px rgba(14,26,54,.4);animation:up .2s}
+.cwrap{position:relative;flex:none}
+.recbtn{border:0;border-radius:999px;padding:9px 14px;font-weight:600;font-size:13px;background:#ECEEE8;flex:none}
 .sendbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
 
 /* настройки */
@@ -282,6 +292,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .eq i{display:block;width:5px;min-height:5px;height:5px;border-radius:3px;background:linear-gradient(var(--local),#C98500)}
 .eq.h i{background:linear-gradient(#6F86FF,var(--server))}
 .eq.off i{background:var(--faint);opacity:.55}
+.eq.sm{height:18px;gap:2.5px}.eq.sm i{width:3px;min-height:3px;height:3px}
 .kbd{flex:none;display:flex;gap:6px;align-items:center;border:1.5px solid var(--ink);border-radius:22px;padding:5px 5px 5px 12px;margin:6px 12px 0;background:#fff}
 .kbd input{flex:1;border:0;font:inherit;font-size:14px;outline:none;background:transparent;min-width:0}
 
@@ -324,7 +335,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
       <p class="sub">Зажмите боковую кнопку. Потяните лист за ручку или нажмите «Развернуть» — он доедет до полного экрана и станет приложением с тем же разговором. Справа меняется «мир»: сеть, сервер, модель, блокировка. Пути настроек, размеры моделей и шаги подключения — по исследованиям 17.10.2026.</p>
     </div>
     <div class="blk"><h2>Сценарии</h2><div class="presets" id="presets"></div></div>
-    <div class="blk"><h2>Сказать (вместо микрофона)</h2><div class="acts" id="say"></div></div>
+    <div class="blk"><h2>Сказать (вместо микрофона)</h2><p class="sub" style="margin:-4px 0 8px;font-size:13px">Кнопка ниже — «зажал, сказал, отпустил». Или зажмите микрофон на телефоне сами: тяните вверх — замочек, влево — отмена; скажется фраза, выбранная последней.</p><div class="acts" id="say"></div></div>
     <div class="blk"><h2>Мир</h2><div class="world" id="world"></div></div>
     <div class="blk"><h2>События снаружи</h2><div class="acts" id="events"></div></div>
     <div class="blk"><h2>Что происходит и почему</h2><div class="trace" id="trace" aria-live="polite"></div></div>
@@ -370,24 +381,24 @@ const fresh = () => ({
   w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, feed:[], tg:[], failNext:null,
-  upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, notifAsked:false, ret:null, dismissed:null,
+  upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, draft:'', sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
 });
 let S = fresh(); let token = 0;
 function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove() }
 
 /* ───────── эквалайзер ───────── */
 class Eq{
-  constructor(el){ this.el=el; el.innerHTML='<i></i>'.repeat(13); this.b=[...el.children]; this.n=13; this.h=Array(13).fill(0); this.g=Array(13).fill(1); this.lag=Array(13).fill(0); this.L=0; this.pv=0; this.ph=0; this.f=0; this.t=0; this.syl=0; this.end=0 }
-  shape(i){ return .72+.28*Math.sin(Math.PI*(i+.5)/13) }
-  reroll(L){ for(let i=0;i<13;i++){ const lo=.75-.55*L; this.g[i]=lo+Math.random()*(1-lo); this.lag[i]=Math.floor(Math.random()*(Math.max(3,9-6*L)+1)) } }
+  constructor(el){ this.el=el; this.sm=el.classList.contains('sm'); const N=this.sm?9:13; el.innerHTML='<i></i>'.repeat(N); this.b=[...el.children]; this.n=N; this.h=Array(13).fill(0); this.g=Array(13).fill(1); this.lag=Array(13).fill(0); this.L=0; this.pv=0; this.ph=0; this.f=0; this.t=0; this.syl=0; this.end=0 }
+  shape(i){ return .72+.28*Math.sin(Math.PI*(i+.5)/this.n) }
+  reroll(L){ for(let i=0;i<this.n;i++){ const lo=.75-.55*L; this.g[i]=lo+Math.random()*(1-lo); this.lag[i]=Math.floor(Math.random()*(Math.max(3,9-6*L)+1)) } }
   voice(dt){ this.t+=dt; if(this.t>this.end){ this.t=0; this.end=120+Math.random()*140; this.syl=Math.random()<.18?.05:.35+Math.random()*.6 } return this.syl*(.4+.6*Math.sin(Math.PI*Math.min(1,this.t/this.end))) }
   step(dt){
-    const m=this.el.dataset.mode, H=33; this.f++;
-    if(m==='dots'){ this.b.forEach(b=>b.style.height='5px'); return }
-    if(m==='wave'){ this.ph+=.28*dt/16.7; this.b.forEach((b,i)=>{ const s=.5+.5*Math.sin(this.ph-i*.55); b.style.height=(5+H*(.18+.32*s))+'px' }); return }
+    const m=this.el.dataset.mode, mn=this.sm?3:5, H=this.sm?15:33; this.f++;
+    if(m==='dots'){ this.b.forEach(b=>b.style.height=mn+'px'); return }
+    if(m==='wave'){ this.ph+=.28*dt/16.7; this.b.forEach((b,i)=>{ const s=.5+.5*Math.sin(this.ph-i*.55); b.style.height=(mn+H*(.18+.32*s))+'px' }); return }
     const inp=this.voice(dt); this.L+=(inp-this.L)*(inp>this.L?.75:.13); const L=this.L;
     if(inp-this.pv>.1) this.reroll(L); else if(L>.35&&this.f%Math.max(4,Math.round(18-15*L))===0) this.reroll(L); this.pv=inp;
-    for(let i=0;i<13;i++){ if(this.lag[i]>0){this.lag[i]--;continue} const tg=L*this.shape(i)*this.g[i]; this.h[i]+=(tg-this.h[i])*(tg>this.h[i]?.75:.13+.45*L); this.b[i].style.height=(5+H*Math.min(1,this.h[i]))+'px' }
+    for(let i=0;i<this.n;i++){ if(this.lag[i]>0){this.lag[i]--;continue} const tg=L*this.shape(i)*this.g[i]; this.h[i]+=(tg-this.h[i])*(tg>this.h[i]?.75:.13+.45*L); this.b[i].style.height=(mn+H*Math.min(1,this.h[i]))+'px' }
   }
 }
 let eqs=[]; let last=performance.now();
@@ -461,6 +472,22 @@ function home(){
 }
 function lock(){ return `<div class="layer lock">${statusBar(false)}<div class="clk">9:41</div><div class="dt">пятница, 17 октября</div><button class="unl" data-act="unlock">Разблокировать отпечатком</button></div>` }
 
+const voiceOk = () => S.w.model==='ready' && S.w.mic==='ok';
+function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; return `0:${String(s).padStart(2,'0')}` }
+function liveHtml(){
+  if (S.rec){ const ph=PHR[S.rec.key]; const n=S.rec.n; const fx=Math.max(0,n-2);
+    const lbl = S.rec.into==='append' ? (S.rec.mode==='hold'?'Дописываю в поле · отпустите — допишется':'Дописываю в поле · «В поле» или «Отправить» всё') : S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · «Отправить» или «В поле»';
+    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">…</span>'}</div>` }
+  if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
+  return '';
+}
+function composerHtml(){
+  const ph=S.w.server==='paired'?'Написать Hermes':'Команда телефону';
+  const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
+  if (S.rec && S.rec.mode==='hold') return `<div class="cwrap"><div class="lockcue">🔒<span style="font-size:12px">↑</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide">‹ влево — отмена</span></div>${mic}</div></div>`;
+  if (S.rec) return `<div class="cwrap"><div class="composer rec"><button class="iconbtn" data-act="reccancel" aria-label="Отменить запись">${I.x}</button><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div></div><button class="recbtn" data-act="recfield">В поле</button><button class="sendbtn" data-act="recsend" aria-label="Отправить">${I.send}</button></div></div>`;
+  return `<div class="cwrap"><div class="composer"><div class="fld"><input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':ph}" autocomplete="off">${S.draft?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div></div>`;
+}
 function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
@@ -468,8 +495,7 @@ function chat(){
     <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
   ${bannerHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
-  <div class="composer"><div class="fld"><input id="cin" placeholder="${S.w.server==='paired'?'Написать Hermes':'Команда телефону'}" autocomplete="off"><button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button></div>
-  <button class="micbtn" data-act="micfromapp" aria-label="Говорить">${I.mic}</button></div></div>`;
+  ${S.ov?'':liveHtml()}${S.ov?'':composerHtml()}</div>`;
 }
 function li(icon,title,sum,act,warn,trail){ return `<button class="li ${warn?'warn':''}" ${act?`data-act="${act}"`:''}><span class="lic">${warn?I.warn:icon}</span><span class="lt"><b>${title}</b>${sum?`<small>${sum}</small>`:''}</span>${trail||''}</button>` }
 function settings(){
@@ -480,10 +506,10 @@ function settings(){
     <div class="lh">Вызов</div>
     ${li(I.btn,'Цифровой помощник', w.role==='ours'?'Тася':`Сейчас ${w.role==='bixby'?'Bixby':'Gemini'}`,'sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.sideOk?'Зажатие вызывает помощника':'Зажатие открывает меню выключения','sysside',!S.sideOk)}
+    ${li(I.mic,'Лист по боковой кнопке', S.sideAuto?'Сразу записывает — без рук':'Ждёт, пока зажмёте микрофон','sideauto',false,`<span class="sw ${S.sideAuto?'':'off'}"></span>`)}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
-    ${li(I.wave,'Слушать после ответа','6 секунд без нажатия','',false,'<span class="sw"></span>')}
     <div class="lh">Сервер</div>
     ${li(I.srv,'Подключение', w.server==='paired'?'hermes.example.ru':w.server==='down'?'hermes.example.ru — не отвечает':'Не подключено','connect',w.server!=='paired')}
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда Hermes ответил, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
@@ -555,11 +581,10 @@ function overlay(){
     <button class="grab" data-act="expand" aria-label="Развернуть"></button>
     <div class="hdr"><span class="ldot ${d}"></span><span>Hermes · ${t}</span><span class="sp"></span>
       <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
-      <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button></div>
+      <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button>
+      <button class="iconbtn" data-act="close" aria-label="Закрыть">${I.x}</button></div>
     <div class="scroll" id="oscroll">${feedHtml(true)}</div>
-    <div class="live ${O.liveQ?'q':''}">${O.live||''}</div>
-    ${O.input==='kbd'?`<div class="kbd"><input id="kin" placeholder="${S.w.server==='paired'?'Написать Hermes':'Команда телефону'}" autocomplete="off"><button class="sendbtn" data-act="ksend" aria-label="Отправить">${I.send}</button></div>`:''}
-    <div class="ctl"><button class="rb" data-act="kbd" aria-label="Клавиатура">${I.kbd}</button><button class="eqb" data-act="eqtap" aria-label="Эквалайзер"><div class="eq ${O.eqc||''}" data-mode="${O.eq||'dots'}"></div></button><button class="rb" data-act="close" aria-label="Закрыть">${I.x}</button></div>
+    ${liveHtml()}${composerHtml()}
   </div></div>`;
 }
 function dialog(){ const D=S.dialog; if(!D) return ''; return `<div class="scrim"><div class="dlg"><div class="di">${D.ic||''}</div><h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
@@ -573,7 +598,9 @@ function render(){
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
+  const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   $('#scr').innerHTML = base + overlay() + dialog() + toast();
+  if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
@@ -635,14 +662,14 @@ function pairDone(){ const c=S.pair.checks.find(x=>x.id==='admit'); c.s='ok'; c.
 /* ───────── лист ───────── */
 function openOverlay(src){
   token++; S.busy=false;
-  const O={pop:true,eq:'dots',input:'voice'};
-  const sub=s=>`<span style="font-size:15px;font-weight:400;color:var(--soft)">${s}</span>`;
-  if (S.w.model!=='ready'){ O.input='kbd'; O.eqc='off'; O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — с клавиатуры. Команды и вопросы работают.')}` }
-  else if (S.w.mic==='ask'){ O.live='<span class="st p">Нужен микрофон</span>'; O.eqc='off'; S.ov=O; S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; trace('Микрофон спрашиваем в момент, когда он нужен, — не на экране настройки. Это штатный паттерн Android.','p'); return render() }
-  else if (S.w.mic==='denied'){ O.input='kbd'; O.eqc='off'; O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пишите — или разрешите в настройках.')}` }
-  else if (S.w.mic==='call'){ O.input='kbd'; O.eqc='off'; O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — с клавиатуры.')}` }
-  else { O.live='<span class="st p">Слушаю</span>'; trace(`Лист открыт ${src}. Пре-ролл 0,5 с.`,'p') }
-  S.ov=O; render();
+  S.rec=null; const O={pop:true}; S.ov=O;
+  const sub=s=>`<span style="font-size:14.5px;font-weight:400;color:var(--soft)">${s}</span>`;
+  if (S.w.model!=='ready'){ O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — пишите. Команды и вопросы работают.')}`; return render() }
+  if (S.w.mic==='ask'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; S.pendingSide = src==='side'; trace('Микрофон спрашиваем в момент, когда он нужен, — не на экране настройки.','p'); return render() }
+  if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пишите — или разрешите в настройках.')}`; return render() }
+  if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }
+  if (src==='side' && S.sideAuto){ render(); trace('Боковая кнопка (настройка по умолчанию): лист сразу пишет без рук — само нажатие и есть намерение. Отпускание боковой кнопки приложению недоступно, поэтому не «рация», а замочек: «Отправить» или «В поле».','p'); return startRec('locked') }
+  O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function closeOverlay(){ token++; S.busy=false; const working=S.feed.some(f=>f.t==='steps'&&f.run); S.ov=null; render();
   if (working&&S.w.notif!=='ok'&&!S.notifAsked&&S.w.server==='paired'){ S.notifAsked=true; S.dialog={ic:'🔔',title:'Сообщить, когда Hermes ответит?',text:'Тогда ответ придёт уведомлением, даже если лист закрыт.',opts:[['Разрешить уведомления','notif_ok'],['Не нужно','x','sec2']]}; trace('Уведомления спрашиваем, когда они нужны: лист закрыли, не дождавшись ответа.','p'); render() } }
@@ -663,19 +690,55 @@ const PHR={
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
 };
-async function say(key,typed){
-  if (S.busy) return; const ph=PHR[key]; const my=++token; S.busy=true; const O=S.ov;
-  if (O&&!typed&&S.w.model==='ready'&&S.w.mic==='ok'){
-    O.eq='speak'; O.eqc=''; O.liveQ=false;
-    for (let i=1;i<=ph.w.length;i++){ const fx=Math.max(0,i-2); O.live='<span class="st p">Слушаю</span>'+ph.w.slice(0,i).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '); render(); await wait(300); if(my!==token) return }
-    O.eq='wave'; O.live='<span class="st p">Распознаю</span>'+esc(ph.fin); render(); await wait(420); if(my!==token) return;
-  }
-  S.feed.push({t:'me',x:ph.fin,via:typed?'клавиатура':'голос'}); if(O) O.live=''; render();
+const guessKey = v => { v=v.toLowerCase(); return /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
+async function deliver(text, via){
+  const key=guessKey(text);
+  if (S.busy){ S.feed.push({t:'me',x:text,via:via+' · учтено'}); trace('Мозг ещё работает — реплика учтена в идущей работе (как в Telegram).','h'); return render() }
+  const my=++token; S.busy=true;
+  S.feed.push({t:'me',x:text,via}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();
   await route(key,my);
-  S.busy=false; if (my===token&&S.ov){ S.ov.live='<span class="st p">Слушаю продолжение</span>'; S.ov.liveQ=true; S.ov.eq='dots'; S.ov.eqc='' } render();
+  S.busy=false; if (my===token&&S.ov){ S.ov.live='' } render();
 }
+async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиатура':'голос') }   // для сценариев
+
+/* запись: зажать — говорить — отпустить; вверх — замочек; влево — отмена */
+let recTok=0;
+async function startRec(mode, into){
+  if (S.rec) return; if (!voiceOk()) return micUnavailable();
+  S.rec={mode, key:S.nextKey||'ask', n:0, into: into||(S.draft?'append':'send'), t0:Date.now()}; const my=++recTok; render();
+  while (S.rec && my===recTok){ await wait(320); if(!S.rec||my!==recTok) return; const ph=PHR[S.rec.key]; if (S.rec.n<ph.w.length) S.rec.n++; S.keepScroll=true; render() }
+}
+function recText(){ const r=S.rec, ph=PHR[r.key]; if(!r.n) return ''; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }
+async function finishRec(how){
+  const r=S.rec; if(!r) return; const text=recText(); recTok++; S.rec=null;
+  if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
+  if (S.ov){ S.ov.live=`<span class="st p">Распознаю</span>${esc(text)}`; S.ov.liveQ=false } render(); await wait(380);
+  if (how==='release') how = r.into==='append' ? 'field' : 'send';   // отпустил: пустое поле — отправить, в поле был текст — дописать
+  if (how==='field'){ S.draft=(S.draft?S.draft+' ':'')+text.replace(/[.]$/,''); S.draftVoice=true; if(S.ov) S.ov.live=''; render(); const el=$('#cin'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length) }
+    trace(r.into==='append'?'Диктовка дописана в поле после того, что уже было. Поправьте руками или договорите — и «Отправить».':'Текст ушёл в поле: можно поправить, договорить микрофоном (допишется) и отправить.','p'); return }
+  const full = r.into==='append' ? (S.draft+' '+text) : text; S.draft=''; S.draftVoice=false;
+  trace(r.mode==='hold'?'Отпустил — отправлено (push-to-talk, как в Писаре). Чистовик GigaAM уже с пунктуацией.':'«Отправить» из замочка — отправлено.','p');
+  return deliver(full,'голос');
+}
+function micUnavailable(){
+  if (S.w.mic==='ask'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render() }
+  const why = S.w.model==='loading'?`распознавание ещё качается (${S.modelPct} %)`:S.w.model!=='ready'?'распознавание не скачано':S.w.mic==='denied'?'нет доступа к микрофону':'микрофон занят звонком';
+  trace(`Микрофон недоступен: ${why}. Поле ввода работает.`,'e'); if(S.ov){ S.ov.live=`<span class="st e">Голос недоступен</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">${why[0].toUpperCase()+why.slice(1)}.</span>` } render();
+}
+let pd=null;
+document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold') });
+document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const dy=pd.y-e.clientY, dx=pd.x-e.clientX;
+  if (dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Дальше «Отправить» или «В поле».','p'); S.keepScroll=true; render() }
+  else if (dx>70){ pd=null; finishRec('cancel') } });
+document.addEventListener('pointerup',()=>{ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
+  if (dt<260){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
+  finishRec('release') });
+async function quickSay(k){ // имитация «зажал — сказал — отпустил» для кнопок панели
+  S.nextKey=k; if (S.rec){ S.rec.key=k; S.rec.n=0; return render() }
+  if (!voiceOk()){ trace('Голос недоступен — фраза введена как с клавиатуры.','e'); return deliver(PHR[k].fin,'клавиатура') }
+  startRec('hold'); const my=recTok; await wait(320*PHR[k].w.length+250); if (S.rec && my===recTok && S.rec.mode==='hold') finishRec('release') }
 async function think(my,steps){
-  if (S.ov){ S.ov.eq='wave'; S.ov.eqc='h'; S.ov.live='<span class="st h">Hermes думает</span>'; S.ov.liveQ=true }
+  if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true }
   const st={t:'steps',id:Date.now(),run:true,cur:'Думаю…',items:[],plan:null,sec:0}; S.feed.push(st); render(); let ms=0;
   for (const s of steps){
     if (s.todo){ // вызов todo_list: в шагах не показываем, обновляем план целиком по ответу инструмента
@@ -686,7 +749,7 @@ async function think(my,steps){
 let msgSeq=0;
 async function stream(my,html,opts={}){
   const blocks=html.split('<!--b-->'); const msg={t:'ai',id:'m'+(++msgSeq),x:'',long:opts.long,interim:opts.interim,done:false}; S.feed.push(msg);
-  if (S.ov){ S.ov.eqc=''; S.ov.live='' }
+  if (S.ov){ S.ov.live='' }
   for (const b of blocks){ msg.x+=b; render(); await wait(opts.fast?120:280); if(my!==token) return false }
   msg.done=true; render(); return true;
 }
@@ -745,8 +808,8 @@ function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true;
 document.addEventListener('click', async e=>{
   const t=e.target.closest('[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
-  if (t.dataset.say) return say(t.dataset.say);
-  if (t.dataset.saytext){ const k=Object.keys(PHR).find(k=>PHR[k].t===t.dataset.saytext); return say(k,true) }
+  if (t.dataset.say) return quickSay(t.dataset.say);
+  if (t.dataset.saytext) return deliver(t.dataset.saytext,'нажатие');
   if (t.dataset.ev) return event(t.dataset.ev);
   if (t.dataset.w){ let v=t.dataset.v; if(v==='true')v=true; if(v==='false')v=false; return setWorld(t.dataset.w,v) }
   if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; return render() }
@@ -792,17 +855,19 @@ document.addEventListener('click', async e=>{
       trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
-    case 'kbd': S.ov.input=S.ov.input==='kbd'?'voice':'kbd'; S.keepScroll=true; render(); $('#kin')?.focus(); return;
-    case 'ksend': case 'csend': { const v=(($(a==='ksend'?'#kin':'#cin')?.value)||'').toLowerCase(); if(!v) return; const k=/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask'; return say(k,true) }
-    case 'micfromapp': return openOverlay('из приложения');
+    case 'csend': { const v=(S.draft||'').trim(); if(!v) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
+    case 'recsend': return finishRec('send');
+    case 'recfield': return finishRec('field');
+    case 'reccancel': return finishRec('cancel');
+    case 'sideauto': S.sideAuto=!S.sideAuto; trace(S.sideAuto?'Лист по боковой кнопке сразу пишет без рук (по умолчанию).':'Лист по боковой кнопке ждёт, пока зажмёте микрофон.'); return render();
     case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
     case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;
-    case 'eqtap': return;
     case 'unlock': S.w.locked=false; S.screen='home'; return render();
     case 'toast': { const T=S.toast; S.toast=null; if(T?.act==='push') openOverlay('из уведомления'); else render(); return }
   }
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='kin') $('[data-act=ksend]').click(); if(e.target.id==='cin') $('[data-act=csend]').click(); if(e.target.id==='addr') $('[data-act=addrgo]').click() } });
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='cin'){ S.draft=e.target.value; $('[data-act=csend]')?.click() } if(e.target.id==='addr') $('[data-act=addrgo]').click() } });
+document.addEventListener('input',e=>{ if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
   if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
@@ -811,11 +876,11 @@ function cardBtn(b){
   if (b==='unlockmove'){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы перенести встречу',text:'После разблокировки перенесу сам.',opts:[['Разблокировать','unlock_move'],['Отмена','x','sec2']]}; return render() }
   if (b==='apr_once'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'sys',x:'Разрешено один раз'}); (async()=>{ const my=++token; S.busy=true; if(!await think(my,[{i:'⌨',t:'Команда на сервере',d:'<div class="term">$ rm -rf /var/log/app/*.gz\n(exit 0)</div>',ms:'0,3 с'}])) return; await stream(my,'<p>Удалил старые логи, освободилось 4,1 ГБ.</p>',{fast:true}); S.busy=false; render() })(); return render() }
   if (b==='apr_no'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'sys',x:'Отклонено — команда не выполнена'}); return render() }
-  if (b==='clar'||b==='clar_other'){ if(idx>=0) S.feed.splice(idx,1); if(b==='clar_other'){ S.feed.push({t:'sys',x:'Напишите свой ответ'}); if(S.ov){ S.ov.input='kbd' } return render() } S.feed.push({t:'me',x:'4',via:'нажатие'}); (async()=>{ const my=++token; S.busy=true; await stream(my,'<p>Забронировал на субботу, 19:00, на четверых. Подтверждение придёт на почту.</p>',{fast:true}); S.busy=false; render() })(); return render() }
+  if (b==='clar'||b==='clar_other'){ if(idx>=0) S.feed.splice(idx,1); if(b==='clar_other'){ S.feed.push({t:'sys',x:'Напишите свой ответ'}); render(); $('#cin')?.focus(); return } S.feed.push({t:'me',x:'4',via:'нажатие'}); (async()=>{ const my=++token; S.busy=true; await stream(my,'<p>Забронировал на субботу, 19:00, на четверых. Подтверждение придёт на почту.</p>',{fast:true}); S.busy=false; render() })(); return render() }
   if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:'Hermes → телефон',btn:'Отменить',kind:'B',id:Date.now()}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
 }
 async function dlgAct(k){
-  if (k==='mic_ok'){ S.w.mic='ok'; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='mic_ok'){ S.w.mic='ok'; if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
   if (k==='mic_no'){ S.w.mic='denied'; if(S.ov) openOverlay('снова'); return render() }
   if (k==='notif_ok'){ S.w.notif='ok'; trace('Уведомления разрешены.','i'); return render() }
   if (k==='dlnow') return startDl(true);
@@ -833,7 +898,7 @@ side.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.prevent
 function longPress(){
   if (!S.sideOk){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Боковая кнопка ещё не настроена на помощника.',opts:[['Понятно','x']]}; return render() }
   if (S.w.role!=='ours'){ const who=S.w.role==='bixby'?'Bixby':'Gemini'; S.dialog={ic:'✦',title:who,text:`Открылся ${who}: он выбран помощником.`,opts:[['Закрыть','x']]}; return render() }
-  openOverlay(S.w.locked?'поверх экрана блокировки':'боковой кнопкой');
+  openOverlay('side');
 }
 async function event(k){
   if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец: hermes pairing approve tasya K7Q2M9XD','h'); return pairDone() } return }
@@ -857,7 +922,7 @@ const PRESETS=[
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
 ];
 function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
-  if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('боковой кнопкой'); setTimeout(()=>say(k),350) } }
+  if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['cron','Cron: утренняя сводка'],['bg','Фоновая задача на сервере завершилась'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
