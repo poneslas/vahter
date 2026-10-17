@@ -1,0 +1,37 @@
+package ru.poneslas.tasya.probe.core
+
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.core.content.edit
+
+/**
+ * Настройки прогона. По умолчанию — адреса для эмулятора: 10.0.2.2 — это Mac,
+ * где `scripts/serve.py` отдаёт сборки и принимает загрузки.
+ */
+object Config {
+    private lateinit var prefs: SharedPreferences
+
+    val fields = listOf(
+        Field("server", "Тестовый сервер (П9, П14)", "http://10.0.2.2:8765"),
+        Field("lan", "Адрес в локальной сети host:port (П13)", "192.168.1.10:8765"),
+        Field("domain", "Домен host:port (П13)", "example.com:443"),
+        Field("tailscale", "Адрес Tailscale host:port (П13, пусто — пропустить)", ""),
+    )
+
+    data class Field(val key: String, val label: String, val default: String)
+
+    fun init(ctx: Context) {
+        prefs = ctx.getSharedPreferences("config", Context.MODE_PRIVATE)
+    }
+
+    operator fun get(key: String): String =
+        prefs.getString(key, null) ?: fields.first { it.key == key }.default
+
+    operator fun set(key: String, value: String) = prefs.edit { putString(key, value) }
+
+    /** Общие флажки, которые человек ставит руками (Auto Blocker и т. п.). */
+    fun flag(key: String) = prefs.getBoolean("flag_$key", false)
+    fun setFlag(key: String, v: Boolean) = prefs.edit { putBoolean("flag_$key", v) }
+
+    val server get() = get("server").trimEnd('/')
+}

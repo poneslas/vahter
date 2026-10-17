@@ -60,7 +60,7 @@ const PRESETS=[
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' },'fail','locked'],
   ['Микрофон запрещён','кнопка «Открыть настройки»',()=>{ ready(); S.w.mic='denied' },'fail','nomic'],
 ];
-function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; curPreset=i; openGroup=p[3]; save({k:'p',slug:p[4]}); history.replaceState(null,'','#'+p[4]); renderGroups(); p[2](); if(p[0].startsWith('Режим «Гастрогид»')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Гастрогид» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
+function preset(i,restored){ token++; clearInterval(dlT); const p=PRESETS[i]; curPreset=i; openGroup=p[3]; save({k:'p',slug:p[4]}); history.replaceState(null,'','#'+p[4]); renderGroups(); p[2](); if(restored && (S.autoSay||S.autoEv)){ S.autoSay=null; S.autoEv=null; render(); trace(`Восстановлен сценарий «${p[0]}» — сам он не проигрывается. Нажмите его в «Сценариях», чтобы проиграть.`,'p') } if(p[0].startsWith('Режим «Гастрогид»')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Гастрогид» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
   else if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoEv){ const k=S.autoEv; S.autoEv=null; openOverlay('из сценария'); setTimeout(()=>event(k),350) }
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
@@ -95,7 +95,7 @@ $('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<b
 $('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Ответ пришёл, пока лист закрыт'],['ctx','Разговор упёрся в предел модели'],['cron','Hermes (v2): утренняя сводка'],['bg','Hermes (v2): фоновая задача'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 renderGroups();
-{ const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i); setPtab('sc') } else startTour() }
+{ const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i,true); setPtab('sc') } else startTour() }
 
 /* телефон: пропорции корпуса S24 Ultra (79 × 162 мм ≈ 1 : 2,05), масштаб — по высоте окна, не больше 90 % */
 const W=400, H=820;

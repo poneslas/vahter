@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sc_svc">Перевод (сервис)</string>
+    <string name="sc_assist">Что это (showAssist)</string>
+    <string name="sc_camera">Гастрогид (камера)</string>
+</resources>

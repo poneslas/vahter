@@ -2,7 +2,7 @@
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
   const t=e.target.closest('[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
-  if (t && t.dataset.ptab){ return setPtab(t.dataset.ptab) }
+  if (t && t.dataset.ptab){ if(t.dataset.ptab==='tour' && curPreset!==null) return startTour(); return setPtab(t.dataset.ptab) }
   if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
   if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }

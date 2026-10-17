@@ -20,12 +20,13 @@ let eqs=[]; let last=performance.now();
 
 /* запись: зажать — говорить — отпустить; вверх — замочек; влево — отмена */
 let recTok=0;
-async function startRec(mode, into){
+async function startRec(mode, into, silent){
   if (S.rec) return; if (!voiceOk()) return micUnavailable();
-  S.rec={mode, key:into==='prompt'?'pr':(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now()}; const my=++recTok; render();
-  while (S.rec && my===recTok){ await wait(320); if(!S.rec||my!==recTok) return; const ph=PHR[S.rec.key]; if (S.rec.n<ph.w.length) S.rec.n++; S.keepScroll=true; render() }
+  // silent: запись включила боковая кнопка — в прототипе «речь» появится, когда выберете фразу в «Сказать»
+  S.rec={mode, key:into==='prompt'?'pr':silent?null:(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now()}; const my=++recTok; render();
+  while (S.rec && my===recTok){ await wait(320); if(!S.rec||my!==recTok) return; if(!S.rec.key) continue; const ph=PHR[S.rec.key]; if (S.rec.n<ph.w.length) S.rec.n++; S.keepScroll=true; render() }
 }
-function recText(){ const r=S.rec, ph=PHR[r.key]; if(!r.n) return ''; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }
+function recText(){ const r=S.rec; if(!r||!r.key||!r.n) return ''; const ph=PHR[r.key]; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }
 async function finishRec(how){
   const r=S.rec; if(!r) return; const text=recText(); recTok++; S.rec=null;
   if (r.into==='prompt'){ const m=modeById(S.editMode); if(how!=='cancel' && text){ m.prompt=(m.prompt.trim()+' '+text).trim(); trace('Надиктовано локально (GigaAM) и дописано в конец промпта — тот же компонент, что в листе.','p') } S.keepScroll=true; return render() }
@@ -74,6 +75,6 @@ function micRelease(){ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.
   finishRec('release') }
 document.addEventListener('pointerup',micRelease); document.addEventListener('pointercancel',micRelease); window.addEventListener('blur',micRelease);
 async function quickSay(k){ // имитация «зажал — сказал — отпустил» для кнопок панели
-  S.nextKey=k; if (S.rec){ S.rec.key=k; S.rec.n=0; return render() }
+  S.nextKey=k; if (S.rec){ S.rec.key=k; S.rec.n=0; render(); if (S.rec.mode==='locked' && S.rec.into!=='prompt'){ const my=recTok; await wait(320*PHR[k].w.length+400); if (S.rec && my===recTok){ trace('Сказал — и нажал «Отправить» на круге (в прототипе нажатие сделано за вас).','p'); finishRec('send') } } return }
   if (!voiceOk()){ trace('Голос недоступен — фраза введена как с клавиатуры.','e'); return deliver(PHR[k].fin,'клавиатура') }
   startRec('hold'); const my=recTok; await wait(320*PHR[k].w.length+250); if (S.rec && my===recTok && S.rec.mode==='hold') finishRec('release') }

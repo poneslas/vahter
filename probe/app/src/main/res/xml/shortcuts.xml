@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="svc" android:enabled="true"
+        android:icon="@android:drawable/ic_btn_speak_now"
+        android:shortcutShortLabel="@string/sc_svc">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="ru.poneslas.tasya.probe"
+            android:targetClass="ru.poneslas.tasya.probe.entry.ShortcutTrampolineActivity">
+            <extra android:name="via" android:value="service" />
+            <extra android:name="mode" android:value="translate" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="assist" android:enabled="true"
+        android:icon="@android:drawable/ic_menu_help"
+        android:shortcutShortLabel="@string/sc_assist">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="ru.poneslas.tasya.probe"
+            android:targetClass="ru.poneslas.tasya.probe.entry.ShortcutTrampolineActivity">
+            <extra android:name="via" android:value="showAssist" />
+            <extra android:name="mode" android:value="whatis" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="camera" android:enabled="true"
+        android:icon="@android:drawable/ic_menu_camera"
+        android:shortcutShortLabel="@string/sc_camera">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="ru.poneslas.tasya.probe"
+            android:targetClass="ru.poneslas.tasya.probe.entry.ShortcutTrampolineActivity">
+            <extra android:name="via" android:value="service" />
+            <extra android:name="mode" android:value="gastro" />
+            <extra android:name="camera" android:value="insheet" />
+        </intent>
+    </shortcut>
+</shortcuts>

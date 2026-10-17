@@ -29,7 +29,7 @@ function bannerHtml(){ const b=issue(); if(!b||S.dismissed===b.t) return ''; ret
 
 /* ───────── лента ───────── */
 function feedHtml(inSheet){
-  if (!S.feed.length && curMode().hint) return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
+  if (!S.feed.length && curMode().hint && (inSheet || S.mode!=='main')) return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
   if (!S.feed.length) return inSheet ? '<div class="feed"></div>' : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
   return `<div class="feed">${S.feed.map(it=>itemHtml(it,inSheet)).join('')}</div>`;
 }
@@ -88,9 +88,9 @@ function lock(){ return `<div class="layer lock">${statusBar(false)}<div class="
 const voiceOk = () => S.w.model==='ready' && S.w.mic==='ok';
 function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; return `0:${String(s).padStart(2,'0')}` }
 function liveHtml(){
-  if (S.rec){ const ph=PHR[S.rec.key]; const n=S.rec.n; const fx=Math.max(0,n-2);
+  if (S.rec){ const ph=PHR[S.rec.key]||{w:[]}; const n=S.rec.n; const fx=Math.max(0,n-2);
     const lbl = S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · кнопка справа — отправить';
-    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">…</span>'}</div>` }
+    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">Слушаю…</span>'}</div>` }
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
@@ -255,7 +255,7 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
   return `<div class="layer cam2">${statusBar(false)}
   <div class="modeName">${I[m.icon]} ${esc(m.title)}</div>
   <div class="vf" style="top:96px"><i class="th ${c.subj}"></i></div>
-  ${qrec?`<div class="q">${PHR[S.rec.key].w.slice(0,S.rec.n).join(' ')||'…'}</div>`:''}
+  ${qrec?`<div class="q">${recText()||'Слушаю…'}</div>`:''}
   ${false?`<div class="sending"><span>Отправляю${c.q?' с вопросом':''}…</span><div class="bar"><i></i></div><button class="recbtn" data-act="shotcancel" style="background:rgba(255,255,255,.18);color:#fff">Отмена</button></div>`
    : c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`
    : `<button class="cx" data-act="camcancel">${c.first?'В лист':'Отмена'}</button><button class="shut" data-act="shoot" aria-label="Снять и отправить"></button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите — снимок уйдёт с вопросом">${I.mic}</button>`}</div>` }
