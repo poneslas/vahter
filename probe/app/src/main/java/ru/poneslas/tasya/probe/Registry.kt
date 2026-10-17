@@ -10,6 +10,7 @@ import ru.poneslas.tasya.probe.entry.EntryModule
 import ru.poneslas.tasya.probe.expand.ExpandModule
 import ru.poneslas.tasya.probe.extra.ExtraModule
 import ru.poneslas.tasya.probe.net.NetModule
+import ru.poneslas.tasya.probe.osread.OsReadModule
 import ru.poneslas.tasya.probe.pick.PickModule
 import ru.poneslas.tasya.probe.push.PushModule
 import ru.poneslas.tasya.probe.session.SessionModule
@@ -26,7 +27,7 @@ interface Module {
 object Registry {
     private val modules: List<Module> = listOf(
         AssistModule, SessionModule, CameraModule, PickModule, UploadModule, ExpandModule,
-        EntryModule, PushModule, NetModule, UpdateModule, AsrModule, ExtraModule,
+        EntryModule, PushModule, NetModule, UpdateModule, AsrModule, ExtraModule, OsReadModule,
     )
 
     lateinit var probes: List<Probe>

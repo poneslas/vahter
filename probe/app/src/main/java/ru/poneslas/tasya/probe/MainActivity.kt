@@ -79,7 +79,29 @@ class MainActivity : ComponentActivity() {
                 Surface(Modifier.fillMaxSize().safeDrawingPadding()) { Screens() }
             }
         }
-        intent?.getStringExtra("probe")?.let { screen.value = it }
+        handle(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handle(intent)
+    }
+
+    /**
+     * Управление с Mac:
+     *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --es run П18
+     *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --es answer Готово
+     *   adb shell am start -n ru.poneslas.tasya.probe/.MainActivity --ez auto true
+     */
+    private fun handle(i: Intent?) {
+        i ?: return
+        i.getStringExtra("probe")?.let { screen.value = it }
+        i.getStringExtra("run")?.let { id ->
+            screen.value = id
+            Runner.start(this, Registry.probe(id))
+        }
+        i.getStringExtra("answer")?.let { Human.answer(it) }
+        if (i.getBooleanExtra("auto", false)) Runner.startAllAutomatic(this)
     }
 
     override fun onResume() {
