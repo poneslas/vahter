@@ -88,7 +88,7 @@ const voiceOk = () => S.w.model==='ready' && S.w.mic==='ok';
 function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; return `0:${String(s).padStart(2,'0')}` }
 function liveHtml(){
   if (S.rec){ const ph=PHR[S.rec.key]; const n=S.rec.n; const fx=Math.max(0,n-2);
-    const lbl = S.rec.into==='append' ? (S.rec.mode==='hold'?'Дописываю в поле · отпустите — допишется':'Дописываю в поле · «В поле» или «Отправить» всё') : S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · «Отправить» или «В поле»';
+    const lbl = S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · кнопка справа — отправить';
     return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">…</span>'}</div>` }
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
@@ -102,7 +102,8 @@ function composerHtml(){
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${modeTabs()}</div>` }
-  if (S.rec) return `<div class="cwrap"><div class="composer rec"><button class="iconbtn" data-act="reccancel" aria-label="Отменить запись">${I.x}</button><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div></div><button class="recbtn" data-act="recfield">В поле</button><button class="sendbtn" data-act="recsend" aria-label="Отправить">${I.send}</button></div>${modeTabs()}</div>`;
+  // запись без рук, как в Писаре: круг микрофона стал «Отправить»; дёрнуть его влево — отмена
+  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><button class="slide lnkc" data-act="reccancel" style="opacity:${Math.max(.25,1-gx/70)}">‹ влево — отмена</button></div><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn sendmode" data-recsend aria-label="Отправить; потяните влево — отменить">${I.send}</button></div></div>${modeTabs()}</div>` }
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
   const canAttach = A.file || A.photo;

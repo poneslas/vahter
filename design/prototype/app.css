@@ -432,3 +432,6 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .sys .it .ic{width:24px;height:24px;color:#3E6FD8;flex:none}
 
 .fieldarea.dictating{border-color:var(--local);background:#FFFBF2}
+
+.micbtn.sendmode{background:var(--ink);color:#fff}
+.lnkc{border:0;background:none;padding:0;font:inherit;cursor:pointer}

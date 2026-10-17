@@ -83,7 +83,6 @@ document.addEventListener('click', async e=>{
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
     case 'csend': { const v=(S.draft||'').trim(); if(!v) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
     case 'recsend': return finishRec('send');
-    case 'recfield': return finishRec('field');
     case 'reccancel': return finishRec('cancel');
     case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
     case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;

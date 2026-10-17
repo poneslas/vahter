@@ -32,9 +32,7 @@ async function finishRec(how){
   if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
   if (S.screen==='cam2' && S.cam){ trace('Отпустил микрофон на камере — снимок и вопрос уходят вместе одним сообщением.','p'); return shotGo(text) }
   if (S.ov){ S.ov.live=`<span class="st p">Распознаю</span>${esc(text)}`; S.ov.liveQ=false } render(); await wait(380);
-  if (how==='release') how = r.into==='append' ? 'field' : 'send';   // отпустил: пустое поле — отправить, в поле был текст — дописать
-  if (how==='field'){ S.draft=(S.draft?S.draft+' ':'')+text.replace(/[.]$/,''); S.draftVoice=true; if(S.ov) S.ov.live=''; render(); const el=$('#cin'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length) }
-    trace(r.into==='append'?'Диктовка дописана в поле после того, что уже было. Поправьте руками или договорите — и «Отправить».':'Текст ушёл в поле: можно поправить, договорить микрофоном (допишется) и отправить.','p'); return }
+  if (how==='release') how='send';   // отпустил — отправить; если в поле был текст, он уходит вместе с голосом
   const full = r.into==='append' ? (S.draft+' '+text) : text; S.draft=''; S.draftVoice=false;
   trace(r.mode==='hold'?'Отпустил — отправлено (push-to-talk, как в Писаре). Чистовик GigaAM уже с пунктуацией.':'«Отправить» из замочка — отправлено.','p');
   return deliver(full,'голос');
@@ -52,6 +50,14 @@ let sw=null;
 document.addEventListener('pointerdown',e=>{ const c=e.target.closest('[data-swipe]'); if(!c) { sw=null; return } sw={x:e.clientX,y:e.clientY} });
 document.addEventListener('pointerup',e=>{ if(!sw) return; const dx=e.clientX-sw.x, dy=e.clientY-sw.y; sw=null; if(Math.abs(dx)<50||Math.abs(dy)>40) return; const am=activeModes(); if(am.length<2) return;
   const i=am.findIndex(m=>m.id===S.mode); const n=am[(i+(dx<0?1:-1)+am.length)%am.length]; setMode(n.id,'Свайп по вкладкам режимов'); sw=false; S.keepScroll=true; render(); setTimeout(()=>{ if(sw===false) sw=null },0) });
+/* запись без рук: тап по кругу — отправить, потянуть влево — отмена */
+let pl=null;
+document.addEventListener('pointerdown',e=>{ const b=e.target.closest('[data-recsend]'); if(!b) return; e.preventDefault(); pl={x:e.clientX,t:Date.now()} });
+document.addEventListener('pointermove',e=>{ if(!pl||!S.rec) return; const k=$('#dev').getBoundingClientRect().width/W; const dx=Math.max(0,(pl.x-e.clientX)/k); S.rec.lg=dx;
+  const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translateX(${-Math.min(dx,70)}px)`; const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-dx/70);
+  if (dx>70){ pl=null; finishRec('cancel') } });
+const lockedUp=()=>{ if(!pl) return; const moved=(S.rec&&S.rec.lg)||0; pl=null; if(!S.rec) return; if(moved<12) return finishRec('send'); S.rec.lg=0; S.keepScroll=true; render() };
+document.addEventListener('pointerup',lockedUp); document.addEventListener('pointercancel',lockedUp);
 let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
 document.addEventListener('dragstart',e=>{ if(e.target.closest&&e.target.closest('[data-mic]')) e.preventDefault() });
@@ -61,7 +67,7 @@ document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold'
   const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;
   const lc=$('#scr .lockcue'); if(lc){ lc.style.setProperty('--ly',Math.min(S.rec.g.y,45)+'px'); lc.classList.toggle('near',S.rec.g.y>22) }
   const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-S.rec.g.x/70);
-  if (pd.axis==='y' && dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Дальше «Отправить» или «В поле».','p'); S.keepScroll=true; render() }
+  if (pd.axis==='y' && dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Круг микрофона стал «Отправить», влево — отмена.','p'); S.keepScroll=true; render() }
   else if (pd.axis==='x' && dx>70){ pd=null; finishRec('cancel') } });
 function micRelease(){ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
   if (dt<260){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
