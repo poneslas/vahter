@@ -29,6 +29,8 @@ data class OpenRecord(
     val newSession: Boolean,
     val locked: Boolean,
     val tCall: Long? = null,
+    /** Время нажатия от системы (args TIME / invocation_time_ms), приведённое к uptime. */
+    val tInvoke: Long? = null,
     val wallTime: Long = System.currentTimeMillis(),
 ) {
     val mode: String? get() = args.getString("mode")
@@ -36,12 +38,15 @@ data class OpenRecord(
     val prepareToFrame get() = tFrame - (tPrepare ?: tCreate ?: tShow)
     val showToFrame get() = tFrame - tShow
     val callToFrame get() = tCall?.let { tFrame - it }
+    /** Нажатие → первый кадр: полная цена кнопки, включая систему. */
+    val invokeToFrame get() = tInvoke?.let { tFrame - it }
 
     fun describe() = buildString {
         append("#$seq flags=0x${Integer.toHexString(flags)} [${showFlags(flags)}]")
         mode?.let { append(" mode=$it") }
         append(" prepare→кадр ${prepareToFrame} мс, onShow→кадр ${showToFrame} мс")
         callToFrame?.let { append(", вызов→кадр $it мс") }
+        invokeToFrame?.let { append(", нажатие→кадр $it мс") }
         if (freshProcess) append(", процесс новый")
         if (newSession) append(", сессия новая")
         if (locked) append(", блокировка")

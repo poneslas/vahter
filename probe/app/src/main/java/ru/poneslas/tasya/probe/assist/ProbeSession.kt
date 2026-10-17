@@ -93,6 +93,7 @@ class ProbeSession(context: Context) : VoiceInteractionSession(context),
         val locked = context.getSystemService(KeyguardManager::class.java).isKeyguardLocked
         registry.currentState = Lifecycle.State.RESUMED
         Sheet.visible.value = true
+        Log.i(TAG, "session onShow invocation_time_ms=${lastArgs.getLong("invocation_time_ms", -1)} TIME=${lastArgs.getLong("android.intent.extra.TIME", -1)} uptime=$tShow elapsed=${SystemClock.elapsedRealtime()} wall=${System.currentTimeMillis()}")
         Log.i(TAG, "session onShow flags=0x${Integer.toHexString(showFlags)} [${showFlags(showFlags)}] args=${lastArgs.keySet()} locked=$locked")
 
         val view = root ?: return
@@ -107,7 +108,7 @@ class ProbeSession(context: Context) : VoiceInteractionSession(context),
                     seq = ++Sheet.seq, flags = showFlags, args = lastArgs,
                     tPrepare = tPrepare, tCreate = tCreate.takeIf { newSession }, tContent = tContent.takeIf { newSession },
                     tShow = tShow, tFrame = tFrame, freshProcess = fresh, newSession = newSession, locked = locked,
-                    tCall = tCall,
+                    tCall = tCall, tInvoke = invokeTime(lastArgs, tShow),
                 )
                 OpenLog.add(view.context, rec)
                 // Маркер для scripts/series.sh: ищет строку «FRAME» в logcat.
@@ -165,6 +166,20 @@ class ProbeSession(context: Context) : VoiceInteractionSession(context),
         // Всё окно принимает касания: затемнение над листом перехватывает нажатия (П3.5).
         outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_FRAME
     }
+}
+
+/**
+ * Система кладёт в args время нажатия: android.intent.extra.TIME и invocation_time_ms.
+ * Часы не задокументированы [?]: на эмуляторе это uptime. Если значение «в будущем» по uptime —
+ * считаем, что это elapsedRealtime, и переводим. Сырые значения пишутся в лог onShow.
+ */
+private fun invokeTime(args: Bundle, tShow: Long): Long? {
+    val raw = args.getLong("android.intent.extra.TIME", -1).takeIf { it > 0 }
+        ?: args.getLong("invocation_time_ms", -1).takeIf { it > 0 }
+        ?: return null
+    if (raw <= tShow) return raw
+    val asUptime = raw - (SystemClock.elapsedRealtime() - SystemClock.uptimeMillis())
+    return asUptime.takeIf { it in 1..tShow }
 }
 
 object LockEvents {

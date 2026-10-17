@@ -127,7 +127,7 @@ object ButtonProbe : Probe(
         "Тёплые: 10 раз удержать кнопку и закрыть лист, между нажатиями ~3 с. Пять из них — на заблокированном экране.",
         "Холодные: в листе «Убить процесс», затем удержать кнопку; повторить 5 раз.",
         "Снова запустить П2 → «Посчитать».",
-        "Полная цена кнопки (нажатие → кадр) — scripts/trace.sh (Perfetto). Пробник видит время только от onPrepareToShowSession.",
+        "Нажатие → кадр пробник берёт из времени нажатия, которое система кладёт в args; сверка — scripts/trace.sh (Perfetto).",
         "На эмуляторе вместо кнопки: adb shell input keyevent KEYCODE_ASSIST.",
     ),
 ) {
@@ -165,17 +165,21 @@ object ButtonProbe : Probe(
         val cold = opens.filter { it.fresh }
         warm.forEach { metric("warm_prepare_to_frame_ms", it.prepareToFrame) }
         cold.forEach { metric("cold_prepare_to_frame_ms", it.prepareToFrame) }
+        warm.mapNotNull { it.invokeToFrame }.forEach { metric("warm_press_to_frame_ms", it) }
+        cold.mapNotNull { it.invokeToFrame }.forEach { metric("cold_press_to_frame_ms", it) }
         opens.filter { it.locked }.forEach { metric("locked_prepare_to_frame_ms", it.prepareToFrame) }
         log("flags", opens.map { showFlags(it.flags) }.distinct().joinToString())
-        val wm = warm.map { it.prepareToFrame.toDouble() }
-        val cm = cold.map { it.prepareToFrame.toDouble() }
+        // Полная цена — от нажатия (время из args системы); если его нет — от onPrepareToShowSession.
+        val haveInvoke = opens.all { it.invokeToFrame != null }
+        val wm = warm.map { (if (haveInvoke) it.invokeToFrame!! else it.prepareToFrame).toDouble() }
+        val cm = cold.map { (if (haveInvoke) it.invokeToFrame!! else it.prepareToFrame).toDouble() }
         val s = buildString {
             append("тёплых ${warm.size}")
             if (wm.isNotEmpty()) append(": медиана ${fmt(median(wm))} мс, p90 ${fmt(percentile(wm, .9))}")
             append("; холодных ${cold.size}")
             if (cm.isNotEmpty()) append(": медиана ${fmt(median(cm))} мс")
             append("; флаги: ${opens.map { showFlags(it.flags) }.distinct().joinToString()}")
-            append(". Без цены самой кнопки — её даёт Perfetto.")
+            append(if (haveInvoke) ". Отсчёт от нажатия (время из args системы)." else ". Отсчёт от onPrepareToShowSession, без цены кнопки — её даёт Perfetto.")
         }
         summary(s)
         val warmOk = wm.isNotEmpty() && median(wm) <= 300
