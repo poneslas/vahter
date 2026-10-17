@@ -35,6 +35,7 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .layer{position:absolute;inset:0}
 .sb{position:absolute;top:0;left:0;right:0;height:34px;display:flex;justify-content:space-between;align-items:center;padding:6px 26px 0;font-size:12.5px;font-weight:600;z-index:30;pointer-events:none}
 .sb.l{color:#fff}.sb.d{color:#1d2333}
+.sbi{display:flex;align-items:center;gap:5px}.sbi svg{display:block}
 .punch{position:absolute;top:12px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#000;z-index:31}
 .ic{width:20px;height:20px;flex:none}
 
@@ -96,6 +97,23 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .mchip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .mchip .mi{font-size:13px;line-height:1}
 .mchip.add{color:var(--soft);padding:6px 10px}
+.mpill{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surf);display:grid;place-items:center;flex:none;font-size:18px}
+.mpicker{position:absolute;left:10px;bottom:72px;min-width:230px;background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:0 18px 40px -16px rgba(14,26,54,.45);z-index:6;animation:up .18s}
+.mpicker button{display:flex;gap:12px;align-items:center;width:100%;border:0;background:none;padding:9px 10px;border-radius:12px;text-align:left}
+.mpicker button[aria-pressed=true]{background:#ECEEE8}
+.mpicker b{display:block;font-weight:600;font-size:14px}.mpicker small{display:block;font-size:12px;color:var(--soft)}
+.mi2{width:26px;text-align:center;font-size:17px}
+.swipehint{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:12px;color:var(--soft);pointer-events:none}
+.cam2 .mic2{position:absolute;bottom:82px;right:44px;width:56px;height:56px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;touch-action:none}
+.cam2 .mic2.on{background:var(--local)}
+.cam2 .q{position:absolute;left:24px;right:24px;bottom:170px;text-align:center;font-size:20px;font-weight:500;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.cam2 .sending{position:absolute;left:0;right:0;bottom:70px;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:15px}
+.cam2 .sending .bar{width:180px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
+.cam2 .sending .bar i{display:block;height:100%;background:#fff;animation:fill 1.8s linear forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+.cam2 .modeName{position:absolute;top:60px;left:0;right:0;text-align:center;font-size:13px;opacity:.85}
+.intool{width:34px;height:34px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;flex:none;font-size:16px;color:var(--soft)}
+.intool:hover{background:#ECEEE8}
 .toolbtn{width:40px;height:40px;border-radius:50%;border:0;background:#ECEEE8;display:grid;place-items:center;flex:none;font-size:17px}
 .attdraft{display:flex;align-items:center;gap:8px;padding:0 14px 6px}
 .attdraft .th{width:52px;height:52px;border-radius:10px;flex:none}
@@ -104,11 +122,11 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .meimg .th{width:170px;height:128px;border-radius:14px}
 .th{container-type:size}
 .th.tea{background:linear-gradient(160deg,#2E6B4F 0 35%,#E9DFC6 35% 100%);position:relative;overflow:hidden}
-.th.tea::after{content:"茉莉花茶\A 250g ¥38";white-space:pre;position:absolute;left:10%;top:44%;font-size:13px;line-height:1.3;color:#2E3B2F;font-weight:700}
+.th.tea::after{content:"茉莉花茶\A 250g ¥38";white-space:pre;position:absolute;left:10%;top:44%;font-size:clamp(5px,9cqw,30px);line-height:1.3;color:#2E3B2F;font-weight:700}
 .th.menu{background:repeating-linear-gradient(180deg,#F4EEDF 0 18px,#E7DDC7 18px 19px);position:relative}
-.th.menu::after{content:"宫保鸡丁 ¥48\A 麻婆豆腐 ¥36\A 酸辣汤 ¥22";white-space:pre;position:absolute;left:10%;top:16%;font-size:12px;line-height:1.55;color:#4a3a1e;font-weight:600}
+.th.menu::after{content:"宫保鸡丁 ¥48\A 麻婆豆腐 ¥36\A 酸辣汤 ¥22";white-space:pre;position:absolute;left:10%;top:16%;font-size:clamp(4px,8cqw,28px);line-height:1.55;color:#4a3a1e;font-weight:600}
 .th.scrn{background:linear-gradient(180deg,#fff 0 22%,#EEF1F5 22% 100%);border:1px solid var(--line);position:relative}
-.th.scrn::after{content:"Siemens EQ.6 plus\A ¥ 6 299";white-space:pre;position:absolute;left:10%;top:30%;font-size:11px;line-height:1.5;color:#222;font-weight:600}
+.th.scrn::after{content:"Siemens EQ.6 plus\A ¥ 6 299";white-space:pre;position:absolute;left:10%;top:30%;font-size:clamp(4px,8cqw,16px);line-height:1.5;color:#222;font-weight:600}
 .cam2{background:#0b0d12;color:#fff}
 .cam2 .vf{position:absolute;top:110px;left:40px;right:40px;height:420px;border-radius:18px;overflow:hidden}
 .cam2 .vf .th{display:block;width:100%;height:100%;border-radius:0}
@@ -386,7 +404,7 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'
 const wait = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 120) : ms));
 
 const I = {
-  gear:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3L5.5 5.5"/></svg>',
+  gear:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>',
   kbd:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10"/></svg>',
   x:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   back:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
@@ -421,10 +439,14 @@ const MODES=[
 const fresh = () => { const o = ({
   w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
-  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[]}, mode:'main', draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
-  upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, draft:'', sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
-}); Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] }, set(v){ this.feeds[this.mode]=v }, enumerable:false}); return o };
-const curMode = () => MODES.find(m=>m.id===S.mode);
+  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true}, sendOnShot:{translate:false,whatsthis:true}, custom:[], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
+  upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
+}); o.drafts={}; Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
+  Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
+const allModes = () => MODES.concat(S.custom);
+const activeModes = () => allModes().filter(m=>m.id==='main'||m.custom||S.modeOn[m.id]);
+const curMode = () => allModes().find(m=>m.id===S.mode) || MODES[0];
+function setMode(id, why){ const was=S.mode; S.mode=id; S.draftImg=null; S.modePick=false; if(!S.feeds[id]) S.feeds[id]=[]; if(was!==id){ const m=curMode(); trace(`${why||'Переключено'}: «${m.title}». Своя лента и своя сессия в Hermes (thread_id=${m.id==='main'?'—':m.id}); память Hermes общая.`,'p') } }
 let S = fresh(); let token = 0;
 function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove() }
 
@@ -447,7 +469,13 @@ let eqs=[]; let last=performance.now();
 (function loop(now){ const dt=Math.min(50,now-last); last=now; eqs.forEach(e=>e.step(dt)); requestAnimationFrame(loop) })(last);
 
 /* ───────── общие куски ───────── */
-function statusBar(dark){ const n=S.w.net==='wifi'?'Wi-Fi ▂▄▆':S.w.net==='cell'?'5G ▂▄▆':'✈'; return `<div class="sb ${dark?'d':'l'}"><span>9:41</span><span>${n} &nbsp;82%</span></div><div class="punch"></div>` }
+function statusBar(dark){
+  const wifi='<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 21 23.6 7A17.6 17.6 0 0 0 12 3 17.6 17.6 0 0 0 .4 7z"/></svg>';
+  const cell='<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M2 22h20V2z"/></svg>';
+  const plane='<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
+  const bat='<svg viewBox="0 0 26 13" width="24" height="12"><rect x=".7" y=".7" width="22" height="11.6" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="15.2" height="8.2" rx="1.6" fill="currentColor"/><rect x="23.8" y="4.3" width="1.8" height="4.4" rx=".9" fill="currentColor" fill-opacity=".45"/></svg>';
+  const net = S.w.net==='none' ? plane : (S.w.net==='wifi' ? wifi : '') + cell;
+  return `<div class="sb ${dark?'d':'l'}"><span>9:41</span><span class="sbi">${net}<span>82%</span>${bat}</span></div><div class="punch"></div>` }
 function oursIcon(st=''){ return `<span class="ico ours" style="${st}"><i><b style="height:8px"></b><b style="height:16px"></b><b style="height:22px"></b><b style="height:12px"></b></i></span>` }
 const brainOk = () => S.w.server==='paired' && S.w.net!=='none';
 function linkState(){
@@ -528,21 +556,23 @@ function liveHtml(){
 }
 function modesBar(){ return `<div class="modes" role="tablist" aria-label="Режимы">${MODES.map(m=>`<button class="mchip" role="tab" data-mode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi">${m.icon}</span>${m.title}</button>`).join('')}<button class="mchip add" data-act="modes" aria-label="Настроить режимы">+</button></div>` }
 function attDraftHtml(){ const a=S.draftImg; if(!a) return ''; return `<div class="attdraft"><i class="th ${a.cls}"></i><span>${a.kind==='screen'?'Снимок экрана':'Фото'} · можно добавить вопрос голосом или текстом</span><button class="iconbtn" data-act="dropimg" aria-label="Убрать">${I.x}</button></div>` }
+function modePill(){ const am=activeModes(); if(am.length<2) return ''; const m=curMode(); return `<button class="mpill" data-act="modepick" aria-label="Режим: ${m.title}. Нажмите — список, свайп по строке — следующий">${m.icon}</button>` }
+function modePicker(){ if(!S.modePick) return ''; return `<div class="mpicker" role="menu">${activeModes().map(m=>`<button data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi2">${m.icon}</span><span><b>${m.title}</b><small>${m.id==='main'?'обычный разговор':(S.camFirst[m.id]?'сразу камера':'голос, текст'+(m.photo?', фото':''))}</small></span></button>`).join('')}<button data-act="modes"><span class="mi2">⚙</span><span><b>Настроить режимы</b></span></button></div>` }
 function composerHtml(){
   const ph=S.w.server==='paired'?'Написать Hermes':'Команда телефону';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold') return `<div class="cwrap"><div class="lockcue">🔒<span style="font-size:12px">↑</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide">‹ влево — отмена</span></div>${mic}</div></div>`;
   if (S.rec) return `<div class="cwrap"><div class="composer rec"><button class="iconbtn" data-act="reccancel" aria-label="Отменить запись">${I.x}</button><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div></div><button class="recbtn" data-act="recfield">В поле</button><button class="sendbtn" data-act="recsend" aria-label="Отправить">${I.send}</button></div></div>`;
-  const m=curMode(); const tools=(m.photo?`<button class="toolbtn" data-act="camera" aria-label="Сфотографировать">📷</button>`:'')+(m.screen?`<button class="toolbtn" data-act="screenshot" aria-label="Снимок экрана под листом">▣</button>`:'');
+  const m=curMode(); const tools=(m.photo?`<button class="intool" data-act="camera" aria-label="Сфотографировать">📷</button>`:'')+(m.screen?`<button class="intool" data-act="screenshot" aria-label="Снимок экрана под листом">▣</button>`:'');
   const canSend = S.draft || S.draftImg;
-  return `<div class="cwrap">${attDraftHtml()}<div class="composer">${tools}<div class="fld"><input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':(m.id==='main'?ph:m.id==='translate'?'Что перевести?':'Вопрос к фото')}" autocomplete="off">${canSend?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div></div>`;
+  return `<div class="cwrap">${modePicker()}${attDraftHtml()}<div class="composer" data-swipe>${modePill()}<div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':(m.id==='main'?ph:m.id==='translate'?'Что перевести?':'Вопрос к фото')}" autocomplete="off">${canSend?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${mic}</div></div>`;
 }
 function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
   <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>Hermes · ${t}</small></div>
     <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
-  ${modesBar()}${bannerHtml()}
+  ${bannerHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
   ${S.ov?'':liveHtml()}${S.ov?'':composerHtml()}</div>`;
 }
@@ -557,7 +587,8 @@ function settings(){
     ${li(I.btn,'Боковая кнопка', S.sideOk?'Зажатие вызывает помощника':'Зажатие открывает меню выключения','sysside',!S.sideOk)}
     ${li(I.mic,'Лист по боковой кнопке', S.sideAuto?'Сразу записывает — без рук':'Ждёт, пока зажмёте микрофон','sideauto',false,`<span class="sw ${S.sideAuto?'':'off'}"></span>`)}
     <div class="lh">Режимы</div>
-    ${MODES.map(m=>li(`<span style="font-size:15px">${m.icon}</span>`,m.title,m.id==='main'?'Основной разговор, все действия телефона':(m.prompt.slice(0,46)+'…'),'editmode:'+m.id)).join('')}
+    ${allModes().map(m=>`<div style="display:flex;align-items:center">${li(`<span style="font-size:15px">${m.icon}</span>`,m.title,m.id==='main'?'Всегда включён: обычный разговор':m.custom?'Свой режим':(S.camFirst[m.id]?'Сразу камера · ':'')+m.prompt.slice(0,34)+'…','editmode:'+m.id)}${m.id==='main'||m.custom?'':`<button class="iconbtn" data-toggle="modeOn:${m.id}" aria-label="${S.modeOn[m.id]?'Выключить':'Включить'} режим" style="margin-right:12px"><span class="sw ${S.modeOn[m.id]?'':'off'}"></span></button>`}</div>`).join('')}
+    ${li('<span style="font-size:18px">+</span>','Свой режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
@@ -571,12 +602,13 @@ function settings(){
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
   </div></div></div>`;
 }
-function modePage(){ const m=MODES.find(x=>x.id===S.editMode);
+function modePage(){ const m=allModes().find(x=>x.id===S.editMode); if(m.custom){ S.camFirst[m.id]??=false; S.sendOnShot[m.id]??=false }
   const chip=(on,t)=>`<span class="mchip" aria-pressed="${on}" style="cursor:default">${t}</span>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${m.icon} ${m.title}</b><small>отдельный разговор в Hermes</small></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${m.icon} ${m.title}</b><small>${m.custom?'идентификатор '+m.id+' — не меняется':'отдельный разговор в Hermes'}</small></div></div>
   <div class="scroll"><div style="padding:0 18px 20px;display:flex;flex-direction:column;gap:12px">
     <div><div class="lh" style="padding:4px 0">Что делать</div>${m.id==='main'?'<p style="margin:0;color:var(--soft);font-size:13.5px">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea">${m.prompt}</textarea>`}</div>
     <div><div class="lh" style="padding:4px 0">Принимает</div><div class="chips">${chip(true,'🎙 Голос')}${chip(true,'⌨ Текст')}${chip(m.photo,'📷 Фото')}${chip(m.screen,'▣ Снимок экрана')}</div></div>
+    ${m.photo?`<div class="setcard"><div style="display:flex;align-items:center">${li('📷','Сразу открывать камеру','Ярлык, свайп или боковая кнопка — сразу видоискатель')}<button class="iconbtn" data-toggle="camFirst:${m.id}" style="margin-right:12px"><span class="sw ${S.camFirst[m.id]?'':'off'}"></span></button></div><div style="display:flex;align-items:center">${li('⇪','Отправлять сразу после снимка','2 секунды на «Отмена», дальше уходит само')}<button class="iconbtn" data-toggle="sendOnShot:${m.id}" style="margin-right:12px"><span class="sw ${S.sendOnShot[m.id]?'':'off'}"></span></button></div></div>`:''}
     <div class="setcard">${li(I.shield,'Действия телефона',m.tools?'Все — таймер, календарь, будильник…':'Выключены — режиму не нужны, ответы быстрее','',false,`<span class="sw ${m.tools?'':'off'}"></span>`)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже','',false,'')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для каждого режима','',false,'<span class="sw off"></span>')}</div>
     <p style="margin:0;font-size:12.5px;color:var(--soft)">В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;:${m.id==='main'?'':m.id}</code>. Промпт подмешивается в каждый ход — сброс сессии его не теряет.</p>
   </div></div></div>` }
@@ -635,11 +667,16 @@ function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"
 function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
 function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i%12; const f=(r<3&&c<3)||(r<3&&c>8)||(r>8&&c<3); s+=`<i style="background:${f||((r*7+c*13+r*c)%3===0)?'#111':'#fff'}"></i>` } return `<div class="qr">${s}</div>` }
 
-function cam2(){ const c=S.cam; return `<div class="layer cam2">${statusBar(false)}
-  <div class="pick">${[['tea','Товар'],['menu','Меню']].map(x=>`<button data-shot="${x[0]}" aria-pressed="${c.subj===x[0]}">${x[1]}</button>`).join('')}</div>
-  <div class="vf"><i class="th ${c.subj}"></i></div>
-  ${c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`:`<button class="cx" data-act="camcancel">Отмена</button><button class="shut" data-act="shoot" aria-label="Снять"></button>`}</div>` }
-function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${MODES.map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;text-align:center">${m.icon}</span>${m.title}</button>`).join('')}</div>` }
+function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen==='cam2';
+  return `<div class="layer cam2">${statusBar(false)}
+  <div class="modeName">${m.icon} ${m.title}</div>
+  <div class="pick" style="top:86px">${[['tea','Товар'],['menu','Меню']].map(x=>`<button data-shot="${x[0]}" aria-pressed="${c.subj===x[0]}">${x[1]}</button>`).join('')}</div>
+  <div class="vf" style="top:124px"><i class="th ${c.subj}"></i></div>
+  ${qrec?`<div class="q">${PHR[S.rec.key].w.slice(0,S.rec.n).join(' ')||'…'}</div>`:''}
+  ${c.sending?`<div class="sending"><span>Отправляю${c.q?' с вопросом':''}…</span><div class="bar"><i></i></div><button class="recbtn" data-act="shotcancel" style="background:rgba(255,255,255,.18);color:#fff">Отмена</button></div>`
+   : c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`
+   : `<button class="cx" data-act="camcancel">${c.first?'В лист':'Отмена'}</button><button class="shut" data-act="shoot" aria-label="Снять и отправить"></button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите — снимок уйдёт с вопросом">${I.mic}</button>`}</div>` }
+function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;text-align:center">${m.icon}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
@@ -648,7 +685,6 @@ function overlay(){
       <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
       <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button>
       <button class="iconbtn" data-act="close" aria-label="Закрыть">${I.x}</button></div>
-    ${modesBar()}
     <div class="scroll" id="oscroll">${feedHtml(true)}</div>
     ${liveHtml()}${composerHtml()}
   </div></div>`;
@@ -734,9 +770,17 @@ function openOverlay(src){
   if (S.w.mic==='ask'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; S.pendingSide = src==='side'; trace('Микрофон спрашиваем в момент, когда он нужен, — не на экране настройки.','p'); return render() }
   if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пишите — или разрешите в настройках.')}`; return render() }
   if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }
+  if (S.camFirst[S.mode] && curMode().photo){ render(); return openCamera(true) }
   if (src==='side' && S.sideAuto){ render(); trace('Боковая кнопка (настройка по умолчанию): лист сразу пишет без рук — само нажатие и есть намерение. Отпускание боковой кнопки приложению недоступно, поэтому не «рация», а замочек: «Отправить» или «В поле».','p'); return startRec('locked') }
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
+function openCamera(first){
+  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.mode==='translate'?'menu':'tea',taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
+  trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера: системная (ACTION_IMAGE_CAPTURE через startAssistantActivity) или своя на CameraX — решит спайк С13.','p'); render() }
+async function shotGo(q){
+  const c=S.cam; c.q=q||''; if (!S.sendOnShot[S.mode] && !q){ c.taken=true; return render() }
+  c.sending=true; render(); const my=++token; await wait(RM?150:1800); if (my!==token || !S.cam || !S.cam.sending) return;
+  S.draftImg={kind:'photo',cls:c.subj}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app'){ S.ov={pop:false} } S.cam=null; render(); deliver(q||'', q?'голос':'фото') }
 function closeOverlay(){ token++; S.busy=false; const working=S.feed.some(f=>f.t==='steps'&&f.run); S.ov=null; render();
   if (working&&S.w.notif!=='ok'&&!S.notifAsked&&S.w.server==='paired'){ S.notifAsked=true; S.dialog={ic:'🔔',title:'Сообщить, когда Hermes ответит?',text:'Тогда ответ придёт уведомлением, даже если лист закрыт.',opts:[['Разрешить уведомления','notif_ok'],['Не нужно','x','sec2']]}; trace('Уведомления спрашиваем, когда они нужны: лист закрыли, не дождавшись ответа.','p'); render() } }
 async function expand(msgId){
@@ -755,6 +799,8 @@ const PHR={
   table:{t:'Забронируй столик на субботу',w:['забронируй','столик','на','субботу'],fin:'Забронируй столик на субботу.'},
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
+  price:{t:'Сколько это в рублях?',w:['сколько','это','в','рублях'],fin:'Сколько это в рублях?'},
+  spicy:{t:'А что здесь не острое?',w:['а','что','здесь','не','острое'],fin:'А что здесь не острое?'},
   toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
 const guessKey = v => { v=v.toLowerCase(); return /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
@@ -775,11 +821,17 @@ async function deliverMode(text, via, img){
   trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
   if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
-  if (m.id==='translate' && img && img.cls==='menu')
+  if (m.id==='translate' && img && img.cls==='menu' && text && /остр/i.test(text))
+    await stream(my,`<p>Не острое здесь — <b>酸辣汤 только наполовину</b>: кисло-острый суп можно попросить без перца. Скажите: «不要辣» (bú yào là) — «без острого».</p>`,{fast:true});
+  else if (m.id==='translate' && img && img.cls==='menu')
     await stream(my,`<div class="tbl"><table><tr><th>В меню</th><th>Перевод</th><th>Что это</th></tr><tr><td>宫保鸡丁 ¥48</td><td>Курица гунбао</td><td>острая, с арахисом</td></tr><tr><td>麻婆豆腐 ¥36</td><td>Тофу мапо</td><td>очень острое, с фаршем</td></tr><tr><td>酸辣汤 ¥22</td><td>Кисло-острый суп</td><td>с грибами и яйцом</td></tr></table></div><p>Если не любите острое — скажите «不要辣» (bú yào là).</p>`,{fast:true});
   else if (m.id==='translate')
     { if(!await stream(my,`<p><b>${text&&/туалет/i.test(text)?'洗手间在哪里？':'请给我看一下菜单。'}</b><br><span style="color:var(--soft)">${text&&/туалет/i.test(text)?'Xǐshǒujiān zài nǎlǐ? — Где здесь туалет?':'Qǐng gěi wǒ kàn yīxià càidān. — Покажите, пожалуйста, меню.'}</span></p>`,{fast:true})) return;
       const last=S.feed[S.feed.length-1]; last.speak=true; trace('Озвучка ответа — v1.1 (системный синтез Android умеет китайский). Кнопка заложена в режим заранее.','p') }
+  else if (img && text && /рубл/i.test(text))
+    await stream(my, `<p><b>Жасминовый чай</b> (茉莉花茶): ¥38 ≈ <b>470 ₽</b> за 250 г — обычная цена.</p>`, {fast:true});
+  else if (!img)
+    await stream(my, `<p>${text?'Без фото не скажу наверняка. ':''}Сфотографируйте предмет или сделайте снимок экрана — коротко объясню, что это.</p>`, {fast:true});
   else
     await stream(my, img&&img.cls==='scrn' ? `<p><b>Кофемашина Siemens EQ.6 plus</b> — автоматическая, с капучинатором.</p><ul><li>¥6 299 ≈ 77 000 ₽ — нормальная цена для Китая, в России дороже.</li><li>Проверьте вилку: китайская версия — 220 В, но вилка другая.</li></ul>`
       : `<p><b>Жасминовый чай</b> (茉莉花茶), 250 г, ¥38 ≈ 470 ₽.</p><ul><li>Зелёный чай с цветами жасмина — классика, пьют без сахара.</li><li>Цена обычная для супермаркета.</li><li>Заваривать 80 °C, 2–3 минуты.</li></ul>`, {fast:true});
@@ -798,6 +850,7 @@ function recText(){ const r=S.rec, ph=PHR[r.key]; if(!r.n) return ''; return r.n
 async function finishRec(how){
   const r=S.rec; if(!r) return; const text=recText(); recTok++; S.rec=null;
   if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
+  if (S.screen==='cam2' && S.cam){ trace('Отпустил микрофон на камере — снимок и вопрос уходят вместе одним сообщением.','p'); return shotGo(text) }
   if (S.ov){ S.ov.live=`<span class="st p">Распознаю</span>${esc(text)}`; S.ov.liveQ=false } render(); await wait(380);
   if (how==='release') how = r.into==='append' ? 'field' : 'send';   // отпустил: пустое поле — отправить, в поле был текст — дописать
   if (how==='field'){ S.draft=(S.draft?S.draft+' ':'')+text.replace(/[.]$/,''); S.draftVoice=true; if(S.ov) S.ov.live=''; render(); const el=$('#cin'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length) }
@@ -815,6 +868,10 @@ let iconT=null, iconLong=false;
 document.addEventListener('pointerdown',e=>{ const ic=e.target.closest('[data-open="app"]'); if(!ic) return; iconLong=false; iconT=setTimeout(()=>{ iconLong=true; S.shortcuts=true; render() },500) });
 document.addEventListener('pointerup',()=>{ clearTimeout(iconT) });
 document.addEventListener('click',e=>{ if(iconLong && e.target.closest('[data-open="app"]')){ e.stopImmediatePropagation(); iconLong=false } else if(S.shortcuts && !e.target.closest('.sc-pop')){ S.shortcuts=false; render() } }, true);
+let sw=null;
+document.addEventListener('pointerdown',e=>{ const c=e.target.closest('[data-swipe]'); if(!c||e.target.closest('[data-mic],button')) { sw=null; return } sw={x:e.clientX,y:e.clientY} });
+document.addEventListener('pointerup',e=>{ if(!sw) return; const dx=e.clientX-sw.x, dy=e.clientY-sw.y; sw=null; if(Math.abs(dx)<50||Math.abs(dy)>40) return; const am=activeModes(); if(am.length<2) return;
+  const i=am.findIndex(m=>m.id===S.mode); const n=am[(i+(dx<0?1:-1)+am.length)%am.length]; setMode(n.id,'Свайп по строке ввода'); if (S.camFirst[S.mode] && curMode().photo) return openCamera(true); render() });
 let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold') });
 document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const dy=pd.y-e.clientY, dx=pd.x-e.clientX;
@@ -896,10 +953,11 @@ function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true;
 
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('.mchip,[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
-  if (t.dataset.mode && t.classList.contains('mchip')){ const was=S.mode; S.mode=t.dataset.mode; S.draftImg=null; if(was!==S.mode){ const m=curMode(); trace(`Переключено на «${m.title}». У режима своя лента и своя сессия в Hermes (thread_id=${m.id==='main'?'—':m.id}); память Hermes общая.`,'p') } return render() }
-  if (t.dataset.shortcut){ S.shortcuts=false; S.mode=t.dataset.shortcut; trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
+  if (t.dataset.pickmode){ setMode(t.dataset.pickmode,'Выбран режим'); if (S.camFirst[S.mode] && curMode().photo) return openCamera(true); return render() }
+  if (t.dataset.toggle){ const [k,id]=t.dataset.toggle.split(':'); S[k][id]=!S[k][id]; if(k==='modeOn' && !S.modeOn[id] && S.mode===id) setMode('main','Режим выключен — вернулись'); S.keepScroll=true; return render() }
+  if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
   if (t.dataset.shot){ S.cam.subj=t.dataset.shot; return render() }
   if (t.dataset.say) return quickSay(t.dataset.say);
   if (t.dataset.saytext) return deliver(t.dataset.saytext,'нажатие');
@@ -939,18 +997,21 @@ document.addEventListener('click', async e=>{
     case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'home': S.fromSheet=null; S.screen='home'; return render();
     case 'about': S.page='about'; return render();
-    case 'modes': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
-    case 'camera': S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.mode==='translate'?'menu':'tea',taken:false}; S.screen='cam2'; trace('Камера из листа: штатно — системная камера через startAssistantActivity (ACTION_IMAGE_CAPTURE) или своя на CameraX; выбор — спайком. Фото уходит Hermes как картинка, он понимает их так же, как фото из Telegram.','p'); return render();
-    case 'shoot': S.cam.taken=true; return render();
+    case 'modes': S.ov=null; S.modePick=false; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
+    case 'modepick': S.modePick=!S.modePick; S.keepScroll=true; return render();
+    case 'addmode': { const id='m-'+Math.random().toString(16).slice(2,6); S.custom.push({id,title:'Свой режим',icon:'✎',photo:true,screen:false,tools:false,custom:true,prompt:'Опишите, что делать с тем, что я присылаю.'}); S.feeds[id]=[]; S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); return render() }
+    case 'camera': return openCamera(false);
+    case 'shoot': return shotGo('');
+    case 'shotcancel': token++; S.cam.sending=false; S.cam.taken=false; trace('Отменено до отправки — можно переснять.'); return render();
     case 'retake': S.cam.taken=false; return render();
-    case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; return render();
-    case 'sendshot': case 'addq': { S.draftImg={kind:'photo',cls:S.cam.subj}; S.screen=S.camRet.screen; S.ov=S.camRet.ov; render(); if(a==='sendshot') return deliver('', 'фото'); $('#cin')?.focus(); trace('Фото прикреплено к полю: можно сказать или написать вопрос и отправить вместе.','p'); return }
+    case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; if(S.rec){ recTok++; S.rec=null } return render();
+    case 'sendshot': case 'addq': { S.draftImg={kind:'photo',cls:S.cam.subj}; S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; render(); if(a==='sendshot') return deliver('', 'фото'); $('#cin')?.focus(); trace('Фото прикреплено к полю: можно сказать или написать вопрос и отправить вместе.','p'); return }
     case 'screenshot': S.draftImg={kind:'screen',cls:'scrn'}; trace('Снимок того, что под листом: окно ассистента получает его штатно (onHandleScreenshot), только по нажатию. Уходит Hermes как картинка.','p'); return render();
     case 'dropimg': S.draftImg=null; return render();
     case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
     case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();
-    case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Тася обновился до 0.5.0','Что нового — в «О программе»'); return render();
+    case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Обновлено до 0.5.0','Что нового — в «О программе»'); return render();
     case 'updcancel': S.upd.state='available'; return render();
     case 'gear': if(S.w.locked){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы открыть настройки',opts:[['Разблокировать','unlock_set'],['Отмена','x','sec2']]}; return render() } S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; trace('Шестерёнка → настройки приложения (startAssistantActivity), лист закрывается.'); return render();
     case 'expand': return expand(t.dataset.msg);
@@ -1025,7 +1086,7 @@ const PRESETS=[
   ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
 ];
-function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открывает последний режим. Нажмите 📷, чтобы сфотографировать товар, или ▣ — снимок экрана под листом. Переключение режимов — чипы над лентой; долгое нажатие на иконку Таси — ярлыки режимов.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
+function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы внизу: значок слева от поля или свайп по строке; ярлыки — долгое нажатие на иконку Таси.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
