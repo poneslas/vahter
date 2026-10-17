@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Сборка и установка пробника, выдача роли помощника.
+#   probe/scripts/install.sh [--run]
+#   --run — после установки открыть пробник.
+# Перед этим на телефоне: Auto Blocker выключен, «Отладка по USB» включена.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+PKG=ru.poneslas.tasya.probe
+
+./gradlew :app:assembleDebug -q
+adb install -r -g app/build/outputs/apk/debug/app-debug.apk
+adb shell cmd role add-role-holder android.app.role.ASSISTANT "$PKG"
+echo "держатель роли: $(adb shell cmd role get-role-holders android.app.role.ASSISTANT | tr -d '\r')"
+if [[ "${1:-}" == "--run" ]]; then
+  adb shell am start -n "$PKG/.MainActivity" >/dev/null
+fi
