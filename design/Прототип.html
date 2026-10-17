@@ -231,6 +231,11 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .ansact{display:flex;gap:2px;margin:-4px 0 0 10px}
 .ai.interim .md{color:var(--soft)}
 .msgatt{display:flex;flex-direction:column;gap:4px}
+.sysl{align-self:center;max-width:92%;text-align:center;font-size:12px;color:var(--soft);background:#ECEEE8;border-radius:999px;padding:5px 12px}
+.sysl b{font-weight:600;color:var(--ink)}
+.errmsg{border-left:3px solid var(--danger);background:var(--danger-t);border-radius:0 12px 12px 0;padding:8px 12px;font-size:13.5px;color:#7a2416}
+.card pre{font-family:var(--mono);font-size:11.5px;background:#10182B;color:#E3E8F6;border-radius:8px;padding:8px 10px;margin:6px 0;white-space:pre-wrap}
+.card .tmr{font-size:11.5px;color:var(--faint)}
 .msgatt .att{margin-left:16px}
 .msgatt .cap{margin-left:16px;font-size:12.5px;color:var(--soft)}
 .ansact button{border:0;background:transparent;color:var(--faint);font-size:12px;padding:4px 6px;border-radius:8px}
@@ -419,13 +424,15 @@ function itemHtml(it,inSheet){
     const clip = it.long && inSheet;
     return `<div class="ai ${it.interim?'interim':''}" data-msg="${it.id||''}"><div class="md ${clip?'clip':''}">${it.x}</div></div>${clip&&it.done?`<button class="more" data-act="expand" data-msg="${it.id}">Развернуть сообщение</button>`:''}${it.done&&it.long&&!clip?`<div class="ansact"><button>Копировать</button><button>Поделиться</button><button>Выделить текст</button></div>`:''}`;
   }
+  if (it.t==='sys') return `<div class="sysl">${it.x}</div>`;
+  if (it.t==='err') return `<div class="errmsg">${it.x}</div>`;
   if (it.t==='att') return `<div class="msgatt">${attHtml(it.a)}${it.cap?`<div class="cap">${it.cap}</div>`:''}</div>`;
   if (it.t==='ph') return `<div class="ph">${it.x}</div>`;
   if (it.t==='steps') return stepsHtml(it);
   if (it.t==='q') return `<div class="queued">${it.x}<span>${it.s}</span></div>`;
   if (it.t==='chips') return `<div class="chips">${it.c.map(c=>`<button class="chip" data-chip="${c}">${c}</button>`).join('')}</div>`;
   if (it.t==='act') return `<div class="act ${it.undone?'undone':''}"><span class="ai2">${it.i}</span><span class="tx"><b>${it.x}</b><span>${it.s}</span></span>${it.btn&&!it.undone?`<button class="ln" data-undo="${it.id}" data-kind="${it.kind}">${it.btn}</button>`:''}</div>`;
-  if (it.t==='card') return `<div class="card"><div class="who ${it.who}">${it.head}</div><div class="bd"><div class="tt">${it.title}</div>${it.kv?`<dl class="kv">${it.kv.map(k=>`<dt>${k[0]}</dt><dd>${k[1]}</dd>`).join('')}</dl>`:''}${it.text?`<p style="margin:6px 0 2px;font-size:13px;color:var(--soft)">${it.text}</p>`:''}</div><div class="btns">${it.btns.map(b=>`<button class="cb ${b[2]||''}" data-cardbtn="${b[1]}">${b[0]}</button>`).join('')}</div></div>`;
+  if (it.t==='card') return `<div class="card"><div class="who ${it.who}">${it.head}</div><div class="bd"><div class="tt">${it.title}</div>${it.kv?`<dl class="kv">${it.kv.map(k=>`<dt>${k[0]}</dt><dd>${k[1]}</dd>`).join('')}</dl>`:''}${it.text?`<p style="margin:6px 0 2px;font-size:13px;color:var(--soft)">${it.text}</p>`:''}${it.code?`<pre>${it.code}</pre>`:''}${it.tmr?`<div class="tmr">${it.tmr}</div>`:''}</div><div class="btns">${it.btns.map(b=>`<button class="cb ${b[2]||''}" data-cardbtn="${b[1]}">${b[0]}</button>`).join('')}</div></div>`;
   return '';
 }
 function stepsHtml(it){
@@ -437,7 +444,7 @@ function stepsHtml(it){
 }
 function attHtml(a){
   return `<div class="att">${a.map(x=>{
-    if (x.k==='imgs') return `<div class="imgs"><i></i><i></i><i></i><i>${x.more?`<em class="more4">+${x.more}</em>`:''}</i></div>`;
+    if (x.k==='imgs'){ const n=x.n||4; const show=Math.min(n,4); return `<div class="imgs" style="grid-template-columns:repeat(${show===3?3:2},1fr)">${Array.from({length:show},(_,i)=>`<i>${i===3&&n>4?`<em class="more4">+${n-4}</em>`:''}</i>`).join('')}</div>` }
     if (x.k==='chart') return `<div class="chart"><div style="font-size:12px;color:var(--soft);margin-bottom:4px">${x.title}</div><svg viewBox="0 0 300 100" preserveAspectRatio="none"><polyline fill="none" stroke="#2F4BE8" stroke-width="2.5" points="0,80 40,72 80,76 120,56 160,58 200,38 240,42 300,18"/><polyline fill="none" stroke="#E8A317" stroke-width="2.5" stroke-dasharray="6 4" points="0,86 60,82 120,78 180,74 240,70 300,66"/></svg><div class="lg"><span><i style="background:#2F4BE8"></i>занято сейчас</span><span><i style="background:#E8A317"></i>с бэкапами, прогноз</span></div></div>`;
     const col={PDF:'#C2412D',XLSX:'#2E7D4F',ZIP:'#4A5670'}[x.type]||'#4A5670';
     return `<div class="file"><span class="fi" style="background:${col}">${x.type}</span><span class="ft"><b>${x.name}</b><span>${x.meta}</span></span><button class="fa" data-act="openfile" data-name="${x.name}">${x.btn||'Открыть'}</button></div>`;
@@ -649,7 +656,9 @@ const PHR={
   timer:{t:'Таймер на пять минут',w:['таймер','на','пять','минут'],fin:'Таймер на 5 минут.'},
   ask:{t:'Что у меня завтра?',w:['что','у','меня','завтра'],fin:'Что у меня завтра?'},
   backup:{t:'Как настроить бэкап сервера?',w:['как','настроить','бэкап','сервера'],fin:'Как настроить бэкап сервера?'},
-  photos:{t:'Пришли фото с дачи',w:['пришли','фото','с','дачи'],fin:'Пришли фото с дачи.'},
+  logo:{t:'Нарисуй три варианта логотипа',w:['нарисуй','три','варианта','логотипа'],fin:'Нарисуй три варианта логотипа.'},
+  logs:{t:'Почисти старые логи на сервере',w:['почисти','старые','логи','на','сервере'],fin:'Почисти старые логи на сервере.'},
+  table:{t:'Забронируй столик на субботу',w:['забронируй','столик','на','субботу'],fin:'Забронируй столик на субботу.'},
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
 };
@@ -703,22 +712,29 @@ async function route(key,my){
     ])) return;
     trace('План — это вызовы todo_list самой модели (ревизии 1→2→3), не шаги. Между вызовами план может отставать от работы — показываем как есть. Если модель не отметит пункт, после хода он останется «в работе» без анимации; досчитывать за неё не будем.','h');
     if(!await stream(my,LONG_MD,{long:true})) return;
-    trace('Сообщение 2 — финальный текст, длинный Markdown. В листе — первые ~240 px с затуханием и «Развернуть сообщение» именно у этого сообщения.','h');
-    if(!await sendAtt(my,[{k:'file',type:'PDF',name:'backup-plan.pdf',meta:'2 страницы · 84 КБ'}])) return;
-    if(!await sendAtt(my,[{k:'chart',title:'Место на диске, ГБ'}],'disk-forecast.png')) return;
-    if(!await stream(my,'<p>Если хотите, могу сам создать бакет и включить таймер — понадобится ваше «да».</p>',{fast:true})) return;
-    trace('Сообщения 3 и 4 — файлы: Hermes шлёт их отдельными вызовами (send_document, send_image_file) после текста, пути из текста вырезает. Сообщение 5 — короткий текст. Каждое сообщение рисуется по своему виду; связи «один ход — одно сообщение» нет.','h'); return }
-  if (key==='photos'){
-    if(!await think(my,[{i:'🖼',t:'Ищу фото',d:'41 фото за август, «дача»',ms:'0,6 с'}])) return;
-    if(!await sendAtt(my,[{k:'imgs',more:37}],'4 из 41')) return;
-    if(!await stream(my,'<p>Все 41 отправил в Telegram — там их удобнее листать и сохранять.</p>',{fast:true})) return;
-    trace('Альбом пришёл одним сообщением (send_multiple_images), текст — отдельным. Целиком фото — в Telegram: ни с кем не конкурируем.','h'); return }
+    trace('Сообщение 2 — финальный текст (сырой Markdown; при потоке — правки одного сообщения). В листе — первые ~240 px и «Развернуть сообщение» у этого сообщения.','h');
+    if(!await sendAtt(my,[{k:'chart',title:'disk-forecast.png'}])) return;
+    if(!await sendAtt(my,[{k:'file',type:'PDF',name:'backup-plan.pdf',meta:'84 КБ'}])) return;
+    trace('Дальше — вложения, вырезанные из финала: сначала картинки (send_multiple_images, даже одна), потом документы по одному (send_document). Подписей у файлов нет — показываем имя. Текста после файлов в этом ходе не будет.','h'); return }
+  if (key==='logo'){
+    if(!await think(my,[{i:'🎨',t:'Рисую',d:'image_generate · вариант 1',ms:'6,2 с',wait:700},{i:'🎨',t:'Рисую',d:'image_generate · вариант 2',ms:'5,8 с',wait:700},{i:'🎨',t:'Рисую',d:'image_generate · вариант 3',ms:'6,0 с',wait:700}])) return;
+    if(!await stream(my,'<p>Три варианта: строгий, игривый и только знак. Какой ближе?</p>',{fast:true})) return;
+    if(!await sendAtt(my,[{k:'imgs',n:3}])) return;
+    trace('image_generate сам дописывает MEDIA-теги → после текста одним send_multiple_images приходит альбом из 3 картинок. Лимита на число нет: 40 картинок пришли бы одним вызовом — сетка показывает 4 и «+36», остальное в просмотрщике.','h'); return }
+  if (key==='logs'){
+    if(!await think(my,[{i:'⌨',t:'Команда на сервере',d:'<div class="term">$ du -sh /var/log/app/*.gz | tail -1\n4.1G  total</div>',ms:'0,4 с'}])) return;
+    S.feed.push({t:'card',who:'h',head:'Hermes хочет выполнить команду на сервере',title:'Удалить 4,1 ГБ старых логов',code:'rm -rf /var/log/app/*.gz',text:'Почему спрашиваю: рекурсивное удаление.',tmr:'Без ответа через 5 минут — не выполню.',btns:[['Один раз','apr_once','pri'],['До конца сессии','apr_once'],['Всегда','apr_once'],['Нет','apr_no','gh']]});
+    trace('Это подтверждение самого Hermes (_send_exec_approval_prompt), не действие телефона. Варианты once/session/always/deny приходят с сервера и бывают урезаны (smart-deny оставляет «Один раз / Нет»). Таймаут 5 минут.','h'); render(); return }
+  if (key==='table'){
+    if(!await think(my,[{i:'🔎',t:'Ищу в интернете',d:'<div class="src"><i style="background:#E05D44"></i>restoclub.ru</div>',ms:'1,2 с'}])) return;
+    S.feed.push({t:'card',who:'h',head:'Hermes уточняет',title:'На сколько человек?',btns:[['2','clar'],['4','clar'],['6','clar'],['Другое…','clar_other','gh']]});
+    trace('Уточнение — инструмент clarify (send_clarify): варианты с сервера, «Другое» рисуем сами (mark_awaiting_text), бывает мультивыбор и открытый вопрос без вариантов.','h'); render(); return }
 }
 const LONG_MD=`<h3>Бэкап сервера на restic — за 15 минут</h3><!--b--><p>На сервере уже стоит <code>restic</code>, свободно 79 ГБ. Предлагаю шифрованный бэкап в S3 раз в сутки: храним 7 дней, 4 недели и 6 месяцев.</p><!--b--><h4>Шаги</h4><ol><li>Создайте бакет и ключ доступа в хранилище.</li><li>Подготовьте репозиторий:</li></ol><!--b--><div class="code"><div class="ch"><span>bash</span><button>Копировать</button></div><pre>export RESTIC_REPOSITORY=s3:s3.example.ru/backup
 export RESTIC_PASSWORD_FILE=/root/.restic-pass
 restic init</pre></div><!--b--><ol start="3"><li>Добавьте запуск по расписанию:</li></ol><div class="code"><div class="ch"><span>ini</span><button>Копировать</button></div><pre>[Timer]
 OnCalendar=*-*-* 03:30
-Persistent=true</pre></div><!--b--><h4>Сколько стоит</h4><div class="tbl"><table><tr><th>Вариант</th><th>Место</th><th>В месяц</th><th>Восстановление</th></tr><tr><td>S3, стандарт</td><td>~140 ГБ</td><td>~280 ₽</td><td>минуты</td></tr><tr><td>S3, холодное</td><td>~140 ГБ</td><td>~90 ₽</td><td>часы</td></tr><tr><td>Второй сервер</td><td>200 ГБ</td><td>~450 ₽</td><td>минуты</td></tr></table></div><!--b--><blockquote>Пароль от репозитория храните отдельно от сервера: без него бэкап не открыть.</blockquote><!--b--><p>Все команды — в памятке ниже.</p><div class="src-row"><span class="cite">restic.readthedocs.io</span><span class="cite">wiki.archlinux.org</span><span class="cite">habr.com</span></div>`;
+Persistent=true</pre></div><!--b--><h4>Сколько стоит</h4><div class="tbl"><table><tr><th>Вариант</th><th>Место</th><th>В месяц</th><th>Восстановление</th></tr><tr><td>S3, стандарт</td><td>~140 ГБ</td><td>~280 ₽</td><td>минуты</td></tr><tr><td>S3, холодное</td><td>~140 ГБ</td><td>~90 ₽</td><td>часы</td></tr><tr><td>Второй сервер</td><td>200 ГБ</td><td>~450 ₽</td><td>минуты</td></tr></table></div><!--b--><blockquote>Пароль от репозитория храните отдельно от сервера: без него бэкап не открыть.</blockquote><!--b--><p>Все команды — в памятке ниже. Если хотите, могу сам создать бакет и включить таймер — понадобится ваше «да».</p><div class="src-row"><span class="cite">restic.readthedocs.io</span><span class="cite">wiki.archlinux.org</span><span class="cite">habr.com</span></div>`;
 function flushQueue(){ let n=0; S.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло Hermes из очереди'; n++ } }); if(n) trace(`Связь есть — очередь (${n}) ушла по порядку.`,'i') }
 
 let toastT=null;
@@ -774,7 +790,7 @@ document.addEventListener('click', async e=>{
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
     case 'kbd': S.ov.input=S.ov.input==='kbd'?'voice':'kbd'; S.keepScroll=true; render(); $('#kin')?.focus(); return;
-    case 'ksend': case 'csend': { const v=(($(a==='ksend'?'#kin':'#cin')?.value)||'').toLowerCase(); if(!v) return; const k=/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/фото/.test(v)?'photos':'ask'; return say(k,true) }
+    case 'ksend': case 'csend': { const v=(($(a==='ksend'?'#kin':'#cin')?.value)||'').toLowerCase(); if(!v) return; const k=/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask'; return say(k,true) }
     case 'micfromapp': return openOverlay('из приложения');
     case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
     case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;
@@ -790,6 +806,9 @@ function cardBtn(b){
   const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]===b));
   if (b==='x'){ if(idx>=0){ const cal=/календарь/.test(S.feed[idx].head); S.feed.splice(idx,1); if(cal){ S.feed.push({t:'act',i:'📅',x:'Банк · не перенесено',s:'отклонено',undone:true}); trace('Отклонено — Hermes получил отказ и не переспрашивает.') } } return render() }
   if (b==='unlockmove'){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы перенести встречу',text:'После разблокировки перенесу сам.',opts:[['Разблокировать','unlock_move'],['Отмена','x','sec2']]}; return render() }
+  if (b==='apr_once'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'sys',x:'Разрешено один раз'}); (async()=>{ const my=++token; S.busy=true; if(!await think(my,[{i:'⌨',t:'Команда на сервере',d:'<div class="term">$ rm -rf /var/log/app/*.gz\n(exit 0)</div>',ms:'0,3 с'}])) return; await stream(my,'<p>Удалил старые логи, освободилось 4,1 ГБ.</p>',{fast:true}); S.busy=false; render() })(); return render() }
+  if (b==='apr_no'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'sys',x:'Отклонено — команда не выполнена'}); return render() }
+  if (b==='clar'||b==='clar_other'){ if(idx>=0) S.feed.splice(idx,1); if(b==='clar_other'){ S.feed.push({t:'sys',x:'Напишите свой ответ'}); if(S.ov){ S.ov.input='kbd' } return render() } S.feed.push({t:'me',x:'4',via:'нажатие'}); (async()=>{ const my=++token; S.busy=true; await stream(my,'<p>Забронировал на субботу, 19:00, на четверых. Подтверждение придёт на почту.</p>',{fast:true}); S.busy=false; render() })(); return render() }
   if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); S.feed.push({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:'Hermes → телефон',btn:'Отменить',kind:'B',id:Date.now()}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
 }
 async function dlgAct(k){
@@ -816,6 +835,9 @@ function longPress(){
 async function event(k){
   if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец: hermes pairing approve android K7Q2M9XD','h'); return pairDone() } return }
   if (k==='push'){ if(S.w.server!=='paired') return; S.feed.push({t:'ai',x:'<p>Готово: нашёл три рецепта сырников без муки, лучший — на рисовой.</p>',done:true}); if(S.ov||(S.screen==='app'&&S.page==='chat')) return render(); if(S.w.notif!=='ok'){ trace('Ответ пришёл, уведомления выключены — увидите при открытии.','e'); return } trace('Пуш без содержимого через свой ntfy → телефон забирает текст и сам показывает уведомление.','h'); return showToast('Hermes','Готово: нашёл три рецепта сырников…','push') }
+  if (k==='cron'){ S.feed.push({t:'sys',x:'<b>По расписанию</b> · утренняя сводка'}); S.feed.push({t:'ai',id:'m'+(++msgSeq),x:'<p>Сегодня: банк в 10:00, созвон с Олей в 15:30. Погода +12, к вечеру дождь.</p>',done:true}); trace('Cron приходит вне хода (adapter.send с job_id). Обёртку «Cronjob Response: …» выключаем (cron.wrap_response: false) и рисуем свою плашку по job_id.','h'); if(!S.ov&&!(S.screen==='app'&&S.page==='chat')&&S.w.notif==='ok') return showToast('Hermes · по расписанию','Сегодня: банк в 10:00…','push'); return render() }
+  if (k==='bg'){ S.feed.push({t:'sys',x:'Задача на сервере завершилась · <code>pytest</code> · 12 с'}); trace('Фоновые процессы приходят вне хода текстом без маркера («✅ Background task finished — `cmd`»). Узнаём по шаблону известных строк и показываем системной строкой по-русски; незнакомое — как есть. Можно выключить: background_process_notifications: off.','h'); return render() }
+  if (k==='rate'){ S.feed.push({t:'err',x:'Сервис модели ограничивает запросы. Попробуйте через минуту.'}); trace('Ошибки провайдера приходят как финальный ответ («⏱️ The AI model service is rate-limiting…»), без отдельного маркера. Распознаём по словарю известных строк Hermes → красная плашка по-русски. Незнакомые — показываем исходный текст.','e'); return render() }
   if (k==='update'){ S.upd.state='available'; showToast('Есть версия 0.5.0','Что нового — в «О программе»'); return render() }
 }
 const ready=()=>{ S=fresh(); S.onboarded=true; S.page='chat'; S.sideOk=true; Object.assign(S.w,{role:'ours',mic:'ok',notif:'ok',server:'paired',model:'ready'}) };
@@ -823,7 +845,9 @@ const PRESETS=[
   ['Первый запуск','всё с нуля',()=>{ S=fresh(); S.screen='app'; S.onboarded=false }],
   ['Обычный день','всё готово — зажмите кнопку',()=>{ ready() }],
   ['Серия сообщений','промежуточное, длинный Markdown, PDF, картинка, короткий текст',()=>{ ready(); S.autoSay='backup' }],
-  ['Много файлов','превью и «остальное в Telegram»',()=>{ ready(); S.autoSay='photos' }],
+  ['Картинки','альбом из image_generate',()=>{ ready(); S.autoSay='logo' }],
+  ['Подтверждение команды','Hermes спрашивает разрешение',()=>{ ready(); S.autoSay='logs' }],
+  ['Уточнение','варианты и «Другое»',()=>{ ready(); S.autoSay='table' }],
   ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
   ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
   ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
@@ -833,7 +857,7 @@ function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('боковой кнопкой'); setTimeout(()=>say(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
-$('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
+$('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['cron','Cron: утренняя сводка'],['bg','Фоновая задача на сервере завершилась'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 preset(0);
 })();
 </script>
