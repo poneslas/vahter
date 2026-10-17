@@ -165,6 +165,22 @@
         <receiver
             android:name=".push.NotifyReceiver"
             android:exported="false" />
+        <service
+            android:name=".push.ProbePushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- extra/: П16, П17 -->
+        <activity
+            android:name=".extra.ExtraTrampolineActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- update/: П14 и П1 -->
         <receiver
