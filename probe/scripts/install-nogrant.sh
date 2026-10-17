@@ -15,6 +15,7 @@ for p in RECORD_AUDIO CAMERA POST_NOTIFICATIONS READ_CALENDAR WRITE_CALENDAR \
   adb shell pm clear-permission-flags "$PKG" "android.permission.$p" user-set user-fixed 2>/dev/null || true
 done
 adb shell cmd role add-role-holder android.app.role.ASSISTANT "$PKG"
+adb reverse tcp:8765 tcp:8765 >/dev/null
 echo "держатель роли: $(adb shell cmd role get-role-holders android.app.role.ASSISTANT | tr -d '\r')"
 if [[ "${1:-}" == "--run" ]]; then
   adb shell am start -n "$PKG/.MainActivity" >/dev/null

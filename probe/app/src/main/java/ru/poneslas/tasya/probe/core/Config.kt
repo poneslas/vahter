@@ -5,14 +5,15 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 
 /**
- * Настройки прогона. По умолчанию — адреса для эмулятора: 10.0.2.2 — это Mac,
- * где `scripts/serve.py` отдаёт сборки и принимает загрузки.
+ * Настройки прогона. Тестовый сервер по умолчанию — 127.0.0.1:8765 через `adb reverse`
+ * (его делает scripts/install.sh): так Mac виден и с эмулятора, и с телефона по USB, и без
+ * разрешения на локальную сеть — 10.0.2.2 и адреса Wi-Fi при targetSdk 37 без него недоступны.
  */
 object Config {
     private lateinit var prefs: SharedPreferences
 
     val fields = listOf(
-        Field("server", "Тестовый сервер (П9, П14)", "http://10.0.2.2:8765"),
+        Field("server", "Тестовый сервер (П9, П14, П15, П23)", "http://127.0.0.1:8765"),
         Field("lan", "Адрес в локальной сети host:port (П13)", "192.168.1.10:8765"),
         Field("domain", "Домен host:port (П13)", "example.com:443"),
         Field("tailscale", "Адрес Tailscale host:port (П13, пусто — пропустить)", ""),
