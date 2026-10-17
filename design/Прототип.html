@@ -445,7 +445,7 @@ const MODES=[
 const fresh = () => { const o = ({
   w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
-  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true}, sendOnShot:{translate:false,whatsthis:true}, custom:[], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
+  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[],'m-4c1e':[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true,'m-4c1e':true}, sendOnShot:{translate:false,whatsthis:true,'m-4c1e':true}, custom:[{id:'m-4c1e', title:'Официант', icon:'🍽', photo:true, screen:false, tools:false, custom:true, prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'}], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
 }); o.drafts={}; Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
   Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
@@ -708,6 +708,7 @@ function render(){
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
+  document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2 });
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
@@ -782,7 +783,7 @@ function openOverlay(src){
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function openCamera(first){
-  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'?'menu':'tea'),taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
+  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
   trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера: системная (ACTION_IMAGE_CAPTURE через startAssistantActivity) или своя на CameraX — решит спайк С13.','p'); render() }
 async function shotGo(q){
   const c=S.cam; c.q=q||''; if (!S.sendOnShot[S.mode] && !q){ c.taken=true; return render() }
@@ -828,7 +829,13 @@ async function deliverMode(text, via, img){
   trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
   if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
-  if (m.id==='translate' && img && img.cls==='menu' && text && /остр/i.test(text))
+  if (m.id==='m-4c1e' && !img)
+    await stream(my,`<p>Сфотографируйте меню — выберу под ваши вкусы.</p>`,{fast:true});
+  else if (m.id==='m-4c1e' && img.cls!=='menu')
+    await stream(my,`<p>Это не похоже на меню. Сфотографируйте страницу с блюдами.</p>`,{fast:true});
+  else if (m.id==='m-4c1e')
+    await stream(my,`<p><b>Берите:</b></p><ol><li><b>宫保鸡丁</b> — курица гунбао, ¥48. Попросите без острого: <b>不要辣</b> (bú yào là).</li><li><b>酸辣汤</b> — кисло-острый суп с грибами и яйцом, ¥22. Тоже <b>不要辣</b>.</li></ol><p>Не берите <b>麻婆豆腐</b>: острое и с фаршем из свинины. Рыбы в этом меню нет — если есть другая страница, снимите её.</p>`,{fast:true});
+  else if (m.id==='translate' && img && img.cls==='menu' && text && /остр/i.test(text))
     await stream(my,`<p>Не острое здесь — <b>酸辣汤 только наполовину</b>: кисло-острый суп можно попросить без перца. Скажите: «不要辣» (bú yào là) — «без острого».</p>`,{fast:true});
   else if (m.id==='translate' && img && img.cls==='menu')
     await stream(my,`<div class="tbl"><table><tr><th>В меню</th><th>Перевод</th><th>Что это</th></tr><tr><td>宫保鸡丁 ¥48</td><td>Курица гунбао</td><td>острая, с арахисом</td></tr><tr><td>麻婆豆腐 ¥36</td><td>Тофу мапо</td><td>очень острое, с фаршем</td></tr><tr><td>酸辣汤 ¥22</td><td>Кисло-острый суп</td><td>с грибами и яйцом</td></tr></table></div><p>Если не любите острое — скажите «不要辣» (bú yào là).</p>`,{fast:true});
@@ -1088,12 +1095,14 @@ const PRESETS=[
   ['Подтверждение команды','редкий случай: Hermes сомневается',()=>{ ready(); S.autoSay='logs' }],
   ['Уточнение','варианты и «Другое»',()=>{ ready(); S.autoSay='table' }],
   ['Режимы: в магазине','«Что это?» и переводчик, фото',()=>{ ready(); S.mode='whatsthis'; S.screen='home' }],
+  ['Режим «Официант»','свой режим: фото меню → выбор',()=>{ ready(); S.mode='m-4c1e'; S.screen='home'; S.camSubj='menu' }],
   ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
   ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
   ['Нет сети','команды да, вопросы в очередь',()=>{ ready(); S.w.net='none' }],
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' }],
 ];
-function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
+function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(p[0].startsWith('Режим «Официант»')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Официант» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
+  else if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
