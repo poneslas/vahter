@@ -19,19 +19,19 @@
 html,body{margin:0;background:var(--page);color:var(--ink);font-family:var(--text);font-size:15px;line-height:1.45}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--server);outline-offset:2px}
-.layout{display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;max-width:1320px;margin:0 auto;padding:28px 32px 48px;align-items:start}
-@media(max-width:980px){.layout{grid-template-columns:1fr;justify-items:center}}
+.layout{display:grid;grid-template-columns:auto minmax(0,1fr);gap:40px;max-width:1320px;margin:0 auto;padding:28px 32px 48px;align-items:start}
+@media(max-width:980px){.layout{grid-template-columns:1fr;justify-items:center}.devw{position:relative}}
 h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font-weight:700;max-width:24ch}
 .sub{color:var(--soft);margin:0 0 18px;max-width:66ch}
 
 /* ─── телефон ─── */
-.devw{position:sticky;top:20px;padding-bottom:44px}
-.dev{position:relative;width:390px;height:836px;border-radius:52px;background:#1B1F2A;padding:10px;box-shadow:0 30px 60px -28px rgba(14,26,54,.6)}
+.devw{position:sticky;top:16px}
+.dev{position:relative;width:400px;height:820px;border-radius:40px;background:#1B1F2A;padding:9px;box-shadow:0 30px 60px -28px rgba(14,26,54,.6);transform-origin:top left}
 .side{position:absolute;right:-7px;top:220px;width:7px;height:86px;border-radius:0 4px 4px 0;background:#2A3046;border:0;padding:0}
 .side.hold{background:var(--local);box-shadow:0 0 18px var(--local)}
 .vol{position:absolute;right:-6px;top:140px;width:6px;height:52px;border-radius:0 3px 3px 0;background:#2A3046}
-.side-l{text-align:center;font-size:12.5px;color:var(--soft);margin-top:12px}
-.scr{position:relative;width:100%;height:100%;border-radius:43px;overflow:hidden;background:#000}
+.side-l{text-align:center;font-size:12.5px;color:var(--soft);position:absolute;left:0;right:0}
+.scr{position:relative;width:100%;height:100%;border-radius:32px;overflow:hidden;background:#000}
 .layer{position:absolute;inset:0}
 .sb{position:absolute;top:0;left:0;right:0;height:34px;display:flex;justify-content:space-between;align-items:center;padding:6px 26px 0;font-size:12.5px;font-weight:600;z-index:30;pointer-events:none}
 .sb.l{color:#fff}.sb.d{color:#1d2333}
@@ -149,7 +149,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .compose .in{flex:1;background:#F1F3F5;border-radius:18px;padding:9px 12px;font-size:14px}
 .qr{width:110px;height:110px;margin-top:6px;background:#fff;display:grid;grid-template-columns:repeat(12,1fr);padding:6px;border-radius:6px}.qr i{display:block;aspect-ratio:1}
 .cam{background:#0b0d12;color:#fff}
-.cam .frame{position:absolute;top:200px;left:70px;width:230px;height:230px;border:3px solid rgba(255,255,255,.85);border-radius:24px}
+.cam .frame{position:absolute;top:200px;left:75px;width:230px;height:230px;border:3px solid rgba(255,255,255,.85);border-radius:24px}
 .cam .scanline{position:absolute;left:8px;right:8px;height:2px;background:var(--local);top:10px;animation:scan 1.4s ease-in-out infinite alternate}@keyframes scan{to{top:210px}}
 .toast{position:absolute;top:44px;left:10px;right:10px;z-index:50;background:rgba(250,250,252,.97);color:#111;border-radius:22px;padding:11px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 14px 30px -14px rgba(0,0,0,.5);animation:drop .3s cubic-bezier(.2,.9,.3,1.1);border:0;text-align:left}
 .toast .ico{width:34px;height:34px;border-radius:10px;font-size:14px;box-shadow:none}.toast .ico::after{inset:6px;border-radius:6px}
@@ -264,7 +264,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--paper);border-radius:30px;display:flex;flex-direction:column;padding:8px 0 12px;height:auto;max-height:calc(100% - 50px);box-shadow:0 -8px 30px -12px rgba(14,26,54,.4);transform-origin:50% 100%;transition:left .35s cubic-bezier(.3,.8,.3,1),right .35s cubic-bezier(.3,.8,.3,1),bottom .35s cubic-bezier(.3,.8,.3,1),max-height .35s cubic-bezier(.3,.8,.3,1),border-radius .35s}
 .sheet.pop{animation:pop .42s cubic-bezier(.34,1.45,.64,1) both}
 @keyframes pop{from{transform:scale(.35);opacity:0}30%{opacity:1}}
-.sheet.full{left:0;right:0;bottom:0;max-height:100%;height:100%;border-radius:43px;padding-top:40px}
+.sheet.full{left:0;right:0;bottom:0;max-height:100%;height:100%;border-radius:32px;padding-top:40px}
 .grab{width:36px;height:4px;border-radius:2px;background:#CBD0C6;margin:0 auto 4px;flex:none;border:0;padding:0;cursor:pointer}
 .hdr{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft);padding:0 6px 0 14px;flex:none}
 .hdr .sp{flex:1}
@@ -723,8 +723,8 @@ async function route(key,my){
     trace('image_generate сам дописывает MEDIA-теги → после текста одним send_multiple_images приходит альбом из 3 картинок. Лимита на число нет: 40 картинок пришли бы одним вызовом — сетка показывает 4 и «+36», остальное в просмотрщике.','h'); return }
   if (key==='logs'){
     if(!await think(my,[{i:'⌨',t:'Команда на сервере',d:'<div class="term">$ du -sh /var/log/app/*.gz | tail -1\n4.1G  total</div>',ms:'0,4 с'}])) return;
-    S.feed.push({t:'card',who:'h',head:'Hermes хочет выполнить команду на сервере',title:'Удалить 4,1 ГБ старых логов',code:'rm -rf /var/log/app/*.gz',text:'Почему спрашиваю: рекурсивное удаление.',tmr:'Без ответа через 5 минут — не выполню.',btns:[['Один раз','apr_once','pri'],['До конца сессии','apr_once'],['Всегда','apr_once'],['Нет','apr_no','gh']]});
-    trace('Это подтверждение самого Hermes (_send_exec_approval_prompt), не действие телефона. Варианты once/session/always/deny приходят с сервера и бывают урезаны (smart-deny оставляет «Один раз / Нет»). Таймаут 5 минут.','h'); render(); return }
+    S.feed.push({t:'card',who:'h',head:'Hermes просит разрешения',title:'Выполнить команду на сервере?',code:'rm -rf /var/log/app/*.gz',text:'Причина: рекурсивное удаление',tmr:'Без ответа за 5 минут — не выполнится.',btns:[['Один раз','apr_once','pri'],['До конца сессии','apr_once'],['Всегда','apr_once'],['Нет','apr_no','gh']]});
+    trace('Это редкий случай. По умолчанию у Hermes approvals.mode: smart — безобидное разрешает, явно опасное запрещает вспомогательная модель, человека спрашивает только в сомнительных случаях. Hermes присылает лишь команду, причину по шаблону (англ. «recursive delete» — переводим по словарю) и варианты; заголовок-пересказ мы не выдумываем. При умном запрете вариантов только «Один раз / Нет».','h'); render(); return }
   if (key==='table'){
     if(!await think(my,[{i:'🔎',t:'Ищу в интернете',d:'<div class="src"><i style="background:#E05D44"></i>restoclub.ru</div>',ms:'1,2 с'}])) return;
     S.feed.push({t:'card',who:'h',head:'Hermes уточняет',title:'На сколько человек?',btns:[['2','clar'],['4','clar'],['6','clar'],['Другое…','clar_other','gh']]});
@@ -846,7 +846,7 @@ const PRESETS=[
   ['Обычный день','всё готово — зажмите кнопку',()=>{ ready() }],
   ['Серия сообщений','промежуточное, длинный Markdown, PDF, картинка, короткий текст',()=>{ ready(); S.autoSay='backup' }],
   ['Картинки','альбом из image_generate',()=>{ ready(); S.autoSay='logo' }],
-  ['Подтверждение команды','Hermes спрашивает разрешение',()=>{ ready(); S.autoSay='logs' }],
+  ['Подтверждение команды','редкий случай: Hermes сомневается',()=>{ ready(); S.autoSay='logs' }],
   ['Уточнение','варианты и «Другое»',()=>{ ready(); S.autoSay='table' }],
   ['Модель качается','баннер с прогрессом',()=>{ ready(); S.w.model='loading'; S.modelPct=43; S.screen='app'; startDl(true) }],
   ['Сервер не подключён','только команды телефона',()=>{ ready(); S.w.server='none'; S.screen='app' }],
@@ -859,6 +859,17 @@ $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i
 $('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['cron','Cron: утренняя сводка'],['bg','Фоновая задача на сервере завершилась'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 preset(0);
+
+/* телефон: пропорции корпуса S24 Ultra (79 × 162 мм ≈ 1 : 2,05), масштаб — по высоте окна, не больше 90 % */
+const W=400, H=820;
+function fit(){
+  const dev=$('#dev'), wrap=dev.parentElement, lab=wrap.querySelector('.side-l');
+  const k=Math.max(0.55, Math.min(0.9, (innerHeight-64)/H));
+  dev.style.transform=`scale(${k})`;
+  wrap.style.width=(W*k+8)+'px'; wrap.style.height=(H*k+30)+'px';
+  lab.style.top=(H*k+8)+'px';
+}
+addEventListener('resize',fit); fit();
 })();
 </script>
 </body>
