@@ -99,6 +99,14 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- actions/: П21, П22 — компоненты сюда -->
+        <activity
+            android:name=".actions.DndConfigActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <receiver
+            android:name=".actions.DndOffReceiver"
+            android:exported="false" />
 
         <!-- camera/: П6 -->
         <activity
