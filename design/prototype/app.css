@@ -405,3 +405,27 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .trace p.p{border-color:var(--local)}.trace p.h{border-color:var(--server)}.trace p.e{border-color:var(--danger)}.trace p.i{border-color:var(--ok)}
 .trace p:first-child{font-weight:500}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* форма режима */
+.mform{padding:0 18px 24px;display:flex;flex-direction:column;gap:14px}
+.mform .lh{padding:4px 0}
+.mnote{margin:6px 0 0;font-size:12.5px;color:var(--soft)}
+.fl{display:flex;flex-direction:column;gap:4px}.fl span{font-size:12.5px;font-weight:600;color:var(--brain,#3B5BDB)}
+.fin{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;background:#fff}
+.fin:focus,.fieldarea:focus{outline:none;border-color:var(--ink)}
+.icons{display:flex;flex-wrap:wrap;gap:6px}
+.icb{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--soft)}
+.icb[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.danger{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #E7C2BE;background:#fff;color:var(--danger);border-radius:12px;padding:12px;font-weight:600;font-size:14px}
+.danger .ic{width:18px;height:18px}
+.opt.danger{color:var(--danger)}
+/* диалог-список (ListPreference) */
+.rdlg{text-align:left}.rdlg h3{margin:0 0 8px}
+.ropt{display:flex;gap:14px;align-items:center;width:100%;border:0;background:none;padding:12px 4px;font-size:14.5px;text-align:left}
+.dfoot{display:flex;justify-content:flex-end;margin-top:6px}.dfoot .tbtn{border:0;background:none;color:var(--brain,#3B5BDB);font-weight:600;padding:10px 12px}
+/* вложения */
+.fcard{position:relative;display:flex;gap:10px;align-items:center;min-width:200px;max-width:240px;padding:12px 40px 12px 12px;border-radius:14px;background:var(--surf);border:1px solid var(--line);overflow:hidden}
+.fcard .ic{width:28px;height:28px;color:var(--brain,#3B5BDB);flex:none}.fcard b{display:block;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fcard small{color:var(--soft);font-size:12px}
+.fcard .upx{top:50%;margin-top:-14px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 4px}.pgrid button{border:0;padding:0;aspect-ratio:1;background:none}.pgrid .th{display:block;width:100%;height:100%}
+.sys .it .ic{width:24px;height:24px;color:#3E6FD8;flex:none}

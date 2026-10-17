@@ -16,9 +16,8 @@ const PHR={
 };
 const guessKey = v => { v=v.toLowerCase(); return /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
-  const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+' · с фото'; S.keepScroll=true; trace('Фото ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
-  const img=S.draftImg; S.draftImg=null;
-  if (S.mode!=='main' || img) return deliverMode(text, via, img);
+  const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
+  if (S.mode!=='main') return deliverMode(text, via);
   const key=guessKey(text);
   if (S.busy){ S.feed.push({t:'me',x:text,via:via+' · учтено'}); trace('Мозг ещё работает — реплика учтена в идущей работе (как в Telegram).','h'); return render() }
   const my=++token; S.busy=true;
@@ -27,7 +26,7 @@ async function deliver(text, via){
   S.busy=false; if (my===token&&S.ov){ S.ov.live='' } render();
 }
 async function deliverMode(text, via, img, bubble){
-  if (bubble && bubble.mode!==S.mode){ const F=S.feeds[bubble.mode], m=allModes().find(x=>x.id===bubble.mode); await wait(1300);
+  if (bubble && bubble.mode!==S.mode){ const F=S.feeds[bubble.mode], m=modeById(bubble.mode); await wait(1300);
     F.push({t:'ai',x:bubble.mode==='m-4c1e'?'<p><b>Берите 宫保鸡丁</b> без острого — 不要辣 (bú yào là).</p>':'<p>Ответ по фото — в этом режиме.</p>',done:true}); render();
     showToast(`Ответ в «${m.title}»`,'Фото ушло в том режиме, где его сняли'); return }
   return deliverModeIn(text,via,img,bubble) }
@@ -38,7 +37,13 @@ async function deliverModeIn(text, via, img, bubble){
   trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
   if (S.ov){ S.ov.live='<span class="st h shim">Hermes думает…</span>'; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
-  if (m.id==='m-4c1e' && !img)
+  if (m.id==='main' && img && img.kind==='file')
+    await stream(my,`<p><b>${esc(img.name)}</b>: договор аренды на 11 месяцев, 45 000 ₽ в месяц, залог — одна оплата.</p><ul><li>Расторжение — за 30 дней письменно.</li><li>Ремонт за счёт арендатора — п. 4.3, стоит обсудить.</li></ul>`,{fast:true});
+  else if (m.id==='main' && img)
+    await stream(my,`<p>${text?'Смотрю фото. ':''}На фото меню китайского ресторана: курица гунбао ¥48, тофу мапо ¥36, кисло-острый суп ¥22.</p>`,{fast:true});
+  else if (!m.builtin && m.id!=='m-4c1e')
+    await stream(my,`<p>Ответ по промпту режима «${esc(m.title)}».</p>`,{fast:true});
+  else if (m.id==='m-4c1e' && !img)
     await stream(my,`<p>Сфотографируйте меню — выберу под ваши вкусы.</p>`,{fast:true});
   else if (m.id==='m-4c1e' && img.cls!=='menu')
     await stream(my,`<p>Это не похоже на меню. Сфотографируйте страницу с блюдами.</p>`,{fast:true});

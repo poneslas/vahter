@@ -73,7 +73,7 @@ const TOUR=[
   ['Спросите Hermes «Что у меня завтра?»','ответ придёт с сервера потоком текста',()=>meIn('main',it=>/завтра/i.test(it.x))],
   ['Внизу листа — вкладка «Гастрогид», снимите меню','большая кнопка справа — камера; спуск — и снимок уходит сам',()=>meIn('m-4c1e',it=>it.img)],
   ['Вкладка «Что это?» — снимок экрана','значок снимка в поле, затем «Отправить»',()=>meIn('whatsthis',it=>it.img&&it.img.kind==='screen')],
-  ['«+» в конце вкладок — свой режим','надиктуйте промпт микрофоном под полем',()=>S.custom.length>1],
+  ['«+» в конце вкладок — свой режим','надиктуйте промпт микрофоном под полем',()=>S.modes.filter(m=>!m.builtin).length>1],
 ];
 let tourStep=0;
 function startTour(){ token++; clearInterval(dlT); ready(); S.screen='home'; S.mode='main'; tourStep=0; curPreset=null; save({k:'tour'}); render(); renderGroups(); renderTour(); setPtab('tour'); trace('Знакомство: телефон уже настроен. Первый запуск — во вкладке «Сценарии».','p') }

@@ -1,15 +1,22 @@
 /* Действия пользователя: клики, ввод, диалоги (в Android — интенты ViewModel). */
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab){ return setPtab(t.dataset.ptab) }
   if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
   if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }
   if (t.dataset.up){ S.upSpeed=t.dataset.up; return render() }
   if (t.dataset.idle!==undefined){ S.idle=+t.dataset.idle; return render() }
-  if (t.dataset.primary){ const [id,v]=t.dataset.primary.split(':'); S.camFirst[id]=v==='true'; S.keepScroll=true; return render() }
-  if (t.dataset.toggle){ const [k,id]=t.dataset.toggle.split(':'); S[k][id]=!S[k][id]; if(k==='modeOn' && !S.modeOn[id] && S.mode===id) setMode('main','Режим выключен — вернулись'); S.keepScroll=true; return render() }
+  /* редактирование режима: все поля — из модели Mode (model.js) */
+  if (t.dataset.menable){ const m=modeById(t.dataset.menable); m.enabled=!m.enabled; if(!m.enabled && S.mode===m.id) setMode('main','Режим выключен — вернулись'); S.keepScroll=true; return render() }
+  if (t.dataset.maccept){ const m=modeById(S.editMode); m.accepts[t.dataset.maccept]=!m.accepts[t.dataset.maccept]; if(!m.accepts.photo) m.primary='voice'; S.keepScroll=true; return render() }
+  if (t.dataset.mprimary){ modeById(S.editMode).primary=t.dataset.mprimary; S.keepScroll=true; return render() }
+  if (t.dataset.mbool){ const m=modeById(S.editMode); m[t.dataset.mbool]=!m[t.dataset.mbool]; S.keepScroll=true; return render() }
+  if (t.dataset.micon){ modeById(S.editMode).icon=t.dataset.micon; S.keepScroll=true; return render() }
+  if (t.dataset.radio){ const D=S.dialog; S.dialog=null; S.settings[D.key]=t.dataset.radio; return render() }
+  if (t.dataset.dlgclose!==undefined){ S.dialog=null; return render() }
+  if (t.dataset.pickitem){ const v=t.dataset.pickitem; const img=S.picker==='gallery'?{kind:'photo',cls:v}:{kind:'file',name:v.split('|')[0],size:v.split('|')[1]}; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; uploadPhoto(img,'',img.kind==='file'?'файл':'фото'); trace(img.kind==='file'?'Файл из системного выбора — уходит Hermes как документ, грузится прямо в пузыре.':'Фото из галереи — так же, как со спуска камеры.','p'); return }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
   if (t.dataset.shot){ S.camSubj=t.dataset.shot; if(S.cam) S.cam.subj=t.dataset.shot; return render() }
   if (t.dataset.say) return quickSay(t.dataset.say);
@@ -52,19 +59,18 @@ document.addEventListener('click', async e=>{
     case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'home': S.fromSheet=null; S.screen='home'; return render();
     case 'about': S.page='about'; return render();
-    case 'modes': S.ov=null; S.modePick=false; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
-    case 'modepick': S.modePick=!S.modePick; S.keepScroll=true; return render();
-    case 'addmode': { S.ov=null; S.modePick=false; S.screen='app'; S.onboarded=true; const id='m-'+Math.random().toString(16).slice(2,6); S.custom.push({id,title:'Свой режим',icon:I.edit,sum:'Свой · настройте промпт',photo:true,screen:false,tools:false,custom:true,prompt:'Опишите, что делать с тем, что я присылаю.'}); S.feeds[id]=[]; S.voiceOn[id]=true; S.camFirst[id]=false; S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); return render() }
-    case 'camera': return openCamera(false);
+    case 'addmode': { S.ov=null; S.screen='app'; S.onboarded=true; const id='m-'+Math.random().toString(16).slice(2,6); S.modes.push(mode({id,title:'Новый режим',icon:'star',hint:'',prompt:''})); S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); render(); $('[data-mfield=title]')?.select(); return }
+    case 'delmode': { const m=modeById(S.editMode); S.dialog={title:`Удалить режим «${esc(m.title)}»?`,text:'Разговор этого режима пропадёт с телефона. В Hermes его сессия останется.',opts:[['Удалить','delmode_ok','danger'],['Отмена','x','sec2']]}; return render() }
+    case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
+    case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();
+    case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace(a==='file'?'Файл: системный выбор (ACTION_OPEN_DOCUMENT) из листа через startAssistantActivity — проверяется спайком; лист после выбора возвращается.':'Галерея: системный Photo Picker — разрешение на все фото не нужно.','p'); return render();
+    case 'pickback': S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; return render();
+    case 'camera': S.attachMenu=false; return openCamera(false);
     case 'shoot': return shotGo('');
     case 'upcancel': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ b.up.st='cancel'; if(S.pendingUp===b) S.pendingUp=null; if(b.x){ S.draft=b.x } trace(b.x?'Отправка отменена. Фото убрано, вопрос вернулся в поле.':'Отправка отменена — ничего не ушло.','p') } S.keepScroll=true; return render() }
     case 'upretry': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ S.pendingUp=b; runUpload(b) } return }
-    case 'shotcancel': token++; S.cam.sending=false; S.cam.taken=false; trace('Отменено до отправки — можно переснять.'); return render();
-    case 'retake': S.cam.taken=false; return render();
     case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; if(S.rec){ recTok++; S.rec=null } return render();
-    case 'sendshot': case 'addq': { S.draftImg={kind:'photo',cls:S.cam.subj}; S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; render(); if(a==='sendshot') return deliver('', 'фото'); $('#cin')?.focus(); trace('Фото прикреплено к полю: можно сказать или написать вопрос и отправить вместе.','p'); return }
     case 'screenshot': uploadPhoto({kind:'screen',cls:'scrn'},'','снимок экрана'); trace('Снимок того, что под листом (onHandleScreenshot), только по нажатию. Грузится прямо в пузыре — как фото с камеры: «✕» или дописать вопрос.','p'); setTimeout(()=>$('#cin')?.focus(),50); return;
-    case 'dropimg': S.draftImg=null; return render();
     case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
     case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();
@@ -76,12 +82,10 @@ document.addEventListener('click', async e=>{
       trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
-    case 'csend': { const v=(S.draft||'').trim(); if(!v && !S.draftImg) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
+    case 'csend': { const v=(S.draft||'').trim(); if(!v) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
     case 'recsend': return finishRec('send');
     case 'recfield': return finishRec('field');
     case 'reccancel': return finishRec('cancel');
-    case 'stick': S.stick={'30':'never','never':'now','now':'30'}[S.stick]; return render();
-    case 'sideauto': S.sideAuto=!S.sideAuto; trace(S.sideAuto?'Лист по боковой кнопке сразу пишет без рук (по умолчанию).':'Лист по боковой кнопке ждёт, пока зажмёте микрофон.'); return render();
     case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
     case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;
     case 'unlock': S.w.locked=false; S.screen='home'; return render();
@@ -89,7 +93,9 @@ document.addEventListener('click', async e=>{
   }
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='cin'){ S.draft=e.target.value; $('[data-act=csend]')?.click() } if(e.target.id==='addr') $('[data-act=addrgo]').click() } });
-document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.prompt){ const m=allModes().find(x=>x.id===e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
+document.addEventListener('change',e=>{ if(e.target.dataset&&e.target.dataset.mfield){ S.keepScroll=true; render() } });
+document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfield){ const m=modeById(S.editMode); m[e.target.dataset.mfield]=e.target.value; return }
+  if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
   if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
@@ -104,6 +110,7 @@ function cardBtn(b){
 async function dlgAct(k){
   if (k==='mic_ok'){ S.w.mic='ok'; if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
   if (k==='mic_no'){ S.w.mic='denied'; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='delmode_ok'){ const id=S.editMode, m=modeById(id); S.modes=S.modes.filter(x=>x.id!==id); delete S.feeds[id]; delete S.drafts[id]; if(S.mode===id) S.mode='main'; S.page='settings'; trace(`Режим «${esc(m.title)}» удалён с телефона. Сессия ${id} в Hermes осталась — удалять её телефон не умеет и не должен.`,'p'); return render() }
   if (k==='notif_ok'){ S.w.notif='ok'; trace('Уведомления разрешены.','i'); return render() }
   if (k==='dlnow') return startDl(true);
   if (k==='unlock_set'){ S.w.locked=false; S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render() }

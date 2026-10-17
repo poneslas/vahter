@@ -28,17 +28,19 @@ function bannerHtml(){ const b=issue(); if(!b||S.dismissed===b.t) return ''; ret
 
 /* ───────── лента ───────── */
 function feedHtml(inSheet){
-  if (!S.feed.length && S.mode!=='main') return `<div class="feed"><div class="empty" style="padding:10px 4px">${S.mode==='translate'?'Скажите или напишите — переведу. Можно сфотографировать надпись или меню.':S.mode==='m-4c1e'?'Сфотографируйте меню — выберу под ваши вкусы.':S.mode.startsWith('m-')?'Свой режим: пришлите то, что он ждёт.':'Сфотографируйте товар, вывеску или меню — или сделайте снимок экрана. Коротко объясню, что это.'}</div></div>`;
+  if (!S.feed.length && curMode().hint) return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
   if (!S.feed.length) return inSheet ? '<div class="feed"></div>' : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
   return `<div class="feed">${S.feed.map(it=>itemHtml(it,inSheet)).join('')}</div>`;
 }
 function itemHtml(it,inSheet){
   if (it.t==='me' && it.img && it.up && it.up.st!=='sent'){ const u=it.up;
     const st = u.st==='wait'?'Ждёт сети — отправлю сам':u.st==='fail'?'Не загрузилось':`Загружаю${u.pct?` · ${u.pct} %`:'…'}`;
+    if (it.img.kind==='file') return `<div class="meimg up"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span><button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button>${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}</div><small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>уйдёт вместе с файлом</small></div>`:`<small class="uphint">Можно дописать вопрос — уйдёт вместе с файлом</small>`}</div>`;
     return `<div class="meimg up"><div class="thw"><i class="th ${it.img.cls}"></i>${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}<button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button></div>
       <small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>
       ${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>уйдёт вместе с фото</small></div>`:`<small class="uphint">Можно дописать вопрос — уйдёт вместе с фото</small>`}</div>` }
   if (it.t==='me' && it.img && it.up && it.up.st==='cancel') return '';
+  if (it.t==='me' && it.img && it.img.kind==='file') return `<div class="meimg"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span></div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
   if (it.t==='me' && it.img) return `<div class="meimg"><i class="th ${it.img.cls}"></i>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
   if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
   if (it.t==='ai' && it.speak) return `<div class="ai"><div class="md">${it.x}</div></div><button class="speak" data-act="speaksoon" aria-disabled="true">🔊 Озвучить · скоро</button>`;
@@ -91,22 +93,25 @@ function liveHtml(){
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
-function modesBar(){ return `<div class="modes" role="tablist" aria-label="Режимы">${MODES.map(m=>`<button class="mchip" role="tab" data-mode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi">${m.icon}</span>${m.title}</button>`).join('')}<button class="mchip add" data-act="modes" aria-label="Настроить режимы">+</button></div>` }
-function attDraftHtml(){ const a=S.draftImg; if(!a) return ''; return `<div class="attdraft"><i class="th ${a.cls}"></i><span>${a.kind==='screen'?'Снимок экрана':'Фото'} · можно добавить вопрос голосом или текстом</span><button class="iconbtn" data-act="dropimg" aria-label="Убрать">${I.x}</button></div>` }
 function modeTabs(){ const am=activeModes(); return `<div class="mtabs" data-swipe role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}<button class="madd" data-act="addmode" aria-label="Новый режим">+</button></div>` }
-function modePill(){ const am=activeModes(); if(am.length<2) return ''; const m=curMode(); return `<button class="mpill" data-act="modepick" aria-label="Режим: ${m.title}. Нажмите — список, свайп по строке — следующий">${m.icon}</button>` }
-function modePicker(){ if(!S.modePick) return ''; return `<div class="mpicker" role="menu">${activeModes().map(m=>`<button data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}"><span class="mi2">${m.icon}</span><span><b>${m.title}</b><small>${m.id==='main'?'обычный разговор':(S.camFirst[m.id]?'сразу камера':'голос, текст'+(m.photo?', фото':''))}</small></span></button>`).join('')}<button data-act="modes"><span class="mi2">⚙</span><span><b>Настроить режимы</b></span></button></div>` }
+function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accepts, photoMain=m.primary==='photo';
+  const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
+  return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
 function composerHtml(){
   const ph=S.w.server==='paired'?'Написать Hermes':'Команда телефону';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${modeTabs()}</div>` }
   if (S.rec) return `<div class="cwrap"><div class="composer rec"><button class="iconbtn" data-act="reccancel" aria-label="Отменить запись">${I.x}</button><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div></div><button class="recbtn" data-act="recfield">В поле</button><button class="sendbtn" data-act="recsend" aria-label="Отправить">${I.send}</button></div>${modeTabs()}</div>`;
-  const m=curMode(); const photoMain=m.photo&&S.camFirst[m.id], vOn=S.voiceOn[m.id]!==false;
-  const tools=(photoMain?(vOn?`<button class="intool" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button>`:''):(m.photo?`<button class="intool" data-act="camera" aria-label="Сфотографировать">${I.cam}</button>`:''))+(m.screen?`<button class="intool" data-act="screenshot" aria-label="Снимок экрана под листом">${I.shot}</button>`:'');
-  const big = photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : vOn ? mic : '';
-  const canSend = S.draft || S.draftImg;
-  return `<div class="cwrap">${modePicker()}${attDraftHtml()}<div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent'?'Вопрос к фото — уйдёт вместе с ним':(m.id==='main'?ph:m.id==='translate'?'Что перевести?':'Вопрос к фото')}" autocomplete="off">${canSend?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${big}</div>${modeTabs()}</div>`;
+  const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
+  const canAttach = A.file || A.photo;   // скрепка: галерея, файл, камера (если она не большая кнопка)
+  const tools=(photoMain&&A.voice?`<button class="intool" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button>`:'')
+    +(canAttach?`<button class="intool" data-act="attach" aria-label="Прикрепить" aria-expanded="${S.attachMenu}">${I.clip}</button>`:'')
+    +(A.screen?`<button class="intool" data-act="screenshot" aria-label="Снимок экрана под листом">${I.shot}</button>`:'');
+  const big = photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
+  const up = S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
+  const place = up ? 'Вопрос к вложению — уйдёт вместе с ним' : m.id==='main' ? ph : m.placeholder;
+  return `<div class="cwrap">${attachMenu()}<div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${S.draft?`<button class="sendbtn" data-act="csend" aria-label="Отправить">${I.send}</button>`:''}</div>${big}</div>${modeTabs()}</div>`;
 }
 function chat(){
   const [d,t]=linkState();
@@ -126,9 +131,9 @@ function settings(){
     <div class="lh">Вызов</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Тася':`Сейчас ${w.role==='bixby'?'Bixby':'Gemini'}`,'sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.sideOk?'Зажатие вызывает помощника':'Зажатие открывает меню выключения','sysside',!S.sideOk)}
-    ${li(I.hist,'Возвращаться к Ассистенту', {'30':'Через 30 минут без дела','never':'Никогда — боковая кнопка открывает последний режим','now':'Сразу — боковая кнопка всегда открывает Ассистента'}[S.stick],'stick')}
+    ${li(I.hist,'Возвращаться к Ассистенту', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[1],'returnpick')}
     <div class="lh">Режимы</div>
-    ${allModes().map(m=>`<div class="lirow">${li(m.icon,m.title,m.sum,'editmode:'+m.id)}${m.id==='main'||m.custom?'':`<button class="swbtn" data-toggle="modeOn:${m.id}" role="switch" aria-checked="${!!S.modeOn[m.id]}" aria-label="${m.title}"><span class="sw ${S.modeOn[m.id]?'':'off'}"></span></button>`}</div>`).join('')}
+    ${S.modes.map(m=>`<div class="lirow">${li(I[m.icon],esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
     ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
@@ -143,21 +148,26 @@ function settings(){
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
   </div></div></div>`;
 }
-function modePage(){ const m=allModes().find(x=>x.id===S.editMode); if(m.custom){ S.camFirst[m.id]??=false; S.sendOnShot[m.id]??=false }
-  const chip=(on,t)=>`<span class="mchip" aria-pressed="${on}" style="cursor:default">${t}</span>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${m.icon}${m.title}</b><small>${m.custom?'идентификатор '+m.id+' — не меняется':'отдельный разговор в Hermes'}</small></div></div>
-  <div class="scroll"><div style="padding:0 18px 20px;display:flex;flex-direction:column;gap:12px">
-    <div><div class="lh" style="padding:4px 0">Что делать</div>${m.id==='main'?'<p style="margin:0;color:var(--soft);font-size:13.5px">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea" data-prompt="${m.id}" rows="1">${esc(m.prompt)}</textarea>
+function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; return settings() } const A=m.accepts, main=m.id==='main';
+  const tog=(k,t,ic,lock)=>lock?`<span class="mchip" aria-pressed="true" style="cursor:default">${ic}${t}</span>`:`<button class="mchip" data-maccept="${k}" aria-pressed="${A[k]}">${ic}${t}</button>`;
+  const field=(k,label,ph)=>`<label class="fl"><span>${label}</span><input class="fin" data-mfield="${k}" value="${esc(m[k])}" placeholder="${ph}"></label>`;
+  const sw=(on,k,t,s,ic)=>`<div class="lirow">${li(ic,t,s)}<button class="swbtn" data-mbool="${k}" role="switch" aria-checked="${on}"><span class="sw ${on?'':'off'}"></span></button></div>`;
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${I[m.icon]}${esc(m.title)}</b><small>${m.builtin?'встроенный режим':'свой режим · id '+m.id+', не меняется'}</small></div></div>
+  <div class="scroll"><div class="mform">
+    ${main?'':`<div class="mrow">${field('title','Название','Как назвать вкладку')}</div>
+    <div><div class="lh">Значок</div><div class="icons">${MODE_ICONS.map(k=>`<button class="icb" data-micon="${k}" aria-pressed="${m.icon===k}" aria-label="${k}">${I[k]}</button>`).join('')}</div></div>`}
+    <div><div class="lh">Что делать</div>${main?'<p class="mnote">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea" data-prompt="${m.id}" rows="1">${esc(m.prompt)}</textarea>
       <div class="dict">${S.rec&&S.rec.into==='prompt'
         ? (S.rec.mode==='locked'
             ? `<button class="iconbtn" data-act="reccancel" aria-label="Отменить">${I.x}</button><span class="dlive"><span class="rdot"></span>${esc(recText())||'Слушаю…'}</span><button class="recbtn" data-act="recsend" style="background:var(--ink);color:#fff">Готово</button>`
             : `<button class="dmic on" data-mic data-into="prompt" aria-label="Говорите">${I.mic}</button><span class="dlive"><span class="rdot"></span>${esc(recText())||'Слушаю…'}</span>`)
         : `<button class="dmic" data-mic data-into="prompt" aria-label="Надиктовать">${I.mic}</button><span class="dhint">Зажмите и надиктуйте — допишется в конец. Можно поправить руками.</span>`}</div>`}</div>
-    <div><div class="lh" style="padding:4px 0">Принимает</div><div class="chips">${m.id==='main'?chip(true,I.mic+'Голос'):`<button class="mchip" data-toggle="voiceOn:${m.id}" aria-pressed="${S.voiceOn[m.id]!==false}">${I.mic}Голос</button>`}${chip(true,I.kbd+'Текст')}${chip(m.photo,I.cam+'Фото')}${chip(m.screen,I.shot+'Снимок экрана')}</div></div>
-    ${m.photo?`<div><div class="lh" style="padding:4px 0">Главное</div><div class="seg2">${[[false,I.mic+'Голос'],[true,I.cam+'Фото']].map(([v,t])=>`<button data-primary="${m.id}:${v}" aria-pressed="${!!S.camFirst[m.id]===v}">${t}</button>`).join('')}</div><p style="margin:6px 0 0;font-size:12.5px;color:var(--soft)">${S.camFirst[m.id]?'Большая кнопка — камера. Открывается сразу видоискателем; спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки сразу слушает.'}</p></div>
-    `:''}
-    <div class="setcard">${li(I.shield,'Действия телефона',m.tools?'Все — таймер, календарь, будильник…':'Выключены — режиму не нужны, ответы быстрее','',false,`<span class="sw ${m.tools?'':'off'}"></span>`)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже','',false,'')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для каждого режима','',false,'<span class="sw off"></span>')}</div>
-    <p style="margin:0;font-size:12.5px;color:var(--soft)">В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;:${m.id==='main'?'':m.id}</code>. Промпт подмешивается в каждый ход — сброс сессии его не теряет.</p>
+    ${main?'':`${field('hint','Подсказка в пустом разговоре','Что сюда присылать')}${field('placeholder','Подсказка в поле ввода','Вопрос к фото')}`}
+    <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('screen','Снимок экрана',I.shot)}${tog('file','Файл',I.doc)}</div></div>
+    ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки и ярлыка — сразу видоискатель. Спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки и ярлыка — сразу слушает.'}</p></div>`:''}
+    <div class="setcard">${main?li(I.shield,'Действия телефона','Все — таймер, календарь, будильник…'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены — таймер, календарь, будильник…':'Выключены — меньше инструментов, ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для режима','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
+    <p class="mnote">В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход — сброс сессии его не теряет.</p>
+    ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
   </div></div></div>` }
 function about(){
   const u=S.upd;
@@ -166,7 +176,7 @@ function about(){
     <div style="text-align:center;padding:10px 0 14px">${oursIcon('width:64px;height:64px;border-radius:20px;margin:0 auto')}<div style="font-family:var(--display);font-size:24px;margin-top:10px">${u.ver}</div><div style="color:var(--soft);font-size:13px">стабильная версия</div></div>
     ${u.state==='available'?`<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`:''}
     ${u.state==='dl'?`<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>`:''}
-    ${u.state==='checking'?'<div class="note">Проверяю…</div>':''}${u.state==='latest'?'<div class="note ok">Это последняя версия</div>':''}${u.state==='fail'?'<div class="note bad">Не удалось проверить: нет связи</div>':''}
+    ${u.state==='checking'?'<div class="mnote">Проверяю…</div>':''}${u.state==='latest'?'<div class="note ok">Это последняя версия</div>':''}${u.state==='fail'?'<div class="note bad">Не удалось проверить: нет связи</div>':''}
   </div>
   <div class="list">
     ${li(I.dl,'Проверить обновления','Сами проверяем при запуске и раз в 6 часов','check')}
@@ -211,6 +221,10 @@ function connectBody(onb){
 function sysRole(){ const o=[['gemini','Gemini'],['bixby','Bixby'],['ours','Тася']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }
 function sysMic(){ const o=(v,t)=>`<button class="it" data-micperm="${v}"><span class="rad ${S.w.mic===v?'on':''}"></span>${t}</button>`;
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Микрофон</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Приложения → Тася → Разрешения → Микрофон</p><div class="grp">${o('ok','Разрешить только во время использования приложения')}${o('ask','Спрашивать каждый раз')}${o('denied','Запретить')}</div></div>` }
+function sysPick(){ const k=S.picker; const items=k==='gallery'?[['menu','Меню · сегодня 19:42'],['tea','Чай · сегодня 18:10'],['scrn','Скриншот · вчера']]:[['Договор аренды.pdf','248 КБ · Загрузки'],['Счёт октябрь.xlsx','36 КБ · Документы'],['Паспорт объекта.pdf','1,2 МБ · Загрузки']];
+  return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="pickback">${I.back}</button>${k==='gallery'?'Выберите фото':'Недавние файлы'}</div>
+  ${k==='gallery'?`<div class="pgrid">${items.map(([c,t])=>`<button data-pickitem="${c}" aria-label="${t}"><i class="th ${c}"></i></button>`).join('')}</div>`:`<div class="grp">${items.map(([n,s])=>`<button class="it" data-pickitem="${n}|${s.split(' · ')[0]}">${I.doc}<span><b style="font-weight:500">${n}</b><br><small style="color:#777">${s}</small></span></button>`).join('')}</div>`}
+  <p style="margin:12px 22px;font-size:12.5px;color:#777">Системный ${k==='gallery'?'выбор фото (Photo Picker)':'выбор файла (ACTION_OPEN_DOCUMENT)'} — разрешения на все файлы приложению не нужны.</p></div>` }
 function sysSide(){ return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Боковая кнопка</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Дополнительные функции → Боковая кнопка</p><p style="margin:14px 24px 4px;font-size:13px;color:#3E6FD8;font-weight:600">Нажатие и удержание</p><div class="grp"><button class="it" data-side="1"><span class="rad ${S.sideOk?'on':''}"></span>Цифровой помощник</button><button class="it" data-side="0"><span class="rad ${S.sideOk?'':'on'}"></span>Меню выключения</button></div></div>` }
 function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"><button class="iconbtn" data-act="home" style="color:#fff">${I.back}</button><span class="av">H</span><span><b>Hermes</b><br><small style="opacity:.8">бот</small></span></div><div class="msgs" id="msgs">${S.tg.map(m=>`<div class="bub ${m.me?'me':''}">${m.html}</div>`).join('')}</div><div class="compose"><span class="in">${S.tg.length?'Сообщение':'/tasya_pair'}</span><button class="cb pri" data-act="tgsend" ${S.tg.length?'disabled':''}>➤</button></div></div>` }
 function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
@@ -218,13 +232,13 @@ function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i
 
 function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen==='cam2';
   return `<div class="layer cam2">${statusBar(false)}
-  <div class="modeName">${m.icon} ${m.title}</div>
+  <div class="modeName">${I[m.icon]} ${esc(m.title)}</div>
   <div class="vf" style="top:96px"><i class="th ${c.subj}"></i></div>
   ${qrec?`<div class="q">${PHR[S.rec.key].w.slice(0,S.rec.n).join(' ')||'…'}</div>`:''}
   ${false?`<div class="sending"><span>Отправляю${c.q?' с вопросом':''}…</span><div class="bar"><i></i></div><button class="recbtn" data-act="shotcancel" style="background:rgba(255,255,255,.18);color:#fff">Отмена</button></div>`
    : c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`
    : `<button class="cx" data-act="camcancel">${c.first?'В лист':'Отмена'}</button><button class="shut" data-act="shoot" aria-label="Снять и отправить"></button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите — снимок уйдёт с вопросом">${I.mic}</button>`}</div>` }
-function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${m.icon}</span>${m.title}</button>`).join('')}</div>` }
+function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
@@ -237,7 +251,9 @@ function overlay(){
     ${liveHtml()}${composerHtml()}
   </div></div>`;
 }
-function dialog(){ const D=S.dialog; if(!D) return ''; return `<div class="scrim"><div class="dlg"><div class="di">${D.ic||''}</div><h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
+function dialog(){ const D=S.dialog; if(!D) return '';
+  if (D.radio) return `<div class="scrim"><div class="dlg rdlg"><h3>${D.title}</h3>${D.radio.map(([v,t])=>`<button class="ropt" data-radio="${v}"><span class="rad ${D.cur===v?'on':''}"></span>${t}</button>`).join('')}<div class="dfoot"><button class="tbtn" data-dlgclose>Отмена</button></div></div></div>`;
+  return `<div class="scrim"><div class="dlg">${D.ic?`<div class="di">${D.ic}</div>`:''}<h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
 function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toast" data-act="toast">${oursIcon()}<span><b>${T.title}</b><span>${T.text}</span></span></button>` }
 
 function grow(t){ t.style.height='auto'; t.style.height=t.scrollHeight+'px' }
@@ -247,7 +263,7 @@ function render(){
   else if (S.screen==='home') base=home();
   else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
-  else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic();
+  else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
