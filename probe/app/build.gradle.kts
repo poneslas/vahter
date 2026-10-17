@@ -50,4 +50,5 @@ dependencies {
     implementation("androidx.camera:camera-view:$camera")
     implementation("androidx.work:work-runtime:2.10.1")
     implementation("org.unifiedpush.android:connector:3.3.5") // push
+    implementation("androidx.photopicker:photopicker-compose:1.0.0-alpha01") // pick
 }
