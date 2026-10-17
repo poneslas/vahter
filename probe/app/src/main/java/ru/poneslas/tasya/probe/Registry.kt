@@ -15,6 +15,7 @@ import ru.poneslas.tasya.probe.perm.PermModule
 import ru.poneslas.tasya.probe.actions.ActionsModule
 import ru.poneslas.tasya.probe.notify.NotifyModule
 import ru.poneslas.tasya.probe.audio.AudioModule
+import ru.poneslas.tasya.probe.keys.KeysModule
 import ru.poneslas.tasya.probe.pick.PickModule
 import ru.poneslas.tasya.probe.push.PushModule
 import ru.poneslas.tasya.probe.session.SessionModule
@@ -32,7 +33,7 @@ object Registry {
     private val modules: List<Module> = listOf(
         AssistModule, SessionModule, CameraModule, PickModule, UploadModule, ExpandModule,
         EntryModule, PushModule, NetModule, UpdateModule, AsrModule, ExtraModule, OsReadModule,
-        PermModule, ActionsModule, NotifyModule, AudioModule,
+        PermModule, ActionsModule, NotifyModule, AudioModule, KeysModule,
     )
 
     lateinit var probes: List<Probe>
