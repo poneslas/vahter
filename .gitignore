@@ -1,0 +1,7 @@
+# клоны референсов (2 ГБ), восстанавливаются клонированием
+upstream/
+# журналы сессий агентов
+.agents/
+# локальные настройки Claude Code
+.claude/settings.local.json
+.DS_Store
