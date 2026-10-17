@@ -118,7 +118,7 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .cam2 .sending .bar{width:180px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
 .cam2 .sending .bar i{display:block;height:100%;background:#fff;animation:fill 1.8s linear forwards}
 @keyframes fill{from{width:0}to{width:100%}}
-.cam2 .modeName{position:absolute;top:60px;left:0;right:0;text-align:center;font-size:13px;opacity:.85}
+.cam2 .modeName{position:absolute;top:60px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:6px;font-size:13px;opacity:.85}.cam2 .modeName .ic{width:16px;height:16px}
 .intool{width:34px;height:34px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;flex:none;font-size:16px;color:var(--soft)}
 .intool:hover{background:#ECEEE8}
 .toolbtn{width:40px;height:40px;border-radius:50%;border:0;background:#ECEEE8;display:grid;place-items:center;flex:none;font-size:17px}
@@ -150,7 +150,11 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .sc-pop button:hover{background:#EEF0F4}
 .sc-pop small{display:block;padding:4px 12px 2px;color:#777;font-size:11.5px}
 .speak{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--faint);margin:4px 0 0 16px;background:none}
-.fieldarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;background:#fff;min-height:96px;resize:none}
+.mchip .ic,.seg2 .ic{width:16px;height:16px}.seg2 button{display:flex;align-items:center;justify-content:center;gap:6px}
+.dict{display:flex;align-items:center;gap:10px;margin-top:8px;min-height:44px}
+.dmic{width:44px;height:44px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none;touch-action:none}.dmic.on{background:var(--local);transform:scale(1.08)}
+.dhint{font-size:12.5px;color:var(--soft)}.dlive{flex:1;font-size:14px;display:flex;align-items:center;gap:8px}
+.fieldarea{overflow:hidden;width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;background:#fff;min-height:60px;resize:none;display:block}
 .recbtn{border:0;border-radius:999px;padding:9px 14px;font-weight:600;font-size:13px;background:#ECEEE8;flex:none}
 .sendbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
 
@@ -159,6 +163,9 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .lh{font-size:13px;font-weight:600;color:var(--server-d);padding:16px 22px 6px}
 .li{display:flex;align-items:center;gap:16px;padding:12px 22px;border:0;background:transparent;width:100%;text-align:left;min-height:64px}
 .li:hover{background:rgba(14,26,54,.04)}
+.lirow{display:flex;align-items:center}.lirow .li{flex:1;min-width:0;width:auto;padding-right:12px}
+.swbtn{flex:none;border:0;background:none;padding:0 22px 0 16px;height:40px;border-left:1px solid var(--line);display:grid;place-items:center}
+.li .lt small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .li .lic{width:24px;height:24px;color:var(--soft);flex:none;display:grid;place-items:center}
 .li .lt{flex:1;min-width:0}
 .li .lt b{display:block;font-weight:500;font-size:15.5px}
@@ -411,6 +418,13 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'
 const wait = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 120) : ms));
 
 const I = {
+  spark:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25z"/></svg>',
+  transl:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>',
+  lens:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>',
+  food:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>',
+  edit:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg>',
+  hist:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.95 8.95 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8z"/></svg>',
+  plus:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>',
   gear:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>',
   kbd:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10"/></svg>',
   x:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -441,14 +455,14 @@ const I = {
 const MODEL_TOTAL = 225539522 + 24110855;
 const mb = b => (b/1048576).toFixed(0);
 const MODES=[
-  {id:'main', title:'Ассистент', icon:'✦', photo:false, screen:false, tools:true, prompt:''},
-  {id:'translate', title:'Переводчик', icon:'🌐', photo:true, screen:false, tools:false, prompt:'Всё не на русском — переведи на русский. Всё на русском — переведи на китайский, добавь пиньинь. Коротко, без вступлений. Не сохраняй это в память.'},
-  {id:'whatsthis', title:'Что это?', icon:'🔍', photo:true, screen:true, tools:false, prompt:'Пользователь в поездке. По фото или снимку экрана коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.'},
+  {id:'main', title:'Ассистент', icon:I.spark, sum:'Всегда включён · обычный разговор', photo:false, screen:false, tools:true, prompt:''},
+  {id:'translate', title:'Переводчик', icon:I.transl, sum:'Голос и фото · русский ↔ китайский', photo:true, screen:false, tools:false, prompt:'Всё не на русском — переведи на русский. Всё на русском — переведи на китайский, добавь пиньинь. Коротко, без вступлений. Не сохраняй это в память.'},
+  {id:'whatsthis', title:'Что это?', icon:I.lens, sum:'Сразу камера · товар, вывеска, экран', photo:true, screen:true, tools:false, prompt:'Пользователь в поездке. По фото или снимку экрана коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.'},
 ];
 const fresh = () => { const o = ({
   w:{ net:'wifi', server:'none', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   sideOk:false, modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
-  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[],'m-4c1e':[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true,'m-4c1e':true}, sendOnShot:{translate:false,whatsthis:true,'m-4c1e':true}, voiceOn:{main:true,translate:true,whatsthis:true,'m-4c1e':true}, stick:'30', idle:0, custom:[{id:'m-4c1e', title:'Официант', icon:'🍽', photo:true, screen:false, tools:false, custom:true, prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'}], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
+  dialog:null, toast:null, ov:null, pair:null, feeds:{main:[],translate:[],whatsthis:[],'m-4c1e':[]}, mode:'main', modeOn:{translate:true,whatsthis:true}, camFirst:{translate:false,whatsthis:true,'m-4c1e':true}, sendOnShot:{translate:false,whatsthis:true,'m-4c1e':true}, voiceOn:{main:true,translate:true,whatsthis:true,'m-4c1e':true}, stick:'30', idle:0, custom:[{id:'m-4c1e', title:'Официант', icon:I.food, sum:'Свой · сразу камера · выбор по меню', photo:true, screen:false, tools:false, custom:true, prompt:'Я пришлю фото меню. Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'}], modePick:false, draftImg:null, editMode:null, shortcuts:false, tg:[], failNext:null,
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, sideAuto:true, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
 }); o.drafts={}; Object.defineProperty(o,'feed',{get(){ return this.feeds[this.mode] }, set(v){ this.feeds[this.mode]=v }, enumerable:false});
   Object.defineProperty(o,'draft',{get(){ return this.drafts[this.mode]||'' }, set(v){ this.drafts[this.mode]=v }, enumerable:false}); return o };
@@ -595,12 +609,12 @@ function settings(){
   <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>Настройки</b></div></div>
   <div class="scroll"><div class="list">
     <div class="lh">Вызов</div>
-    ${li(I.btn,'Цифровой помощник', w.role==='ours'?'Тася':`Сейчас ${w.role==='bixby'?'Bixby':'Gemini'}`,'sysrole',w.role!=='ours')}
+    ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Тася':`Сейчас ${w.role==='bixby'?'Bixby':'Gemini'}`,'sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.sideOk?'Зажатие вызывает помощника':'Зажатие открывает меню выключения','sysside',!S.sideOk)}
-    ${li(I.btn,'Возвращаться к Ассистенту', {'30':'Через 30 минут без дела','never':'Никогда — боковая кнопка открывает последний режим','now':'Сразу — боковая кнопка всегда открывает Ассистента'}[S.stick],'stick')}
+    ${li(I.hist,'Возвращаться к Ассистенту', {'30':'Через 30 минут без дела','never':'Никогда — боковая кнопка открывает последний режим','now':'Сразу — боковая кнопка всегда открывает Ассистента'}[S.stick],'stick')}
     <div class="lh">Режимы</div>
-    ${allModes().map(m=>`<div style="display:flex;align-items:center">${li(`<span style="font-size:15px">${m.icon}</span>`,m.title,m.id==='main'?'Всегда включён: обычный разговор':m.custom?'Свой режим':(S.camFirst[m.id]?'Сразу камера · ':'')+m.prompt.slice(0,34)+'…','editmode:'+m.id)}${m.id==='main'||m.custom?'':`<button class="iconbtn" data-toggle="modeOn:${m.id}" aria-label="${S.modeOn[m.id]?'Выключить':'Включить'} режим" style="margin-right:12px"><span class="sw ${S.modeOn[m.id]?'':'off'}"></span></button>`}</div>`).join('')}
-    ${li('<span style="font-size:18px">+</span>','Свой режим','Название, промпт, что принимает','addmode')}
+    ${allModes().map(m=>`<div class="lirow">${li(m.icon,m.title,m.sum,'editmode:'+m.id)}${m.id==='main'||m.custom?'':`<button class="swbtn" data-toggle="modeOn:${m.id}" role="switch" aria-checked="${!!S.modeOn[m.id]}" aria-label="${m.title}"><span class="sw ${S.modeOn[m.id]?'':'off'}"></span></button>`}</div>`).join('')}
+    ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
@@ -616,12 +630,17 @@ function settings(){
 }
 function modePage(){ const m=allModes().find(x=>x.id===S.editMode); if(m.custom){ S.camFirst[m.id]??=false; S.sendOnShot[m.id]??=false }
   const chip=(on,t)=>`<span class="mchip" aria-pressed="${on}" style="cursor:default">${t}</span>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${m.icon} ${m.title}</b><small>${m.custom?'идентификатор '+m.id+' — не меняется':'отдельный разговор в Hermes'}</small></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${m.icon}${m.title}</b><small>${m.custom?'идентификатор '+m.id+' — не меняется':'отдельный разговор в Hermes'}</small></div></div>
   <div class="scroll"><div style="padding:0 18px 20px;display:flex;flex-direction:column;gap:12px">
-    <div><div class="lh" style="padding:4px 0">Что делать</div>${m.id==='main'?'<p style="margin:0;color:var(--soft);font-size:13.5px">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea">${m.prompt}</textarea>`}</div>
-    <div><div class="lh" style="padding:4px 0">Принимает</div><div class="chips">${m.id==='main'?chip(true,'🎙 Голос'):`<button class="mchip" data-toggle="voiceOn:${m.id}" aria-pressed="${S.voiceOn[m.id]!==false}">🎙 Голос</button>`}${chip(true,'⌨ Текст')}${chip(m.photo,'📷 Фото')}${chip(m.screen,'▣ Снимок экрана')}</div></div>
-    ${m.photo?`<div><div class="lh" style="padding:4px 0">Главное</div><div class="seg2">${[[false,'🎙 Голос'],[true,'📷 Фото']].map(([v,t])=>`<button data-primary="${m.id}:${v}" aria-pressed="${!!S.camFirst[m.id]===v}">${t}</button>`).join('')}</div><p style="margin:6px 0 0;font-size:12.5px;color:var(--soft)">${S.camFirst[m.id]?'Большая кнопка — камера. Открывается сразу видоискателем; спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки сразу слушает.'}</p></div>
-    <div class="setcard"><div style="display:flex;align-items:center">${li('⇪','Отправлять сразу после снимка','2 секунды на «Отмена», дальше уходит само')}<button class="iconbtn" data-toggle="sendOnShot:${m.id}" style="margin-right:12px"><span class="sw ${S.sendOnShot[m.id]?'':'off'}"></span></button></div></div>`:''}
+    <div><div class="lh" style="padding:4px 0">Что делать</div>${m.id==='main'?'<p style="margin:0;color:var(--soft);font-size:13.5px">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea" data-prompt="${m.id}" rows="1">${esc(m.prompt)}</textarea>
+      <div class="dict">${S.rec&&S.rec.into==='prompt'
+        ? (S.rec.mode==='locked'
+            ? `<button class="iconbtn" data-act="reccancel" aria-label="Отменить">${I.x}</button><span class="dlive"><span class="rdot"></span>${esc(recText())||'Слушаю…'}</span><button class="recbtn" data-act="recsend" style="background:var(--ink);color:#fff">Готово</button>`
+            : `<button class="dmic on" data-mic data-into="prompt" aria-label="Говорите">${I.mic}</button><span class="dlive"><span class="rdot"></span>${esc(recText())||'Слушаю…'}</span>`)
+        : `<button class="dmic" data-mic data-into="prompt" aria-label="Надиктовать">${I.mic}</button><span class="dhint">Зажмите и надиктуйте — допишется в конец. Можно поправить руками.</span>`}</div>`}</div>
+    <div><div class="lh" style="padding:4px 0">Принимает</div><div class="chips">${m.id==='main'?chip(true,I.mic+'Голос'):`<button class="mchip" data-toggle="voiceOn:${m.id}" aria-pressed="${S.voiceOn[m.id]!==false}">${I.mic}Голос</button>`}${chip(true,I.kbd+'Текст')}${chip(m.photo,I.cam+'Фото')}${chip(m.screen,I.shot+'Снимок экрана')}</div></div>
+    ${m.photo?`<div><div class="lh" style="padding:4px 0">Главное</div><div class="seg2">${[[false,I.mic+'Голос'],[true,I.cam+'Фото']].map(([v,t])=>`<button data-primary="${m.id}:${v}" aria-pressed="${!!S.camFirst[m.id]===v}">${t}</button>`).join('')}</div><p style="margin:6px 0 0;font-size:12.5px;color:var(--soft)">${S.camFirst[m.id]?'Большая кнопка — камера. Открывается сразу видоискателем; спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки сразу слушает.'}</p></div>
+    <div class="setcard"><div class="lirow">${li(I.send,'Отправлять сразу после снимка','2 секунды на «Отмена», дальше уходит само')}<button class="swbtn" data-toggle="sendOnShot:${m.id}" role="switch" aria-checked="${!!S.sendOnShot[m.id]}"><span class="sw ${S.sendOnShot[m.id]?'':'off'}"></span></button></div></div>`:''}
     <div class="setcard">${li(I.shield,'Действия телефона',m.tools?'Все — таймер, календарь, будильник…':'Выключены — режиму не нужны, ответы быстрее','',false,`<span class="sw ${m.tools?'':'off'}"></span>`)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже','',false,'')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для каждого режима','',false,'<span class="sw off"></span>')}</div>
     <p style="margin:0;font-size:12.5px;color:var(--soft)">В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;:${m.id==='main'?'':m.id}</code>. Промпт подмешивается в каждый ход — сброс сессии его не теряет.</p>
   </div></div></div>` }
@@ -649,7 +668,7 @@ function onb(){
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает ваш агент на сервере.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
-    extra=`<div class="setcard">${li(I.btn,'Цифровой помощник',S.w.role==='ours'?'Тася':'Сейчас '+(S.w.role==='bixby'?'Bixby':'Gemini'),'sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка → помощник',S.sideOk?'Готово':'Зажатие и удержание','sysside',false,S.sideOk?I.ok:'')}</div>`; if(ok) skip=null }
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Тася':'Сейчас '+(S.w.role==='bixby'?'Bixby':'Gemini'),'sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка → помощник',S.sideOk?'Готово':'Зажатие и удержание','sysside',false,S.sideOk?I.ok:'')}</div>`; if(ok) skip=null }
   if (st==='voice'){ art='<div style="font-size:64px;letter-spacing:-4px">▂▅▇▅▂</div>'; h='Голос на телефоне'; p=`Один раз скачать ${mb(MODEL_TOTAL)} МБ. Голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
@@ -690,7 +709,7 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
   ${c.sending?`<div class="sending"><span>Отправляю${c.q?' с вопросом':''}…</span><div class="bar"><i></i></div><button class="recbtn" data-act="shotcancel" style="background:rgba(255,255,255,.18);color:#fff">Отмена</button></div>`
    : c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`
    : `<button class="cx" data-act="camcancel">${c.first?'В лист':'Отмена'}</button><button class="shut" data-act="shoot" aria-label="Снять и отправить"></button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите — снимок уйдёт с вопросом">${I.mic}</button>`}</div>` }
-function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;text-align:center">${m.icon}</span>${m.title}</button>`).join('')}</div>` }
+function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${m.icon}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
@@ -706,6 +725,7 @@ function overlay(){
 function dialog(){ const D=S.dialog; if(!D) return ''; return `<div class="scrim"><div class="dlg"><div class="di">${D.ic||''}</div><h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
 function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toast" data-act="toast">${oursIcon()}<span><b>${T.title}</b><span>${T.text}</span></span></button>` }
 
+function grow(t){ t.style.height='auto'; t.style.height=t.scrollHeight+'px' }
 function render(){
   let base='';
   if (S.screen==='lock') base=lock();
@@ -716,6 +736,7 @@ function render(){
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
+  document.querySelectorAll('#scr .fieldarea').forEach(grow);
   document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2 });
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
@@ -822,6 +843,7 @@ const PHR={
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
   price:{t:'Сколько это в рублях?',w:['сколько','это','в','рублях'],fin:'Сколько это в рублях?'},
   spicy:{t:'А что здесь не острое?',w:['а','что','здесь','не','острое'],fin:'А что здесь не острое?'},
+  pr:{t:'(диктовка промпта)',w:['если','есть','рыба','на','гриле','—','советуй','её','первой'],fin:'Если есть рыба на гриле — советуй её первой.'},
   toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
 const guessKey = v => { v=v.toLowerCase(); return /таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
@@ -870,12 +892,13 @@ async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиа�
 let recTok=0;
 async function startRec(mode, into){
   if (S.rec) return; if (!voiceOk()) return micUnavailable();
-  S.rec={mode, key:S.nextKey||'ask', n:0, into: into||(S.draft?'append':'send'), t0:Date.now()}; const my=++recTok; render();
+  S.rec={mode, key:into==='prompt'?'pr':(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now()}; const my=++recTok; render();
   while (S.rec && my===recTok){ await wait(320); if(!S.rec||my!==recTok) return; const ph=PHR[S.rec.key]; if (S.rec.n<ph.w.length) S.rec.n++; S.keepScroll=true; render() }
 }
 function recText(){ const r=S.rec, ph=PHR[r.key]; if(!r.n) return ''; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }
 async function finishRec(how){
   const r=S.rec; if(!r) return; const text=recText(); recTok++; S.rec=null;
+  if (r.into==='prompt'){ const m=allModes().find(x=>x.id===S.editMode); if(how!=='cancel' && text){ m.prompt=(m.prompt.trim()+' '+text).trim(); trace('Надиктовано локально (GigaAM) и дописано в конец промпта — тот же компонент, что в листе.','p') } S.keepScroll=true; return render() }
   if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
   if (S.screen==='cam2' && S.cam){ trace('Отпустил микрофон на камере — снимок и вопрос уходят вместе одним сообщением.','p'); return shotGo(text) }
   if (S.ov){ S.ov.live=`<span class="st p">Распознаю</span>${esc(text)}`; S.ov.liveQ=false } render(); await wait(380);
@@ -900,7 +923,7 @@ document.addEventListener('pointerdown',e=>{ const c=e.target.closest('[data-swi
 document.addEventListener('pointerup',e=>{ if(!sw) return; const dx=e.clientX-sw.x, dy=e.clientY-sw.y; sw=null; if(Math.abs(dx)<50||Math.abs(dy)>40) return; const am=activeModes(); if(am.length<2) return;
   const i=am.findIndex(m=>m.id===S.mode); const n=am[(i+(dx<0?1:-1)+am.length)%am.length]; setMode(n.id,'Свайп по вкладкам режимов'); sw=false; S.keepScroll=true; render(); setTimeout(()=>{ if(sw===false) sw=null },0) });
 let pd=null;
-document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold') });
+document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
 document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const dy=pd.y-e.clientY, dx=pd.x-e.clientX;
   if (dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Дальше «Отправить» или «В поле».','p'); S.keepScroll=true; render() }
   else if (dx>70){ pd=null; finishRec('cancel') } });
@@ -1030,7 +1053,7 @@ document.addEventListener('click', async e=>{
     case 'about': S.page='about'; return render();
     case 'modes': S.ov=null; S.modePick=false; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'modepick': S.modePick=!S.modePick; S.keepScroll=true; return render();
-    case 'addmode': { S.ov=null; S.modePick=false; S.screen='app'; S.onboarded=true; const id='m-'+Math.random().toString(16).slice(2,6); S.custom.push({id,title:'Свой режим',icon:'✎',photo:true,screen:false,tools:false,custom:true,prompt:'Опишите, что делать с тем, что я присылаю.'}); S.feeds[id]=[]; S.voiceOn[id]=true; S.camFirst[id]=false; S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); return render() }
+    case 'addmode': { S.ov=null; S.modePick=false; S.screen='app'; S.onboarded=true; const id='m-'+Math.random().toString(16).slice(2,6); S.custom.push({id,title:'Свой режим',icon:I.edit,sum:'Свой · настройте промпт',photo:true,screen:false,tools:false,custom:true,prompt:'Опишите, что делать с тем, что я присылаю.'}); S.feeds[id]=[]; S.voiceOn[id]=true; S.camFirst[id]=false; S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); return render() }
     case 'camera': return openCamera(false);
     case 'shoot': return shotGo('');
     case 'shotcancel': token++; S.cam.sending=false; S.cam.taken=false; trace('Отменено до отправки — можно переснять.'); return render();
@@ -1063,7 +1086,7 @@ document.addEventListener('click', async e=>{
   }
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='cin'){ S.draft=e.target.value; $('[data-act=csend]')?.click() } if(e.target.id==='addr') $('[data-act=addrgo]').click() } });
-document.addEventListener('input',e=>{ if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
+document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.prompt){ const m=allModes().find(x=>x.id===e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
   if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
@@ -1123,7 +1146,7 @@ function preset(i){ token++; clearInterval(dlT); const p=PRESETS[i]; p[2](); if(
   else if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 $('#presets').innerHTML=PRESETS.map((p,i)=>`<button class="pre" data-preset="${i}"><b>${p[0]}</b><span>${p[1]}</span></button>`).join('');
-$('#say').innerHTML=Object.entries(PHR).map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
+$('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
 $('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Hermes ответил, пока лист закрыт'],['cron','Cron: утренняя сводка'],['bg','Фоновая задача на сервере завершилась'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 preset(0);
