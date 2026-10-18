@@ -9,7 +9,7 @@ function openOverlay(src){
   if (curMode().primary==='photo' && curMode().accepts.photo){ render(); return openCamera(true) }
   const sub=s=>`<span style="font-size:14.5px;font-weight:400;color:var(--soft)">${s}</span>`;
   if (S.w.model!=='ready'){ O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — пишите. Команды и вопросы работают.')}`; return render() }
-  if (S.w.mic==='ask'){ S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; S.pendingSide = src==='side'; trace('Микрофон спрашиваем в момент, когда он нужен, — не на экране настройки.','p'); return render() }
+  if (S.w.mic==='ask'){ O.live=`<span class="st">Нужен доступ к микрофону</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">Спросит приложение — лист на секунду развернётся.</span><br><button class="recbtn" data-act="permmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`; S.pendingSide = src==='side'; trace('Системное окно разрешения из листа на Samsung открывается ПОД листом (пробник, S24). Поэтому разрешение спрашивает приложение: лист разворачивается, окно поверх приложения, потом снова лист.','p'); return render() }
   if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пока можно писать. Чтобы говорить, разрешите микрофон в настройках.')}<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>`; return render() }
   if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }
   if (!curMode().accepts.voice){ O.live=`<span class="st">Режим без голоса</span>${sub('Пишите или пришлите фото.')}`; return render() }
@@ -68,6 +68,12 @@ async function shotGo(q){
   uploadPhoto(img, q||'', (q?'голос · ':'')+(items.length>1?`альбом · ${items.length}`:'фото'));
   trace(q?'Снимок и вопрос: сразу обратно в разговор, фото грузится в пузыре.':'Спуск — сразу обратно в разговор. Фото грузится прямо в пузыре: пока грузится (не меньше 2 секунд), можно нажать «✕» или дописать вопрос — уйдёт вместе с фото.','p');
   if(!q) setTimeout(()=>$('#cin')?.focus(),50); }
+/** Разрешения — только из приложения: системное окно поверх листа на S24 не показывается (уходит под лист). */
+function permInApp(kind){ S.permRet={screen:S.screen==='app'?'home':S.screen, side:S.pendingSide}; S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat';
+  S.dialog = kind==='mic' ? {ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}
+    : {ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','notif_no','sec2']]};
+  render() }
+function permBack(){ const R=S.permRet; if(!R) return false; S.permRet=null; S.screen=R.screen; openOverlay(R.side?'side':'снова'); return true }
 function closeOverlay(){ token++; S.busy=false; S.ov=null; render() }
 /** Разрешение на уведомления спрашиваем, пока лист ещё виден: при первом вопросе мозгу, пока он думает. После закрытия окна спросить уже нечем. */
 function maybeAskNotif(){ if (S.w.notif==='ok'||S.notifAsked||!S.ov) return; S.notifAsked=true; S.feed.push({t:'notifask'}); trace('Уведомления спрашиваем, пока лист виден: при закрытии листа окна уже нет, системный запрос показать нечем.','p') }

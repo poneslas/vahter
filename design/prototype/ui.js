@@ -229,6 +229,7 @@ function onb(){
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
+    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен, чтобы говорить с Тасей',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
   if (st==='done'){ art='<div style="font-size:64px">✓</div>'; h='Готово'; p = S.w.role==='ours'&&S.sideOk ? 'Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».' : 'Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».'; primary=['Открыть','onbdone']; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }

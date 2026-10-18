@@ -52,7 +52,8 @@ document.addEventListener('click', async e=>{
     case 'dl': S.ov=null; if(S.w.model==='loading'||S.w.model==='ready'){ S.screen='app'; if(S.onboarded) S.page='about'; return render() } return startDl();
     case 'askmic': if (S.w.mic==='denied'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() } S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
     case 'notifno': S.feed=S.feed.filter(f=>f.t!=='notifask'); S.keepScroll=true; return render();
-    case 'asknotif': S.dialog={ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
+    case 'permmic': return permInApp('mic');
+    case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
     case 'tgsend': S.tg.push({me:true,html:'/tasya_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/tasya/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
@@ -137,12 +138,13 @@ function cardBtn(b){
   if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:brainOf().title+' → телефон',btn:'Отменить',kind:'B',id:Date.now()},{tool:'calendar.add',who:brainOf().title,phrase:'перенеси банк на пятницу',params:'event_id=812, start=2026-10-19T10:00',confirm:'«Перенести» нажатием',lock:false,undo:true}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
 }
 async function dlgAct(k){
-  if (k==='mic_ok'){ S.w.mic='ok'; if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
-  if (k==='mic_no'){ S.w.mic='denied'; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='mic_ok'){ S.w.mic='ok'; if(permBack()){ S.pendingSide=false; return } if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
+  if (k==='mic_no'){ S.w.mic='denied'; if(permBack()) return; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='notif_no'){ if(permBack()) return; return render() }
   if (k==='restart_ok'){ S.feeds[S.restartId]=[]; trace('Разговор режима стёрт с телефона — следующая реплика уйдёт мозгу без истории.','p'); return render() }
   if (k==='brainsetup') { S.dialog=null; return }
   if (k==='delmode_ok'){ const id=S.editMode, m=modeById(id); S.modes=S.modes.filter(x=>x.id!==id); delete S.feeds[id]; delete S.drafts[id]; if(S.mode===id) S.mode='main'; S.page='settings'; trace(`Режим «${esc(m.title)}» удалён с телефона. Сессия ${id} в Hermes осталась — удалять её телефон не умеет и не должен.`,'p'); return render() }
-  if (k==='notif_ok'){ S.w.notif='ok'; S.feeds && Object.keys(S.feeds).forEach(id=>S.feeds[id]=S.feeds[id].filter(f=>f.t!=='notifask')); trace('Уведомления разрешены.','i'); return render() }
+  if (k==='notif_ok'){ S.w.notif='ok'; S.feeds && Object.keys(S.feeds).forEach(id=>S.feeds[id]=S.feeds[id].filter(f=>f.t!=='notifask')); trace('Уведомления разрешены.','i'); if(permBack()) return; return render() }
   if (k==='dlnow') return startDl(true);
   if (k==='unlock_set'){ S.w.locked=false; S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render() }
   if (k==='unlock_move'){ S.w.locked=false; S.screen='home'; render(); await wait(300); return cardBtn('move') }
