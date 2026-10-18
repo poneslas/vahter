@@ -90,11 +90,14 @@ fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
  * Первый ответ — главный (залитый), остальные — контурные.
  */
 @Composable
-fun PromptBlock(p: Prompt, onAnswer: (String) -> Unit, large: Boolean = true) {
+fun PromptBlock(p: Prompt, onAnswer: (String) -> Unit, large: Boolean = true, actions: @Composable () -> Unit = {}) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(p.text, fontSize = if (large) 24.sp else 18.sp, lineHeight = if (large) 31.sp else 24.sp, fontWeight = FontWeight.Medium, color = Tone.ink)
+        // Кнопки шага (например «Выбрать фото») — сразу под фразой, выше запасных выходов.
+        actions()
         p.options.forEachIndexed { i, o ->
-            if (i == 0) {
+            // Запасные выходы («Не открывается», «Пропустить») — всегда контурные: главное действие тогда — на телефоне.
+            if (i == 0 && o !in escapes) {
                 Button(
                     { onAnswer(o) }, Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Tone.action),
@@ -107,6 +110,8 @@ fun PromptBlock(p: Prompt, onAnswer: (String) -> Unit, large: Boolean = true) {
         }
     }
 }
+
+private val escapes = setOf("Не открывается", "Не получается", "Пропустить", "Лист не открылся", "Хватит", "Закончить", "Не пришло", "Кнопка не сработала")
 
 @Composable
 fun SectionTitle(text: String, note: String? = null) {

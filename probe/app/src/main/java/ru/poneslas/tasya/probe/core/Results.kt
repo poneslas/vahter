@@ -150,7 +150,7 @@ object Results {
             appendLine("Часть ${part.n}. ${part.title}")
             part.steps.forEach { st ->
                 val r = _all.value[st.id]
-                appendLine("  ${st.title} — ${ru.poneslas.tasya.probe.ui.statusWord(r?.status ?: Status.NOT_RUN)}" + (r?.summary?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""))
+                appendLine("  ${st.title} — ${ru.poneslas.tasya.probe.ui.statusWord(r?.status ?: Status.NOT_RUN)}" + (ru.poneslas.tasya.probe.guide.Guide.plain(st.id).takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""))
             }
         }
         appendLine()

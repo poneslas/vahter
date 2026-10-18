@@ -54,6 +54,9 @@ object GuideModule : Module {
     )
 }
 
+/** Шаг с человеком ждёт его действия, а не проваливается по тайм-ауту, пока он отошёл. */
+private const val WAIT_HUMAN = 30 * 60_000L
+
 private fun prefs(ctx: Context) = ctx.getSharedPreferences("guide", Context.MODE_PRIVATE)
 
 /** Время открытия для человека: от нажатия, если система дала время нажатия, иначе от первой точки в нашем коде. */
@@ -64,7 +67,7 @@ object ButtonStep : Probe("Г1", "Боковая кнопка", "Удержан�
         Sheet.close()
         val times = mutableListOf<Double>()
         for (i in 1..5) {
-            val r = waitOrHuman("Удержите боковую кнопку. Раз $i из 5.", "Не открывается", 90_000) {
+            val r = waitOrHuman("Удержите боковую кнопку. Раз $i из 5.", "Не открывается", WAIT_HUMAN) {
                 Sheet.opens.first { it.tCall == null }
             }
             if (r == null) {
@@ -89,7 +92,7 @@ object CameraButtonStep : Probe("Г2", "Камера с кнопки", "Удер
         Sheet.close()
         CameraBus.armed = Variant.INSHEET_COMPAT
         val e = try {
-            waitOrHuman("Удержите боковую кнопку — откроется камера.", "Не открывается", 90_000) {
+            waitOrHuman("Удержите боковую кнопку — откроется камера.", "Не открывается", WAIT_HUMAN) {
                 CameraBus.events.first { it.variant == Variant.INSHEET_COMPAT && (it is CamEvent.Streaming || it is CamEvent.Failed) }
             }
         } finally {
@@ -103,7 +106,7 @@ object CameraButtonStep : Probe("Г2", "Камера с кнопки", "Удер
         val open = e.open
         val ms = open?.let { e.t - (it.tInvoke ?: it.tPrepare ?: it.tShow) }
         ms?.let { metric("press_to_viewfinder_ms", it) }
-        val shot = waitOrHuman("Нажмите «Отправить».", "Пропустить", 60_000) {
+        val shot = waitOrHuman("Нажмите «Отправить».", "Пропустить", WAIT_HUMAN) {
             CameraBus.events.first { it.variant == Variant.INSHEET_COMPAT && (it is CamEvent.Captured || it is CamEvent.Failed) }
         }
         (shot as? CamEvent.Captured)?.let { metric("capture_ms", it.ms) }
@@ -121,7 +124,7 @@ object CameraButtonStep : Probe("Г2", "Камера с кнопки", "Удер
 object LockStep : Probe("Г3", "Заблокированный экран", "Лист поверх блокировки: микрофон, ключ API, разблокировка с возвратом в лист.", needsHuman = true) {
     override suspend fun ProbeScope.run(): Status {
         Sheet.close()
-        val r = waitOrHuman("Заблокируйте телефон и удержите боковую кнопку.", "Не открывается", 120_000) {
+        val r = waitOrHuman("Заблокируйте телефон и удержите боковую кнопку.", "Не открывается", WAIT_HUMAN) {
             Sheet.opens.first { it.locked }
         }
         if (r == null) {
@@ -139,7 +142,7 @@ object LockStep : Probe("Г3", "Заблокированный экран", "Л�
 
         Sheet.showGroups(setOf("guide_unlock"))
         val u = try {
-            waitOrHuman("Нажмите в листе «Разблокировать» и приложите палец.", "Не получается", 90_000) { UnlockBus.events.first() }
+            waitOrHuman("Нажмите в листе «Разблокировать» и приложите палец.", "Не получается", WAIT_HUMAN) { UnlockBus.events.first() }
         } finally {
             Sheet.showGroups(null)
         }
@@ -168,7 +171,7 @@ object PickStep : Probe("Г4", "Фото и файл из листа", "Выбо
             Sheet.showGroups(setOf("guide_$kind"))
             if (!Sheet.visible.value) Sheet.open()
             val e = try {
-                waitOrHuman("Нажмите в листе «$label» и выберите любой.", "Пропустить", 180_000) {
+                waitOrHuman("Нажмите в листе «$label» и выберите любой.", "Пропустить", WAIT_HUMAN) {
                     PickBus.events.first { it.kind == kind && (it is PickEvent.Picked || it is PickEvent.Failed || it is PickEvent.Cancelled) }
                 }
             } finally {
@@ -209,7 +212,7 @@ object AnswerOffStep : Probe("Г5", "Ответ при выключенном э
         val seen = ask("Включите экран. Пришло уведомление «Тася ответила»?", listOf("Да", "Нет"))
         var opened = false
         if (seen == "Да") {
-            val r = waitOrHuman("Нажмите на это уведомление.", "Лист не открылся", 60_000) { Sheet.opens.first() }
+            val r = waitOrHuman("Нажмите на это уведомление.", "Лист не открылся", WAIT_HUMAN) { Sheet.opens.first() }
             opened = r != null
             delay(700)
             Sheet.close()

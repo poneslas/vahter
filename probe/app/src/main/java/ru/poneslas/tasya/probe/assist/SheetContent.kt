@@ -116,7 +116,19 @@ fun SheetContent(session: ProbeSession) {
                     TextButton(onClick = { session.hide() }) { Text("Закрыть") }
                 }
                 if (debug) last?.let { Text(it.describe(), fontSize = 10.sp, color = Tone.muted, maxLines = 2) }
-                prompt?.let { p -> PromptBlock(p, { Human.answer(it) }, large = false) }
+                val stepActions = if (ui.groups != null) actions else emptyList()
+                prompt?.let { p ->
+                    PromptBlock(p, { Human.answer(it) }, large = false) {
+                        stepActions.forEach { a ->
+                            Button(
+                                onClick = { App.scope.launch { a.run(session) } },
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Tone.action),
+                            ) { Text(a.label, fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+                        }
+                    }
+                }
                 if (ui.status.isNotBlank()) Text(ui.status, fontSize = 15.sp, color = Tone.ink)
                 ui.panel?.let { panel -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) { panel(session) } }
                 if (prompt == null && actions.isEmpty() && ui.status.isBlank() && ui.panel == null) {
@@ -125,7 +137,7 @@ fun SheetContent(session: ProbeSession) {
                         fontSize = 16.sp, color = Tone.muted,
                     )
                 }
-                if (actions.isNotEmpty()) {
+                if (actions.isNotEmpty() && !(prompt != null && ui.groups != null)) {
                     Column(
                         Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(8.dp),

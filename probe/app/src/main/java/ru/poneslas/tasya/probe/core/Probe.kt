@@ -128,6 +128,7 @@ object Runner {
             with(probe) { scope.run() }
         } catch (e: CancellationException) {
             scope.log("cancel", "прервано человеком")
+            Results.update(probe.id) { it.copy(summary = "Прервано. " + it.summary) }
             Status.PARTIAL
         } catch (t: Throwable) {
             scope.error(t, "необработанное исключение")

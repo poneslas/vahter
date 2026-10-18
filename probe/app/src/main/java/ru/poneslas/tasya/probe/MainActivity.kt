@@ -199,8 +199,7 @@ class MainActivity : ComponentActivity() {
                 Guide.parts.forEach { part ->
                     item { SectionTitle("Часть ${part.n}. ${part.title}", "Около ${part.minutes} минут. ${part.note}") }
                     items(part.steps) { st ->
-                        val r = Results.get(st.id)
-                        StepRow(st.title, r.status, r.summary) { open(st.id, "home") }
+                        StepRow(st.title, Results.get(st.id).status, Guide.plain(st.id)) { open(st.id, "home") }
                     }
                 }
                 item {
@@ -322,8 +321,7 @@ class MainActivity : ComponentActivity() {
                 Guide.parts.forEach { part ->
                     item { SectionTitle("Часть ${part.n}. ${part.title}") }
                     items(part.steps) { st ->
-                        val r = Results.get(st.id)
-                        StepRow(st.title, r.status, r.summary) { open(st.id, "results") }
+                        StepRow(st.title, Results.get(st.id).status, Guide.plain(st.id)) { open(st.id, "results") }
                     }
                 }
             }
@@ -388,7 +386,11 @@ class MainActivity : ComponentActivity() {
                     Spacer(Modifier.width(10.dp))
                     Text(statusWord(st), color = statusColor(st), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
-                if (!r?.summary.isNullOrBlank()) Text(r!!.summary, fontSize = 16.sp, color = Tone.ink)
+                val plain = if (Guide.isGuideStep(p.id)) Guide.plain(p.id) else r?.summary.orEmpty()
+                if (plain.isNotBlank()) Text(plain, fontSize = 16.sp, color = Tone.ink)
+                if (Guide.isGuideStep(p.id) && plain != r?.summary && !r?.summary.isNullOrBlank()) {
+                    Text(r!!.summary, fontSize = 13.sp, color = Tone.muted)
+                }
                 prompt?.takeIf { it.probeId == p.id }?.let { Spacer(Modifier.height(8.dp)); PromptBlock(it, { a -> Human.answer(a) }, large = false) }
                 Spacer(Modifier.height(8.dp))
                 if (running == p.id) OutlinedButton({ Guide.stop(); Runner.cancel() }) { Text("Остановить") }

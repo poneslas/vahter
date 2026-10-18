@@ -48,8 +48,13 @@ object Guide {
     fun indexIn(id: String) = partOf(id).steps.indexOfFirst { it.id == id }
 
     fun status(id: String): Status = Results.get(id).status
-    private fun done(id: String) = status(id) in setOf(Status.PASS, Status.FAIL, Status.PARTIAL) &&
-        !(id == "Г7" && Results.get(id).summary.startsWith("Ждём"))
+    /** Пройден: есть итог, и шаг не прерван и не оборван (такой проходим заново). */
+    private fun done(id: String): Boolean {
+        val r = Results.get(id)
+        return r.status in setOf(Status.PASS, Status.FAIL, Status.PARTIAL) &&
+            !r.summary.startsWith("Прервано") && !r.summary.startsWith("оборвано") &&
+            !(id == "Г7" && r.summary.startsWith("Ждём"))
+    }
 
     /** Первый незаконченный шаг части (или null — часть пройдена). */
     fun nextIn(part: Part) = part.steps.firstOrNull { !done(it.id) }
@@ -71,6 +76,38 @@ object Guide {
             } finally {
                 _current.value = null
             }
+        }
+    }
+
+    /**
+     * Итог шага простыми словами. Шаги части 2 пишут его сами; подробные проверки части 1 пишут
+     * технический итог — здесь он пересказывается по цифрам.
+     */
+    fun plain(id: String): String {
+        val r = Results.get(id)
+        if (r.status == Status.NOT_RUN || r.status == Status.RUNNING) return ""
+        fun m(k: String) = r.metrics[k]?.takeIf { it.isNotEmpty() }?.let { ru.poneslas.tasya.probe.core.median(it) }
+        fun ms(v: Double?) = v?.let { "${it.toLong()} мс" } ?: "—"
+        return when (id) {
+            "П4" -> {
+                val buf = m("early_show_to_first_buffer_ms")
+                val zeros = m("early_first300_zero_fraction")
+                "Запись начинается через ${ms(buf?.coerceAtLeast(0.0))} после появления листа (цель — до 100)" +
+                    (zeros?.let { if (it < 0.9) "; начало записи не пустое" else "; начало записи пустое" } ?: "")
+            }
+            "П6" -> "Видоискатель на весь экран через ${ms(m("insheet_texture_call_to_preview_ms"))} (цель — до 700); " +
+                "заморозка кадра ${ms(m("insheet_texture_freeze_ms"))}; через отдельный экран — ${ms(m("activity_call_to_preview_ms"))}"
+            "П23" -> {
+                val c = m("coroutine_done") == 1.0
+                val w = m("workmanager_done") == 1.0
+                when {
+                    c && w -> "Ответ дочитывается после закрытия листа, уведомление приходит"
+                    c || w -> "Дочитывается только одним способом из двух"
+                    else -> "Ответ после закрытия листа не дочитывается"
+                }
+            }
+            "П25" -> if (r.status == Status.FAIL) "Ключ API не расшифровывается" else "Ключ API шифруется и расшифровывается"
+            else -> r.summary
         }
     }
 
