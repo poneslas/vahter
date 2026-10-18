@@ -17,7 +17,7 @@ function openOverlay(src){
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function openCamera(first){
-  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
+  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first,tool:null,frozen:false,marks:[],crop:null}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
   trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера — CameraX прямо в листе: на эмуляторе видоискатель через ~320 мс после вызова (пробник). Запасной путь — своя активность, ~530 мс.','p'); render() }
 function uploadPhoto(img, q, via){
   const modeId=S.mode, F=S.feed; const b={t:'me',x:q||'',via:via||'фото',img,up:{st:S.w.net==='none'?'wait':'up',pct:0,t0:Date.now()},mode:modeId,id:'u'+Date.now()};
@@ -34,8 +34,19 @@ async function runUpload(b){
     if(b.up.pct>=100 && Date.now()-b.up.t0>=MIN && composing){ if(!b.up.hold){ b.up.hold=true; trace('В поле начат вопрос — вложение ждёт его и уйдёт вместе с ним.','p') } S.keepScroll=true; render(); continue }
     if(b.up.pct>=100 && Date.now()-b.up.t0>=MIN){ b.up.st='sent'; if(S.pendingUp===b) S.pendingUp=null; S.keepScroll=true; render(); return deliverMode(b.x,b.via,b.img,b) }
     S.keepScroll=true; render() } }
+/** Инструменты на видоискателе: выбор инструмента замораживает кадр; пометки и обрезка впекаются в снимок перед загрузкой. */
+function camTool(t){ const c=S.cam; if(!c.frozen){ c.frozen=true; trace('Инструмент нажат — кадр зафиксирован, как спуск. Дальше рисуете поверх и «Отправить».','p') } c.tool = c.tool===t ? null : t; render() }
+let draw=null;
+function camPoint(e){ const r=$('#scr .cam2 .vf').getBoundingClientRect(); return [Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100)), Math.max(0,Math.min(100,(e.clientY-r.top)/r.height*100))] }
+document.addEventListener('pointerdown',e=>{ if(!e.target.closest('[data-draw]')||!S.cam||!S.cam.tool) return; e.preventDefault(); const p=camPoint(e); const t=S.cam.tool;
+  draw = t==='circle' ? {k:'circle',pts:[p]} : t==='arrow' ? {k:'arrow',a:p,b:p} : {k:'crop',a:p,b:p}; S.cam.draft=draw; render() });
+document.addEventListener('pointermove',e=>{ if(!draw||!S.cam) return; const p=camPoint(e); if(draw.k==='circle') draw.pts.push(p); else draw.b=p; render() });
+document.addEventListener('pointerup',()=>{ if(!draw||!S.cam) return; const d=draw; draw=null; S.cam.draft=null;
+  if (d.k==='crop'){ const x=Math.min(d.a[0],d.b[0]), y=Math.min(d.a[1],d.b[1]), w=Math.abs(d.a[0]-d.b[0]), h=Math.abs(d.a[1]-d.b[1]); if(w>8&&h>8) S.cam.crop={x,y,w,h} }
+  else if ((d.k==='circle'&&d.pts.length>3)||(d.k==='arrow'&&Math.hypot(d.a[0]-d.b[0],d.a[1]-d.b[1])>5)) S.cam.marks.push(d);
+  render() });
 async function shotGo(q){
-  const c=S.cam; const img={kind:'photo',cls:c.subj}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app') S.ov={pop:false}; S.cam=null;
+  const c=S.cam; const img={kind:'photo',cls:c.subj,marks:c.marks.slice(),crop:c.crop}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app') S.ov={pop:false}; S.cam=null;
   uploadPhoto(img, q||'', q?'голос · с фото':'фото');
   trace(q?'Снимок и вопрос: сразу обратно в разговор, фото грузится в пузыре.':'Спуск — сразу обратно в разговор. Фото грузится прямо в пузыре: пока грузится (не меньше 2 секунд), можно нажать «✕» или дописать вопрос — уйдёт вместе с фото.','p');
   if(!q) setTimeout(()=>$('#cin')?.focus(),50); }

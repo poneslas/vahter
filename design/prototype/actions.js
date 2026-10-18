@@ -1,7 +1,7 @@
 /* Действия пользователя: клики, ввод, диалоги (в Android — интенты ViewModel). */
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab){ if(t.dataset.ptab==='tour' && curPreset!==null) return startTour(); return setPtab(t.dataset.ptab) }
   if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
@@ -14,6 +14,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.mprimary){ modeById(S.editMode).primary=t.dataset.mprimary; S.keepScroll=true; return render() }
   if (t.dataset.mbool){ const m=modeById(S.editMode); m[t.dataset.mbool]=!m[t.dataset.mbool]; S.keepScroll=true; return render() }
   if (t.dataset.micon){ modeById(S.editMode).icon=t.dataset.micon; S.keepScroll=true; return render() }
+  if (t.dataset.ctool) return camTool(t.dataset.ctool);
   if (t.dataset.tool){ const x=toolById(t.dataset.tool); S.editTool=x.id; S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
   if (t.dataset.jid){ S.jopen = S.jopen===t.dataset.jid ? null : t.dataset.jid; S.keepScroll=true; return render() }
   if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tool'){ S.policy[S.editTool]=t.dataset.radio; S.keepScroll=true; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
@@ -85,7 +86,9 @@ document.addEventListener('click', async e=>{
     case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace(a==='file'?'Файл: системный выбор (ACTION_OPEN_DOCUMENT) из листа через startAssistantActivity — проверяется спайком; лист после выбора возвращается.':'Галерея: системный Photo Picker — разрешение на все фото не нужно.','p'); return render();
     case 'pickback': S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; return render();
     case 'camera': S.attachMenu=false; return openCamera(false);
-    case 'shoot': return shotGo('');
+    case 'shoot': case 'camsend': return shotGo('');
+    case 'camretake': Object.assign(S.cam,{frozen:false,tool:null,marks:[],crop:null}); trace('Переснять — пометки сброшены, снова живой видоискатель.'); return render();
+    case 'camundo': { const c=S.cam; if(c.marks.length) c.marks.pop(); else c.crop=null; return render() }
     case 'upcancel': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ b.up.st='cancel'; if(S.pendingUp===b) S.pendingUp=null; if(b.x){ S.draft=b.x } trace(b.x?'Отправка отменена. Фото убрано, вопрос вернулся в поле.':'Отправка отменена — ничего не ушло.','p') } S.keepScroll=true; return render() }
     case 'upretry': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ S.pendingUp=b; runUpload(b) } return }
     case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; if(S.rec){ recTok++; S.rec=null } return render();

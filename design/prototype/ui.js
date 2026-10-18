@@ -39,12 +39,12 @@ function itemHtml(it,inSheet){
   if (it.t==='me' && it.img && it.up && it.up.st!=='sent'){ const u=it.up;
     const st = u.st==='wait'?'Ждёт сети — отправлю сам':u.st==='fail'?'Не загрузилось':u.pct>=100&&u.hold?'Загружено · ждёт ваш вопрос':u.pct>=100?`Загружено · отправлю через ${Math.max(1,Math.ceil((2000-(Date.now()-u.t0))/1000))} с`:`Загружаю${u.pct?` · ${u.pct} %`:'…'}`;
     if (it.img.kind==='file') return `<div class="meimg up"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span><button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button>${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}</div><small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>уйдёт вместе с файлом</small></div>`:`<small class="uphint">Можно дописать вопрос — уйдёт вместе с файлом</small>`}</div>`;
-    return `<div class="meimg up"><div class="thw"><i class="th ${it.img.cls}"></i>${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}<button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button></div>
+    return `<div class="meimg up"><div class="thw" style="${thumbStyle(it.img)}">${thumbHtml(it.img)}${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}<button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button></div>
       <small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>
       ${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>уйдёт вместе с фото</small></div>`:`<small class="uphint">Можно дописать вопрос — уйдёт вместе с фото</small>`}</div>` }
   if (it.t==='me' && it.img && it.up && it.up.st==='cancel') return '';
   if (it.t==='me' && it.img && it.img.kind==='file') return `<div class="meimg"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span></div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
-  if (it.t==='me' && it.img) return `<div class="meimg"><i class="th ${it.img.cls}"></i>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
+  if (it.t==='me' && it.img) return `<div class="meimg"><div class="thw" style="${thumbStyle(it.img)}">${thumbHtml(it.img)}</div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
   if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
   if (it.t==='ai' && it.speak) return `<div class="ai"><div class="md">${it.x}</div></div><button class="speak" data-act="speaksoon" aria-disabled="true">🔊 Озвучить · скоро</button>`;
   if (it.t==='ai'){
@@ -261,14 +261,32 @@ function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"
 function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
 function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i%12; const f=(r<3&&c<3)||(r<3&&c>8)||(r>8&&c<3); s+=`<i style="background:${f||((r*7+c*13+r*c)%3===0)?'#111':'#fff'}"></i>` } return `<div class="qr">${s}</div>` }
 
+/** Пометки поверх снимка: координаты в процентах кадра (0–100). */
+function marksSvg(marks, crop, draft){
+  const all = draft ? marks.concat(draft.k==='crop'?[]:[draft]) : marks;
+  const path = m => m.k==='circle' ? `<path d="M${m.pts.map(p=>p.join(' ')).join(' L')}" />` : `<line x1="${m.a[0]}" y1="${m.a[1]}" x2="${m.b[0]}" y2="${m.b[1]}" marker-end="url(#ah)"/>`;
+  const cr = draft&&draft.k==='crop' ? {x:Math.min(draft.a[0],draft.b[0]),y:Math.min(draft.a[1],draft.b[1]),w:Math.abs(draft.a[0]-draft.b[0]),h:Math.abs(draft.a[1]-draft.b[1])} : crop;
+  return `<svg class="marks" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FF3B30"/></marker></defs>
+    ${cr?`<path class="cropdim" fill-rule="evenodd" d="M0 0H100V100H0Z M${cr.x} ${cr.y}h${cr.w}v${cr.h}h${-cr.w}Z"/><rect class="croprect" x="${cr.x}" y="${cr.y}" width="${cr.w}" height="${cr.h}"/>`:''}
+    <g class="ink">${all.map(path).join('')}</g></svg>` }
+/** Размер миниатюры — в пропорциях снимка (кадр телефона 400×820), с учётом обрезки; иначе пометки съедут. */
+function thumbStyle(img){ const c=img.crop, a=(c?c.w:100)*(400/820)/(c?c.h:100); let h=200, w=h*a; if(w>230){ w=230; h=w/a } if(w<110){ w=110; h=Math.min(260,w/a) } return `width:${Math.round(w)}px;height:${Math.round(h)}px` }
+/** Миниатюра снимка в разговоре: обрезка применена, пометки впечены. */
+function thumbHtml(img){ const c=img.crop; const inner=`<i class="th ${img.cls}"></i>${img.marks&&img.marks.length?marksSvg(img.marks,null):''}`;
+  return c ? `<span class="cropbox" style="width:${10000/c.w}%;height:${10000/c.h}%;left:${-c.x*100/c.w}%;top:${-c.y*100/c.h}%">${inner}</span>` : inner }
 function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen==='cam2';
-  return `<div class="layer cam2">${statusBar(false)}
-  <div class="modeName">${I[m.icon]} ${esc(m.title)}</div>
-  <div class="vf" style="top:96px"><i class="th ${c.subj}"></i></div>
+  const tools=[['crop','Обрезать',I.crop],['circle','Обвести',I.circle],['arrow','Стрелка',I.arrow]];
+  const hint={crop:'Выделите нужную часть',circle:'Обведите пальцем',arrow:'Проведите от начала к острию'}[c.tool];
+  return `<div class="layer cam2">
+  <div class="vf ${c.frozen?'frozen':''}" ${c.tool?'data-draw':''}><i class="th ${c.subj}"></i>${marksSvg(c.marks,c.crop,c.draft)}</div>
+  ${statusBar(false)}
+  <div class="ctop"><button class="cbtn" data-act="${c.frozen?'camretake':'camcancel'}" aria-label="${c.frozen?'Переснять':'Закрыть камеру'}">${I.x}</button><span class="modeName2">${I[m.icon]} ${esc(m.title)}</span>${c.frozen&&(c.marks.length||c.crop)?`<button class="cbtn" data-act="camundo" aria-label="Отменить последнее">${I.undo}</button>`:'<span style="width:40px"></span>'}</div>
+  ${hint?`<div class="chint">${hint}</div>`:''}
   ${qrec?`<div class="q">${recText()||'Слушаю…'}</div>`:''}
-  ${false?`<div class="sending"><span>Отправляю${c.q?' с вопросом':''}…</span><div class="bar"><i></i></div><button class="recbtn" data-act="shotcancel" style="background:rgba(255,255,255,.18);color:#fff">Отмена</button></div>`
-   : c.taken?`<div class="after"><button data-act="retake">Переснять</button><button data-act="addq">Добавить вопрос</button><button class="pri" data-act="sendshot">Отправить</button></div>`
-   : `<button class="cx" data-act="camcancel">${c.first?'В лист':'Отмена'}</button><button class="shut" data-act="shoot" aria-label="Снять и отправить"></button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите — снимок уйдёт с вопросом">${I.mic}</button>`}</div>` }
+  <div class="cbottom">
+    <div class="ctools">${tools.map(([k,t,ic])=>`<button class="ctool" data-ctool="${k}" aria-pressed="${c.tool===k}">${ic}<span>${t}</span></button>`).join('')}</div>
+    <div class="crow"><span style="width:56px"></span><button class="csend" data-act="camsend" aria-label="Отправить">${I.send}</button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button></div>
+  </div></div>` }
 function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();

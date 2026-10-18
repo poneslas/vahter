@@ -120,7 +120,7 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .attdraft .th{width:52px;height:52px;border-radius:10px;flex:none}
 .attdraft span{font-size:12.5px;color:var(--soft);flex:1}
 .meimg{align-self:flex-end;max-width:72%;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.meimg .thw{position:relative;width:170px;height:128px;border-radius:14px;overflow:hidden}.meimg .thw .th{display:block}
+.meimg .thw{position:relative;border-radius:14px;overflow:hidden}.meimg .thw .th{display:block}
 .meimg.up .th{filter:saturate(.6) brightness(.92)}
 .upbar{position:absolute;left:0;bottom:0;height:4px;background:var(--brain,#3B5BDB);transition:width .2s linear}
 .upx{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center}.upx .ic{width:16px;height:16px}
@@ -448,3 +448,30 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .prow{min-height:52px}.pword{font-size:13.5px;color:var(--soft);flex:none}.pword.ask{color:var(--local)}.pword.off{color:var(--danger)}
 
 .nask{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--soft)}.nask .ic{width:18px;height:18px;flex:none}.nask span{flex:1}.nask .tbtn{border:0;background:none;color:var(--brain,#3B5BDB);font-weight:600}
+
+/* камера на весь экран с инструментами */
+.cam2 .vf{position:absolute;inset:0;top:0;left:0;right:0;height:auto;border-radius:0;touch-action:none}
+.cam2 .vf.frozen::before{content:"";position:absolute;inset:0;border:3px solid rgba(255,255,255,.9);pointer-events:none;z-index:2}
+.cam2 .sb{position:relative;z-index:3}
+.cam2 .ctop{position:absolute;top:44px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;z-index:3}
+.cam2 .cbtn{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center}
+.cam2 .modeName2{display:flex;gap:6px;align-items:center;font-size:13px;background:rgba(0,0,0,.45);padding:6px 12px;border-radius:999px}.cam2 .modeName2 .ic{width:16px;height:16px}
+.cam2 .chint{position:absolute;top:96px;left:0;right:0;text-align:center;z-index:3}.cam2 .chint{font-size:14px;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.cam2 .cbottom{position:absolute;left:0;right:0;bottom:0;padding:14px 20px 34px;background:linear-gradient(transparent,rgba(0,0,0,.65));z-index:3;display:flex;flex-direction:column;gap:16px}
+.cam2 .ctools{display:flex;justify-content:center;gap:8px}
+.cam2 .ctool{display:flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:8px 14px;background:rgba(0,0,0,.5);color:#fff;font-size:13.5px}
+.cam2 .ctool .ic{width:18px;height:18px}.cam2 .ctool[aria-pressed=true]{background:#fff;color:#111}
+.cam2 .crow{display:flex;align-items:center;justify-content:space-between}
+.cam2 .csend{width:76px;height:76px;border-radius:50%;border:4px solid rgba(255,255,255,.6);background:#fff;color:#111;display:grid;place-items:center}.cam2 .csend .ic{width:30px;height:30px}
+.cam2 .mic2{position:static;width:56px;height:56px}
+.cam2 .q{bottom:200px;z-index:3}
+svg.marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+svg.marks .ink path,svg.marks .ink line{fill:none;stroke:#FF3B30;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.cam2 svg.marks .ink path,.cam2 svg.marks .ink line{stroke-width:5}
+.meimg svg.marks .ink path,.meimg svg.marks .ink line{stroke-width:2.5}
+svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.thw{position:relative;overflow:hidden}.cropbox{position:absolute;display:block}.cropbox .th{display:block;width:100%;height:100%;border-radius:0}
+.meimg>.thw{border-radius:14px}.meimg>.thw>.th{display:block;width:100%;height:100%}
+
+.cam2::before{content:"";position:absolute;left:0;right:0;top:0;height:120px;background:linear-gradient(rgba(0,0,0,.55),transparent);z-index:2;pointer-events:none}
+.meimg .thw>.th{display:block;width:100%;height:100%}
