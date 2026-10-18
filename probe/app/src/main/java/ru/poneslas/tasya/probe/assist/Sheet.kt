@@ -70,6 +70,8 @@ data class SheetUi(
     val status: String = "",
     val panel: (@Composable (ProbeSession) -> Unit)? = null,
     val groups: Set<String>? = null,
+    /** Панель на всё окно листа (камера: решение 18.10 — видоискатель на весь экран). */
+    val fullscreen: Boolean = false,
 )
 
 /** Связка «сервис помощника — сессия — проверки». Всё живёт в одном процессе. */
@@ -95,7 +97,8 @@ object Sheet {
     var lastOpenProcessCreatedAt = 0L
 
     fun setStatus(s: String) = ui.update { it.copy(status = s) }
-    fun setPanel(p: (@Composable (ProbeSession) -> Unit)?) = ui.update { it.copy(panel = p) }
+    fun setPanel(p: (@Composable (ProbeSession) -> Unit)?) = ui.update { it.copy(panel = p, fullscreen = false) }
+    fun setFullPanel(p: @Composable (ProbeSession) -> Unit) = ui.update { it.copy(panel = p, fullscreen = true) }
     fun showGroups(g: Set<String>?) = ui.update { it.copy(groups = g) }
 
     suspend fun awaitService(timeoutMs: Long = 3000): ProbeAssistService? {

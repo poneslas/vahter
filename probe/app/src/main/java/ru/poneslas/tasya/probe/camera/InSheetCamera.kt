@@ -9,6 +9,19 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,14 +52,18 @@ object InSheetCamera {
     @Volatile var active = false
         private set
 
+    /** Заморозить кадр, как кнопка инструмента (для авто-серии П6). */
+    @Volatile var freeze: (() -> Unit)? = null
+
     fun start(variant: String, open: OpenRecord?) {
         active = true
-        Sheet.setPanel { s -> CameraPanel(s, variant, open) }
+        Sheet.setFullPanel { s -> CameraPanel(s, variant, open) }
     }
 
     fun stop() {
         if (!active) return
         active = false
+        freeze = null
         Sheet.setPanel(null)
     }
 }
@@ -117,10 +134,45 @@ private fun CameraPanel(session: ProbeSession, variant: String, open: OpenRecord
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        AndroidView({ previewView }, Modifier.fillMaxWidth().height(260.dp))
-        Text(state, fontSize = 12.sp)
-        Button(onClick = {
+    var frozen by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var tool by remember { mutableStateOf<String?>(null) }
+    // Инструмент замораживает кадр: снимок с превью (TextureView — getBitmap, SurfaceView — PixelCopy внутри PreviewView).
+    val doFreeze: (String) -> Unit = { name ->
+        val t0 = CameraBus.now()
+        val bmp = runCatching { previewView.bitmap }.getOrNull()
+        val ms = CameraBus.now() - t0
+        if (bmp != null) {
+            frozen = bmp
+            tool = name
+            state = "кадр заморожен за $ms мс ($name)"
+            CameraBus.emit(CamEvent.Frozen(variant, ms, bmp.width, bmp.height))
+        } else {
+            state = "кадр не заморозился"
+            CameraBus.emit(CamEvent.Failed(variant, "previewView.bitmap = null", open))
+        }
+    }
+    DisposableEffect(variant) {
+        InSheetCamera.freeze = { doFreeze("авто") }
+        onDispose { InSheetCamera.freeze = null }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        AndroidView({ previewView }, Modifier.fillMaxSize())
+        frozen?.let { Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0x99000000)).navigationBarsPadding().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(state, fontSize = 12.sp, color = Color.White)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Обрезать", "Обвести", "Стрелка").forEach { name ->
+                    OutlinedButton(onClick = { if (frozen == null) doFreeze(name) else tool = name }) {
+                        Text(name, color = if (tool == name) Color(0xFFFFD54F) else Color.White, fontSize = 13.sp)
+                    }
+                }
+                if (frozen != null) TextButton(onClick = { frozen = null; tool = null; state = "видоискатель" }) { Text("Заново", color = Color.White) }
+            }
+            Button(onClick = {
             val f = File(attachmentsDir(ctx), "insheet_${System.currentTimeMillis()}.jpg")
             val t0 = CameraBus.now()
             capture.takePicture(
@@ -140,7 +192,8 @@ private fun CameraPanel(session: ProbeSession, variant: String, open: OpenRecord
                     }
                 },
             )
-        }) { Text("Снять") }
-        shot?.let { AttachmentThumb(it) }
+        }, modifier = Modifier.fillMaxWidth()) { Text("Отправить") }
+            shot?.let { AttachmentThumb(it) }
+        }
     }
 }

@@ -1,6 +1,7 @@
 package ru.poneslas.tasya.probe.assist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Row
@@ -56,6 +57,33 @@ fun SheetContent(session: ProbeSession) {
                 .background(Color(0x66000000))
                 .clickable(remember { MutableInteractionSource() }, null) { session.hide() },
         ) {
+            if (ui.fullscreen && ui.panel != null) {
+                // Камера на весь экран: панель занимает окно листа, вопрос проверки и «Закрыть» — поверх.
+                Box(Modifier.fillMaxSize().background(Color.Black).clickable(remember { MutableInteractionSource() }, null) {}) {
+                    ui.panel!!(session)
+                    Column(
+                        Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(ui.status, color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            TextButton(onClick = { session.hide() }) { Text("Закрыть", color = Color.White) }
+                        }
+                        prompt?.let { p ->
+                            Column(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xEEFFF3E0)).padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text(p.text, fontSize = 14.sp)
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    p.options.forEach { o -> Button(onClick = { Human.answer(o) }) { Text(o) } }
+                                }
+                            }
+                        }
+                    }
+                }
+                return@Box
+            }
             // Видоискатель и встроенный пикер — отдельные поверхности (SurfaceView): контейнер с прокруткой
             // их не обрезает, и они вылезают за край листа. Поэтому панель стоит вне прокрутки, а лист обрезан по форме.
             Column(

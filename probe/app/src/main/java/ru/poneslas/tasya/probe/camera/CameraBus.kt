@@ -21,8 +21,8 @@ object Variant {
     const val SYSTEM = "system"                   // 6.3
 
     fun title(v: String) = when (v) {
-        INSHEET_COMPAT -> "6.1 в листе, TextureView"
-        INSHEET_PERF -> "6.1 в листе, SurfaceView"
+        INSHEET_COMPAT -> "6.1 на весь экран листа, TextureView"
+        INSHEET_PERF -> "6.1 на весь экран листа, SurfaceView"
         ACTIVITY -> "6.2 своя активность"
         SYSTEM -> "6.3 системная камера"
         else -> v
@@ -35,6 +35,8 @@ sealed class CamEvent {
     data class Streaming(override val variant: String, val t: Long, val open: OpenRecord?, val importance: Int) : CamEvent()
     data class Failed(override val variant: String, val msg: String, val open: OpenRecord?) : CamEvent()
     data class Captured(override val variant: String, val path: String, val bytes: Long, val ms: Long) : CamEvent()
+    /** Инструмент на видоискателе заморозил кадр: [ms] — нажатие → готовая картинка. */
+    data class Frozen(override val variant: String, val ms: Long, val w: Int, val h: Int) : CamEvent()
     /** 6.2/6.3: активность создана — цена запуска через startAssistantActivity. */
     data class ActivityCreated(override val variant: String, val t: Long) : CamEvent()
 }

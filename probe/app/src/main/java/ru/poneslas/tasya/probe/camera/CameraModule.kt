@@ -102,7 +102,9 @@ private fun ProbeScope.summarize(ok: Map<String, Int>, tries: Map<String, Int>, 
     val r = Results.get(id)
     val parts = ok.keys.map { v ->
         val m = r.metrics["${key(v)}_$metricSuffix"].orEmpty()
-        "${Variant.title(v)}: ${ok[v]}/${tries[v]}" + if (m.isNotEmpty()) ", медиана ${fmt(median(m))} мс" else ""
+        val fz = r.metrics["${key(v)}_freeze_ms"].orEmpty()
+        "${Variant.title(v)}: ${ok[v]}/${tries[v]}" + (if (m.isNotEmpty()) ", медиана ${fmt(median(m))} мс" else "") +
+            (if (fz.isNotEmpty()) ", заморозка кадра ${fmt(median(fz))} мс" else "")
     }
     val good = ok.keys.filter { v ->
         val m = r.metrics["${key(v)}_$metricSuffix"].orEmpty()
@@ -174,6 +176,22 @@ object CameraAutoProbe : Probe(
                 metric("${key(v)}_call_to_preview_ms", e.t - r.tCall!!)
                 metric("${key(v)}_frame_to_preview_ms", e.t - r.tFrame)
                 log(v, "#${r.seq} видоискатель ${e.t - r.tCall!!} мс от вызова, importance=${CameraBus.importanceName(e.importance)}")
+                if (v != Variant.ACTIVITY) {
+                    // Нажатие инструмента («Обрезать / Обвести / Стрелка») замораживает кадр — сколько это стоит.
+                    delay(300)
+                    val fr = async(start = CoroutineStart.UNDISPATCHED) {
+                        withTimeoutOrNull(3000) { CameraBus.events.first { it.variant == v && (it is CamEvent.Frozen || it is CamEvent.Failed) } }
+                    }
+                    InSheetCamera.freeze?.invoke() ?: fr.cancel()
+                    when (val f = if (fr.isCancelled) null else fr.await()) {
+                        is CamEvent.Frozen -> {
+                            metric("${key(v)}_freeze_ms", f.ms)
+                            log(v, "заморозка кадра ${f.ms} мс, ${f.w}×${f.h}")
+                        }
+                        is CamEvent.Failed -> log(v, "заморозка: ${f.msg}")
+                        else -> log(v, "заморозка: нет ответа")
+                    }
+                }
                 true
             }
             is CamEvent.Failed -> {
