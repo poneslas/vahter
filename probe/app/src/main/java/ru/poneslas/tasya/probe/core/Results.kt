@@ -146,9 +146,12 @@ object Results {
         appendLine("Пробник Таси — отчёт")
         Header.collect(App.instance).forEach { (k, v) -> appendLine("$k: $v") }
         appendLine()
-        appendLine("Главное:")
-        ru.poneslas.tasya.probe.Essentials.all.forEach { e ->
-            appendLine("  ${e.n}. ${e.title} — ${ru.poneslas.tasya.probe.Essentials.word(ru.poneslas.tasya.probe.Essentials.verdict(e, _all.value))}")
+        ru.poneslas.tasya.probe.guide.Guide.parts.forEach { part ->
+            appendLine("Часть ${part.n}. ${part.title}")
+            part.steps.forEach { st ->
+                val r = _all.value[st.id]
+                appendLine("  ${st.title} — ${ru.poneslas.tasya.probe.ui.statusWord(r?.status ?: Status.NOT_RUN)}" + (r?.summary?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""))
+            }
         }
         appendLine()
         Registry.probes.forEach { p ->

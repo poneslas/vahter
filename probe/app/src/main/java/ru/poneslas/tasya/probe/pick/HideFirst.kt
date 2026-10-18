@@ -29,7 +29,7 @@ object HideFirst {
         },
     )
 
-    private suspend fun launch(s: ProbeSession, i: Intent) {
+    internal suspend fun launch(s: ProbeSession, i: Intent) {
         PickBus.tAction = PickBus.now()
         val ctx = s.context.applicationContext
         s.hide()

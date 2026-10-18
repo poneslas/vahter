@@ -115,6 +115,9 @@ object Runner {
         job?.cancel()
     }
 
+    /** Прогнать проверку и дождаться итога (ведущий прогон запускает проверки по очереди). */
+    suspend fun runAwait(ctx: Context, probe: Probe) = run(ctx, probe)
+
     private suspend fun run(ctx: Context, probe: Probe) {
         running.value = probe.id
         val note = Results.get(probe.id).note

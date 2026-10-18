@@ -16,6 +16,7 @@ import ru.poneslas.tasya.probe.actions.ActionsModule
 import ru.poneslas.tasya.probe.notify.NotifyModule
 import ru.poneslas.tasya.probe.audio.AudioModule
 import ru.poneslas.tasya.probe.keys.KeysModule
+import ru.poneslas.tasya.probe.guide.GuideModule
 import ru.poneslas.tasya.probe.pick.PickModule
 import ru.poneslas.tasya.probe.push.PushModule
 import ru.poneslas.tasya.probe.session.SessionModule
@@ -33,7 +34,7 @@ object Registry {
     private val modules: List<Module> = listOf(
         AssistModule, SessionModule, CameraModule, PickModule, UploadModule, ExpandModule,
         EntryModule, PushModule, NetModule, UpdateModule, AsrModule, ExtraModule, OsReadModule,
-        PermModule, ActionsModule, NotifyModule, AudioModule, KeysModule,
+        PermModule, ActionsModule, NotifyModule, AudioModule, KeysModule, GuideModule,
     )
 
     lateinit var probes: List<Probe>
@@ -45,7 +46,7 @@ object Registry {
         modules.forEach { it.init(ctx) }
         // «П3ч» встаёт сразу за «П3»: сортируем по номеру, потом по суффиксу.
         probes = modules.flatMap { it.probes }.sortedWith(
-            compareBy({ Regex("\\d+").find(it.id)?.value?.toInt() ?: 99 }, { it.id }),
+            compareBy({ !it.id.startsWith("П") }, { Regex("\\d+").find(it.id)?.value?.toInt() ?: 99 }, { it.id }),
         )
         sheetActions = modules.flatMap { it.actions }
     }

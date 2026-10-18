@@ -100,7 +100,7 @@ private fun levelName(l: Int) = when (l) {
 }
 
 /** Расшифровать оба AES-ключа и подписать обоими EC; результат — строка для лога и признак успеха. */
-private fun ProbeScope.useAll(tag: String): Map<String, Boolean> {
+internal fun ProbeScope.useAll(tag: String): Map<String, Boolean> {
     val p = prefs(ctx)
     val out = linkedMapOf<String, Boolean>()
     for ((alias, unlocked) in listOf(AES to false, AES_UNLOCKED to true)) {

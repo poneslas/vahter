@@ -1,30 +1,29 @@
 package ru.poneslas.tasya.probe.assist
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.ui.draw.clip
-import androidx.compose.material3.TextButton
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,24 +32,46 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import ru.poneslas.tasya.probe.App
 import ru.poneslas.tasya.probe.Registry
+import ru.poneslas.tasya.probe.core.Config
 import ru.poneslas.tasya.probe.core.Human
+import ru.poneslas.tasya.probe.core.Runner
+import ru.poneslas.tasya.probe.guide.Guide
+import ru.poneslas.tasya.probe.ui.ProbeTheme
+import ru.poneslas.tasya.probe.ui.PromptBlock
+import ru.poneslas.tasya.probe.ui.Tone
 
+/**
+ * Лист пробника. В обычном прогоне — только то, что нужно сейчас: шаг, вопрос, одна-две кнопки шага.
+ * Все кнопки подробных проверок — когда идёт подробная проверка или включено «Показывать все кнопки».
+ */
 @Composable
 fun SheetContent(session: ProbeSession) {
     val ui by Sheet.ui.collectAsState()
     val last by Sheet.last.collectAsState()
     val prompt by Human.prompt.collectAsState()
+    val running by Runner.running.collectAsState()
+    val step by Guide.current.collectAsState()
     var text by remember { mutableStateOf("") }
     val screenH = LocalConfiguration.current.screenHeightDp
+    val debug = Config.flag("debug_buttons")
 
-    MaterialTheme {
+    val actions = when {
+        ui.groups != null -> Registry.sheetActions.filter { it.group in ui.groups!! }
+        debug || (running != null && !Guide.isGuideStep(running)) -> Registry.sheetActions.filter { !it.group.startsWith("guide_") }
+        else -> emptyList()
+    }
+    val header = step?.let { s -> "Шаг ${Guide.indexIn(s.id) + 1} из ${Guide.partOf(s.id).steps.size} · ${s.title}" } ?: "Пробник Таси"
+
+    ProbeTheme {
         Box(
             Modifier
                 .fillMaxSize()
@@ -58,26 +79,17 @@ fun SheetContent(session: ProbeSession) {
                 .clickable(remember { MutableInteractionSource() }, null) { session.hide() },
         ) {
             if (ui.fullscreen && ui.panel != null) {
-                // Камера на весь экран: панель занимает окно листа, вопрос проверки и «Закрыть» — поверх.
+                // Камера на весь экран: панель занимает окно листа, вопрос шага и «Закрыть» — поверх.
                 Box(Modifier.fillMaxSize().background(Color.Black).clickable(remember { MutableInteractionSource() }, null) {}) {
                     ui.panel!!(session)
-                    Column(
-                        Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
+                    Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(ui.status, color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            Text(header, color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f))
                             TextButton(onClick = { session.hide() }) { Text("Закрыть", color = Color.White) }
                         }
                         prompt?.let { p ->
-                            Column(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xEEFFF3E0)).padding(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(p.text, fontSize = 14.sp)
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    p.options.forEach { o -> Button(onClick = { Human.answer(o) }) { Text(o) } }
-                                }
+                            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xF2FFFFFF)).padding(14.dp)) {
+                                PromptBlock(p, { Human.answer(it) }, large = false)
                             }
                         }
                     }
@@ -90,55 +102,62 @@ fun SheetContent(session: ProbeSession) {
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .heightIn(max = (screenH * 0.7f).dp)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .background(Color(0xFFF4F4F4))
+                    .heightIn(max = (screenH * 0.75f).dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .background(Tone.surface)
                     .clickable(remember { MutableInteractionSource() }, null) {}
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Лист пробника", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(header, fontSize = 14.sp, color = Tone.muted, modifier = Modifier.weight(1f))
                     TextButton(onClick = { session.hide() }) { Text("Закрыть") }
                 }
-                last?.let { Text(it.describe(), fontSize = 10.sp, color = Color.Gray, maxLines = 2) }
-                prompt?.let { p ->
-                    Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFF3E0)).padding(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(p.text, fontSize = 15.sp)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            p.options.forEach { o -> Button(onClick = { Human.answer(o) }) { Text(o) } }
-                        }
-                    }
+                if (debug) last?.let { Text(it.describe(), fontSize = 10.sp, color = Tone.muted, maxLines = 2) }
+                prompt?.let { p -> PromptBlock(p, { Human.answer(it) }, large = false) }
+                if (ui.status.isNotBlank()) Text(ui.status, fontSize = 15.sp, color = Tone.ink)
+                ui.panel?.let { panel -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) { panel(session) } }
+                if (prompt == null && actions.isEmpty() && ui.status.isBlank() && ui.panel == null) {
+                    Text(
+                        if (running != null) "Идёт проверка. Ничего нажимать не нужно." else "Здесь будет Тася. Сейчас пробнику ничего не нужно.",
+                        fontSize = 16.sp, color = Tone.muted,
+                    )
                 }
-                if (ui.status.isNotBlank()) Text(ui.status, fontSize = 13.sp)
-                ui.panel?.let { panel -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))) { panel(session) } }
-                Column(
-                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Registry.sheetActions
-                        .filter { ui.groups == null || it.group in ui.groups!! }
-                        .groupBy { it.group }
-                        .forEach { (group, actions) ->
-                            Text(groupTitle(group), fontSize = 11.sp, color = Color.Gray)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                actions.forEach { a ->
-                                    FilledTonalButton(onClick = { App.scope.launch { a.run(session) } }) {
-                                        Text(a.label, fontSize = 12.sp)
+                if (actions.isNotEmpty()) {
+                    Column(
+                        Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        // Кнопки шага — крупные, главные; кнопки подробных проверок — компактные, по группам.
+                        if (ui.groups != null) {
+                            actions.forEach { a ->
+                                Button(
+                                    onClick = { App.scope.launch { a.run(session) } },
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Tone.action),
+                                ) { Text(a.label, fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+                            }
+                        } else {
+                            actions.groupBy { it.group }.forEach { (group, list) ->
+                                Text(groupTitle(group), fontSize = 12.sp, color = Tone.muted)
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    list.forEach { a ->
+                                        FilledTonalButton(onClick = { App.scope.launch { a.run(session) } }) { Text(a.label, fontSize = 12.sp) }
                                     }
                                 }
                             }
                         }
-                    OutlinedTextField(
-                        value = text, onValueChange = { text = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Поле ввода (клавиатура)") },
-                    )
+                        if (debug || running == "П3" || running == "П3ч") {
+                            OutlinedTextField(
+                                value = text, onValueChange = { text = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Поле ввода (клавиатура)") },
+                            )
+                        }
+                    }
                 }
             }
         }
