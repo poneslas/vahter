@@ -44,7 +44,7 @@ const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', 
  * @property {string} title
  * @property {string} [url]   адрес API (kind=api)
  * @property {string} [model] имя модели (kind=api)
- * @property {{vision:boolean, tools:boolean, memory:boolean, server:boolean, maxImages:number}} caps  maxImages — сколько картинок в одной реплике (DeepSeek: 10 приняты, замер 18.10)
+ * @property {{vision:boolean, tools:boolean, memory:boolean, server:boolean, maxImages:number}} caps  maxImages — сколько картинок в одной реплике (DeepSeek: наш лимит 10, API принимает не меньше — замер 18.10)
  */
 const BRAINS=[
   {id:'deepseek', kind:'api', title:'DeepSeek', url:'https://api.deepseek.com', model:'deepseek-chat', caps:{vision:true,tools:true,memory:false,server:false,maxImages:10}},
