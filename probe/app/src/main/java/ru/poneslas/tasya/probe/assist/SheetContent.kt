@@ -1,6 +1,9 @@
 package ru.poneslas.tasya.probe.assist
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -53,45 +56,76 @@ fun SheetContent(session: ProbeSession) {
                 .background(Color(0x66000000))
                 .clickable(remember { MutableInteractionSource() }, null) { session.hide() },
         ) {
+            // Видоискатель и встроенный пикер — отдельные поверхности (SurfaceView): контейнер с прокруткой
+            // их не обрезает, и они вылезают за край листа. Поэтому панель стоит вне прокрутки, а лист обрезан по форме.
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .heightIn(max = (screenH * 0.6f).dp)
-                    .background(Color(0xFFECECEC), RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .heightIn(max = (screenH * 0.7f).dp)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .background(Color(0xFFF4F4F4))
                     .clickable(remember { MutableInteractionSource() }, null) {}
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(12.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("Лист пробника", style = MaterialTheme.typography.titleSmall)
-                last?.let { Text(it.describe(), fontSize = 11.sp, color = Color.DarkGray) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Лист пробника", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { session.hide() }) { Text("Закрыть") }
+                }
+                last?.let { Text(it.describe(), fontSize = 10.sp, color = Color.Gray, maxLines = 2) }
                 prompt?.let { p ->
-                    Text("${p.probeId}: ${p.text}", fontSize = 14.sp)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        p.options.forEach { o -> Button(onClick = { Human.answer(o) }) { Text(o) } }
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFF3E0)).padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(p.text, fontSize = 15.sp)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            p.options.forEach { o -> Button(onClick = { Human.answer(o) }) { Text(o) } }
+                        }
                     }
                 }
                 if (ui.status.isNotBlank()) Text(ui.status, fontSize = 13.sp)
-                ui.panel?.invoke(session)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                ui.panel?.let { panel -> Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))) { panel(session) } }
+                Column(
+                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Registry.sheetActions
                         .filter { ui.groups == null || it.group in ui.groups!! }
-                        .forEach { a ->
-                            FilledTonalButton(onClick = { App.scope.launch { a.run(session) } }) {
-                                Text(a.label, fontSize = 12.sp)
+                        .groupBy { it.group }
+                        .forEach { (group, actions) ->
+                            Text(groupTitle(group), fontSize = 11.sp, color = Color.Gray)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                actions.forEach { a ->
+                                    FilledTonalButton(onClick = { App.scope.launch { a.run(session) } }) {
+                                        Text(a.label, fontSize = 12.sp)
+                                    }
+                                }
                             }
                         }
-                    FilledTonalButton(onClick = { session.hide() }) { Text("Закрыть", fontSize = 12.sp) }
+                    OutlinedTextField(
+                        value = text, onValueChange = { text = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Поле ввода (клавиатура)") },
+                    )
                 }
-                OutlinedTextField(
-                    value = text, onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Поле ввода (клавиатура, П3)") },
-                )
             }
         }
     }
+}
+
+private fun groupTitle(g: String) = when (g) {
+    "assist" -> "Процесс"
+    "session" -> "Микрофон, блокировка"
+    "camera" -> "Камера"
+    "pick" -> "Фото и файлы"
+    "upload" -> "Загрузка"
+    "expand" -> "Развернуть"
+    "net" -> "Сеть"
+    "perm" -> "Разрешения"
+    "actions" -> "Действия"
+    else -> g
 }

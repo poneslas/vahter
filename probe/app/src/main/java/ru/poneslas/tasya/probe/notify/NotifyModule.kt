@@ -120,10 +120,10 @@ private suspend fun ProbeScope.oneRun(variant: String, seconds: Int, closeAfterM
 
 object AnswerAfterCloseProbe : Probe(
     "П23", "Ответ дочитывается после закрытия листа",
-    "Поток ответа (SSE с scripts/serve.py) идёт 90 с; лист закрывают через 2 с. Процесс помощника дочитывает поток и сам показывает уведомление «ответ готов». Варианты: корутина в процессе, ускоренный WorkManager.",
+    "Поток ответа (httpbin.org или свой scripts/serve.py) идёт 90 с; лист закрывают через 2 с. Процесс помощника дочитывает поток и сам показывает уведомление «ответ готов». Варианты: корутина в процессе, ускоренный WorkManager.",
     needsHuman = false,
     steps = listOf(
-        "На Mac: python3 probe/scripts/serve.py (адрес — «Отчёт и настройки → Тестовый сервер»).",
+        "Нужен только интернет: поток берётся с httpbin.org (свой сервер — галочка в «Отчёт и настройки»).",
         "Пробник сам: лист → поток → закрыть лист → ждать до конца потока → уведомление. Два варианта по очереди, ~4 минуты.",
         "С выключенным экраном — П23ч.",
     ),
@@ -132,7 +132,7 @@ object AnswerAfterCloseProbe : Probe(
     var seconds = 90
 
     override suspend fun ProbeScope.run(): Status {
-        serverAlive()?.let {
+        if (Config.useOwnServer) serverAlive()?.let {
             summary("сервер ${Config.server} недоступен ($it) — запустите scripts/serve.py")
             return Status.FAIL
         }
@@ -154,14 +154,14 @@ object AnswerHumanProbe : Probe(
     "То же, что П23, но с выключенным экраном; нажатие на уведомление открывает лист; ответ текстом из шторки уходит на сервер.",
     needsHuman = true,
     steps = listOf(
-        "Нужен serve.py (как в П23).",
+        "Нужен интернет (как в П23); ответ из шторки — только со своим сервером.",
         "Поток с выключенным экраном: после «Старт» сразу выключить экран, включить через 2 минуты.",
         "Нажать на уведомление «Тася ответила» 3 раза: с разблокированного и заблокированного экрана.",
         "Ответить из шторки кнопкой «Ответить» — с заблокированным экраном.",
     ),
 ) {
     override suspend fun ProbeScope.run(): Status {
-        serverAlive()?.let {
+        if (Config.useOwnServer) serverAlive()?.let {
             summary("сервер ${Config.server} недоступен ($it) — запустите scripts/serve.py")
             return Status.FAIL
         }

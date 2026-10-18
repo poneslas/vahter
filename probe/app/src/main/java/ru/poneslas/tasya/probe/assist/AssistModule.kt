@@ -57,9 +57,8 @@ object RoleProbe : Probe(
     needsHuman = true,
     steps = listOf(
         "Пробник проверяет роль; если её нет — открывает настройки, выберите «Пробник Таси».",
-        "На Mac: scripts/bump.sh 1, затем scripts/bump.sh 2 — две обновлённые сборки подряд.",
-        "На Mac: scripts/bump.sh 3 norec — сборка без recognitionService (роль должна слететь).",
-        "На Mac: scripts/install.sh — вернуть нормальную сборку и роль.",
+        "Установить поверх файл tasya-probe-2.apk (или с кабелем: scripts/bump.sh 1).",
+        "По желанию, с кабелем: scripts/bump.sh 3 norec — сборка без recognitionService (роль должна слететь), затем scripts/install.sh.",
         "Снова запустите П1 и выберите «Посчитать».",
     ),
 ) {
@@ -92,7 +91,7 @@ object RoleProbe : Probe(
         val ready = Sheet.awaitService(5000) != null
         log("vis_ready", ready.toString())
         p.edit { putLong("p1_marker", System.currentTimeMillis()) }
-        tell("Роль у пробника. Теперь на Mac по очереди: scripts/bump.sh 1; scripts/bump.sh 2; scripts/bump.sh 3 norec; scripts/install.sh. Процесс пробника при каждой установке перезапустится — потом снова откройте П1 и выберите «Посчитать».", "Понятно")
+        tell("Роль у пробника. Теперь обновите пробник: установите поверх файл tasya-probe-2.apk (как ставили первый). С кабелем — на Mac scripts/bump.sh 1 (и для контроля bump.sh 3 norec). Потом снова откройте эту проверку и выберите «Посчитать».", "Понятно")
         summary("Роль поставлена; ждём обновлений, затем «Посчитать»")
         return Status.PARTIAL
     }
@@ -111,7 +110,8 @@ object RoleProbe : Probe(
         val s = "обычных обновлений ${normal.size}, роль осталась в $normalKept; без recognitionService ${control.size}, роль слетела в ${control.count { !it.roleHeld }}"
         summary(s)
         return when {
-            normal.size >= 2 && normalKept == normal.size && control.isNotEmpty() && control.all { !it.roleHeld } -> Status.PASS
+            // Главное — роль пережила обычное обновление; контрольная сборка без recognitionService — по желанию.
+            normal.isNotEmpty() && normalKept == normal.size && control.all { !it.roleHeld } -> Status.PASS
             normal.isNotEmpty() && normalKept < normal.size -> Status.FAIL
             else -> Status.PARTIAL
         }

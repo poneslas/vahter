@@ -35,9 +35,44 @@ object Sse {
 
     fun start(id: String, variant: String): Run = Run(id, variant).also { runs[id] = it }
 
+    /**
+     * Поток без своего сервера: httpbin.org/drip отдаёт [seconds] байт по одному в секунду —
+     * как ответ, который приходит частями. Один байт = одна «часть».
+     */
+    private fun readDrip(ctx: Context, run: Run, seconds: Int, cancelled: () -> Boolean): Boolean {
+        var conn: HttpURLConnection? = null
+        try {
+            conn = URL("https://httpbin.org/drip?duration=$seconds&numbytes=$seconds&delay=0").openConnection() as HttpURLConnection
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 20_000
+            val input = conn.inputStream
+            var lastAt = SystemClock.uptimeMillis()
+            while (!cancelled()) {
+                val b = input.read()
+                if (b < 0) break
+                val now = SystemClock.uptimeMillis()
+                if (run.events > 0) run.maxGapMs = maxOf(run.maxGapMs, now - lastAt)
+                lastAt = now
+                run.events++
+            }
+            run.done = run.events >= seconds
+            if (!run.done) run.error = "поток оборвался на ${run.events} из $seconds"
+        } catch (t: Throwable) {
+            run.error = "${t.javaClass.simpleName}: ${t.message}"
+            Log.w(TAG, "drip ${run.id}", t)
+        } finally {
+            conn?.disconnect()
+            run.finished = true
+            run.finishedAt = SystemClock.uptimeMillis()
+        }
+        if (run.done) run.notified = AnswerNotifier.postAnswer(ctx, "Ответ готов (${run.variant}): ${run.events} частей")
+        return run.done
+    }
+
     /** Блокирующее чтение потока. [seconds] — длина ответа на сервере. */
     fun readBlocking(ctx: Context, id: String, seconds: Int, cancelled: () -> Boolean = { false }): Boolean {
         val run = runs[id] ?: start(id, "?")
+        if (!Config.useOwnServer) return readDrip(ctx, run, seconds, cancelled)
         var conn: HttpURLConnection? = null
         try {
             conn = URL("${Config.server}/sse?seconds=$seconds&interval=1000").openConnection() as HttpURLConnection

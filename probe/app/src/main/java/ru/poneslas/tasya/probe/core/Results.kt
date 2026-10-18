@@ -146,6 +146,11 @@ object Results {
         appendLine("Пробник Таси — отчёт")
         Header.collect(App.instance).forEach { (k, v) -> appendLine("$k: $v") }
         appendLine()
+        appendLine("Главное:")
+        ru.poneslas.tasya.probe.Essentials.all.forEach { e ->
+            appendLine("  ${e.n}. ${e.title} — ${ru.poneslas.tasya.probe.Essentials.word(ru.poneslas.tasya.probe.Essentials.verdict(e, _all.value))}")
+        }
+        appendLine()
         Registry.probes.forEach { p ->
             val r = _all.value[p.id] ?: return@forEach
             appendLine("${p.id} ${p.title} — ${r.status.label}")

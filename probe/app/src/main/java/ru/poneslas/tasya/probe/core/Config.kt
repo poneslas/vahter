@@ -35,4 +35,9 @@ object Config {
     fun setFlag(key: String, v: Boolean) = prefs.edit { putBoolean("flag_$key", v) }
 
     val server get() = get("server").trimEnd('/')
+
+    /** Свой тестовый сервер (scripts/serve.py) включён; иначе П23 берёт поток из интернета (httpbin.org). */
+    var useOwnServer: Boolean
+        get() = flag("own_server")
+        set(v) = setFlag("own_server", v)
 }
