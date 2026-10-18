@@ -44,11 +44,11 @@ const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', 
  * @property {string} title
  * @property {string} [url]   адрес API (kind=api)
  * @property {string} [model] имя модели (kind=api)
- * @property {{vision:boolean, tools:boolean, memory:boolean, server:boolean}} caps
+ * @property {{vision:boolean, tools:boolean, memory:boolean, server:boolean, maxImages:number}} caps  maxImages — сколько картинок в одной реплике (у DeepSeek — уточнить пробником)
  */
 const BRAINS=[
-  {id:'deepseek', kind:'api', title:'DeepSeek', url:'https://api.deepseek.com', model:'deepseek-chat', caps:{vision:true,tools:true,memory:false,server:false}},
-  {id:'hermes', kind:'hermes', title:'Hermes', caps:{vision:true,tools:true,memory:true,server:true}},
+  {id:'deepseek', kind:'api', title:'DeepSeek', url:'https://api.deepseek.com', model:'deepseek-chat', caps:{vision:true,tools:true,memory:false,server:false,maxImages:10}},
+  {id:'hermes', kind:'hermes', title:'Hermes', caps:{vision:true,tools:true,memory:true,server:true,maxImages:10}},
 ];
 /**
  * Действие телефона (реестр — Архитектура, 7). Пользователю показываем только одно: делает ли Тася это сама,

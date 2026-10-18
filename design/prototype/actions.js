@@ -1,7 +1,7 @@
 /* Действия пользователя: клики, ввод, диалоги (в Android — интенты ViewModel). */
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab){ if(t.dataset.ptab==='tour' && curPreset!==null) return startTour(); return setPtab(t.dataset.ptab) }
   if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
@@ -15,10 +15,13 @@ document.addEventListener('click', async e=>{
   if (t.dataset.mbool){ const m=modeById(S.editMode); m[t.dataset.mbool]=!m[t.dataset.mbool]; S.keepScroll=true; return render() }
   if (t.dataset.micon){ modeById(S.editMode).icon=t.dataset.micon; S.keepScroll=true; return render() }
   if (t.dataset.ctool) return camTool(t.dataset.ctool);
+  if (t.dataset.frame!==undefined) return camOpenFrame(+t.dataset.frame);
+  if (t.dataset.framedel!==undefined) return camDelFrame(+t.dataset.framedel);
   if (t.dataset.tool){ const x=toolById(t.dataset.tool); S.editTool=x.id; S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
   if (t.dataset.jid){ S.jopen = S.jopen===t.dataset.jid ? null : t.dataset.jid; S.keepScroll=true; return render() }
   if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tool'){ S.policy[S.editTool]=t.dataset.radio; S.keepScroll=true; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
   if (t.dataset.dlgclose!==undefined){ S.dialog=null; return render() }
+  if (t.dataset.pickitem && S.picker==='gallery'){ const v=t.dataset.pickitem; S.pickSel=S.pickSel||[]; const i=S.pickSel.indexOf(v); if(i>=0) S.pickSel.splice(i,1); else if(S.pickSel.length<(brainOf().caps.maxImages||10)) S.pickSel.push(v); return render() }
   if (t.dataset.pickitem){ const v=t.dataset.pickitem; const img=S.picker==='gallery'?{kind:'photo',cls:v}:{kind:'file',name:v.split('|')[0],size:v.split('|')[1]}; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; uploadPhoto(img,'',img.kind==='file'?'файл':'фото'); trace(img.kind==='file'?'Файл из системного выбора — уходит Hermes как документ, грузится прямо в пузыре.':'Фото из галереи — так же, как со спуска камеры.','p'); return }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
   if (t.dataset.shot){ S.camSubj=t.dataset.shot; if(S.cam) S.cam.subj=t.dataset.shot; return render() }
@@ -84,10 +87,12 @@ document.addEventListener('click', async e=>{
     case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();
     case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace(a==='file'?'Файл: системный выбор (ACTION_OPEN_DOCUMENT) из листа через startAssistantActivity — проверяется спайком; лист после выбора возвращается.':'Галерея: системный Photo Picker — разрешение на все фото не нужно.','p'); return render();
-    case 'pickback': S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; return render();
+    case 'pickdone': { const sel=S.pickSel||[]; S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; const items=sel.map(cls=>({cls,marks:[],crop:null})); uploadPhoto(items.length>1?{kind:'album',items}:{kind:'photo',...items[0]},'',items.length>1?`альбом · ${items.length}`:'фото'); trace(items.length>1?`Несколько фото из галереи — одна реплика, ${items.length} картинки.`:'Фото из галереи — как со спуска камеры.','p'); return }
+    case 'pickback': S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; return render();
     case 'camera': S.attachMenu=false; return openCamera(false);
     case 'shoot': case 'camsend': return shotGo('');
-    case 'camretake': Object.assign(S.cam,{frozen:false,tool:null,marks:[],crop:null}); trace('Переснять — пометки сброшены, снова живой видоискатель.'); return render();
+    case 'camadd': return camAdd();
+    case 'camretake': { const back=S.cam.editIdx!=null; camLive(); trace(back?'Правки кадра из ленты отменены — снова живой видоискатель.':'Переснять — пометки сброшены, снова живой видоискатель.'); return render() }
     case 'camundo': { const c=S.cam; if(c.marks.length) c.marks.pop(); else c.crop=null; return render() }
     case 'upcancel': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ b.up.st='cancel'; if(S.pendingUp===b) S.pendingUp=null; if(b.x){ S.draft=b.x } trace(b.x?'Отправка отменена. Фото убрано, вопрос вернулся в поле.':'Отправка отменена — ничего не ушло.','p') } S.keepScroll=true; return render() }
     case 'upretry': { const b=Object.values(S.feeds).flat().find(x=>x.id===t.dataset.id); if(b){ S.pendingUp=b; runUpload(b) } return }

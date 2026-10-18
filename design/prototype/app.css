@@ -475,3 +475,16 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 
 .cam2::before{content:"";position:absolute;left:0;right:0;top:0;height:120px;background:linear-gradient(rgba(0,0,0,.55),transparent);z-index:2;pointer-events:none}
 .meimg .thw>.th{display:block;width:100%;height:100%}
+
+/* лента кадров и альбом */
+.th.menu2{background:repeating-linear-gradient(180deg,#F1EFE6 0 18px,#E2DDCC 18px 19px);position:relative}
+.th.menu2::after{content:"清蒸鲈鱼 ¥88\A 炒青菜 ¥26\A 米饭 ¥3";white-space:pre;position:absolute;left:10%;top:16%;font-size:clamp(4px,8cqw,28px);line-height:1.55;color:#3d3a2a;font-weight:600}
+.cam2 .cstrip{display:flex;gap:8px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
+.cam2 .cfr{position:relative;flex:none}.cam2 .cfrb{border:2px solid rgba(255,255,255,.7);border-radius:10px;padding:0;background:none;overflow:hidden;display:block}
+.cam2 .cfr.on .cfrb{border-color:#FFD60A}.cam2 .cfrb .thw{display:block}
+.cam2 .cfrx{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#111;color:#fff;display:grid;place-items:center}.cam2 .cfrx .ic{width:14px;height:14px}
+.cam2 .cplus{width:56px;height:56px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center}.cam2 .cplus:disabled{opacity:.35}
+.cam2 .csend{position:relative}.ccount{position:absolute;top:-4px;right:-4px;min-width:24px;height:24px;border-radius:12px;background:#FFD60A;color:#111;font-size:13px;display:grid;place-items:center;padding:0 6px}
+.alb{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}.alb .thw{border-radius:8px}
+.pgrid button{position:relative}.pgrid button[aria-pressed=true]{outline:3px solid #3E6FD8;outline-offset:-3px}
+.psel:not(:empty){position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:#3E6FD8;color:#fff;font-size:12px;display:grid;place-items:center}

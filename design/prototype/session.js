@@ -17,11 +17,15 @@ function openOverlay(src){
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function openCamera(first){
-  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first,tool:null,frozen:false,marks:[],crop:null}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
+  S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first,tool:null,frozen:false,marks:[],crop:null,frames:[],editIdx:null}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
   trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера — CameraX прямо в листе: на эмуляторе видоискатель через ~320 мс после вызова (пробник). Запасной путь — своя активность, ~530 мс.','p'); render() }
 function uploadPhoto(img, q, via){
   const modeId=S.mode, F=S.feed; const b={t:'me',x:q||'',via:via||'фото',img,up:{st:S.w.net==='none'?'wait':'up',pct:0,t0:Date.now()},mode:modeId,id:'u'+Date.now()};
   F.push(b); S.pendingUp=b; render(); runUpload(b); return b }
+/** Подпись состояния вложения: у прямого API загрузка — это сам запрос, у Hermes — файлы на сервер. */
+function upLabel(b){ const u=b.up, api=brainOf(modeById(b.mode)).kind==='api', n=b.img.kind==='album'?b.img.items.length:1;
+  if (u.pct<8) return 'Готовлю'+(n>1?` ${n} кадра`:'')+'…';
+  return (api?'Отправляю':'Загружаю')+` · ${u.pct} %` }
 async function runUpload(b){
   const speed=S.upSpeed||'fast', dur=speed==='slow'?7000:1400, MIN=2000; b.up.st=S.w.net==='none'?'wait':'up'; b.up.pct=0; b.up.t0=Date.now(); render();
   while(true){ await wait(200); if(b.up.st==='cancel') return;
@@ -34,6 +38,20 @@ async function runUpload(b){
     if(b.up.pct>=100 && Date.now()-b.up.t0>=MIN && composing){ if(!b.up.hold){ b.up.hold=true; trace('В поле начат вопрос — вложение ждёт его и уйдёт вместе с ним.','p') } S.keepScroll=true; render(); continue }
     if(b.up.pct>=100 && Date.now()-b.up.t0>=MIN){ b.up.st='sent'; if(S.pendingUp===b) S.pendingUp=null; S.keepScroll=true; render(); return deliverMode(b.x,b.via,b.img,b) }
     S.keepScroll=true; render() } }
+/** Лента кадров: «＋» оставляет текущий кадр и возвращает живой видоискатель; «Отправить» оставляет текущий и отправляет всё. */
+const camMax = () => brainOf().caps.maxImages||10;
+function camCurrent(){ const c=S.cam; return {cls:c.subj,marks:c.marks.slice(),crop:c.crop} }
+function camLive(){ Object.assign(S.cam,{frozen:false,tool:null,marks:[],crop:null,editIdx:null}) }
+/** Положить текущий кадр в ленту (или сохранить правки кадра из ленты). Возвращает все кадры. */
+function camCommit(forSend){ const c=S.cam;
+  if (c.editIdx!=null) c.frames[c.editIdx]=camCurrent();
+  else if (forSend || c.frozen || true) c.frames.push(camCurrent());
+  return c.frames.slice() }
+function camAdd(){ const c=S.cam; if (c.editIdx==null && c.frames.length>=camMax()-1){ trace(`Предел мозга — ${camMax()} картинок в одной реплике. «Отправить» добавит этот кадр и отправит всё.`,'e'); return }
+  camCommit(false); camLive(); if (c.subj==='menu') { c.subj='menu2'; trace('В прототипе видоискатель «перевернул страницу» — следующий кадр будет второй страницей меню.','p') } render() }
+function camOpenFrame(i){ const c=S.cam; if (c.frozen && c.editIdx==null) c.frames.push(camCurrent());
+  const f=c.frames[i]; Object.assign(c,{frozen:true,tool:null,subj:f.cls,marks:f.marks.slice(),crop:f.crop,editIdx:i}); render() }
+function camDelFrame(i){ const c=S.cam; c.frames.splice(i,1); if (c.editIdx===i) camLive(); else if (c.editIdx>i) c.editIdx--; render() }
 /** Инструменты на видоискателе: выбор инструмента замораживает кадр; пометки и обрезка впекаются в снимок перед загрузкой. */
 function camTool(t){ const c=S.cam; if(!c.frozen){ c.frozen=true; trace('Инструмент нажат — кадр зафиксирован, как спуск. Дальше рисуете поверх и «Отправить».','p') } c.tool = c.tool===t ? null : t; render() }
 let draw=null;
@@ -46,8 +64,8 @@ document.addEventListener('pointerup',()=>{ if(!draw||!S.cam) return; const d=dr
   else if ((d.k==='circle'&&d.pts.length>3)||(d.k==='arrow'&&Math.hypot(d.a[0]-d.b[0],d.a[1]-d.b[1])>5)) S.cam.marks.push(d);
   render() });
 async function shotGo(q){
-  const c=S.cam; const img={kind:'photo',cls:c.subj,marks:c.marks.slice(),crop:c.crop}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app') S.ov={pop:false}; S.cam=null;
-  uploadPhoto(img, q||'', q?'голос · с фото':'фото');
+  const c=S.cam; const cur={cls:c.subj,marks:c.marks.slice(),crop:c.crop}; const items=camCommit(true); const img=items.length>1?{kind:'album',items}:{kind:'photo',...items[0]}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app') S.ov={pop:false}; S.cam=null;
+  uploadPhoto(img, q||'', (q?'голос · ':'')+(items.length>1?`альбом · ${items.length}`:'фото'));
   trace(q?'Снимок и вопрос: сразу обратно в разговор, фото грузится в пузыре.':'Спуск — сразу обратно в разговор. Фото грузится прямо в пузыре: пока грузится (не меньше 2 секунд), можно нажать «✕» или дописать вопрос — уйдёт вместе с фото.','p');
   if(!q) setTimeout(()=>$('#cin')?.focus(),50); }
 function closeOverlay(){ token++; S.busy=false; S.ov=null; render() }

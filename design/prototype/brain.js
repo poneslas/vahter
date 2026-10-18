@@ -39,7 +39,10 @@ async function deliverModeIn(text, via, img, bubble){
   const B=brainOf(m); if (B.kind==='api') trace(`Запрос в ${B.title}: промпт режима «${esc(m.title)}» + вся история режима (${S.feed.filter(x=>x.t==='me'||x.t==='ai').length} сообщ., фото тоже) + новая реплика. Начало совпадает с прошлым запросом — провайдер берёт его из кэша.${m.tools?' Действия телефона переданы как функции.':' Действий телефона у режима нет.'}`,'h'); else trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
   maybeAskNotif(); if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
-  if (m.id==='main' && img && img.kind==='file')
+  const album = img && img.kind==='album' ? img : null; if (album){ trace(B.kind==='api'?`Одна реплика с ${album.items.length} картинками (image_url, base64 в теле запроса). В следующих запросах альбом едет снова — вся история целиком; одинаковое начало берётся из кэша.`:`Одно событие с ${album.items.length} путями в media_urls; модель со зрением получает их напрямую, без зрения — через vision_analyze по одному.`,'h'); img = album.items.find(x=>x.cls==='menu') || album.items[0] }
+  if (m.id==='m-4c1e' && album && album.items.some(x=>x.cls==='menu2'))
+    await stream(my,`<p><b>Берите:</b></p><ol><li><b>清蒸鲈鱼</b> — сибас на пару, ¥88. Рыба, не острое — то, что вы любите.</li><li><b>炒青菜</b> — жареная зелень, ¥26.</li><li>К ним <b>米饭</b> — рис, ¥3.</li></ol><p>С первой страницы — <b>酸辣汤</b>, ¥22, попросите <b>不要辣</b> (bú yào là). Не берите <b>麻婆豆腐</b>: острое и со свининой.</p>`,{fast:true});
+  else if (m.id==='main' && img && img.kind==='file')
     await stream(my,`<p><b>${esc(img.name)}</b>: договор аренды на 11 месяцев, 45 000 ₽ в месяц, залог — одна оплата.</p><ul><li>Расторжение — за 30 дней письменно.</li><li>Ремонт за счёт арендатора — п. 4.3, стоит обсудить.</li></ul>`,{fast:true});
   else if (m.id==='main' && img)
     await stream(my,`<p>${text?'Смотрю фото. ':''}На фото меню китайского ресторана: курица гунбао ¥48, тофу мапо ¥36, кисло-острый суп ¥22.</p>`,{fast:true});
@@ -47,7 +50,7 @@ async function deliverModeIn(text, via, img, bubble){
     await stream(my,`<p>Ответ по промпту режима «${esc(m.title)}».</p>`,{fast:true});
   else if (m.id==='m-4c1e' && !img)
     await stream(my,`<p>Сфотографируйте меню — выберу под ваши вкусы.</p>`,{fast:true});
-  else if (m.id==='m-4c1e' && img.cls!=='menu')
+  else if (m.id==='m-4c1e' && img.cls!=='menu' && img.cls!=='menu2')
     await stream(my,`<p>Это не похоже на меню. Сфотографируйте страницу с блюдами.</p>`,{fast:true});
   else if (m.id==='m-4c1e')
     await stream(my,`<p><b>Берите:</b></p><ol><li><b>宫保鸡丁</b> — курица гунбао, ¥48. Попросите без острого: <b>不要辣</b> (bú yào là).</li><li><b>酸辣汤</b> — кисло-острый суп с грибами и яйцом, ¥22. Тоже <b>不要辣</b>.</li></ol><p>Не берите <b>麻婆豆腐</b>: острое и с фаршем из свинины. Рыбы в этом меню нет — если есть другая страница, снимите её.</p>`,{fast:true});
