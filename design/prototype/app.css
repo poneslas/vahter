@@ -488,3 +488,6 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .alb{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}.alb .thw{border-radius:8px}
 .pgrid button{position:relative}.pgrid button[aria-pressed=true]{outline:3px solid #3E6FD8;outline-offset:-3px}
 .psel:not(:empty){position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:#3E6FD8;color:#fff;font-size:12px;display:grid;place-items:center}
+
+.pword.nope{color:var(--local)}.prow .lt small{display:block;font-size:12px;color:var(--local)}
+.prow .lt small.pend{color:var(--soft)}

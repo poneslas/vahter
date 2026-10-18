@@ -8,6 +8,7 @@ const PHR={
   logs:{t:'Почисти старые логи на сервере',w:['почисти','старые','логи','на','сервере'],fin:'Почисти старые логи на сервере.'},
   table:{t:'Забронируй столик на субботу',w:['забронируй','столик','на','субботу'],fin:'Забронируй столик на субботу.'},
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
+  call:{t:'Позвони маме',w:['позвони','маме'],fin:'Позвони маме.'},
   alarmfz:{t:'Поставь мне алярмер на семь',w:['поставь','мне','алярмер','на','семь'],fin:'Поставь мне алярмер на семь.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
   price:{t:'Сколько это в рублях?',w:['сколько','это','в','рублях'],fin:'Сколько это в рублях?'},
@@ -15,7 +16,7 @@ const PHR={
   pr:{t:'(диктовка промпта)',w:['если','есть','рыба','на','гриле','—','советуй','её','первой'],fin:'Если есть рыба на гриле — советуй её первой.'},
   toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
-const guessKey = v => { v=v.toLowerCase(); return /алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
+const guessKey = v => { v=v.toLowerCase(); return /позвони/.test(v)?'call':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
   const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
   if (S.mode!=='main') return deliverMode(text, via);
@@ -97,6 +98,11 @@ async function route(key,my){
   const B=brainOf();
   if (!brainReady(B)){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:B.kind==='api'?'Мозг не подключён':'Hermes не подключён',text:'Команды телефона работают и так.',btns:[['Подключить',B.kind==='api'?'brainsetup':'connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
   if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи — отправлю, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
+  if (key==='call'){ const P=S.policy['call.dial'];
+    if (P==='off'){ await stream(my,'<p>Звонить мне не разрешено — это в Настройках → «Действия на телефоне».</p>',{fast:true}); return }
+    if (!permOk('contacts')){ S.feed.push({t:'card',who:'h',head:`${B.title} просит · звонок`,title:'Нет доступа к контактам',text:'Без него не найду «маму». Можно продиктовать номер.',btns:[[S.w.perms.contacts==='ask'?'Разрешить доступ':'Открыть настройки','permfix:contacts','pri'],['Отмена','x','gh']]}); trace('Мозг вызвал call.dial, а доступа к контактам у Android нет — мозг получил понятный отказ (no_android_permission), пользователю — карточка с исправлением.','e'); return }
+    if (!await think(my,[{i:'👤',t:'Ищу в контактах',phone:true,d:'phone.contacts.find · «мама» → Мама, +7 916 …',ms:'0,1 с'}])) return;
+    S.feed.push({t:'card',who:'h',head:`${B.title} просит · звонок`,title:'Позвонить: Мама',kv:[['Номер','+7 916 123-45-67']],btns:[['Позвонить','call_ok','pri'],['Отмена','x','gh']]}); return }
   if (key==='alarmfz'){ const P=S.policy['alarm.set'];
     if (P==='off'){ await stream(my,'<p>Будильники мне выключены. Разрешить — Настройки → «Разрешения» → «Будильник».</p>',{fast:true}); trace('Мозг вызвал alarm.set, но действие выключено в политике — он получил понятный отказ (denied: disabled_by_user), не таймаут.','e'); return }
     if (S.w.locked && !lockOk('alarm.set')){ S.feed.push({t:'card',who:'h',head:`${B.title} просит · будильник`,title:'Будильник на 7:00',text:'Сначала разблокируйте телефон.',btns:[['Разблокировать','unlock','pri'],['Отмена','x','gh']]}); return }

@@ -1,7 +1,7 @@
 /* Действия пользователя: клики, ввод, диалоги (в Android — интенты ViewModel). */
 /* ───────── клики ───────── */
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-perm],[data-permfix],[data-sysperm],[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab){ if(t.dataset.ptab==='tour' && curPreset!==null) return startTour(); return setPtab(t.dataset.ptab) }
   if (t && t.dataset.tour){ if(t.dataset.tour==='restart') return startTour(); tourStep++; return renderTour() }
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
@@ -17,6 +17,11 @@ document.addEventListener('click', async e=>{
   if (t.dataset.ctool) return camTool(t.dataset.ctool);
   if (t.dataset.frame!==undefined) return camOpenFrame(+t.dataset.frame);
   if (t.dataset.framedel!==undefined) return camDelFrame(+t.dataset.framedel);
+  if (t.dataset.perm && t.dataset.v){ S.w.perms[t.dataset.perm]=t.dataset.v; return render() }
+  if (t.dataset.permfix) return permFix(t.dataset.permfix);
+  if (t.dataset.sysperm){ S.w.perms[S.permKind]=t.dataset.sysperm; S.keepScroll=true; return render() }
+  if (t.dataset.tool && toolBlocked(toolById(t.dataset.tool))){ const x=toolById(t.dataset.tool), k=x.perm, st=S.w.perms[k];
+    S.editTool=x.id; S.dialog={title:x.title,text:`Тасе это разрешено, но Android не даёт доступ: ${SYS_PERMS[k]}. ${x.example?`Поэтому ${x.example} не сработает.`:''}`,opts:[[st==='ask'&&k!=='dnd'?'Разрешить доступ':'Открыть настройки','permfix:'+k],['Настроить действие','tooledit'],['Закрыть','x','sec2']]}; return render() }
   if (t.dataset.tool){ const x=toolById(t.dataset.tool); S.editTool=x.id; S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
   if (t.dataset.jid){ S.jopen = S.jopen===t.dataset.jid ? null : t.dataset.jid; S.keepScroll=true; return render() }
   if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tool'){ S.policy[S.editTool]=t.dataset.radio; S.keepScroll=true; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
@@ -82,6 +87,7 @@ document.addEventListener('click', async e=>{
     case 'brainpick': { const m=modeById(S.editMode); const ok=S.brains.filter(b=>!m.accepts.photo||b.caps.vision); S.dialog={title:'Мозг режима',radio:ok.map(b=>[b.id,b.title]),cur:m.brain,key:'__brain'}; return render() }
     case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
     case 'tools': S.page='tools'; return render();
+    case 'syspermback': { const R=S.permRet2; S.permRet2=null; S.screen=R?.screen||'app'; S.page=R?.page||'tools'; if(R?.sheet){ S.screen=R.sheet; openOverlay('снова') } return render() }
     case 'journal': S.page='journal'; S.jopen=null; return render();
     case 'lockscope': S.dialog={title:'Без разблокировки',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
@@ -124,6 +130,8 @@ document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfi
   if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
+  if (b.startsWith('permfix:')) return permFix(b.slice(8));
+  if (b==='call_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='call_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📞',x:'Звонилка · Мама',s:'номер набран — звоните вы',btn:'',kind:'E',id:Date.now()},{tool:'call.dial',who:brainOf().title,phrase:'позвони маме',params:'contact=«Мама»',confirm:'«Позвонить» нажатием',lock:S.w.locked}); trace('Звонилка открывается поверх, лист перед этим прячется (иначе на S24 она окажется под листом).','p'); return render() }
   if (b==='alarm_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='alarm_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'⏰',x:'Будильник · 7:00',s:brainOf().title+' → телефон · через 9 ч',btn:'Открыть Часы',kind:'D',id:Date.now()},{tool:'alarm.set',who:brainOf().title,phrase:'поставь мне алярмер на семь',params:'time=07:00',confirm:'«Поставить» нажатием',lock:S.w.locked}); return render() }
   if (b==='unlock'){ S.w.locked=false; return render() }
   if (b==='brainsetup'){ S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; return render() }
@@ -137,7 +145,15 @@ function cardBtn(b){
   if (b==='clar'||b==='clar_other'){ if(idx>=0) S.feed.splice(idx,1); if(b==='clar_other'){ S.feed.push({t:'sys',x:'Напишите свой ответ'}); render(); $('#cin')?.focus(); return } S.feed.push({t:'me',x:'4',via:'нажатие'}); (async()=>{ const my=++token; S.busy=true; await stream(my,'<p>Забронировал на субботу, 19:00, на четверых. Подтверждение придёт на почту.</p>',{fast:true}); S.busy=false; render() })(); return render() }
   if (b==='move'){ if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📅',x:'Банк → пт, 19 окт, 10:00',s:brainOf().title+' → телефон',btn:'Отменить',kind:'B',id:Date.now()},{tool:'calendar.add',who:brainOf().title,phrase:'перенеси банк на пятницу',params:'event_id=812, start=2026-10-19T10:00',confirm:'«Перенести» нажатием',lock:false,undo:true}); S.feed.push({t:'ai',x:'<p>Перенёс на пятницу, 10:00.</p>',done:true}); trace('Событие вставлено в видимый Google-календарь; id известен — отмена настоящая.','i'); return render() }
 }
+/** Починить системный доступ: ещё не спрашивали — системное окно; отказано — системный экран настроек. Из листа — через приложение (на S24 окна из листа уходят под лист). */
+function permFix(k){ const st=S.w.perms[k], fromSheet=!!S.ov;
+  if (fromSheet){ S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat' }
+  if (st==='ask' && k!=='dnd'){ S.permKind=k; S.permSheet=fromSheet; S.dialog={title:`Разрешить приложению «Тася» доступ: ${SYS_PERMS[k]}?`,opts:[[k==='location'?'При использовании приложения':'Разрешить','sysperm_ok'],['Не разрешать','sysperm_no','sec2']]}; return render() }
+  S.permKind=k; S.permRet2={screen:S.screen,page:S.page,sheet:fromSheet?'home':null}; S.screen='sysperm'; trace(k==='dnd'?'Доступ к «Не беспокоить» — особый: только системный экран, окна разрешения нет.':'Отказано раньше — Android больше не покажет окно, ведём в системные настройки приложения.','p'); return render() }
 async function dlgAct(k){
+  if (k&&k.startsWith('permfix:')) return permFix(k.slice(8));
+  if (k==='tooledit'){ const x=toolById(S.editTool); S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
+  if (k==='sysperm_ok'||k==='sysperm_no'){ S.w.perms[S.permKind]=k==='sysperm_ok'?'ok':'denied'; if(S.permSheet){ S.permSheet=false; S.screen='home'; openOverlay('снова') } return render() }
   if (k==='mic_ok'){ S.w.mic='ok'; if(permBack()){ S.pendingSide=false; return } if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
   if (k==='mic_no'){ S.w.mic='denied'; if(permBack()) return; if(S.ov) openOverlay('снова'); return render() }
   if (k==='notif_no'){ if(permBack()) return; return render() }

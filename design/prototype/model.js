@@ -60,27 +60,34 @@ const BRAINS=[
  * @property {'auto'|'ask'|'off'} def  по умолчанию
  * @property {boolean} [safe]   можно на заблокированном телефоне в режиме «только безопасное»
  * @property {boolean} [always] всегда спрашивает (сообщения): «Разрешить» не предлагается
+ * @property {'calendar'|'location'|'contacts'|'dnd'} [perm] системный доступ Android, без которого действие не работает
  */
 const TOOL_GROUPS=['Часы','Календарь','Телефон','Приложения и связь'];
 const TOOLS=[
   ['alarm.set','Будильник','Часы','auto',{safe:true}],
   ['timer.set','Таймер','Часы','auto',{safe:true}],
   ['alarm.next','Ближайший будильник','Часы','auto',{safe:true}],
-  ['calendar.query','Просмотр календаря','Календарь','auto'],
-  ['calendar.add','Создание событий','Календарь','ask'],
+  ['calendar.query','Просмотр календаря','Календарь','auto',{perm:'calendar'}],
+  ['calendar.add','Создание событий','Календарь','ask',{perm:'calendar'}],
   ['torch.set','Фонарик','Телефон','auto',{safe:true}],
   ['volume.set','Громкость','Телефон','auto'],
-  ['dnd.set','Не беспокоить','Телефон','auto'],
+  ['dnd.set','Не беспокоить','Телефон','auto',{perm:'dnd'}],
   ['media.control','Управление музыкой','Телефон','auto'],
-  ['location.get','Местоположение','Телефон','ask'],
+  ['location.get','Местоположение','Телефон','ask',{perm:'location'}],
   ['place.save','Сохранённые места','Телефон','auto'],
   ['note.remember','Заметки','Телефон','auto'],
   ['app.open','Запуск приложений','Приложения и связь','auto'],
   ['settings.open','Системные настройки','Приложения и связь','auto'],
-  ['call.dial','Звонки','Приложения и связь','ask'],
-  ['message.draft','Сообщения','Приложения и связь','ask',{always:true}],
+  ['call.dial','Звонки','Приложения и связь','ask',{perm:'contacts'}],
+  ['message.draft','Сообщения','Приложения и связь','ask',{always:true,perm:'contacts'}],
 ].map(([id,title,group,def,o])=>({id,title,group,def,...(o||{})}));
 /** Слова — как в системном диалоге разрешений Android. */
+/** Системные доступы Android, от которых зависят действия. Состояние: ok — выдан, ask — ещё не спрашивали, denied — отказано (окно больше не покажется — только настройки). */
+const SYS_PERMS={calendar:'Календарь',location:'Местоположение',contacts:'Контакты',dnd:'«Не беспокоить»'};
+const permOk = k => !k || S.w.perms[k]==='ok';
+/** Не работает: Android отказал в доступе. «Ещё не спрашивали» — не поломка: спросим при первом использовании. */
+const toolBlocked = x => S.policy[x.id]!=='off' && !!x.perm && S.w.perms[x.perm]==='denied';
+const toolPending = x => S.policy[x.id]!=='off' && !!x.perm && S.w.perms[x.perm]==='ask';
 const POLICY_OPTS=[['auto','Разрешить'],['ask','Спрашивать каждый раз'],['off','Не разрешать']];
 const POLICY_WORD={auto:'Разрешено',ask:'Спрашивать',off:'Не разрешено'};
 const LOCK_SCOPE=[['safe','Будильник, таймер, фонарик'],['unlock','Ничего']];
@@ -95,7 +102,7 @@ function modeSummary(m){
   return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
 
 const fresh = () => { const o = ({
-  w:{ net:'wifi', key:'none', server:'none', side:'power', model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
+  w:{ net:'wifi', key:'none', server:'none', side:'power', perms:{calendar:'ok',location:'ask',contacts:'ok',dnd:'ask'}, model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,
