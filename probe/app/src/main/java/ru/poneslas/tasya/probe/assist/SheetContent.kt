@@ -150,6 +150,7 @@ private fun groupTitle(g: String) = when (g) {
     "session" -> "Микрофон, блокировка"
     "camera" -> "Камера"
     "pick" -> "Фото и файлы"
+    "hide" -> "Обход: сначала спрятать лист"
     "upload" -> "Загрузка"
     "expand" -> "Развернуть"
     "net" -> "Сеть"

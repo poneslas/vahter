@@ -23,6 +23,7 @@ class PermTrampolineActivity : Activity() {
         overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
         overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
         PermBus.tCreate = SystemClock.uptimeMillis()
+        alive = true
         if (savedInstanceState != null) return
         val perms = intent.getStringArrayExtra(EXTRA_PERMISSIONS)
         val target = intent.getParcelableExtra(EXTRA_TARGET, Intent::class.java)
@@ -63,6 +64,7 @@ class PermTrampolineActivity : Activity() {
     }
 
     override fun onDestroy() {
+        alive = false
         if (isFinishing) {
             PermBus.perm?.complete(PermResult(emptyMap(), emptyMap(), SystemClock.uptimeMillis()))
             PermBus.launched?.complete("батут закрыт до запуска")
@@ -72,6 +74,8 @@ class PermTrampolineActivity : Activity() {
 
     companion object {
         const val EXTRA_PERMISSIONS = "permissions"
+        /** Батут на экране (для обхода «спрятав лист»). */
+        @Volatile var alive = false
         const val EXTRA_TARGET = "target"
     }
 }

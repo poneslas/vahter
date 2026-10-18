@@ -25,7 +25,7 @@ object PickModule : Module {
         SheetAction("pick", "Фото") { s -> startPicker(s, "photo") },
         SheetAction("pick", "Файл") { s -> startPicker(s, "file") },
         SheetAction("pick", "Встроенный пикер") { Sheet.setPanel { EmbeddedPickerPanel() } },
-    )
+    ) + HideFirst.actions
 }
 
 private fun startPicker(s: ProbeSession, kind: String) {
@@ -135,6 +135,9 @@ object PickProbe : Probe(
         while (!result.isCompleted && !skip.isCompleted) delay(100)
         skip.cancel()
         val e = if (result.isCompleted) result.await() else null
+        if (trampoline && e != null) {
+            log(kind, "окно выбора: " + ask("Где открылось окно выбора?", listOf("Под листом", "Над листом", "Лист пропал, окно на экране")))
+        }
 
         val good = when (e) {
             is PickEvent.Picked -> {

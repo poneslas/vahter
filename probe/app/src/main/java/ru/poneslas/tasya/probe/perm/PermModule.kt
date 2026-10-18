@@ -225,7 +225,7 @@ object PermsFromSheetProbe : Probe(
             }
             val ok = res?.granted?.values?.any { it } == true
             val visible = Sheet.visible.value
-            val where = ask("${g.label}: где было системное окно?", listOf("Над листом", "Лист пропал, окно на экране", "Окна не было"))
+            val where = ask("${g.label}: где было системное окно?", listOf("Под листом", "Над листом", "Лист пропал, окно на экране", "Окна не было"))
             val row = "${g.key}: " + when {
                 err != null -> "ошибка запуска $err"
                 res == null -> "ответа не дождались"
