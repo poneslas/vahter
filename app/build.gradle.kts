@@ -1,21 +1,7 @@
-import java.security.MessageDigest
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
-}
-
-// Распознавание: sherpa-onnx (Apache-2.0). AAR не в git — качается при первой сборке, sha256 закреплён.
-val sherpaAar = file("libs/sherpa-onnx-1.13.8.aar")
-if (!sherpaAar.exists()) {
-    sherpaAar.parentFile.mkdirs()
-    val tmp = file("libs/sherpa-onnx-1.13.8.aar.part")
-    uri("https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-1.13.8.aar").toURL()
-        .openStream().use { input -> tmp.outputStream().use { input.copyTo(it) } }
-    val sha = MessageDigest.getInstance("SHA-256").digest(tmp.readBytes()).joinToString("") { "%02x".format(it) }
-    check(sha == "633c24321e06b1fe79feafa03ea16cbc0f8a286641e2da3559bac91bdb13bd96") { "sherpa-onnx AAR: sha256 не совпал ($sha)" }
-    tmp.renameTo(sherpaAar)
 }
 
 android {
@@ -58,7 +44,8 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation(files("libs/sherpa-onnx-1.13.8.aar"))
+    // Распознавание — как в Гига Писаре для Android: GigaAM v3 e2e CTC в ONNX Runtime.
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.30.0")
     val camera = "1.4.1"
     implementation("androidx.camera:camera-core:$camera")
     implementation("androidx.camera:camera-camera2:$camera")

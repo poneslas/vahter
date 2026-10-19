@@ -18,9 +18,8 @@ import ru.poneslas.tasya.notify.Notifier
 import kotlinx.coroutines.launch
 import ru.poneslas.tasya.assistant.Sheet
 import ru.poneslas.tasya.assistant.SheetEvents
-import ru.poneslas.tasya.voice.Models
-import ru.poneslas.tasya.voice.Recognizer
-import ru.poneslas.tasya.voice.SherpaRecognizer
+import ru.poneslas.tasya.pisar.model.ModelDownload
+import ru.poneslas.tasya.voice.Voice
 
 /** Один процесс: сервис помощника, лист и приложение делят один разговор. */
 class App : Application() {
@@ -29,11 +28,8 @@ class App : Application() {
         private set
     lateinit var secrets: Secrets
         private set
-    lateinit var models: Models
+    lateinit var voice: Voice
         private set
-    lateinit var sherpa: SherpaRecognizer
-        private set
-    val recognizer: Recognizer get() = sherpa
 
     /** Приложение на экране — уведомление об ответе не нужно. */
     val appVisible = MutableStateFlow(false)
@@ -63,24 +59,16 @@ class App : Application() {
         secrets = Secrets(this)
         Notifier.init(this)
         conversation = Conversation(this, scope, Store(this), ::brainFor) { mode, text -> Notifier.answer(this, mode, text) }
-        models = Models(this, scope)
-        sherpa = SherpaRecognizer(this, models, scope)
-        // Ранний старт: AudioRecord создаём в onPrepareToShowSession, запускаем только на запись (Архитектура 3).
-        Sheet.prepareHooks += { sherpa.prepare() }
+        voice = Voice(this, scope)
         // Запись останавливаем сами: после hide() система микрофон не выключает.
-        SheetEvents.onHide = { sherpa.cancel() }
-        warmUp()
+        SheetEvents.onHide = { voice.cancel() }
+        voice.warmUp()
     }
 
-    /** Прогрев распознавания, когда модели на месте (после загрузки — тоже). */
-    fun warmUp() { scope.launch { runCatching { sherpa.warmUp() } } }
-
-    fun voiceStatus(): String = when (val s = models.status.value) {
-        Models.Status.Ready -> if (sherpa.available) "На телефоне · ${ru.poneslas.tasya.voice.ModelFiles.totalBytes / 1_048_576} МБ · готово" else "На телефоне · прогревается"
-        is Models.Status.Downloading -> if (s.waitingNetwork) "Ждёт сеть: ${s.percent} %" else "Качается: ${s.percent} %"
-        Models.Status.Verifying -> "Проверяю файл…"
-        is Models.Status.Failed -> "Ошибка: ${s.message}"
-        Models.Status.None -> "Не скачано · ${ru.poneslas.tasya.voice.ModelFiles.totalBytes / 1_048_576} МБ"
+    fun voiceStatus(): String = when (val s = ModelDownload.state.value) {
+        is ModelDownload.State.Running -> "Загрузка модели: ${s.percent} %"
+        is ModelDownload.State.Failed -> "Не скачалась — попробуйте ещё раз"
+        else -> if (voice.installed.value) "GigaAM на телефоне · работает без интернета" else "Не скачано · 225 МБ"
     }
 
     companion object {

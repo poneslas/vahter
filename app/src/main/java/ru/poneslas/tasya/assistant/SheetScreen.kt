@@ -81,7 +81,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 LiveLine(live)
                 Composer(
                     state = state,
-                    recognizer = app.recognizer,
+                    voice = app.voice,
                     onDraft = app.conversation::setDraft,
                     onSend = { text, via -> app.conversation.send(text, via) },
                     onSelectMode = app.conversation::selectMode,

@@ -46,8 +46,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import ru.poneslas.tasya.App
 import ru.poneslas.tasya.core.Brains
-import ru.poneslas.tasya.voice.ModelFiles
-import ru.poneslas.tasya.voice.Models
+import ru.poneslas.tasya.pisar.model.ModelDownload
 import ru.poneslas.tasya.ui.Ink
 import android.app.role.RoleManager
 
@@ -59,39 +58,35 @@ fun VoicePage(onBack: () -> Unit) {
     ScrollPage { VoiceBlock() }
 }
 
+/** Скачивание голоса — как шаг «Модель» у Гига Писаря для Android: одна полоса, «Попробуйте здесь» в конце. */
 @Composable
 fun VoiceBlock() {
     val app = App.instance
-    val status by app.models.status.collectAsState()
-    var tick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(status) { if (status == Models.Status.Ready) { app.warmUp(); while (!app.sherpa.available) { delay(400); tick++ } ; tick++ } }
-    val mb = ModelFiles.totalBytes / 1_048_576
-    Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        when (val s = status) {
-            Models.Status.None -> {
-                Text("Один раз скачать $mb МБ. Голос распознаётся на телефоне и работает без интернета.", fontSize = 15.sp, color = Ink.soft)
-                if (app.models.isMetered()) Note("Сейчас мобильная сеть. Можно скачать и так или подождать Wi-Fi — загрузка продолжится с того же места.")
-                PrimaryButton("Скачать · $mb МБ") { app.models.start() }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val state by ModelDownload.state.collectAsState()
+    val installed by app.voice.installed.collectAsState()
+    val running = state as? ModelDownload.State.Running
+    val error = (state as? ModelDownload.State.Failed)?.reason
+    Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        when {
+            installed -> {
+                Text("Всё готово", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
+                Text("Зажмите микрофон, скажите что-нибудь и отпустите.", fontSize = 15.sp, color = Ink.soft)
+                ru.poneslas.tasya.ui.TryVoice()
             }
-            is Models.Status.Downloading -> {
-                Text(if (s.waitingNetwork) "Ждёт сеть — продолжит с того же места: ${s.percent} %" else "Качается: ${s.percent} % из $mb МБ", fontSize = 15.sp, color = Ink.ink)
-                Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Ink.line)) {
-                    Box(Modifier.fillMaxWidth(s.percent / 100f).height(6.dp).background(Ink.local))
+            running != null -> {
+                Text("GigaAM, 225 МБ. Скачивается один раз, потом голос распознаётся без интернета. Лучше по Wi-Fi.", fontSize = 15.sp, color = Ink.soft)
+                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Ink.line)) {
+                    Box(Modifier.fillMaxWidth(running.percent / 100f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(Ink.ink))
                 }
-                Text("Можно закрыть экран — докачается, пока приложение живо, иначе продолжит при следующем открытии.", fontSize = 13.sp, color = Ink.soft)
-                TextButton("Остановить") { app.models.cancel() }
+                Text("Загрузка модели: ${running.percent} %", fontSize = 14.sp, color = Ink.ink)
             }
-            Models.Status.Verifying -> Text("Проверяю файл…", fontSize = 15.sp, color = Ink.ink)
-            Models.Status.Ready -> {
-                Note(if (app.sherpa.available) "Готово: распознавание на телефоне, $mb МБ." else "Скачано. Прогреваю — несколько секунд…", ok = app.sherpa.available.takeIf { it })
-                TextButton("Удалить модель") { app.models.delete() }
-            }
-            is Models.Status.Failed -> {
-                Note(s.message, ok = false)
-                PrimaryButton("Скачать заново") { app.models.start() }
+            else -> {
+                Text("GigaAM, 225 МБ. Скачивается один раз, потом голос распознаётся без интернета. Лучше по Wi-Fi.", fontSize = 15.sp, color = Ink.soft)
+                PrimaryButton(if (error == null) "Скачать" else "Попробовать ещё раз") { ModelDownload.start(ctx) }
+                if (error != null) Text("Ошибка загрузки: $error", fontSize = 14.sp, color = Ink.danger)
             }
         }
-        @Suppress("UNUSED_EXPRESSION") tick
     }
 }
 
@@ -178,23 +173,19 @@ private fun Chip(label: String, on: Boolean, locked: Boolean = false, onClick: (
 /** Надиктовать в промпт: нажать — пишет, нажать ещё раз — текст дописывается в конец. */
 @Composable
 private fun Dictate(onText: (String) -> Unit) {
-    val app = App.instance
-    val rec = app.recognizer
+    // Та же кнопка Писаря, что в листе: зажать и говорить, вверх — без рук; текст дописывается в конец.
+    var msg by remember { mutableStateOf<String?>(null) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
-    var on by remember { mutableStateOf(false) }
-    val partial by rec.partial.collectAsState()
-    val ok = rec.available && ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(if (on) Ink.danger else Ink.ink).clickable(enabled = ok) {
-            if (!on) { rec.start(); on = true }
-            else { on = false; scope.launch { rec.stop()?.takeIf { it.isNotBlank() }?.let(onText) } }
-        }, contentAlignment = Alignment.Center) { Text(if (on) "■" else "🎙", color = androidx.compose.ui.graphics.Color.White, fontSize = 16.sp) }
-        Text(when { !ok -> "Надиктовать можно, когда голос скачан и микрофон разрешён"; on -> partial.ifEmpty { "Слушаю… нажмите ещё раз — допишется" }
-            else -> "Нажмите и надиктуйте — допишется в конец. Можно поправить руками." },
-            fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(start = 12.dp))
+    Column(Modifier.padding(start = 16.dp, end = 4.dp)) {
+        ru.poneslas.tasya.ui.VoiceRow(
+            voice = App.instance.voice,
+            field = { Text(msg ?: "Зажмите и надиктуйте — допишется в конец. Можно поправить руками.", fontSize = 13.sp, color = Ink.soft) },
+            trailing = null,
+            onText = { msg = null; onText(it) },
+            onMessage = { msg = it },
+            onNeedMic = { (ctx as? android.app.Activity)?.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) },
+        )
     }
-    DisposableEffect(Unit) { onDispose { if (on) rec.cancel() } }
 }
 
 /**
@@ -224,10 +215,9 @@ fun Onboarding(activity: MainActivity, onDone: () -> Unit) {
                 }
                 2 -> {
                     Title("Голос на телефоне")
-                    VoiceBlock()
                     val mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                    if (!mic) Item("Микрофон", "Нужен для голосового ввода — разрешите сейчас") { activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) }
-                    else Note("Микрофон разрешён.", ok = true)
+                    if (!mic) Item("Микрофон", "Нужен, чтобы слышать вас — разрешите сейчас") { activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) }
+                    VoiceBlock()
                 }
                 3 -> {
                     Title("Мозг")

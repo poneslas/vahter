@@ -21,12 +21,11 @@ class DebugAsr : BroadcastReceiver() {
         val pending = goAsync()
         app.scope.launch {
             try {
-                app.sherpa.warmUp()
                 val bytes = File(context.filesDir.parentFile, path).readBytes()
                 val pcm = ByteBuffer.wrap(bytes, 44, bytes.size - 44).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
-                val audio = FloatArray(pcm.remaining()) { pcm.get(it) / 32768f }
+                val audio = ShortArray(pcm.remaining()) { pcm.get(it) }
                 val t = System.currentTimeMillis()
-                val text = app.sherpa.decodeForTest(audio)
+                val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.voice.transcribeForTest(audio) }
                 Log.i("TasyaAsr", "${audio.size / 16000.0} с → ${System.currentTimeMillis() - t} мс: $text")
             } catch (e: Throwable) {
                 Log.e("TasyaAsr", "ошибка", e)

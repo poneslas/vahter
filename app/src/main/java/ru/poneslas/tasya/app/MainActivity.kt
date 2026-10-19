@@ -141,7 +141,7 @@ class MainActivity : ComponentActivity() {
         Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach, modifier = Modifier.weight(1f).fillMaxWidth())
         LiveLine(live)
         Composer(
-            state = state, recognizer = app.recognizer,
+            state = state, voice = app.voice,
             onDraft = app.conversation::setDraft,
             onSend = { t, v -> app.conversation.send(t, v) },
             onSelectMode = app.conversation::selectMode,

@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Тася</string>
+    <!-- Гига Писарь для Android: запись и модель -->
+    <string name="button_idle">Голосовой ввод</string>
+    <string name="button_recording">Идёт запись</string>
+    <string name="button_processing">Распознавание</string>
+    <string name="button_insert">Отправить</string>
+    <string name="bar_cancel">Отмена</string>
+    <string name="download_no_network">Телефон не может связаться с сервером. Проверьте интернет: Wi-Fi может быть подключён без доступа в сеть. Если включён «Частный DNS», поставьте «Автоматически» или попробуйте мобильный интернет.</string>
+    <string name="model_verification_failed">Модель скачана, но проверка установки не пройдена</string>
 </resources>
