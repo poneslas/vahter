@@ -90,7 +90,7 @@ object Guide {
         fun ms(v: Double?) = v?.let { "${it.toLong()} мс" } ?: "—"
         return when (id) {
             "П4" -> {
-                val buf = m("early_show_to_first_buffer_ms")
+                val buf = listOfNotNull(m("pre_show_to_first_buffer_ms"), m("early_show_to_first_buffer_ms")).minOrNull()
                 val zeros = m("early_first300_zero_fraction")
                 "Запись начинается через ${ms(buf?.coerceAtLeast(0.0))} после появления листа (цель — до 100)" +
                     (zeros?.let { if (it < 0.9) "; начало записи не пустое" else "; начало записи пустое" } ?: "")
@@ -108,6 +108,25 @@ object Guide {
             }
             "П25" -> if (r.status == Status.FAIL) "Ключ API не расшифровывается" else "Ключ API шифруется и расшифровывается"
             else -> r.summary
+        }
+    }
+
+    /** Шаги, которые прошли не полностью (кроме ждущего обновления), — по порядку. */
+    fun notPassed() = allSteps.filter { s -> Results.get(s.id).status in setOf(Status.FAIL, Status.PARTIAL) && s.id != "Г7" }
+
+    /** Повторить все непрошедшие шаги подряд. */
+    fun retryNotPassed(ctx: Context) {
+        if (job?.isActive == true || Runner.running.value != null) return
+        val steps = notPassed()
+        job = App.scope.launch {
+            try {
+                for (s in steps) {
+                    _current.value = s
+                    Runner.runAwait(ctx, Registry.probe(s.id))
+                }
+            } finally {
+                _current.value = null
+            }
         }
     }
 

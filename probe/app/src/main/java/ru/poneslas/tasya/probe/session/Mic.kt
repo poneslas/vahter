@@ -35,12 +35,10 @@ data class MicStats(
 
 /** Запись 16 кГц моно [ms] миллисекунд. Блокирующее чтение — на IO. */
 @SuppressLint("MissingPermission")
-suspend fun recordFor(ctx: Context, ms: Long): MicStats = withContext(Dispatchers.IO) {
-    val rate = 16_000
+suspend fun recordFor(ctx: Context, ms: Long, pre: AudioRecord? = null): MicStats = withContext(Dispatchers.IO) {
     val tStart = SystemClock.uptimeMillis()
-    val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-    val rec = try {
-        AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, rate))
+    val rec = pre ?: try {
+        newRecord()
     } catch (t: Throwable) {
         return@withContext MicStats(false, "${t.javaClass.simpleName}: ${t.message}", tStart, null, 0.0, 1.0, null, 0, -1)
     }
@@ -94,6 +92,17 @@ suspend fun recordFor(ctx: Context, ms: Long): MicStats = withContext(Dispatcher
     } finally {
         rec.release()
     }
+}
+
+/**
+ * AudioRecord 16 кГц моно, созданный, но не запущенный: индикатор микрофона не горит — он загорается
+ * на startRecording [AOSP: AppOps OP_RECORD_AUDIO start]. Так «прогретый» микрофон держится без нарушения приватности.
+ */
+@SuppressLint("MissingPermission")
+fun newRecord(): AudioRecord {
+    val rate = 16_000
+    val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+    return AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, rate))
 }
 
 fun importance(): Int = ActivityManager.RunningAppProcessInfo().also { ActivityManager.getMyMemoryState(it) }.importance

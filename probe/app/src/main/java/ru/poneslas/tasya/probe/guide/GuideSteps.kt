@@ -44,7 +44,11 @@ object GuideModule : Module {
     override val probes = listOf(ButtonStep, CameraButtonStep, LockStep, PickStep, AnswerOffStep, SideKeyStep, UpdateStep)
 
     override val actions = listOf(
-        SheetAction("guide_unlock", "Разблокировать") { s -> UnlockBus.start(s) },
+        // На S24 окна, запущенные из листа, открываются под ним — экран разблокировки тоже: сначала прячем лист.
+        SheetAction("guide_unlock", "Разблокировать") { s ->
+            UnlockBus.tAction = android.os.SystemClock.uptimeMillis()
+            HideFirst.launch(s, Intent(s.context, ru.poneslas.tasya.probe.session.UnlockActivity::class.java))
+        },
         SheetAction("guide_photo", "Выбрать фото") { s ->
             HideFirst.launch(s, Intent(s.context, PickerTrampolineActivity::class.java).putExtra("kind", "photo"))
         },
@@ -146,6 +150,7 @@ object LockStep : Probe("Г3", "Заблокированный экран", "Л�
         } finally {
             Sheet.showGroups(null)
         }
+        log("unlock", u?.let { "${it.result}, экран через ${it.tCreate - it.tAction} мс, итог через ${it.tResult - it.tAction} мс" } ?: "нет события")
         val back = if (u?.result == "succeeded") withTimeoutOrNull(4000) { Sheet.opens.first() } else null
         delay(500)
         Sheet.close()
@@ -153,7 +158,7 @@ object LockStep : Probe("Г3", "Заблокированный экран", "Л�
             append("Лист на блокировке за ${pressMs(r)} мс")
             append("; микрофон ${if (micOk) "пишет" else "не пишет"}")
             append("; ключ API ${if (keyOk) "расшифрован" else if (keys.isEmpty()) "не проверен (нет ключей)" else "НЕ расшифрован"}")
-            append("; разблокировка ${if (u?.result == "succeeded") "прошла" else "не прошла"}")
+            append("; разблокировка ${if (u?.result == "succeeded") "прошла" else "не прошла (${u?.result ?: "нет ответа"})"}")
             if (u?.result == "succeeded") append(", лист ${if (back != null) "вернулся" else "не вернулся"}")
         })
         return when {
@@ -229,6 +234,7 @@ object AnswerOffStep : Probe("Г5", "Ответ при выключенном э
 
 object SideKeyStep : Probe("Г6", "Видно ли настройку кнопки", "Может ли приложение прочитать, что назначено на удержание боковой кнопки, — чтобы предупредить «кнопка открывает Bixby».", needsHuman = true) {
     override suspend fun ProbeScope.run(): Status {
+        log("side_key_screens", SideKeyScreen.candidates(ctx).joinToString { it.className }.ifEmpty { "не нашлось" })
         val before = snapshot(ctx)
         openSettings(ctx)
         if (ask("Смените действие удержания боковой кнопки на любое другое и вернитесь сюда.", listOf("Готово", "Пропустить")) != "Готово") {
@@ -250,8 +256,7 @@ object SideKeyStep : Probe("Г6", "Видно ли настройку кнопк
     }
 
     private fun openSettings(ctx: Context) {
-        val i = Components.get(ctx, "side_key")?.let { Intent().setComponent(it) } ?: Intent(Settings.ACTION_SETTINGS)
-        runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        runCatching { ctx.startActivity(SideKeyScreen.intent(ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
     /** Все настройки, видимые приложению: system, secure, global. */
@@ -266,6 +271,27 @@ object SideKeyStep : Probe("Г6", "Видно ли настройку кнопк
         }
         return out
     }
+}
+
+/**
+ * Экран «Боковая кнопка» в настройках Samsung. Публичного интента нет, имя экрана не угадываем —
+ * ищем среди открытых экранов приложения «Настройки» по имени (SideKey, FunctionKey…). Не нашли — корень настроек.
+ */
+object SideKeyScreen {
+    private val name = Regex("side.?key|function.?key|side.?button|power.?key", RegexOption.IGNORE_CASE)
+
+    fun candidates(ctx: Context): List<android.content.ComponentName> = runCatching {
+        val pm = ctx.packageManager
+        val acts = pm.getPackageInfo("com.android.settings", android.content.pm.PackageManager.GET_ACTIVITIES).activities.orEmpty()
+        acts.filter { it.exported && name.containsMatchIn(it.name) }
+            .sortedBy { if (Regex("settings", RegexOption.IGNORE_CASE).containsMatchIn(it.name.substringAfterLast('.'))) 0 else 1 }
+            .map { android.content.ComponentName(it.packageName, it.name) }
+    }.getOrDefault(emptyList())
+
+    fun intent(ctx: Context): Intent =
+        Components.get(ctx, "side_key")?.let { Intent().setComponent(it) }
+            ?: candidates(ctx).firstOrNull()?.let { Intent().setComponent(it) }
+            ?: Intent(Settings.ACTION_SETTINGS)
 }
 
 object UpdateStep : Probe("Г7", "После обновления", "После установки новой версии роль помощника и ключ API на месте.", needsHuman = true) {

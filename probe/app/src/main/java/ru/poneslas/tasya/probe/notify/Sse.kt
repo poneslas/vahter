@@ -36,37 +36,65 @@ object Sse {
     fun start(id: String, variant: String): Run = Run(id, variant).also { runs[id] = it }
 
     /**
-     * Поток без своего сервера: httpbin.org/drip отдаёт [seconds] байт по одному в секунду —
-     * как ответ, который приходит частями. Один байт = одна «часть».
+     * Ответ без своего сервера: [seconds] коротких запросов подряд, по одному в секунду, к
+     * connectivitycheck.gstatic.com/generate_204 — им сам Android проверяет интернет, он надёжен.
+     * httpbin.org оказался ненадёжным (19.10): медленный поток обрывался через ~17 с и на S24, и на эмуляторе.
+     * Короткие запросы проверяют главное: процесс жив и ходит в сеть после закрытия листа.
+     * Одна часть = один успешный запрос; ошибки отдельных запросов считаются пропусками.
      */
     private fun readDrip(ctx: Context, run: Run, seconds: Int, cancelled: () -> Boolean): Boolean {
+        var lastAt = SystemClock.uptimeMillis()
+        var fails = 0
+        try {
+            for (i in 1..seconds) {
+                if (cancelled()) break
+                val t0 = SystemClock.uptimeMillis()
+                val ok = runCatching {
+                    val c = URL("https://connectivitycheck.gstatic.com/generate_204").openConnection() as HttpURLConnection
+                    c.connectTimeout = 8_000
+                    c.readTimeout = 8_000
+                    c.useCaches = false
+                    try { c.responseCode == 204 } finally { c.disconnect() }
+                }.onFailure { if (run.error == null) run.error = "${it.javaClass.simpleName}: ${it.message}" }.getOrDefault(false)
+                val now = SystemClock.uptimeMillis()
+                if (ok) {
+                    if (run.events > 0) run.maxGapMs = maxOf(run.maxGapMs, now - lastAt)
+                    lastAt = now
+                    run.events++
+                } else {
+                    fails++
+                    run.skipped++
+                }
+                Thread.sleep((1000 - (now - t0)).coerceAtLeast(0))
+            }
+            run.done = run.events >= seconds * 9 / 10
+            if (!run.done && run.error == null) run.error = "успешных запросов ${run.events} из $seconds"
+        } finally {
+            run.finished = true
+            run.finishedAt = SystemClock.uptimeMillis()
+        }
+        Log.i(TAG, "requests ${run.id}: успешно ${run.events} из $seconds, ошибок $fails")
+        if (run.done) run.notified = AnswerNotifier.postAnswer(ctx, "Ответ готов (${run.variant}): ${run.events} частей")
+        return run.done
+    }
+
+    /** Контроль: один медленный поток (httpbin drip) — обрывается ли он сам по себе, без закрытия листа. */
+    fun readLongStream(seconds: Int): Pair<Int, String?> {
+        var n = 0
+        var err: String? = null
         var conn: HttpURLConnection? = null
         try {
             conn = URL("https://httpbin.org/drip?duration=$seconds&numbytes=$seconds&delay=0").openConnection() as HttpURLConnection
             conn.connectTimeout = 10_000
             conn.readTimeout = 20_000
             val input = conn.inputStream
-            var lastAt = SystemClock.uptimeMillis()
-            while (!cancelled()) {
-                val b = input.read()
-                if (b < 0) break
-                val now = SystemClock.uptimeMillis()
-                if (run.events > 0) run.maxGapMs = maxOf(run.maxGapMs, now - lastAt)
-                lastAt = now
-                run.events++
-            }
-            run.done = run.events >= seconds
-            if (!run.done) run.error = "поток оборвался на ${run.events} из $seconds"
+            while (input.read() >= 0) n++
         } catch (t: Throwable) {
-            run.error = "${t.javaClass.simpleName}: ${t.message}"
-            Log.w(TAG, "drip ${run.id}", t)
+            err = "${t.javaClass.simpleName}: ${t.message}"
         } finally {
             conn?.disconnect()
-            run.finished = true
-            run.finishedAt = SystemClock.uptimeMillis()
         }
-        if (run.done) run.notified = AnswerNotifier.postAnswer(ctx, "Ответ готов (${run.variant}): ${run.events} частей")
-        return run.done
+        return n to err
     }
 
     /** Блокирующее чтение потока. [seconds] — длина ответа на сервере. */

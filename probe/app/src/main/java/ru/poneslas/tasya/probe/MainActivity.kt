@@ -189,7 +189,7 @@ class MainActivity : ComponentActivity() {
                     SetupRow("Микрофон, камера, уведомления", perms, "Разрешить") { permissions.launch(corePermissions) }
                     SetupRow("Батарея без ограничений", battery, "Разрешить") { requestBatteryUnrestricted() }
                     SetupRow("Боковая кнопка: удержание → «Цифровой помощник»", null, "Открыть") {
-                        runCatching { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                        runCatching { startActivity(ru.poneslas.tasya.probe.guide.SideKeyScreen.intent(this@MainActivity)) }
                     }
                     Text(
                         "Путь: Дополнительные функции → Боковая кнопка → Нажатие и удержание.",
@@ -217,6 +217,10 @@ class MainActivity : ComponentActivity() {
                     !ready -> BigButton("Сначала подготовка", enabled = false) {}
                     !Guide.partDone(p1) -> BigButton(if (Guide.nextIn(p1) == p1.steps.first()) "Начать часть 1" else "Продолжить часть 1") { Guide.start(this@MainActivity, p1) }
                     !Guide.partDone(p2) -> BigButton(if (Guide.nextIn(p2) == p2.steps.first()) "Начать часть 2" else "Продолжить: ${Guide.nextIn(p2)!!.title}") { Guide.start(this@MainActivity, p2) }
+                    Guide.notPassed().isNotEmpty() -> {
+                        BigButton("Повторить непрошедшие: ${Guide.notPassed().size}") { Guide.retryNotPassed(this@MainActivity) }
+                        TextButton({ screen.value = "results" }, Modifier.align(Alignment.CenterHorizontally)) { Text("Посмотреть итог") }
+                    }
                     else -> BigButton("Посмотреть итог") { screen.value = "results" }
                 }
             }

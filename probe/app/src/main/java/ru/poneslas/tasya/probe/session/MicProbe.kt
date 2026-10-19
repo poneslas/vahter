@@ -68,6 +68,36 @@ object MicProbe : Probe(
             delay(500)
         }
 
+        // 0б. Заранее созданный AudioRecord: запись стартует в onPrepareToShowSession — сколько до первого буфера.
+        val preShowToBuf = mutableListOf<Double>()
+        repeat(5) {
+            val pre = runCatching { newRecord() }.getOrNull()
+            if (pre == null) { log("pre", "AudioRecord не создался"); return@repeat }
+            delay(1500) // «лежит без дела»: индикатор микрофона в это время гореть не должен
+            val started = CompletableDeferred<kotlinx.coroutines.Deferred<MicStats>>()
+            val hook: () -> Unit = {
+                if (!started.isCompleted) started.complete(ru.poneslas.tasya.probe.App.scope.async { recordFor(ctx, 1500, pre) })
+            }
+            Sheet.prepareHooks += hook
+            val rec = Sheet.open()
+            Sheet.prepareHooks -= hook
+            val job = withTimeoutOrNull(1000) { started.await() }
+            if (rec == null || job == null) {
+                runCatching { pre.release() }
+                log("pre", "не открылось")
+            } else {
+                val st = job.await()
+                log("pre", st.describe())
+                st.tFirstBuffer?.let {
+                    metric("pre_show_to_first_buffer_ms", it - rec.tShow)
+                    metric("pre_start_to_first_buffer_ms", it - st.tStart)
+                    preShowToBuf += (it - rec.tShow).toDouble()
+                }
+            }
+            Sheet.close()
+            delay(500)
+        }
+
         // 1. Лист показан
         val open = Sheet.open()
         if (open == null) {
@@ -111,6 +141,7 @@ object MicProbe : Probe(
         val earlyOk = early.isNotEmpty() && early.all { it.ok && it.first300Zeros < 0.9 }
         val earlyFast = earlyShowToBuf.isNotEmpty() && median(earlyShowToBuf) <= 100
         val s = buildString {
+            if (preShowToBuf.isNotEmpty()) append("заранее созданный AudioRecord: onShow→буфер медиана ${"%.0f".format(median(preShowToBuf))} мс; ")
             append("ранний старт: ${early.size}/5")
             if (earlyShowToBuf.isNotEmpty()) append(", onShow→буфер медиана ${"%.0f".format(median(earlyShowToBuf))} мс")
             if (early.isNotEmpty()) append(", первые 300 мс нулей ${early.joinToString("/") { "%.0f".format(it.first300Zeros * 100) }} %")
