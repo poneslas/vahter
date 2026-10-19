@@ -10,6 +10,17 @@
 
 Тестовый телефон — Samsung Galaxy S24 Ultra, One UI 9.5, Android 16.
 
+## Сборка и установка
+
+```
+./gradlew :app:assembleDebug
+adb install -r -g app/build/outputs/apk/debug/app-debug.apk
+adb shell cmd role add-role-holder android.app.role.ASSISTANT ru.poneslas.tasya.dev
+adb shell input keyevent KEYCODE_ASSIST        # открыть лист
+```
+
+Отладочная сборка ставится как отдельное приложение `ru.poneslas.tasya.dev`. SDK — `~/Dev/.toolchains/android-sdk` (`local.properties`), JDK 21.
+
 ## Папки
 
 ```

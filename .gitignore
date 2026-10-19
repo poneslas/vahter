@@ -6,3 +6,9 @@ upstream/
 .claude/settings.local.json
 .DS_Store
 .claude/worktrees/
+# сборка
+build/
+.gradle/
+.kotlin/
+local.properties
+*.apk

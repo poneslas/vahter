@@ -1,0 +1,287 @@
+package ru.poneslas.tasya.ui
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import ru.poneslas.tasya.core.Conversation
+import ru.poneslas.tasya.core.FeedItem
+import ru.poneslas.tasya.voice.Recognizer
+import kotlin.math.abs
+import kotlin.math.hypot
+
+/** Лента разговора текущего режима. Пустой режим — подсказка из поля режима (hint). */
+@Composable
+fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, modifier: Modifier = Modifier) {
+    val list = rememberLazyListState()
+    LaunchedEffect(state.feed.size, (state.feed.lastOrNull() as? FeedItem.Ai)?.text?.length) {
+        if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1)
+    }
+    if (state.feed.isEmpty()) {
+        Box(modifier.padding(horizontal = 18.dp, vertical = 10.dp), contentAlignment = Alignment.BottomStart) {
+            Text(state.current.hint, color = Ink.soft, fontSize = 15.sp, lineHeight = 21.sp)
+        }
+        return
+    }
+    LazyColumn(
+        modifier, state = list,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(state.feed, key = { it.id }) { item ->
+            when (item) {
+                is FeedItem.Me -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    Column(
+                        Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp))
+                            .background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Text(item.text, fontSize = 15.sp, color = Ink.ink)
+                        Text(item.via, fontSize = 11.sp, color = Ink.faint, modifier = Modifier.align(Alignment.End))
+                    }
+                }
+                is FeedItem.Ai -> Row(verticalAlignment = Alignment.Top) {
+                    Box(Modifier.padding(top = 8.dp, end = 8.dp).size(7.dp).clip(CircleShape).background(Ink.server))
+                    Text(item.text + if (item.done) "" else " ▍", fontSize = 15.sp, lineHeight = 21.sp, color = Ink.ink)
+                }
+                is FeedItem.Act -> Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.surf)
+                        .border(1.dp, Ink.line, RoundedCornerShape(14.dp)).padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Ink.localT), contentAlignment = Alignment.Center) {
+                        Text(item.icon, fontSize = 18.sp)
+                    }
+                    Column(Modifier.padding(horizontal = 10.dp).weight(1f)) {
+                        Text(item.title, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, color = Ink.ink)
+                        Text(item.subtitle, fontSize = 12.sp, color = Ink.soft)
+                    }
+                    item.button?.let { b ->
+                        Text(b, color = Color(0xFF9A6A00), fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
+                            modifier = Modifier.clickable { onAct(item) }.padding(6.dp))
+                    }
+                }
+                is FeedItem.Err -> Text(
+                    item.text, color = Ink.danger, fontSize = 14.sp,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink.dangerT).padding(10.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Вкладки режимов под полем ввода — видны всегда, последняя «+» (Продукт 5.17). */
+@Composable
+fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () -> Unit) {
+    LazyRow(
+        Modifier.fillMaxWidth().padding(bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
+    ) {
+        items(state.tabs, key = { it.id }) { m ->
+            val on = m.id == state.mode
+            Text(
+                m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                color = if (on) Color.White else Ink.soft,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Color.Transparent)
+                    .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+        item {
+            Box(
+                Modifier.size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClick = onAdd),
+                contentAlignment = Alignment.Center,
+            ) { Text("+", fontSize = 17.sp, color = Ink.soft) }
+        }
+    }
+}
+
+/** Запись push-to-talk: зажал — пишет, отпустил — ушло; вверх — замочек; влево — отмена (Продукт 5.2). */
+enum class RecMode { HOLD, LOCKED }
+
+/**
+ * Строка ввода: поле, большая кнопка (микрофон / «Отправить», если в поле есть текст) и вкладки режимов.
+ * Жесты — как в прототипе: направление выбирается по первым 8 dp и держится до отпускания.
+ */
+@Composable
+fun Composer(
+    state: Conversation.State,
+    recognizer: Recognizer,
+    onDraft: (String) -> Unit,
+    onSend: (String, String) -> Unit,
+    onSelectMode: (String) -> Unit,
+    onAddMode: () -> Unit,
+    onLive: (String?) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var rec by remember { mutableStateOf<RecMode?>(null) }
+    var dx by remember { mutableStateOf(0f) }
+    var dy by remember { mutableStateOf(0f) }
+    var t0 by remember { mutableLongStateOf(0L) }
+    val density = LocalDensity.current
+    val lockPx = with(density) { 45.dp.toPx() }
+    val cancelPx = with(density) { 70.dp.toPx() }
+    val axisPx = with(density) { 8.dp.toPx() }
+    val partial by recognizer.partial.collectAsState()
+    var now by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(rec) { while (rec != null) { now = System.currentTimeMillis(); delay(250) } }
+
+    fun finish(how: String) {
+        val mode = rec ?: return
+        rec = null; dx = 0f; dy = 0f
+        if (how == "cancel") { recognizer.cancel(); onLive(null); return }
+        scope.launch {
+            val text = recognizer.stop()
+            if (text.isBlank()) {
+                onLive(if (recognizer.available) "Ничего не расслышал" else "Распознавание речи появится в следующей сборке — пока пишите")
+                delay(2500); onLive(null); return@launch
+            }
+            onLive(null)
+            val full = (state.draft + " " + text).trim()
+            onSend(full, "голос")
+        }
+    }
+
+    LaunchedEffect(rec, partial) {
+        onLive(when (rec) {
+            RecMode.HOLD -> "Запись · отпустите — отправится|" + partial.ifEmpty { "Слушаю…" }
+            RecMode.LOCKED -> "Запись без рук · кнопка справа — отправить|" + partial.ifEmpty { "Слушаю…" }
+            null -> null
+        })
+    }
+
+    Column(Modifier.background(Ink.paper)) {
+        Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
+                    .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                if (rec != null) {
+                    val sec = ((now - t0) / 1000).coerceAtLeast(0).toInt()
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(9.dp).clip(CircleShape).background(Ink.danger))
+                        Text("  0:%02d".format(sec), fontSize = 14.sp, color = Ink.ink)
+                        Spacer(Modifier.weight(1f))
+                        Text("‹ влево — отмена", fontSize = 13.sp, color = Ink.faint.copy(alpha = (1f - dx / cancelPx).coerceIn(.25f, 1f)),
+                            modifier = Modifier.clickable { finish("cancel") })
+                    }
+                } else {
+                    if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 15.sp)
+                    BasicTextField(
+                        value = state.draft, onValueChange = onDraft,
+                        textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink),
+                        cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            Spacer(Modifier.size(8.dp))
+            val hasText = state.draft.isNotBlank() && rec == null
+            val scale by animateFloatAsState(if (rec == RecMode.HOLD) 1.15f else 1f, label = "mic")
+            Box(
+                Modifier
+                    .offset { IntOffset(-dx.toInt().coerceAtMost(cancelPx.toInt()), -dy.toInt().coerceAtMost(lockPx.toInt())) }
+                    .size((48 * scale).dp).clip(CircleShape)
+                    .background(if (rec == RecMode.HOLD) Ink.local else Ink.ink)
+                    .pointerInput(hasText, rec) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            if (hasText) {
+                                val up = waitForUpOrCancellation()
+                                if (up != null) onSend(state.draft, "клавиатура")
+                                return@awaitEachGesture
+                            }
+                            val start = down.position
+                            if (rec == RecMode.LOCKED) {
+                                // Замочек: круг — «Отправить»; дёрнуть влево — отмена.
+                                var moved = 0f
+                                while (true) {
+                                    val e = awaitPointerEvent(); val c = e.changes.first()
+                                    moved = (start.x - c.position.x).coerceAtLeast(0f); dx = moved
+                                    if (moved > cancelPx) { finish("cancel"); break }
+                                    if (!c.pressed) { if (moved < 12f) finish("send") else dx = 0f; break }
+                                }
+                                return@awaitEachGesture
+                            }
+                            rec = RecMode.HOLD; t0 = System.currentTimeMillis(); recognizer.start()
+                            var axis: Char? = null
+                            while (true) {
+                                val e = awaitPointerEvent(); val c = e.changes.first()
+                                val mx = start.x - c.position.x; val my = start.y - c.position.y
+                                if (axis == null && hypot(mx, my) > axisPx) axis = if (abs(my) >= abs(mx)) 'y' else 'x'
+                                dx = if (axis == 'x') mx.coerceAtLeast(0f) else 0f
+                                dy = if (axis == 'y') my.coerceAtLeast(0f) else 0f
+                                if (axis == 'y' && my > lockPx) { rec = RecMode.LOCKED; dx = 0f; dy = 0f; break }
+                                if (axis == 'x' && mx > cancelPx) { finish("cancel"); break }
+                                if (!c.pressed) {
+                                    if (System.currentTimeMillis() - t0 < 260) { rec = RecMode.LOCKED; dx = 0f; dy = 0f }
+                                    else finish("send")
+                                    break
+                                }
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(if (hasText || rec == RecMode.LOCKED) "↑" else "🎙", color = Color.White, fontSize = 20.sp)
+            }
+        }
+        ModeTabs(state, onSelectMode, onAddMode)
+    }
+}
+
+
+/** Живая строка над полем: статус записи и «караоке». Формат «статус|текст». */
+@Composable
+fun LiveLine(live: String?) {
+    if (live == null) return
+    val (status, text) = live.split("|", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Text(status, fontSize = 12.sp, color = Color(0xFF9A6A00), fontWeight = FontWeight.Medium)
+        if (text.isNotEmpty()) Text(text, fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.Medium, color = Ink.ink)
+    }
+}
