@@ -35,28 +35,60 @@ object UnlockBus {
  * снова открывает лист из сервиса («отложенное действие выполнено»).
  */
 class UnlockActivity : Activity() {
+    private var tCreate = 0L
+    private var locked = false
+    private var requested = false
+    private var retried = false
+    private var finished = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val tCreate = SystemClock.uptimeMillis()
+        tCreate = SystemClock.uptimeMillis()
         setShowWhenLocked(true)
         val km = getSystemService(KeyguardManager::class.java)
-        val locked = km.isKeyguardLocked
+        locked = km.isKeyguardLocked
         Log.i(TAG, "UnlockActivity onCreate locked=$locked secure=${km.isDeviceSecure} через ${tCreate - UnlockBus.tAction} мс")
-        fun done(result: String) {
-            val t = SystemClock.uptimeMillis()
-            Log.i(TAG, "UnlockActivity $result через ${t - UnlockBus.tAction} мс от нажатия")
-            UnlockBus.events.tryEmit(UnlockEvent(result, UnlockBus.tAction, tCreate, t, locked))
-            if (result == "succeeded") {
-                Sheet.service?.showSession(Bundle().apply { putString("src", "unlock") }, 0)
-            }
-            finish()
-            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+    }
+
+    /**
+     * Просим снять блокировку, когда окно получило фокус: на S24 запрос из onCreate отменялся системой
+     * через ~180 мс («cancelled»), человек не успевал приложить палец.
+     */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && !requested) {
+            requested = true
+            request()
         }
-        // [?] если экран не заблокирован, ожидаем немедленный onDismissSucceeded
-        km.requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
+    }
+
+    private fun request() {
+        val tReq = SystemClock.uptimeMillis()
+        Log.i(TAG, "UnlockActivity requestDismissKeyguard через ${tReq - UnlockBus.tAction} мс${if (retried) " (повтор)" else ""}")
+        getSystemService(KeyguardManager::class.java).requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
             override fun onDismissSucceeded() = done("succeeded")
-            override fun onDismissCancelled() = done("cancelled")
+            override fun onDismissCancelled() {
+                // Мгновенная отмена (< 1 с) — не человек; один раз пробуем снова.
+                if (!retried && SystemClock.uptimeMillis() - tReq < 1000) {
+                    retried = true
+                    Log.i(TAG, "UnlockActivity мгновенная отмена — повтор")
+                    window.decorView.postDelayed({ request() }, 300)
+                } else done(if (retried) "cancelled после повтора" else "cancelled")
+            }
             override fun onDismissError() = done("error")
         })
+    }
+
+    private fun done(result: String) {
+        if (finished) return
+        finished = true
+        val t = SystemClock.uptimeMillis()
+        Log.i(TAG, "UnlockActivity $result через ${t - UnlockBus.tAction} мс от нажатия")
+        UnlockBus.events.tryEmit(UnlockEvent(result, UnlockBus.tAction, tCreate, t, locked))
+        if (result == "succeeded") {
+            Sheet.service?.showSession(Bundle().apply { putString("src", "unlock") }, 0)
+        }
+        finish()
+        overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
     }
 }

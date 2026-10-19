@@ -151,7 +151,8 @@ object LockStep : Probe("Г3", "Заблокированный экран", "Л�
             Sheet.showGroups(null)
         }
         log("unlock", u?.let { "${it.result}, экран через ${it.tCreate - it.tAction} мс, итог через ${it.tResult - it.tAction} мс" } ?: "нет события")
-        val back = if (u?.result == "succeeded") withTimeoutOrNull(4000) { Sheet.opens.first() } else null
+        // Лист открывается сразу после успеха — раньше, чем сюда дойдёт событие; смотрим, виден ли он.
+        val back = if (u?.result == "succeeded") withTimeoutOrNull(4000) { Sheet.visible.first { it } } else null
         delay(500)
         Sheet.close()
         summary(buildString {
