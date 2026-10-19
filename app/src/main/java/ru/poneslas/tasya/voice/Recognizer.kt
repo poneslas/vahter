@@ -37,6 +37,8 @@ interface Recognizer {
     val partial: StateFlow<String>
     /** Уровень звука 0..1 — для эквалайзера. */
     val level: StateFlow<Float>
+    /** Микрофон сейчас пишет. Остановили снаружи (лист скрыт, экран погас) — интерфейс сбрасывает запись. */
+    val recording: StateFlow<Boolean>
     fun start()
     /** Остановить и вернуть чистовик. */
     suspend fun stop(): String
@@ -47,6 +49,7 @@ interface Recognizer {
 class NoopRecognizer : Recognizer {
     override val partial = MutableStateFlow("")
     override val level = MutableStateFlow(0f)
+    override val recording = MutableStateFlow(false)
     override val available = false
     override fun start() { partial.value = "" }
     override suspend fun stop(): String = ""
@@ -61,6 +64,7 @@ class NoopRecognizer : Recognizer {
 class SherpaRecognizer(private val context: Context, private val models: Models, private val scope: CoroutineScope) : Recognizer {
     override val partial = MutableStateFlow("")
     override val level = MutableStateFlow(0f)
+    override val recording = MutableStateFlow(false)
     override val available get() = offline != null
 
     private var offline: OfflineRecognizer? = null
@@ -119,6 +123,7 @@ class SherpaRecognizer(private val context: Context, private val models: Models,
         samples.clear()
         stream = online?.createStream("")
         runCatching { rec.startRecording() }.onFailure { return }
+        recording.value = true
         job = scope.launch(Dispatchers.IO) {
             val buf = ShortArray(1600)
             while (isActive) {
@@ -142,6 +147,7 @@ class SherpaRecognizer(private val context: Context, private val models: Models,
     private fun stopMic() {
         job?.cancel(); job = null
         runCatching { record?.stop() }
+        recording.value = false
         level.value = 0f
         stream?.release(); stream = null
     }

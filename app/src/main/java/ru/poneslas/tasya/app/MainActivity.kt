@@ -70,11 +70,20 @@ class MainActivity : ComponentActivity() {
         readIntent(intent)
     }
 
+    private var askMicThenSheet = false
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray, deviceId: Int) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+        if (requestCode == REQ_MIC && askMicThenSheet) { askMicThenSheet = false; collapse() }
+    }
+
     override fun onResume() { super.onResume(); App.instance.appVisible.value = true }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
     private fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
+        // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
+        if (i.getBooleanExtra(EXTRA_ASK_MIC, false)) { askMicThenSheet = true; requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQ_MIC) }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
     }
 
@@ -248,5 +257,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_FROM_SHEET = "from_sheet"
         const val EXTRA_SETTINGS = "settings"
+        const val EXTRA_ASK_MIC = "ask_mic"
+        const val REQ_MIC = 11
     }
 }

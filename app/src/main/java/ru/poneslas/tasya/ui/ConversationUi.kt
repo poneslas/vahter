@@ -184,6 +184,8 @@ fun Composer(
     onSelectMode: (String) -> Unit,
     onAddMode: () -> Unit,
     onLive: (String?) -> Unit,
+    autoListen: kotlinx.coroutines.flow.StateFlow<Int>? = null,
+    onNeedMic: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     var rec by remember { mutableStateOf<RecMode?>(null) }
@@ -211,6 +213,26 @@ fun Composer(
             onLive(null)
             val full = (state.draft + " " + text).trim()
             onSend(full, "голос")
+        }
+    }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    fun micOk(): Boolean {
+        if (context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (onNeedMic != null) onNeedMic() else onLive("Нужен доступ к микрофону|Разрешите в настройках приложения")
+            return false
+        }
+        if (!recognizer.available) { onLive("Распознавание ещё не готово|Настройки → Голос: скачать модель"); scope.launch { delay(3000); onLive(null) }; return false }
+        return true
+    }
+    val micOn by recognizer.recording.collectAsState()
+    LaunchedEffect(micOn) { if (!micOn && rec != null) { rec = null; dx = 0f; dy = 0f; onLive(null) } }
+    // Вызов кнопкой: голосовой режим сразу пишет без рук (замочек).
+    val auto = autoListen?.collectAsState()?.value ?: 0
+    LaunchedEffect(auto) {
+        if (auto > 0 && rec == null && state.draft.isEmpty() &&
+            context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED && recognizer.available) {
+            rec = RecMode.LOCKED; t0 = System.currentTimeMillis(); recognizer.start()
         }
     }
 
@@ -275,6 +297,7 @@ fun Composer(
                                 }
                                 return@awaitEachGesture
                             }
+                            if (!micOk()) { waitForUpOrCancellation(); return@awaitEachGesture }
                             rec = RecMode.HOLD; t0 = System.currentTimeMillis(); recognizer.start()
                             var axis: Char? = null
                             while (true) {

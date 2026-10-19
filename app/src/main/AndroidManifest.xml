@@ -58,6 +58,11 @@
             </intent-filter>
             <meta-data android:name="android.speech" android:resource="@xml/recognition_service" />
         </service>
+        <activity
+            android:name=".assistant.UnlockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <receiver android:name=".notify.OpenSheetReceiver" android:exported="false" />
     </application>
 </manifest>

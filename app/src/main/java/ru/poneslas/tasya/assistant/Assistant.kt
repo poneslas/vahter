@@ -66,6 +66,8 @@ object Sheet {
     val visible = MutableStateFlow(false)
     @Volatile var session: AssistSession? = null
     val prepareHooks = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+    /** Счётчик «начать запись без рук» — меняется при вызове кнопкой. */
+    val autoListen = MutableStateFlow(0)
 
     /** Свернуть приложение обратно в лист (Архитектура 3.1: finish + showSession). */
     fun show(args: Bundle = Bundle()) = service?.showSession(args, 0)
@@ -97,6 +99,7 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
         Sheet.session = this
+        context.registerReceiver(screenOff, android.content.IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onCreateContentView(): View = ComposeView(context).apply {
@@ -108,14 +111,38 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
                 onClose = { hide() },
                 onExpand = { expand() },
                 onSettings = { openApp(settings = true) },
+                onNeedMic = { openApp(settings = false, askMic = true) },
             )
         }
     }
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
+        val app = ru.poneslas.tasya.App.instance
+        val conv = app.conversation
+        val settings = conv.state.value.settings
+        val src = args?.getString("src")
+        // На заблокированном экране по умолчанию ничего не открывается: сначала разблокировка (Продукт 5.7).
+        val locked = context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
+        if (locked && settings.lockScope == ru.poneslas.tasya.core.LockScope.OFF) {
+            runCatching { startAssistantActivity(Intent(context, UnlockActivity::class.java)) }
+            hide()
+            return
+        }
+        // Режим запоминается; после 30 минут без дела кнопка снова открывает Ассистента (Продукт 5.17).
+        if (src == null) {
+            val idle = System.currentTimeMillis() - conv.state.value.saved.lastUse
+            val back = when (settings.returnToAssistant) {
+                ru.poneslas.tasya.core.ReturnToAssistant.ALWAYS -> true
+                ru.poneslas.tasya.core.ReturnToAssistant.NEVER -> false
+                ru.poneslas.tasya.core.ReturnToAssistant.MIN30 -> idle > 30 * 60_000
+            }
+            if (back) conv.selectMode(ru.poneslas.tasya.core.Modes.MAIN)
+        }
         registry.currentState = Lifecycle.State.RESUMED
         Sheet.visible.value = true
+        // Вызов кнопкой (не из уведомления и не из приложения): голосовой режим сразу слушает без рук.
+        if ((src == null || src == "unlock") && conv.state.value.current.primary == ru.poneslas.tasya.core.Primary.VOICE) Sheet.autoListen.value++
     }
 
     override fun onHide() {
@@ -127,12 +154,20 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     }
 
     override fun onDestroy() {
+        runCatching { context.unregisterReceiver(screenOff) }
         registry.currentState = Lifecycle.State.DESTROYED
         store.clear()
         if (Sheet.session === this) Sheet.session = null
         Sheet.visible.value = false
         super.onDestroy()
     }
+
+    /** Экран погас — лист закрываем, запись останавливаем (иначе микрофон пишет в кармане). */
+    private val screenOff = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) { hide() }
+    }
+
+    override fun onLockscreenShown() { hide() }
 
     override fun onComputeInsets(outInsets: Insets) {
         super.onComputeInsets(outInsets)
@@ -143,10 +178,11 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     /** Развернуть лист в приложение: сначала запуск активности, потом hide (на скрытой сессии запуск не работает). */
     private fun expand() = openApp(settings = false)
 
-    private fun openApp(settings: Boolean) {
+    fun openApp(settings: Boolean, askMic: Boolean = false) {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_FROM_SHEET, true)
             .putExtra(MainActivity.EXTRA_SETTINGS, settings)
+            .putExtra(MainActivity.EXTRA_ASK_MIC, askMic)
         runCatching { startAssistantActivity(intent) }
         hide()
     }
