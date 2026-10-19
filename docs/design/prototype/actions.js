@@ -47,6 +47,8 @@ document.addEventListener('click', async e=>{
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.page='mode'; return render() }
   switch(a){
+    case 'intronext': S.introStep=(S.introStep||0)+1; return render();
+    case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('button'); return render();
     case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
     case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
     case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
