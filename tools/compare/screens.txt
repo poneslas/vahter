@@ -1,0 +1,13 @@
+# имя | запрос к прототипу (?…#пресет) | экран приложения (page=… или sheet) | подпись
+onb-welcome | onb=0#first | onb:0 | Первый запуск · привет
+onb-button | onb=1#first | onb:1 | Первый запуск · боковая кнопка
+onb-voice | onb=2#first | onb:2 | Первый запуск · голос
+onb-brain | onb=3#first | onb:3 | Первый запуск · мозг
+onb-done | onb=4#first | onb:4 | Первый запуск · готово
+chat | page=chat#day | chat | Приложение · разговор
+sheet | sheet=1#day | sheet | Лист поверх приложений
+settings | page=settings#day | settings | Настройки
+brain | page=brain&brain=deepseek#day | brain:deepseek | Мозг DeepSeek
+tools | page=tools#day | actions | Действия на телефоне
+mode-gastro | page=mode&edit=m-4c1e#day | mode:m-4c1e | Режим «Гастрогид»
+mode-main | page=mode&edit=main#day | mode:main | Режим «Ассистент»

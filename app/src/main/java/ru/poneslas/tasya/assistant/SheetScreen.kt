@@ -25,6 +25,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import ru.poneslas.tasya.ui.Ic
+import ru.poneslas.tasya.app.IconBtn
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -55,29 +63,40 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 onSend = { files -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото") })
             return@TasyaTheme
         }
-        Box(Modifier.fillMaxSize().background(Color(0x66000000)).clickable(
-            interactionSource = remember { MutableInteractionSource() }, indication = null) { /* затемнение лист не закрывает */ },
+        val brain = ru.poneslas.tasya.core.Brains.byId(state.current.brain)
+        val keyV by app.keyVersion.collectAsState()
+        val connected = remember(keyV, brain.id) { app.hasKey(brain.id) }
+        // .ov .dim — затемнение rgba(14,26,54,.32), лист не закрывает
+        Box(Modifier.fillMaxSize().background(Color(0x520E1A36)).clickable(
+            interactionSource = remember { MutableInteractionSource() }, indication = null) { },
             contentAlignment = Alignment.BottomCenter,
         ) {
+            // .sheet: отступ 8 от краёв, скругление 30, бумага, поля 8 сверху / 12 снизу
             Column(
-                Modifier.fillMaxWidth().padding(8.dp).navigationBarsPadding().imePadding()
+                Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(8.dp)
+                    .shadow(24.dp, RoundedCornerShape(30.dp), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(30.dp)).background(Ink.paper)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                    .padding(top = 8.dp),
+                    .padding(top = 8.dp, bottom = 0.dp),
             ) {
-                Box(Modifier.fillMaxWidth().clickable(onClick = onExpand), contentAlignment = Alignment.Center) {
-                    Box(Modifier.padding(vertical = 4.dp).size(width = 36.dp, height = 4.dp).clip(CircleShape).background(Ink.line))
+                // .grab 36×4
+                Box(Modifier.fillMaxWidth().clickable(onClickLabel = "Развернуть", onClick = onExpand).padding(bottom = 4.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
                 }
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(7.dp).clip(CircleShape).background(Ink.server))
-                    Text("  ${state.current.title}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
-                    Text(" · на связи", fontSize = 13.sp, color = Ink.soft)
-                    Spacer(Modifier.weight(1f))
-                    HeaderButton("⤢", "Развернуть", onExpand)
-                    HeaderButton("⚙", "Настройки", onSettings)
-                    HeaderButton("✕", "Закрыть", onClose)
+                // .hdr: точка · «Режим · на связи» 12 · ⤢ ⚙ ✕ (36, приглушённые)
+                Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(if (connected) Ink.server else Ink.local))
+                    Spacer(Modifier.width(6.dp))
+                    Text(buildAnnotatedString {
+                        withStyle(SpanStyle(color = Ink.ink, fontWeight = FontWeight.SemiBold)) { append(state.current.title) }
+                        append(if (connected) " · на связи" else " · нет ключа · только команды телефона")
+                    }, fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    IconBtn(Ic.expand, "Развернуть в приложение", size = 36.dp, tint = Ink.soft, onClick = onExpand)
+                    IconBtn(Ic.gear, "Настройки", size = 36.dp, tint = Ink.soft, onClick = onSettings)
+                    IconBtn(Ic.x, "Закрыть", size = 36.dp, tint = Ink.soft, onClick = onClose)
                 }
-                Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 420.dp))
+                Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 420.dp))
                 LiveLine(live)
                 Composer(
                     state = state,
@@ -97,9 +116,3 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
     }
 }
 
-@Composable
-private fun HeaderButton(glyph: String, label: String, onClick: () -> Unit) {
-    Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
-        Text(glyph, fontSize = 18.sp, color = Ink.soft)
-    }
-}

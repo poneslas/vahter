@@ -33,6 +33,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -232,33 +236,36 @@ fun Composer(
     fun flash(text: String) { scope.launch { onLive(text); delay(2800); onLive(null) } }
 
     Column(Modifier.background(Ink.paper)) {
-        if (menu) Column(Modifier.padding(start = 12.dp).clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp)).padding(6.dp)) {
-            if (onCamera != null && !photoMain) Text("📷  Камера", fontSize = 15.sp, color = Ink.ink, modifier = Modifier.clickable { menu = false; onCamera() }.padding(horizontal = 12.dp, vertical = 10.dp))
-            if (onGallery != null) Text("🖼  Галерея", fontSize = 15.sp, color = Ink.ink, modifier = Modifier.clickable { menu = false; onGallery() }.padding(horizontal = 12.dp, vertical = 10.dp))
+        // .mpicker: меню скрепки над полем
+        if (menu) Column(Modifier.padding(start = 10.dp, bottom = 4.dp).widthIn(min = 230.dp)
+            .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
+            .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
+            if (onCamera != null && !photoMain) PickItem(Ic.cam, "Камера", "снять и отправить") { menu = false; onCamera() }
+            if (onGallery != null) PickItem(Ic.image, "Галерея", "системный выбор фото") { menu = false; onGallery() }
         }
-        Box(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)) {
+        Box(Modifier.padding(start = 12.dp, end = 0.dp, top = 2.dp, bottom = 2.dp)) {
             VoiceRow(
                 voice = voice,
                 field = {
+                    // .fld: белое поле, рамка, скругление 24, мин. высота 48; слева скрепка, справа микрофон фото-режима
+                    val canAttach = state.current.accepts.photo && (onGallery != null || (onCamera != null && !photoMain))
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
-                            .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp),
+                            .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(start = if (canAttach) 4.dp else 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val canAttach = state.current.accepts.photo && (onGallery != null || (onCamera != null && !photoMain))
-                        if (canAttach) Text("📎", fontSize = 18.sp, modifier = Modifier.clickable { menu = !menu }.padding(end = 10.dp))
+                        if (canAttach) InTool(Ic.clip, "Прикрепить") { menu = !menu }
                         Box(Modifier.weight(1f)) {
-                            if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 15.sp)
-                            BasicTextField(state.draft, onDraft, textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink),
+                            if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
+                            BasicTextField(state.draft, onDraft, textStyle = BaseText.copy(fontSize = 14.5.sp),
                                 cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
                         }
-                        if (photoMain && !hasText && state.current.accepts.voice)
-                            Text("🎙", fontSize = 18.sp, modifier = Modifier.clickable { handsFreeTick++ }.padding(start = 10.dp))
+                        if (photoMain && !hasText && state.current.accepts.voice) InTool(Ic.mic, "Спросить голосом без рук") { handsFreeTick++ }
                     }
                 },
                 trailing = when {
-                    hasText -> { { RoundAction("↑") { onSend(state.draft, "клавиатура") } } }
-                    photoMain -> { { RoundAction("📷") { onCamera?.invoke() } } }
+                    hasText -> { { RoundAction(Ic.send, "Отправить") { onSend(state.draft, "клавиатура") } } }
+                    photoMain -> { { RoundAction(Ic.cam, "Камера") { onCamera?.invoke() } } }
                     else -> null
                 },
                 onText = { text -> onSend((state.draft + " " + text).trim(), "голос") },
@@ -272,10 +279,29 @@ fun Composer(
     }
 }
 
+/** .micbtn 48: тёмный круг — «Отправить» или «Камера». */
 @Composable
-private fun RoundAction(glyph: String, onClick: () -> Unit) {
-    Box(Modifier.size(52.dp).clip(CircleShape).background(Ink.ink).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Text(glyph, color = Color.White, fontSize = 20.sp)
+private fun RoundAction(icon: Int, label: String, onClick: () -> Unit) {
+    Box(Modifier.size(48.dp).clip(CircleShape).background(Ink.ink).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+        Icon(painterResource(icon), label, Modifier.size(20.dp), tint = Color.White)
+    }
+}
+
+/** .intool 34: приглушённая иконка в поле. */
+@Composable
+private fun InTool(icon: Int, label: String, onClick: () -> Unit) {
+    Box(Modifier.size(34.dp).clip(CircleShape).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+        Icon(painterResource(icon), label, Modifier.size(20.dp), tint = Ink.soft)
+    }
+}
+
+/** .mpicker button: иконка, заголовок 14/600, пояснение 12. */
+@Composable
+private fun PickItem(icon: Int, title: String, sub: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(painterResource(icon), null, Modifier.size(20.dp), tint = Ink.ink)
+        Spacer(Modifier.width(12.dp))
+        Column { Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold); Text(sub, fontSize = 12.sp, color = Ink.soft) }
     }
 }
 

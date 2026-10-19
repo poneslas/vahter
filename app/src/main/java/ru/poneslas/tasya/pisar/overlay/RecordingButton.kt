@@ -432,14 +432,14 @@ class RecordingButton(
         super.onSizeChanged(w, h, oldw, oldh)
         val c = w / 2f
         val r = circleRadius
-        // Turquoise blue: light cyan to deep blue.
+        // Тася: в покое — тёмно-синий прототипа (--ink) вместо бирюзового Писаря; запись — красная, как у Писаря.
         idleShader =
             LinearGradient(
                 c - r,
                 c - r,
                 c + r,
                 c + r,
-                intArrayOf(0xFF7FE3F0.toInt(), 0xFF1FA3D6.toInt(), 0xFF0B6FA8.toInt()),
+                intArrayOf(0xFF3B4C7A.toInt(), 0xFF1A2850.toInt(), 0xFF0E1A36.toInt()),
                 floatArrayOf(0f, 0.55f, 1f),
                 Shader.TileMode.CLAMP,
             )

@@ -9,6 +9,21 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.em
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -55,132 +70,226 @@ import ru.poneslas.tasya.core.FeedItem
 import kotlin.math.abs
 import kotlin.math.hypot
 
-/** Лента разговора текущего режима. Пустой режим — подсказка из поля режима (hint). */
+/** Лента разговора (ui.js, feedHtml/itemHtml): промежутки 10, поля 6/14/12, текст 14.5. Прижата к низу. */
 @Composable
-fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {}, modifier: Modifier = Modifier) {
+fun Feed(
+    state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {},
+    modifier: Modifier = Modifier, inSheet: Boolean = true, onChip: ((String) -> Unit)? = null,
+) {
     val list = rememberLazyListState()
     LaunchedEffect(state.feed.size, (state.feed.lastOrNull() as? FeedItem.Ai)?.text?.length) {
         if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1)
     }
+    val pad = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 12.dp)
     if (state.feed.isEmpty()) {
-        Box(modifier.padding(horizontal = 18.dp, vertical = 10.dp), contentAlignment = Alignment.BottomStart) {
-            Text(state.current.hint, color = Ink.soft, fontSize = 15.sp, lineHeight = 21.sp)
+        Column(modifier.padding(pad), verticalArrangement = Arrangement.Bottom) {
+            if (inSheet || state.mode != ru.poneslas.tasya.core.Modes.MAIN) {
+                Text(state.current.hint, color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em, modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp))
+            } else {
+                Text("Зажмите боковую кнопку в любом приложении — или напишите здесь.", color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 24.dp))
+                if (onChip != null) FlowRow(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("Таймер на пять минут", "Разбуди в 7:30", "Как настроить бэкап сервера?").forEach { c ->
+                        Text(c, fontSize = 13.sp, color = Ink.ink, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.surf)
+                            .border(1.dp, Ink.line, RoundedCornerShape(50)).clickable { onChip(c) }.padding(horizontal = 12.dp, vertical = 6.dp))
+                    }
+                }
+            }
         }
         return
     }
-    LazyColumn(
-        modifier, state = list,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        items(state.feed, key = { it.id }) { item ->
-            when (item) {
-                is FeedItem.Me -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                  Column(horizontalAlignment = Alignment.End) {
-                    if (item.images.isNotEmpty()) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            item.images.take(4).forEach { path ->
-                                val bmp = remember(path) { ru.poneslas.tasya.media.Attachments.thumb(path, 300) }
-                                if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), null,
-                                    Modifier.size(width = if (item.images.size > 1) 76.dp else 150.dp, height = if (item.images.size > 1) 110.dp else 200.dp).clip(RoundedCornerShape(12.dp)),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                            }
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(item.status?.let { "$it · " }.orEmpty() + item.via, fontSize = 11.sp, color = Ink.faint)
-                            if (item.status != null) Text("  ✕", fontSize = 14.sp, color = Ink.soft, modifier = Modifier.clickable { onCancelAttach(item.id) }.padding(4.dp))
-                        }
-                    }
-                    if (item.text.isNotEmpty() || item.images.isEmpty()) Column(
-                        Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp))
-                            .background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp),
-                    ) {
-                        Text(item.text, fontSize = 15.sp, color = Ink.ink)
-                        Text(item.via, fontSize = 11.sp, color = Ink.faint, modifier = Modifier.align(Alignment.End))
-                    }
-                  }
+    CompositionLocalProvider(LocalTextStyle provides BaseText.copy(fontSize = 14.5.sp)) {
+        LazyColumn(modifier, state = list, contentPadding = pad, verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
+            items(state.feed, key = { it.id }) { item ->
+                when (item) {
+                    is FeedItem.Me -> MeItem(item, onCancelAttach)
+                    is FeedItem.Ai -> AiItem(item)
+                    is FeedItem.Act -> ActItem(item, onAct)
+                    is FeedItem.Steps -> StepsItem(item)
+                    is FeedItem.Card -> CardItem(item, onCard)
+                    is FeedItem.Err -> Text(item.text, color = Ink.errText, fontSize = 13.5.sp,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)).background(Ink.dangerT)
+                            .drawBehind { drawRect(Ink.danger, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }
+                            .padding(start = 15.dp, end = 12.dp, top = 8.dp, bottom = 8.dp))
                 }
-                is FeedItem.Ai -> Row(verticalAlignment = Alignment.Top) {
-                    Box(Modifier.padding(top = 8.dp, end = 8.dp).size(7.dp).clip(CircleShape).background(Ink.server))
-                    Text(item.text + if (item.done) "" else " ▍", fontSize = 15.sp, lineHeight = 21.sp, color = Ink.ink)
-                }
-                is FeedItem.Act -> Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.surf)
-                        .border(1.dp, Ink.line, RoundedCornerShape(14.dp)).padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Ink.localT), contentAlignment = Alignment.Center) {
-                        Text(item.icon, fontSize = 18.sp)
-                    }
-                    Column(Modifier.padding(horizontal = 10.dp).weight(1f)) {
-                        Text(item.title, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, color = Ink.ink)
-                        Text(item.subtitle, fontSize = 12.sp, color = Ink.soft)
-                    }
-                    item.button?.let { b ->
-                        Text(b, color = Color(0xFF9A6A00), fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
-                            modifier = Modifier.clickable { onAct(item) }.padding(6.dp))
-                    }
-                }
-                is FeedItem.Steps -> Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink.serverT).padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(if (item.running) "${item.titles.last()}…" else "${item.titles.size} ${plural(item.titles.size, "шаг", "шага", "шагов")}",
-                        fontSize = 13.sp, color = Color(0xFF2238B8), fontWeight = FontWeight.Medium)
-                }
-                is FeedItem.Card -> Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp)),
-                ) {
-                    Text(item.head, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (item.phone) Color(0xFF9A6A00) else Color(0xFF2238B8),
-                        modifier = Modifier.fillMaxWidth().background(if (item.phone) Ink.localT else Ink.serverT).padding(horizontal = 12.dp, vertical = 6.dp))
-                    Column(Modifier.padding(12.dp)) {
-                        Text(item.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
-                        if (item.text.isNotEmpty()) Text(item.text, fontSize = 14.sp, color = Ink.soft, modifier = Modifier.padding(top = 4.dp))
-                        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item.buttons.forEachIndexed { i, (label, action) ->
-                                Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                                    color = if (i == 0) Color.White else Ink.ink,
-                                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (i == 0) Ink.ink else Color.Transparent)
-                                        .clickable { onCard(item, action) }.padding(horizontal = 14.dp, vertical = 9.dp))
-                            }
-                        }
-                    }
-                }
-                is FeedItem.Err -> Text(
-                    item.text, color = Ink.danger, fontSize = 14.sp,
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink.dangerT).padding(10.dp),
-                )
             }
         }
     }
 }
 
-/** Вкладки режимов под полем ввода — видны всегда, последняя «+» (Продукт 5.17). */
-private fun plural(n: Int, one: String, few: String, many: String) =
-    if (n % 10 == 1 && n % 100 != 11) one else if (n % 10 in 2..4 && n % 100 !in 12..14) few else many
-
+/** .me — пузырь справа; .meimg — миниатюры 170×128, под ними статус и «✕», пока не ушло. */
 @Composable
-fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () -> Unit) {
-    LazyRow(
-        Modifier.fillMaxWidth().padding(bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
-    ) {
-        items(state.tabs, key = { it.id }) { m ->
-            val on = m.id == state.mode
-            Text(
-                m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                color = if (on) Color.White else Ink.soft,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Color.Transparent)
-                    .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
-        item {
-            Box(
-                Modifier.size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClick = onAdd),
-                contentAlignment = Alignment.Center,
-            ) { Text("+", fontSize = 17.sp, color = Ink.soft) }
+private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        val maxW = maxWidth * 0.84f
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (item.images.isNotEmpty()) {
+                Box {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val n = item.images.size
+                        item.images.take(4).forEach { path ->
+                            val bmp = remember(path) { ru.poneslas.tasya.media.Attachments.thumb(path, 400) }
+                            if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), null,
+                                Modifier.size(if (n > 1) 80.dp else 170.dp, if (n > 1) 106.dp else 128.dp).clip(RoundedCornerShape(14.dp)),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                        }
+                    }
+                    if (item.status != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).clip(CircleShape).background(Color(0x8C000000))
+                        .clickable { onCancel(item.id) }, contentAlignment = Alignment.Center) {
+                        Icon(painterResource(Ic.x), "Отменить отправку", Modifier.size(16.dp), tint = Color.White)
+                    }
+                }
+                if (item.status != null) {
+                    Text(item.status, fontSize = 11.5.sp, color = Ink.soft)
+                    if (item.text.isEmpty()) Text("Можно дописать вопрос — уйдёт вместе с фото", fontSize = 11.5.sp, color = Ink.faint)
+                } else if (item.text.isEmpty()) Text(item.via, fontSize = 10.5.sp, color = Ink.faint)
+            }
+            if (item.text.isNotEmpty()) Column(
+                Modifier.widthIn(max = maxW).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)).background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(item.text, color = Ink.ink)
+                Text(item.via, fontSize = 10.5.sp, lineHeight = 1.3.em, color = Ink.faint, modifier = Modifier.align(Alignment.End))
+            }
         }
     }
 }
 
+/** .ai — точка 7 слева (синяя — мозг), текст с простой разметкой (жирный, заголовки, списки, код). */
+@Composable
+private fun AiItem(item: FeedItem.Ai) {
+    Box(Modifier.fillMaxWidth().padding(start = 16.dp)) {
+        Box(Modifier.offset(x = (-15).dp, y = 8.dp).size(7.dp).clip(CircleShape).background(Ink.server))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { Markdown(item.text) }
+    }
+}
+
+/** .act — итог действия на телефоне: значок на янтарном, заголовок, «на телефоне», ссылка справа. */
+@Composable
+private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(14.dp))
+        .padding(horizontal = 11.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(Ink.localT), contentAlignment = Alignment.Center) { Text(item.icon, fontSize = 15.sp) }
+        Column(Modifier.padding(start = 10.dp).weight(1f)) {
+            Text(item.title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, lineHeight = 1.35.em)
+            Text(item.subtitle, fontSize = 11.5.sp, color = Ink.soft, lineHeight = 1.35.em)
+        }
+        item.button?.let { b -> Text(b, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
+    }
+}
+
+/** .steps — свёрнутая строка «N шагов», по нажатию — список; пока идёт — название текущего шага. */
+@Composable
+private fun StepsItem(item: FeedItem.Steps) {
+    var open by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.serverT)) {
+        Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(if (item.running) item.titles.last() else "${item.titles.size} ${plural(item.titles.size, "шаг", "шага", "шагов")}",
+                fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = Ink.serverD, modifier = Modifier.weight(1f))
+            Icon(painterResource(Ic.chev), null, Modifier.size(14.dp).graphicsLayer { rotationZ = if (open) 180f else 0f }, tint = Ink.serverD)
+        }
+        if (open) Column(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+            item.titles.forEach { t ->
+                Row(Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Ink.surf).padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(22.dp).clip(RoundedCornerShape(6.dp)).background(Ink.localT), contentAlignment = Alignment.Center) { Text("📱", fontSize = 12.sp) }
+                    Text(t, fontSize = 12.5.sp, color = Ink.ink, modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        }
+    }
+}
+
+/** .card — шапка (янтарная — телефон, синяя — мозг), заголовок 15.5, текст, кнопки .cb (первая — тёмная). */
+@Composable
+private fun CardItem(item: FeedItem.Card, onCard: (FeedItem.Card, String) -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp))) {
+        Text(item.head, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = if (item.phone) Ink.localD else Ink.serverD,
+            modifier = Modifier.fillMaxWidth().background(if (item.phone) Ink.localT else Ink.serverT).padding(horizontal = 12.dp, vertical = 7.dp))
+        Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 4.dp)) {
+            Text(item.title, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold)
+            if (item.text.isNotEmpty()) Text(item.text, fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 6.dp, bottom = 2.dp))
+        }
+        FlowRow(Modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            item.buttons.forEachIndexed { i, (label, action) ->
+                Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (i == 0) Color.White else Ink.ink,
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (i == 0) Ink.ink else Ink.chipBg)
+                        .clickable { onCard(item, action) }.padding(horizontal = 13.dp, vertical = 8.dp))
+            }
+        }
+    }
+}
+
+/** Простая разметка ответа: «# заголовок», «- пункт», «1. пункт», **жирный**, `код`, блоки ``` . */
+@Composable
+fun Markdown(text: String) {
+    val blocks = remember(text) { mdBlocks(text) }
+    blocks.forEach { (kind, line) ->
+        when (kind) {
+            'h' -> Text(mdInline(line), fontSize = 16.5.sp, fontWeight = FontWeight.SemiBold, lineHeight = 1.3.em)
+            'l' -> Row { Text("•", modifier = Modifier.padding(start = 4.dp, end = 8.dp)); Text(mdInline(line)) }
+            'n' -> Text(mdInline(line), modifier = Modifier.padding(start = 4.dp))
+            'c' -> Text(line, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Color(0xFFE3E8F6),
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFF10182B)).padding(horizontal = 12.dp, vertical = 10.dp))
+            else -> Text(mdInline(line))
+        }
+    }
+}
+
+private fun mdBlocks(text: String): List<Pair<Char, String>> {
+    val out = mutableListOf<Pair<Char, String>>()
+    val para = StringBuilder()
+    fun flush() { if (para.isNotBlank()) out += 'p' to para.toString().trim(); para.clear() }
+    var code: StringBuilder? = null
+    for (raw in text.lines()) {
+        val l = raw.trimEnd()
+        if (l.trimStart().startsWith("```")) { if (code == null) { flush(); code = StringBuilder() } else { out += 'c' to code.toString().trimEnd(); code = null }; continue }
+        if (code != null) { code.appendLine(raw); continue }
+        val t = l.trimStart()
+        when {
+            t.isEmpty() -> flush()
+            t.startsWith("#") -> { flush(); out += 'h' to t.trimStart('#').trim() }
+            t.startsWith("- ") || t.startsWith("* ") || t.startsWith("• ") -> { flush(); out += 'l' to t.drop(2) }
+            Regex("^\\d+[.)] ").containsMatchIn(t) -> { flush(); out += 'n' to t }
+            else -> { if (para.isNotEmpty()) para.append(' '); para.append(t) }
+        }
+    }
+    code?.let { out += 'c' to it.toString().trimEnd() }
+    flush()
+    return out
+}
+
+private fun mdInline(s: String) = buildAnnotatedString {
+    var i = 0
+    while (i < s.length) {
+        when {
+            s.startsWith("**", i) && s.indexOf("**", i + 2) > 0 -> { val e = s.indexOf("**", i + 2); withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(s.substring(i + 2, e)) }; i = e + 2 }
+            s[i] == '`' && s.indexOf('`', i + 1) > 0 -> { val e = s.indexOf('`', i + 1); withStyle(SpanStyle(fontFamily = FontFamily.Monospace, background = Ink.chipBg)) { append(s.substring(i + 1, e)) }; i = e + 1 }
+            else -> { append(s[i]); i++ }
+        }
+    }
+}
+
+private fun plural(n: Int, one: String, few: String, many: String) =
+    if (n % 10 == 1 && n % 100 != 11) one else if (n % 10 in 2..4 && n % 100 !in 12..14) few else many
+
+/** .mtabs — вкладки режимов под полем: 13/500, выбранная — тёмная «таблетка», в конце «+» 30. */
+@Composable
+fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () -> Unit) {
+    LazyRow(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+        contentPadding = PaddingValues(horizontal = 12.dp),
+    ) {
+        items(state.tabs, key = { it.id }) { m ->
+            val on = m.id == state.mode
+            Text(m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (on) Color.White else Ink.soft,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Color.Transparent)
+                    .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
+        }
+        item {
+            Box(Modifier.padding(start = 2.dp).size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = "Новый режим", onClick = onAdd),
+                contentAlignment = Alignment.Center) { Text("+", fontSize = 17.sp, color = Ink.soft) }
+        }
+    }
+}

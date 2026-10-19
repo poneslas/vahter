@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Иконка прототипа (docs/design/prototype/core.js, I.kbd) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M5.0,6.0h14.0a2.5,2.5 0 0 1 2.5,2.5v7.0a2.5,2.5 0 0 1 -2.5,2.5h-14.0a2.5,2.5 0 0 1 -2.5,-2.5v-7.0a2.5,2.5 0 0 1 2.5,-2.5z" android:strokeColor="#FF000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="miter" />
+    <path android:pathData="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10" android:strokeColor="#FF000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="miter" />
+</vector>
