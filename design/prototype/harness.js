@@ -1,6 +1,6 @@
 /* Обвязка демо, в Android не переносится: «мир», боковая кнопка корпуса, сценарии, знакомство, масштаб телефона. */
 /* ───────── мир ───────── */
-const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Цифровой помощник',[['gemini','Gemini'],['ours','Тася']]],['side','Боковая кнопка',[['power','Выключение'],['bixby','Bixby'],['assistant','Помощник']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
+const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Цифровой помощник',[['gemini','Gemini'],['ours','Тася']]],['side','Боковая кнопка',[['power','Выключение'],['bixby','Bixby'],['double','Помощник ×2'],['assistant','Помощник']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
 function renderWorld(){
   $('#world').innerHTML=WORLD.map(([k,l,o])=>`<label>${l}</label><div class="seg">${o.map(x=>`<button data-w="${k}" data-v="${x[0]}" aria-pressed="${S.w[k]===x[0]}">${x[1]}</button>`).join('')}</div>`).join('')
     + `<label>Доступ к контактам</label><div class="seg">${[['ok','Есть'],['ask','Не спрашивали'],['denied','Отказано']].map(x=>`<button data-perm="contacts" data-v="${x[0]}" aria-pressed="${S.w.perms.contacts===x[0]}">${x[1]}</button>`).join('')}</div>`
@@ -28,6 +28,7 @@ side.addEventListener('pointerup',()=>{ if(holdT){ clearTimeout(holdT); holdT=nu
 side.addEventListener('pointerleave',()=>{ if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold') } });
 side.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); longPress() } });
 function longPress(){
+  if (S.w.side==='double'){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Цифровой помощник висит на двойном нажатии — One UI переставил его сам после выдачи роли. Удержание открывает меню выключения.',opts:[['Понятно','x']]}; return render() }
   if (S.w.side==='power'){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Боковая кнопка настроена на меню выключения.',opts:[['Понятно','x']]}; return render() }
   if (S.w.side==='bixby'){ S.dialog={ic:'✦',title:'Bixby',text:'Боковая кнопка настроена на Bixby — это настройка Samsung, не роль помощника.',opts:[['Закрыть','x']]}; return render() }
   if (S.w.role!=='ours'){ S.dialog={ic:'✦',title:'Gemini',text:'Кнопка открывает цифрового помощника, а помощник — Gemini.',opts:[['Закрыть','x']]}; return render() }

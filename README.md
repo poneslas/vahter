@@ -14,7 +14,7 @@
 
 Сервер Hermes (где стоит, версия, домен) нужен к этапу 5 — сразу после DeepSeek.
 
-Тестовый телефон — Samsung Galaxy S24 Ultra.
+Тестовый телефон — Samsung Galaxy S24 Ultra, One UI 9.5, Android 16.
 
 ## Что читать
 
