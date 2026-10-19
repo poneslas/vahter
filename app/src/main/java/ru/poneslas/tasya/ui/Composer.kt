@@ -63,6 +63,9 @@ import ru.poneslas.tasya.pisar.overlay.RecordingPill
 import ru.poneslas.tasya.voice.Voice
 import kotlin.math.roundToInt
 
+/** Последний отработанный вызов кнопкой (баг №8: после камеры строка ввода создаётся заново и не должна слушать снова). */
+private var autoSeen = 0
+
 /** Что сейчас с голосом — для волны над полем. */
 object RecUi {
     enum class Phase { IDLE, LISTENING, PROCESSING }
@@ -230,7 +233,7 @@ fun Composer(
     var handsFreeTick by remember { mutableStateOf(0) }
     val autoFlow = remember { MutableStateFlow(0) }
     val outerAuto = autoListen?.collectAsState()?.value ?: 0
-    LaunchedEffect(outerAuto) { if (outerAuto > 0) autoFlow.value++ }
+    LaunchedEffect(outerAuto) { if (outerAuto > autoSeen) { autoSeen = outerAuto; autoFlow.value++ } }
     LaunchedEffect(handsFreeTick) { if (handsFreeTick > 0) autoFlow.value++ }
 
     fun flash(text: String) { scope.launch { onLive(text); delay(2800); onLive(null) } }

@@ -25,6 +25,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import ru.poneslas.tasya.ui.Ic
 import ru.poneslas.tasya.app.IconBtn
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,10 +83,25 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                     .padding(top = 8.dp, bottom = 0.dp),
             ) {
-                // .grab 36×4
-                Box(Modifier.fillMaxWidth().clickable(onClickLabel = "Развернуть", onClick = onExpand).padding(bottom = 4.dp), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
+                // .grab 36×4 и шапка: потянуть вниз — закрыть лист, вверх — развернуть в приложение (баг №5)
+                val density = androidx.compose.ui.platform.LocalDensity.current
+                var drag by remember { mutableStateOf(0f) }
+                val dragArea = Modifier.pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragStart = { drag = 0f },
+                        onVerticalDrag = { ch, dy -> ch.consume(); drag += dy },
+                        onDragEnd = {
+                            val px = with(density) { 48.dp.toPx() }
+                            if (drag > px) onClose() else if (drag < -px) onExpand()
+                            drag = 0f
+                        },
+                        onDragCancel = { drag = 0f },
+                    )
                 }
+                Column(dragArea.graphicsLayer { translationY = drag.coerceAtLeast(0f) * 0.4f }) {
+                    Box(Modifier.fillMaxWidth().height(20.dp).clickable(onClickLabel = "Развернуть", onClick = onExpand), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
+                    }
                 // .hdr: точка · «Режим · на связи» 12 · ⤢ ⚙ ✕ (36, приглушённые)
                 Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(8.dp).clip(CircleShape).background(if (connected) Ink.server else Ink.local))
@@ -95,7 +114,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     IconBtn(Ic.gear, "Настройки", size = 36.dp, tint = Ink.soft, onClick = onSettings)
                     IconBtn(Ic.x, "Закрыть", size = 36.dp, tint = Ink.soft, onClick = onClose)
                 }
-                Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
+                }
+                Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 420.dp))
                 LiveLine(live)
                 Composer(

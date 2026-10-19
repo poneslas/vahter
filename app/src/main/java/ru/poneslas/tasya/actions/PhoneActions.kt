@@ -43,6 +43,7 @@ object Rules {
     sealed interface Match {
         data class Timer(val seconds: Int, val title: String) : Match
         data class Alarm(val hour: Int, val minute: Int) : Match
+        data class Torch(val on: Boolean) : Match
     }
 
     private val numbers = mapOf(
@@ -55,6 +56,11 @@ object Rules {
 
     fun match(phrase: String): Match? {
         val words = phrase.lowercase().replace(Regex("[.,!?]"), " ").split(Regex("\\s+")).filter { it.isNotBlank() }
+        // «включи / выключи фонарик» — коротко и без вариантов
+        if (words.size <= 3 && words.any { it.startsWith("фонар") }) {
+            if (words.any { it.startsWith("выкл") || it == "погаси" || it == "убери" }) return Match.Torch(false)
+            if (words.any { it.startsWith("вкл") || it == "зажги" || it == "посвети" } || words.size == 1) return Match.Torch(true)
+        }
         if ("таймер" in words) {
             val i = words.indexOfFirst { it.startsWith("минут") || it.startsWith("секунд") || it.startsWith("час") }
             if (i > 0) {

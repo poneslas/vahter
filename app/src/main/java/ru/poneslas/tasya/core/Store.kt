@@ -18,6 +18,8 @@ data class Saved(
     val histories: Map<String, List<ChatMsg>> = emptyMap(),
     val settings: Settings = Settings(),
     val lastUse: Long = 0,
+    val notes: List<Note> = emptyList(),
+    val journal: List<JournalEntry> = emptyList(),
 )
 
 class Store(context: Context) {

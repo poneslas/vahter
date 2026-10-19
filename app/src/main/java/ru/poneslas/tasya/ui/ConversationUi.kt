@@ -53,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
@@ -73,7 +74,7 @@ import kotlin.math.hypot
 /** Лента разговора (ui.js, feedHtml/itemHtml): промежутки 10, поля 6/14/12, текст 14.5. Прижата к низу. */
 @Composable
 fun Feed(
-    state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {},
+    state: Conversation.State, onAct: (FeedItem.Act, Boolean) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {},
     modifier: Modifier = Modifier, inSheet: Boolean = true, onChip: ((String) -> Unit)? = null,
 ) {
     val list = rememberLazyListState()
@@ -163,17 +164,50 @@ private fun AiItem(item: FeedItem.Ai) {
     }
 }
 
-/** .act — итог действия на телефоне: значок на янтарном, заголовок, «на телефоне», ссылка справа. */
+/**
+ * .act — итог действия на телефоне: значок на янтарном с отметкой (✓ сделано, × не вышло), заголовок с глаголом,
+ * пояснение и срок («прозвенит через …», у таймера — живой отсчёт), справа «Отменить» и «Открыть …».
+ */
 @Composable
-private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act) -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(14.dp))
-        .padding(horizontal = 11.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(Ink.localT), contentAlignment = Alignment.Center) { Text(item.icon, fontSize = 15.sp) }
-        Column(Modifier.padding(start = 10.dp).weight(1f)) {
-            Text(item.title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, lineHeight = 1.35.em)
-            Text(item.subtitle, fontSize = 11.5.sp, color = Ink.soft, lineHeight = 1.35.em)
+private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) {
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    if (item.at != null && item.state != "undone") LaunchedEffect(item.id, item.at) {
+        while (true) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(if (item.countdown) 1000 else 30_000) }
+    }
+    val sub = buildString {
+        append(item.subtitle)
+        item.at?.takeIf { item.state != "undone" }?.let { at ->
+            val left = at - now
+            append(" · ")
+            append(when {
+                item.countdown && left > 0 -> "осталось " + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
+                item.countdown -> "прозвенел"
+                left > 0 -> "прозвенит " + ru.poneslas.tasya.actions.Phone.inText(left)
+                else -> "прозвенел"
+            })
         }
-        item.button?.let { b -> Text(b, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
+    }
+    Row(Modifier.fillMaxWidth().alpha(if (item.state == "undone") .55f else 1f).clip(RoundedCornerShape(14.dp)).background(Ink.surf)
+        .border(1.dp, Ink.line, RoundedCornerShape(14.dp)).padding(horizontal = 11.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box {
+            Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(if (item.state == "fail") Ink.dangerT else Ink.localT), contentAlignment = Alignment.Center) {
+                Text(item.icon, fontSize = 15.sp)
+            }
+            val (mark, bg) = when (item.state) { "done" -> "✓" to Ink.ok; "fail" -> "×" to Ink.danger; else -> null to null }
+            if (mark != null && bg != null) Box(Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(15.dp).clip(CircleShape).background(bg)
+                .border(1.5.dp, Ink.surf, CircleShape), contentAlignment = Alignment.Center) {
+                Text(mark, fontSize = 9.sp, lineHeight = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+        Column(Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(item.title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 1.35.em,
+                color = if (item.state == "fail") Ink.danger else Ink.ink)
+            Text(sub, fontSize = 11.5.sp, color = Ink.soft, lineHeight = 1.35.em)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            item.undo?.let { u -> Text(u, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item, true) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
+            item.button?.let { b -> Text(b, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item, false) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
+        }
     }
 }
 

@@ -169,10 +169,15 @@ class Conversation(
             var answerId: Long? = null
             var stepsId: Long? = null
             val answer = StringBuilder()
+            val who = Brains.byId(mode.brain).title
+            val phrase = clean
             val tools = PhoneTools(
                 context, settings = { _state.value.settings },
                 confirm = { title, detail -> confirm(modeId, title, detail) },
-                report = { icon, title, sub, button, action -> push(modeId, FeedItem.Act(nextId(), icon, title, sub, button, action)) },
+                report = { a -> push(modeId, a.copy(id = nextId())) },
+                journal = { tool, params, title, status -> journal(tool, params, title, status, who, phrase) },
+                notes = { _state.value.saved.notes },
+                saveNote = { n -> edit { it.copy(notes = (it.notes + n).takeLast(500)) } },
             )
             try {
                 brainFor(mode).send(Turn(mode, history), tools).collect { e ->
@@ -210,20 +215,37 @@ class Conversation(
     /** Точные короткие команды — без мозга и без сети (Архитектура 5). */
     private fun localRule(mode: Mode, text: String): Boolean {
         val m = Rules.match(text) ?: return false
-        val policyId = if (m is Rules.Match.Timer) "timer.set" else "alarm.set"
-        if (_state.value.settings.policy[policyId] == Policy.OFF) return false
+        val s = _state.value.settings
+        val policyId = when (m) { is Rules.Match.Timer -> "timer.set"; is Rules.Match.Alarm -> "alarm.set"; is Rules.Match.Torch -> "torch.set" }
+        // «Спрашивать» и «Не разрешено» — через мозг: там карточка «Да / Отмена» и честный отказ.
+        if (ru.poneslas.tasya.actions.Registry.policy(s, policyId) != Policy.AUTO) return false
         val (item, note) = when (m) {
             is Rules.Match.Timer -> PhoneActions.setTimer(context, m.seconds).fold(
-                { FeedItem.Act(nextId(), "⏱", "Таймер · ${m.title}", "на телефоне", "Открыть таймеры", "timers") to "Таймер ${m.title} поставлен на телефоне." },
-                { FeedItem.Err(nextId(), "Не получилось поставить таймер: «Часы» не ответили.") to null })
-            is Rules.Match.Alarm -> PhoneActions.setAlarm(context, m.hour, m.minute).fold(
-                { FeedItem.Act(nextId(), "⏰", "Будильник · %d:%02d".format(m.hour, m.minute), "на телефоне", "Открыть Часы", "alarms") to "Будильник на %d:%02d поставлен на телефоне.".format(m.hour, m.minute) },
-                { FeedItem.Err(nextId(), "Не получилось поставить будильник: «Часы» не ответили.") to null })
+                { FeedItem.Act(nextId(), "⏱", "Таймер запущен · ${m.title}", "на телефоне", "Открыть таймеры", "timers",
+                    at = System.currentTimeMillis() + m.seconds * 1000L, countdown = true) to "Таймер ${m.title} запущен на телефоне." },
+                { FeedItem.Act(nextId(), "⏱", "Таймер не запущен · ${m.title}", "«Часы» не ответили", state = "fail") to null })
+            is Rules.Match.Alarm -> {
+                val t = "%d:%02d".format(m.hour, m.minute)
+                PhoneActions.setAlarm(context, m.hour, m.minute).fold(
+                    { FeedItem.Act(nextId(), "⏰", "Будильник поставлен · $t", "на телефоне", "Открыть будильники", "alarms",
+                        at = ru.poneslas.tasya.actions.Phone.nextOccurrence(m.hour, m.minute)) to "Будильник на $t поставлен на телефоне." },
+                    { FeedItem.Act(nextId(), "⏰", "Будильник не поставлен · $t", "«Часы» не ответили", state = "fail") to null })
+            }
+            is Rules.Match.Torch -> ru.poneslas.tasya.actions.Phone.torch(context, m.on).fold(
+                { FeedItem.Act(nextId(), "🔦", if (m.on) "Фонарик включён" else "Фонарик выключен", "на телефоне",
+                    undo = if (m.on) "Выключить" else null, undoAction = if (m.on) "torch:off" else null) to (if (m.on) "Фонарик включён." else "Фонарик выключен.") },
+                { FeedItem.Act(nextId(), "🔦", "Фонарик недоступен", "камера занята или вспышки нет", state = "fail") to null })
         }
         push(mode.id, item)
+        journal(policyId, text, (item as FeedItem.Act).title, if (note != null) "выполнено" else "не выполнено", "Правило на телефоне", text)
         // Мозг узнаёт о локальном действии из истории — «а перенеси его на 8» сработает.
         if (note != null) { appendHistory(mode.id, ChatMsg("user", text)); appendHistory(mode.id, ChatMsg("assistant", note)) }
         return true
+    }
+
+    private fun journal(tool: String, params: String, title: String, status: String, who: String, phrase: String) {
+        val locked = context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
+        edit { it.copy(journal = (it.journal + JournalEntry(nextId(), System.currentTimeMillis(), title, who, phrase, tool, params, status, locked)).takeLast(300)) }
     }
 
     /** Карточка «Поставить / Отмена» и ожидание ответа. */
@@ -247,10 +269,29 @@ class Conversation(
         }
     }
 
-    fun onActButton(item: FeedItem.Act) {
-        when (item.action) {
-            "timers" -> PhoneActions.showTimers(context)
-            else -> PhoneActions.showAlarms(context)
+    /** Кнопки строки действия: «Открыть …» ([FeedItem.Act.action]) и «Отменить / Выключить / Вернуть» ([FeedItem.Act.undoAction]). */
+    fun onActButton(item: FeedItem.Act, undo: Boolean = false) {
+        val a = (if (undo) item.undoAction else item.action) ?: return
+        val P = ru.poneslas.tasya.actions.Phone
+        val parts = a.split(":")
+        val ok: Boolean = when (parts[0]) {
+            "timers" -> ru.poneslas.tasya.actions.Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_TIMERS)).isSuccess
+            "alarms" -> ru.poneslas.tasya.actions.Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)).isSuccess
+            "perm" -> { ru.poneslas.tasya.actions.Launch.askPermissions(context, a.removePrefix("perm:").split(",")); true }
+            "dndaccess" -> P.openDndAccess(context).isSuccess
+            "map" -> P.openMap(context, parts[1].toDouble(), parts[2].toDouble(), parts.drop(3).joinToString(":")).isSuccess
+            "cal" -> if (parts[1] == "open") P.openEvent(context, parts[2].toLong()).isSuccess else P.deleteEvent(context, parts[2].toLong()).isSuccess
+            "torch" -> P.torch(context, false).isSuccess
+            "vol" -> P.volumeRaw(context, parts[1], parts[2].toInt()).isSuccess
+            "dnd" -> P.dndRestore(context, parts[1].toInt()).isSuccess
+            else -> false
+        }
+        // Отменили — строка гаснет и говорит, что сделано; модель узнаёт из истории режима.
+        if (undo && ok) {
+            val modeId = _state.value.saved.feeds.entries.firstOrNull { e -> e.value.any { it.id == item.id } }?.key ?: return
+            replace(modeId, item.id) { (it as FeedItem.Act).copy(state = "undone", subtitle = "отменено", undo = null, undoAction = null, countdown = false, at = null) }
+            appendHistory(modeId, ChatMsg("user", "(Пользователь отменил кнопкой: ${item.title})"))
+            appendHistory(modeId, ChatMsg("assistant", "Отменено: ${item.title}."))
         }
     }
 }

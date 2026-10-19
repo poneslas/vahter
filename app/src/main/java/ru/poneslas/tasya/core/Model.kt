@@ -112,7 +112,8 @@ object Brains {
 data class Settings(
     val lockScope: LockScope = LockScope.OFF,
     val returnToAssistant: ReturnToAssistant = ReturnToAssistant.MIN30,
-    val policy: Map<String, Policy> = mapOf("alarm.set" to Policy.AUTO, "timer.set" to Policy.AUTO),
+    /** Только то, что пользователь менял; остальное — по умолчанию из реестра ([ru.poneslas.tasya.actions.Registry]). */
+    val policy: Map<String, Policy> = emptyMap(),
     val onboarded: Boolean = false,
 )
 
@@ -133,7 +134,11 @@ sealed interface FeedItem {
     @Serializable
     data class Steps(override val id: Long, val titles: List<String>, val running: Boolean) : FeedItem
 
-    /** Строка итога действия на телефоне. */
+    /**
+     * Строка итога действия на телефоне: заголовок с глаголом («Будильник поставлен · 7:00»), пояснение,
+     * состояние значка ([state]: done — галочка, fail — крестик, info — без отметки), срок [at] —
+     * «прозвенит через …» или живой отсчёт таймера ([countdown]); две кнопки: открыть и отменить.
+     */
     @Serializable
     data class Act(
         override val id: Long,
@@ -142,6 +147,11 @@ sealed interface FeedItem {
         val subtitle: String,
         val button: String? = null,
         val action: String? = null,
+        val state: String = "done",
+        val at: Long? = null,
+        val countdown: Boolean = false,
+        val undo: String? = null,
+        val undoAction: String? = null,
     ) : FeedItem
 
     /** Карточка с кнопками: подтверждение действия, ошибка с «Начать заново»… */
@@ -159,3 +169,14 @@ sealed interface FeedItem {
     @Serializable
     data class Err(override val id: Long, val text: String) : FeedItem
 }
+
+/** Заметка или сохранённое место — хранится на телефоне, мозг находит через note_find / place_list. */
+@Serializable
+data class Note(val id: Long, val text: String, val at: Long, val place: Boolean = false, val lat: Double? = null, val lon: Double? = null, val address: String? = null)
+
+/** Запись журнала действий (Архитектура Б.3): что, кто попросил, с какой фразы, чем кончилось. Только на телефоне. */
+@Serializable
+data class JournalEntry(
+    val id: Long, val at: Long, val title: String, val who: String, val phrase: String,
+    val tool: String, val params: String, val status: String, val locked: Boolean,
+)

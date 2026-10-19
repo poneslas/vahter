@@ -302,7 +302,10 @@ fun CameraScreen(owner: LifecycleOwner, mode: Mode, maxImages: Int, onClose: () 
             }
         }
     }
-    DisposableEffect(Unit) { onDispose { if (voice.recording.value) voice.cancel() } }
+    DisposableEffect(Unit) {
+        ru.poneslas.tasya.assistant.Sheet.cameraBack = { if (frozen != null) live() else onClose() }
+        onDispose { ru.poneslas.tasya.assistant.Sheet.cameraBack = null; if (voice.recording.value) voice.cancel() }
+    }
 }
 
 /** .cbtn: круг 40, чёрный 45 %. */

@@ -70,6 +70,8 @@ object Sheet {
     val autoListen = MutableStateFlow(0)
     /** Камера в листе открыта. */
     val camera = MutableStateFlow(false)
+    /** Что делает «назад», пока открыта камера (ставит экран камеры). */
+    @Volatile var cameraBack: (() -> Unit)? = null
 
     /** Свернуть приложение обратно в лист (Архитектура 3.1: finish + showSession). */
     fun show(args: Bundle = Bundle()) = service?.showSession(args, 0)
@@ -180,6 +182,11 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     }
 
     override fun onLockscreenShown() { hide() }
+
+    /** Системный «назад»: в камере — как ✕ (заморожен кадр — переснять, иначе — в лист), иначе как обычно (баг №9). */
+    override fun onBackPressed() {
+        if (Sheet.camera.value) { Sheet.cameraBack?.invoke() ?: run { Sheet.camera.value = false } } else super.onBackPressed()
+    }
 
     override fun onComputeInsets(outInsets: Insets) {
         super.onComputeInsets(outInsets)

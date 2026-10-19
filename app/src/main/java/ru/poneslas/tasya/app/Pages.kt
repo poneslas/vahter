@@ -254,9 +254,7 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     val keyV by app.keyVersion.collectAsState()
     val installed by app.voice.installed.collectAsState()
     val dl by ModelDownload.state.collectAsState()
-    var tick by remember { mutableIntStateOf(0) } // перечитать разрешения после системных окон
-    LaunchedEffect(Unit) { while (true) { delay(800); tick++ } }
-    @Suppress("UNUSED_EXPRESSION") tick
+    @Suppress("UNUSED_VARIABLE") val r = activity.resumed.intValue // баг №1: перечитать после возврата из системных окон
     val steps = 5
     val next: () -> Unit = { if (step < steps - 1) step++ else onDone() }
     val mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED

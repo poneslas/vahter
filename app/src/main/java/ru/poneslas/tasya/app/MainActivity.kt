@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -83,13 +85,17 @@ class MainActivity : ComponentActivity() {
         if (requestCode == REQ_MIC && askMicThenSheet) { askMicThenSheet = false; collapse() }
     }
 
-    override fun onResume() { super.onResume(); App.instance.appVisible.value = true }
+    /** Растёт при каждом возврате в приложение: статусы системных настроек перечитываются от него (баг №1). */
+    val resumed = androidx.compose.runtime.mutableIntStateOf(0)
+
+    override fun onResume() { super.onResume(); App.instance.appVisible.value = true; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
     private fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
-        i.getStringExtra(EXTRA_ASK_PERM)?.let { perm -> askMicThenSheet = true; requestPermissions(arrayOf(perm), REQ_MIC) }
+        // Из листа — после ответа вернуть лист; из приложения — остаться.
+        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
         i.getStringExtra(EXTRA_PAGE)?.let { p -> stack.clear(); stack.add("chat"); if (p != "chat") { if (p != "settings" && !p.startsWith("onb:")) stack.add("settings"); stack.add(p) } }
         if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { if (stack.last() != "settings") stack.add("settings"); stack.add("mode:" + App.instance.conversation.addMode()) }
@@ -120,6 +126,8 @@ class MainActivity : ComponentActivity() {
                         page == "settings" -> SettingsPage()
                         page.startsWith("brain:") -> BrainPage(page.removePrefix("brain:"))
                         page == "actions" -> ActionsPage()
+                        page == "journal" -> JournalPage()
+                        page == "hermes" -> HermesPage()
                         page == "voice" -> VoicePage(onBack = ::back)
                         page.startsWith("mode:") -> ModePage(this@MainActivity, page.removePrefix("mode:"))
                     }
@@ -144,7 +152,7 @@ class MainActivity : ComponentActivity() {
         }
         if (!connected) Banner("Мозг не подключён — работают только команды телефона.",
             actions = listOf("Подключить" to { go("brain:${brain.id}") }))
-        Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
+        Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
             modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, "клавиатура") })
         LiveLine(live)
         Composer(
@@ -164,6 +172,7 @@ class MainActivity : ComponentActivity() {
     private fun SettingsPage() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
+        @Suppress("UNUSED_VARIABLE") val r = resumed.intValue // баг №1: перечитать после возврата из системных настроек
         val roleHeld = getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
         val mic = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
         val notif = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -199,8 +208,8 @@ class MainActivity : ComponentActivity() {
             Brains.all.forEach { b ->
                 val api = b.kind == BrainDesc.Kind.API
                 val has = app.hasKey(b.id)
-                Item(b.title, if (api) (if (has) "${b.model} · ключ есть" else "Нет ключа") else "Свой сервер: память, поиск, Telegram — следующий этап",
-                    warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { if (api) go("brain:${b.id}") }
+                Item(b.title, if (api) (if (has) "${b.model} · ключ есть" else "Нет ключа") else "Свой сервер: память, поиск, Telegram · скоро",
+                    warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { go(if (api) "brain:${b.id}" else "hermes") }
             }
             Section("Уведомления")
             Item("Уведомления", if (notif) "Когда пришёл ответ, а лист закрыт" else "Выключены", icon = Ic.bell, end = { Sw(notif) }) {
@@ -208,9 +217,12 @@ class MainActivity : ComponentActivity() {
                 else startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, packageName))
             }
             Section("Действия")
-            val pol = state.settings.policy.values
-            Item("Действия на телефоне", "Разрешено ${pol.count { it == Policy.AUTO }}, спрашивать ${pol.count { it == Policy.ASK }}, не разрешено ${pol.count { it == Policy.OFF }}",
-                icon = Ic.shield) { go("actions") }
+            val R = ru.poneslas.tasya.actions.Registry
+            val pol = R.all.map { R.policy(state.settings, it.id) }
+            val blockedN = R.all.count { R.policy(state.settings, it.id) != Policy.OFF && it.special != null && R.missing(this@MainActivity, it).isNotEmpty() }
+            Item("Действия на телефоне", if (blockedN > 0) "Нет доступа — $blockedN" else "Разрешено ${pol.count { it == Policy.AUTO }}, спрашивать ${pol.count { it == Policy.ASK }}, не разрешено ${pol.count { it == Policy.OFF }}",
+                warn = blockedN > 0, icon = Ic.shield) { go("actions") }
+            Item("Журнал действий", "Сегодня — ${state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }}", icon = Ic.list) { go("journal") }
             Divider()
             Item("О программе", "Версия ${packageManager.getPackageInfo(packageName, 0).versionName ?: ""}", icon = Ic.info)
         }
@@ -257,20 +269,37 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** toolsPage(): группы, слово политики справа, экран блокировки, пояснение. */
+    /** toolsPage(): баннер «нет доступа», группы с политикой справа и состоянием доступа, экран блокировки, журнал. */
     @Composable
     private fun ActionsPage() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
+        @Suppress("UNUSED_VARIABLE") val r = resumed.intValue // перечитать доступы после системных окон
+        val R = ru.poneslas.tasya.actions.Registry
         TopBar("Действия на телефоне", "что выполняется сразу, а что — после вопроса", onBack = ::back)
         ScrollPage {
-            Section("Часы")
-            listOf("alarm.set" to "Будильник", "timer.set" to "Таймер").forEach { (id, title) ->
-                val p = state.settings.policy[id] ?: Policy.ASK
-                Item(title, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger },
-                    minHeight = 52.dp) {
-                    dialog = ChoiceDialog(title, listOf("AUTO" to "Разрешено", "ASK" to "Спрашивать", "OFF" to "Не разрешено"), p.name) { v ->
-                        app.conversation.updateSettings { it.copy(policy = it.policy + (id to Policy.valueOf(v))) }
+            val blocked = R.all.filter { R.policy(state.settings, it.id) != Policy.OFF && it.special != null && R.missing(this@MainActivity, it).isNotEmpty() }
+            if (blocked.isNotEmpty()) {
+                val t = blocked.first()
+                Banner("«${t.title}» не работает: нет доступа ${R.specialTitle(t.special!!)}. Его включают один раз в настройках телефона.",
+                    actions = listOf("Исправить" to { ru.poneslas.tasya.actions.Phone.openDndAccess(this@MainActivity); Unit }))
+            }
+            R.groups.forEach { g ->
+                Section(g)
+                R.all.filter { it.group == g }.forEach { t ->
+                    val p = R.policy(state.settings, t.id)
+                    val miss = R.missing(this@MainActivity, t)
+                    val sub = when {
+                        p == Policy.OFF || miss.isEmpty() -> null
+                        t.special != null -> "нет доступа: ${miss.joinToString(", ")}"
+                        else -> "доступ «${miss.joinToString(", ")}» спросим при первом разе"
+                    }
+                    Item(t.title, sub, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger },
+                        minHeight = 52.dp) {
+                        val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to "Разрешено")) + listOf("ASK" to "Спрашивать", "OFF" to "Не разрешено")
+                        dialog = ChoiceDialog(t.title, opts, p.name) { v ->
+                            app.conversation.updateSettings { it.copy(policy = it.policy + (t.id to Policy.valueOf(v))) }
+                        }
                     }
                 }
             }
@@ -280,8 +309,73 @@ class MainActivity : ComponentActivity() {
                     app.conversation.updateSettings { it.copy(lockScope = LockScope.valueOf(v)) }
                 }
             }
-            MNote("«Разрешено» — выполняется сразу, в разговоре видно, что сделано. «Спрашивать» — сначала показывается и ждёт «Да».",
+            Item("Журнал действий", "Сегодня — ${state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }}", icon = Ic.list) { go("journal") }
+            MNote("«Разрешено» — выполняется сразу, в разговоре видно, что сделано. «Спрашивать» — сначала показывается и ждёт «Да». Сообщения только готовятся — отправляете вы.",
                 Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 20.dp))
+        }
+    }
+
+    /** Hermes: ещё не подключается — честно говорим и описываем, что будет (бэклог; Продукт 2, 4). */
+    @Composable
+    private fun HermesPage() {
+        TopBar("Hermes", "свой сервер · скоро", onBack = ::back)
+        FormPage {
+            Note("Ещё не работает. Подключение Hermes появится в следующей версии — сейчас все режимы отвечают через DeepSeek.")
+            Text("Hermes — личный агент на вашем сервере или компьютере (открытый проект Nous Research). Отвечает на всё, что сложнее команд телефона, " +
+                "а разговоры, память и расписание хранятся у вас.", color = Ink.soft)
+            Column {
+                Text("Что будет уметь", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                SetCard {
+                    Item("Память между днями", "Помнит, о чём говорили вчера и неделю назад", icon = Ic.hist)
+                    Item("Поиск в интернете", "Погода, новости, цены, расписания — со ссылками на источники", icon = Ic.lens)
+                    Item("Команды на сервере", "Проверить бэкапы, посмотреть логи; опасное — только после вашего «Да»", icon = Ic.srv)
+                    Item("Расписание", "Напоминания и отчёты в нужное время — приходят сообщением в разговор", icon = Ic.bell)
+                    Item("План длинных задач", "Видно, какой шаг сейчас и что уже сделано", icon = Ic.list)
+                    Item("Файлы и картинки", "Присылает PDF, таблицы, картинки — открыть или поделиться", icon = Ic.doc)
+                    Item("Тот же разговор в Telegram", "Начали голосом в листе — продолжили в Telegram", icon = Ic.chat)
+                    Item("Действия телефона", "Будильник, календарь, звонки — как у DeepSeek", icon = Ic.shield)
+                }
+            }
+            Column {
+                Text("Как будет подключаться", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                SetCard {
+                    Item("Ссылка из Telegram", "Боту Hermes — команда /tasya_pair", icon = Ic.chat, trailing = "скоро", trailingColor = Ink.faint)
+                    Item("QR с экрана компьютера", "Та же команда на сервере", icon = Ic.qr, trailing = "скоро", trailingColor = Ink.faint)
+                    Item("Ввести адрес", "Владелец сервера подтвердит код", icon = Ic.pen, trailing = "скоро", trailingColor = Ink.faint)
+                }
+                MNote("Каждый режим можно будет перевести на Hermes отдельно: «Ассистент» — на сервер, «Переводчик» — оставить на DeepSeek.")
+            }
+        }
+    }
+
+    /** journalPage(): по дням, время · что · кто; по нажатию — фраза, действие, итог, экран. */
+    @Composable
+    private fun JournalPage() {
+        val app = App.instance
+        val state by app.conversation.state.collectAsState()
+        var open by remember { mutableStateOf<Long?>(null) }
+        TopBar("Журнал действий", "только на телефоне", onBack = ::back)
+        ScrollPage {
+            val list = state.saved.journal.reversed()
+            if (list.isEmpty()) MNote("Пока пусто. Здесь будет всё, что делалось на телефоне: будильники, таймеры, календарь, звонки.", Modifier.padding(horizontal = 22.dp))
+            list.groupBy { java.text.SimpleDateFormat("d MMMM, EEEE", java.util.Locale("ru")).format(java.util.Date(it.at)) }.forEach { (day, items) ->
+                Section(if (android.text.format.DateUtils.isToday(items.first().at)) "Сегодня" else day)
+                items.forEach { j ->
+                    Row(Modifier.fillMaxWidth().clickable { open = if (open == j.id) null else j.id }.padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(java.text.SimpleDateFormat("H:mm", java.util.Locale.ROOT).format(java.util.Date(j.at)), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.width(40.dp))
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(j.title, fontSize = 14.5.sp, fontWeight = FontWeight.Medium)
+                            Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == "выполнено") Ink.soft else Ink.danger)
+                        }
+                    }
+                    if (open == j.id) Column(Modifier.padding(start = 76.dp, end = 22.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf("Фраза" to "«${j.phrase}»", "Действие" to "${j.tool} ${j.params}", "Экран" to if (j.locked) "заблокирован" else "открыт").forEach { (k, v) ->
+                            Row { Text(k, fontSize = 12.5.sp, color = Ink.faint, modifier = Modifier.width(80.dp)); Text(v, fontSize = 12.5.sp) }
+                        }
+                    }
+                }
+            }
         }
     }
 
