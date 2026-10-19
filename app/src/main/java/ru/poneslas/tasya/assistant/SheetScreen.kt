@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.only
@@ -141,10 +142,13 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(9.dp).clip(CircleShape).background(if (connected) Ink.server else Ink.local))
                     Spacer(Modifier.width(8.dp))
-                    Text(buildAnnotatedString {
+                    // Долгое нажатие на название режима — «Начать заново» (с подтверждением карточкой в ленте).
+                    Text(modifier = Modifier.weight(1f).pointerInput(state.mode) {
+                        detectTapGestures(onLongPress = { app.conversation.askRestart() })
+                    }, text = buildAnnotatedString {
                         withStyle(SpanStyle(color = Ink.ink, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)) { append(state.current.title) }
                         append(if (connected) tr(R.string.sheet_na_svyazi) else tr(R.string.sheet_net_klyucha_tolko_komandy_telefona))
-                    }, fontSize = 13.5.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    }, fontSize = 13.5.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (camera) {
                         IconBtn(Ic.expand, androidx.compose.ui.res.stringResource(ru.poneslas.tasya.R.string.cam_fullscreen), size = 36.dp, tint = Ink.soft) { camFull = true }
                         IconBtn(Ic.x, androidx.compose.ui.res.stringResource(ru.poneslas.tasya.R.string.cam_close), size = 36.dp, tint = Ink.soft) { Sheet.camera.value = false }

@@ -95,6 +95,13 @@ class Conversation(
             mode = if (s.mode == id) Modes.MAIN else s.mode)
     }
 
+    /** Карточка «Стереть разговор «…»? — Стереть / Отмена» в ленте режима (меню, долгое нажатие, голос). */
+    fun askRestart(modeId: String = _state.value.mode) {
+        val m = _state.value.modes.firstOrNull { it.id == modeId } ?: return
+        push(modeId, FeedItem.Card(nextId(), tr(R.string.restart_head), tr(R.string.restart_title, m.title), tr(R.string.restart_text),
+            listOf(tr(R.string.restart_yes) to "restart", tr(R.string.restart_no) to "dismiss"), phone = true))
+    }
+
     /** «Начать заново»: стереть разговор режима с телефона. */
     fun restart(modeId: String = _state.value.mode) = edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId) }
 
@@ -156,6 +163,8 @@ class Conversation(
         _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
         touch()
         push(mode.id, FeedItem.Me(nextId(), clean, via))
+        // «Начни заново» голосом или текстом — подтверждение, мозгу не уходит.
+        if (Rules.isRestart(clean)) { askRestart(mode.id); return }
         if (mode.tools) {
             // Составная фраза («будильник на 7 и таймер на минуту») — мозгу: он разложит на шаги.
             // Без сети — по частям локально; что не понято, честно сказать (Бэклог №19).

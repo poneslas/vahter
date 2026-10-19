@@ -35,6 +35,7 @@ object Ic {
     val mic = R.drawable.ic_mic
     val pen = R.drawable.ic_pen
     val plus = R.drawable.ic_plus
+    val more = R.drawable.ic_more
     val power = R.drawable.ic_power
     val qr = R.drawable.ic_qr
     val send = R.drawable.ic_send

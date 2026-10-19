@@ -151,6 +151,18 @@ class MainActivity : ComponentActivity() {
         TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
             onBack = if (fromSheet) ({ collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
             IconBtn(Ic.gear, tr(R.string.sheet_nastroyki)) { go("settings") }
+            // ⋮ — меню разговора: «Начать заново» (с подтверждением карточкой в ленте).
+            Box {
+                var menu by remember { mutableStateOf(false) }
+                IconBtn(Ic.more, tr(R.string.restart_more)) { menu = true }
+                androidx.compose.material3.DropdownMenu(menu, { menu = false }, containerColor = Ink.surf,
+                    shape = RoundedCornerShape(16.dp)) {
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(tr(R.string.restart_menu), fontSize = 15.sp, color = Ink.ink) },
+                        leadingIcon = { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.hist), null, Modifier.size(20.dp), tint = Ink.soft) },
+                        onClick = { menu = false; app.conversation.askRestart() })
+                }
+            }
         }
         if (!connected) Banner(tr(R.string.set_mozg_ne_podklyuchen_rabotayut_tolko),
             actions = listOf(tr(R.string.set_podklyuchit) to { go("brain:${brain.id}") }))

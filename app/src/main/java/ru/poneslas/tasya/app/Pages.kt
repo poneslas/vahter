@@ -182,10 +182,8 @@ fun ModePage(activity: MainActivity, id: String) {
             Item(tr(R.string.pg_yazyk_rechi), tr(R.string.pg_russkiy_gigaam_drugie_yazyki_pozzhe), icon = Ic.wave)
         }
         Column {
-            val n = state.saved.feeds[m.id].orEmpty().size
             SetCard {
                 Item(tr(R.string.kit_mozg), Brains.byId(m.brain).title + if (m.accepts.photo) tr(R.string.pg_nuzhen_so_zreniem) else "", icon = Ic.spark)
-                Item(tr(R.string.conv_nachat_zanovo), if (n > 0) tr(R.string.pg_steret_razgovor_rezhima_1_s, n) else tr(R.string.pg_razgovor_pust), icon = Ic.hist) { if (n > 0) conv.restart(m.id) }
             }
             MNote(tr(R.string.pg_istoriya_rezhima_khranitsya_na_telefone))
         }

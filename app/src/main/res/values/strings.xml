@@ -542,4 +542,13 @@
         <item quantity="other">%d шага</item>
     </plurals>
     <string name="conv_offline_missed">Нет сети — без неё понял не всё: «%1$s». Повторите это отдельно или когда появится сеть.</string>
+    <!-- Начать заново -->
+    <string name="restart_menu">Начать заново</string>
+    <string name="restart_more">Ещё</string>
+    <string name="restart_head">Начать заново</string>
+    <string name="restart_title">Стереть разговор «%1$s»?</string>
+    <string name="restart_text">Промпт и настройки режима останутся.</string>
+    <string name="restart_yes">Стереть</string>
+    <string name="restart_no">Отмена</string>
+    <string name="restart_hint_longpress">Удерживайте название режима — начать заново</string>
 </resources>
