@@ -22,6 +22,9 @@ function issue(){
   if (S.w.model==='loading') return {k:'p',t:S.w.net==='none'?`Распознавание: ${S.modelPct} % — ждёт сеть`:`Распознавание качается: ${S.modelPct} % из ${mb(MODEL_TOTAL)} МБ`,prog:S.modelPct};
   if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
   if (S.w.role!=='ours') return {k:'p',t:'Цифровой помощник — Gemini. Тася откроется только отсюда.',a:[['Не сейчас','dismiss'],['Настроить','sysrole']]};
+  if (S.w.profile==='unknown' && S.w.role==='ours' && S.sideProbe!=='yes') return S.sideProbe==='no'
+      ? {k:'p',t:'Назначьте Тасю цифровым помощником для боковой кнопки: Настройки → кнопки или жесты → помощник. Пункты зависят от телефона.',a:[['Сообщить разработчику','sidereport'],['Открыть настройки','sysside']]}
+      : {k:'p',t:'Зажмите боковую кнопку. Открылась Тася?',a:[['Нет, другое','sideno'],['Да','sideyes']]};
   if (S.w.side==='double') return {k:'p',t:'Тася открывается двойным нажатием боковой кнопки. Для удержания: Боковая кнопка → Нажатие и удержание → Цифровой помощник.',a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
   if (S.w.side!=='assistant') return {k:'p',t:`Боковая кнопка открывает ${S.w.side==='bixby'?'Bixby':'меню выключения'}.`,a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
   if (!brainReady()) return {k:'p',t:brainOf().kind==='api'?'Мозг не подключён — работают только команды телефона.':'Hermes не подключён — работают только команды телефона.',a:[['Не сейчас','dismiss'],['Подключить',brainOf().kind==='api'?'brainsetup':'connect']]};
@@ -136,7 +139,7 @@ function settings(){
   <div class="scroll"><div class="list">
     <div class="lh">Вызов</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',w.role!=='ours')}
-    ${li(I.btn,'Боковая кнопка', {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
+    ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
     ${li(I.hist,'Возвращаться к Ассистенту', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[1],'returnpick')}
     <div class="lh">Режимы</div>
     ${S.modes.map(m=>`<div class="lirow">${li(I[m.icon],esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}

@@ -91,6 +91,9 @@ document.addEventListener('click', async e=>{
     case 'journal': S.page='journal'; S.jopen=null; return render();
     case 'lockscope': S.dialog={title:'Без разблокировки',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
+    case 'sideyes': S.sideProbe='yes'; trace('Пользователь подтвердил: кнопка открывает Тасю. Запомнили — баннер больше не нужен.','p'); return render();
+    case 'sideno': S.sideProbe='no'; return render();
+    case 'sidereport': S.dialog={title:'Сообщить разработчику',text:'Через «Поделиться» уйдёт: модель телефона, версия Android и оболочки, что не сработало, значения найденных ключей. Своего сервера не нужно.',opts:[['Поделиться…','x'],['Отмена','x','sec2']]}; return render();
     case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();
     case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace('Лист на время выбора прячется (иначе на S24 окно выбора откроется под ним), после выбора возвращается с вложением — проверено на S24.','p'); return render();
