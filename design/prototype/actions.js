@@ -21,7 +21,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.permfix) return permFix(t.dataset.permfix);
   if (t.dataset.sysperm){ S.w.perms[S.permKind]=t.dataset.sysperm; S.keepScroll=true; return render() }
   if (t.dataset.tool && toolBlocked(toolById(t.dataset.tool))){ const x=toolById(t.dataset.tool), k=x.perm, st=S.w.perms[k];
-    S.editTool=x.id; S.dialog={title:x.title,text:`Тасе это разрешено, но Android не даёт доступ: ${SYS_PERMS[k]}. ${x.example?`Поэтому ${x.example} не сработает.`:''}`,opts:[[st==='ask'&&k!=='dnd'?'Разрешить доступ':'Открыть настройки','permfix:'+k],['Настроить действие','tooledit'],['Закрыть','x','sec2']]}; return render() }
+    S.editTool=x.id; S.dialog={title:x.title,text:`Действие разрешено, но у приложения нет доступа: ${SYS_PERMS[k]}. ${x.example?`Поэтому ${x.example} не сработает.`:''}`,opts:[[st==='ask'&&k!=='dnd'?'Разрешить доступ':'Открыть настройки','permfix:'+k],['Настроить действие','tooledit'],['Закрыть','x','sec2']]}; return render() }
   if (t.dataset.tool){ const x=toolById(t.dataset.tool); S.editTool=x.id; S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
   if (t.dataset.jid){ S.jopen = S.jopen===t.dataset.jid ? null : t.dataset.jid; S.keepScroll=true; return render() }
   if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tool'){ S.policy[S.editTool]=t.dataset.radio; S.keepScroll=true; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
@@ -89,7 +89,7 @@ document.addEventListener('click', async e=>{
     case 'tools': S.page='tools'; return render();
     case 'syspermback': { const R=S.permRet2; S.permRet2=null; S.screen=R?.screen||'app'; S.page=R?.page||'tools'; if(R?.sheet){ S.screen=R.sheet; openOverlay('снова') } return render() }
     case 'journal': S.page='journal'; S.jopen=null; return render();
-    case 'lockscope': S.dialog={title:'Без разблокировки',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
+    case 'lockscope': S.dialog={title:'На заблокированном экране',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
     case 'sideyes': S.sideProbe='yes'; trace('Пользователь подтвердил: кнопка открывает Тасю. Запомнили — баннер больше не нужен.','p'); return render();
     case 'sideno': S.sideProbe='no'; return render();
@@ -135,6 +135,7 @@ document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfi
 function cardBtn(b){
   if (b.startsWith('permfix:')) return permFix(b.slice(8));
   if (b==='call_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='call_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📞',x:'Звонилка · Мама',s:'номер набран — звоните вы',btn:'',kind:'E',id:Date.now()},{tool:'call.dial',who:brainOf().title,phrase:'позвони маме',params:'contact=«Мама»',confirm:'«Позвонить» нажатием',lock:S.w.locked}); trace('Звонилка открывается поверх, лист перед этим прячется (иначе на S24 она окажется под листом).','p'); return render() }
+  if (b==='unlock_any'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock_any')); if(i>=0) S.feed.splice(i,1); const me=[...S.feed].reverse().find(f=>f.t==='me'); if(me){ S.feed.splice(S.feed.lastIndexOf(me),1); return deliver(me.x,me.via) } render() }) }
   if (b==='alarm_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='alarm_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'⏰',x:'Будильник · 7:00',s:brainOf().title+' → телефон · через 9 ч',btn:'Открыть Часы',kind:'D',id:Date.now()},{tool:'alarm.set',who:brainOf().title,phrase:'поставь мне алярмер на семь',params:'time=07:00',confirm:'«Поставить» нажатием',lock:S.w.locked}); return render() }
   if (b==='unlock'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock')); if(i>=0) S.feed.splice(i,1); return cardBtn('alarm_ok') }) }
   if (b==='brainsetup'){ S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; return render() }

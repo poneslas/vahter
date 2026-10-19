@@ -20,8 +20,10 @@ const PHR={
 const guessKey = v => { v=v.toLowerCase(); return /беспокоить/.test(v)?'dnd':/позвони/.test(v)?'call':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
   const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
+  const key0=guessKey(text);
+  if (S.w.locked && S.settings.lockScope==='safe' && !['timer','alarm','alarmfz'].includes(key0)){ S.feed.push({t:'me',x:text,via}); S.feed.push({t:'card',who:'p',head:'Экран заблокирован',title:'Разблокируйте, чтобы продолжить',text:'На заблокированном экране сейчас работают только будильник, таймер и фонарик.',btns:[['Разблокировать','unlock_any','pri'],['Отмена','x','gh']]}); return render() }
   if (S.mode!=='main') return deliverMode(text, via);
-  const key=guessKey(text);
+  const key=key0;
   if (S.busy){ S.feed.push({t:'me',x:text,via:via+' · учтено'}); trace('Мозг ещё работает — реплика учтена в идущей работе (как в Telegram).','h'); return render() }
   const my=++token; S.busy=true;
   S.feed.push({t:'me',x:text,via}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();

@@ -90,7 +90,8 @@ const toolBlocked = x => S.policy[x.id]!=='off' && !!x.perm && S.w.perms[x.perm]
 const toolPending = x => S.policy[x.id]!=='off' && !!x.perm && S.w.perms[x.perm]==='ask';
 const POLICY_OPTS=[['auto','Разрешить'],['ask','Спрашивать каждый раз'],['off','Не разрешать']];
 const POLICY_WORD={auto:'Разрешено',ask:'Спрашивать',off:'Не разрешено'};
-const LOCK_SCOPE=[['safe','Будильник, таймер, фонарик'],['unlock','Ничего']];
+/** На заблокированном экране: off — сначала разблокировка (по умолчанию); safe — только будильник, таймер, фонарик; on — разговор работает, действия с данными просят разблокировку. */
+const LOCK_SCOPE=[['off','Не открывать'],['safe','Только будильник, таймер, фонарик'],['on','Открывать']];
 
 /** Настройки приложения, которых нет у режимов. */
 const RETURN_OPTS=[['30m','Через 30 минут без дела'],['never','Никогда — открывать последний режим'],['always','Всегда — боковая кнопка открывает Ассистента']];
@@ -106,7 +107,7 @@ const fresh = () => { const o = ({
   modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,
-  settings:{ returnToAssistant:'30m', lockScope:'safe' },
+  settings:{ returnToAssistant:'30m', lockScope:'off' },
   policy:Object.fromEntries(TOOLS.map(t=>[t.id,t.def])), editTool:null, jopen:null,
   journal:[
     {id:'j3',day:'Сегодня',at:'09:05',tool:'calendar.add',title:'Встреча с Олей · пт 15:00',who:'DeepSeek',phrase:'запиши встречу с Олей в пятницу в 15',params:'title="Встреча с Олей", start=2026-10-23T15:00',confirm:'«Да» нажатием',lock:false,undo:true},
@@ -122,7 +123,7 @@ const fresh = () => { const o = ({
 const modeById = id => S.modes.find(m=>m.id===id);
 const toolById = id => TOOLS.find(t=>t.id===id);
 /** Можно ли на заблокированном телефоне без разблокировки. */
-const lockOk = id => S.settings.lockScope==='safe' && !!toolById(id).safe;
+const lockOk = id => S.settings.lockScope!=='off' && !!toolById(id).safe;
 /** Строка итога в разговоре + запись в журнал действий. */
 function addAct(item, j){ S.feed.push(item); const d=new Date(); S.journal.unshift({id:'j'+Date.now(),day:'Сегодня',at:d.toTimeString().slice(0,5),title:item.x,status:item.undone?'отклонено':'',...j}) }
 const brainById = id => S.brains.find(b=>b.id===id);

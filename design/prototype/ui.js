@@ -21,11 +21,11 @@ function issue(){
   if (S.w.model==='broken') return {k:'e',t:'Файл распознавания повреждён.',a:[['Скачать заново','dl']]};
   if (S.w.model==='loading') return {k:'p',t:S.w.net==='none'?`Распознавание: ${S.modelPct} % — ждёт сеть`:`Распознавание качается: ${S.modelPct} % из ${mb(MODEL_TOTAL)} МБ`,prog:S.modelPct};
   if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
-  if (S.w.role!=='ours') return {k:'p',t:'Цифровой помощник — Gemini. Тася откроется только отсюда.',a:[['Не сейчас','dismiss'],['Настроить','sysrole']]};
+  if (S.w.role!=='ours') return {k:'p',t:'Цифровым помощником выбран Gemini — боковая кнопка откроет его.',a:[['Не сейчас','dismiss'],['Настроить','sysrole']]};
   if (S.w.profile==='unknown' && S.w.role==='ours' && S.sideProbe!=='yes') return S.sideProbe==='no'
-      ? {k:'p',t:'Назначьте Тасю цифровым помощником для боковой кнопки: Настройки → кнопки или жесты → помощник. Пункты зависят от телефона.',a:[['Сообщить разработчику','sidereport'],['Открыть настройки','sysside']]}
-      : {k:'p',t:'Зажмите боковую кнопку. Открылась Тася?',a:[['Нет, другое','sideno'],['Да','sideyes']]};
-  if (S.w.side==='double') return {k:'p',t:'Тася открывается двойным нажатием боковой кнопки. Для удержания: Боковая кнопка → Нажатие и удержание → Цифровой помощник.',a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
+      ? {k:'p',t:'Выберите «Тася» цифровым помощником для боковой кнопки: Настройки → кнопки или жесты → помощник. Пункты зависят от телефона.',a:[['Сообщить разработчику','sidereport'],['Открыть настройки','sysside']]}
+      : {k:'p',t:'Зажмите боковую кнопку. Открылось окно ассистента?',a:[['Нет, другое','sideno'],['Да','sideyes']]};
+  if (S.w.side==='double') return {k:'p',t:'Ассистент открывается двойным нажатием боковой кнопки. Для удержания: Боковая кнопка → Нажатие и удержание → Цифровой помощник.',a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
   if (S.w.side!=='assistant') return {k:'p',t:`Боковая кнопка открывает ${S.w.side==='bixby'?'Bixby':'меню выключения'}.`,a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
   if (!brainReady()) return {k:'p',t:brainOf().kind==='api'?'Мозг не подключён — работают только команды телефона.':'Hermes не подключён — работают только команды телефона.',a:[['Не сейчас','dismiss'],['Подключить',brainOf().kind==='api'?'brainsetup':'connect']]};
   return null;
@@ -203,10 +203,10 @@ function blockedBanner(){ const miss=[...new Set(TOOLS.filter(toolBlocked).map(x
 function sysPerm(){ const k=S.permKind, o=(v,t)=>`<button class="it" data-sysperm="${v}"><span class="rad ${(S.w.perms[k]==='ok')===(v==='ok')?'on':''}"></span>${t}</button>`;
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="syspermback">${I.back}</button>${SYS_PERMS[k].replace(/[«»]/g,'')}</div><p style="margin:0 22px 6px;font-size:13px;color:#666">${k==='dnd'?'Настройки → Уведомления → Доступ к «Не беспокоить»':`Приложения → Тася → Разрешения → ${SYS_PERMS[k]}`}</p><div class="grp">${k==='dnd'?o('ok','Тася — разрешить')+o('denied','Не разрешать'):o('ok',k==='location'?'Разрешить только во время использования':'Разрешить')+o('denied','Не разрешать')}</div></div>` }
 function toolsPage(){
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Действия на телефоне</b><small>что Тася делает сама, а что спрашивает</small></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Действия на телефоне</b><small>что выполняется сразу, а что — после вопроса</small></div></div>
   <div class="scroll">${blockedBanner()}<div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b>${toolBlocked(x)?`<small>нет доступа: ${SYS_PERMS[x.perm]}</small>`:toolPending(x)?`<small class="pend">доступ «${SYS_PERMS[x.perm].replace(/[«»]/g,'')}» спросим при первом разе</small>`:''}</span><span class="pword ${toolBlocked(x)?'nope':S.policy[x.id]}">${toolBlocked(x)?'Нет доступа':POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
-    <div class="lh">Экран блокировки</div>${li(I.lock,'Без разблокировки', S.settings.lockScope==='safe'?'Будильник, таймер, фонарик':'Ничего','lockscope')}
-    <p class="mnote" style="padding:4px 22px 20px">«Разрешено» — Тася делает сразу и показывает в разговоре, что сделала. «Спрашивать» — сначала покажет и подождёт «Да». Сообщения Тася только готовит — отправляете вы.</p></div></div></div>` }
+    <div class="lh">Экран блокировки</div>${li(I.lock,'На заблокированном экране', LOCK_SCOPE.find(o=>o[0]===S.settings.lockScope)[1],'lockscope')}
+    <p class="mnote" style="padding:4px 22px 20px">«Разрешено» — выполняется сразу, в разговоре видно, что сделано. «Спрашивать» — сначала показывается и ждёт «Да». Сообщения только готовятся — отправляете вы.</p></div></div></div>` }
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Журнал действий</b><small>только на телефоне</small></div></div>
   <div class="scroll"><div class="list">${days.map(d=>`<div class="lh">${d}</div>${S.journal.filter(j=>j.day===d).map(j=>`<button class="jrow" data-jid="${j.id}" aria-expanded="${S.jopen===j.id}"><span class="jt">${j.at}</span><span class="jm"><b>${esc(j.title)}</b><small>${j.who}${j.status?' · '+j.status:''}</small></span></button>${S.jopen===j.id?`<div class="jd"><div><span>Фраза</span>«${esc(j.phrase)}»</div><div><span>Действие</span><code>${j.tool}</code> ${esc(j.params)}</div><div><span>Подтверждение</span>${j.confirm}</div><div><span>Экран</span>${j.lock?'заблокирован':'открыт'}</div>${j.undo?`<button class="tbtn" data-act="jundo" data-id="${j.id}">Отменить</button>`:''}</div>`:''}`).join('')}`).join('')}</div></div></div>` }
@@ -239,7 +239,7 @@ function onb(){
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
-    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен, чтобы говорить с Тасей',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
+    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
   if (st==='done'){ art='<div style="font-size:64px">✓</div>'; h='Готово'; p = S.w.role==='ours'&&S.sideOk ? 'Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».' : 'Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».'; primary=['Открыть','onbdone']; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }

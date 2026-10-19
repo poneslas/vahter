@@ -1,6 +1,7 @@
 /* Лист ассистента и съёмка: открыть/закрыть, камера, загрузка фото (в Android — VoiceInteractionSession, CameraX в окне листа, загрузка корутиной в процессе, запасной путь WorkManager). */
 /* ───────── лист ───────── */
 function openOverlay(src){
+  if (S.w.locked && S.settings.lockScope==='off' && !S.unlocking){ return lockGate(src) }
   token++; S.busy=false;
   const isSide = src==='side'||src.startsWith('боков');
   const R=S.settings.returnToAssistant; if (isSide && S.mode!=='main' && R!=='never' && (R==='always' || S.idle>=30 || !curMode().enabled)){ const t=curMode().title; S.mode='main'; trace(R==='always'?`Боковая кнопка всегда открывает Ассистента (настройка). «${t}» — через вкладки или ярлык.`:`Без дела ${S.idle} мин — боковая кнопка снова открывает Ассистента. «${t}» остался во вкладках, лента сохранена.`,'p') }
@@ -76,6 +77,9 @@ function permInApp(kind){ S.permRet={screen:S.screen==='app'?'home':S.screen, si
     : {ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','notif_no','sec2']]};
   render() }
 function permBack(){ const R=S.permRet; if(!R) return false; S.permRet=null; S.screen=R.screen; openOverlay(R.side?'side':'снова'); return true }
+/** На заблокированном экране по умолчанию ничего не открывается: сначала разблокировка (тот же путь, что проверен на S24), микрофон до неё не включается. */
+async function lockGate(src){ S.ov=null; S.unlocking=true; render(); trace('На заблокированном экране — «Не открывать» (по умолчанию): сначала разблокировка, микрофон не включается. Настройки → Действия на телефоне → Экран блокировки.','p');
+  await wait(1100); S.unlocking=false; S.w.locked=false; S.screen='home'; openOverlay(src) }
 function closeOverlay(){ token++; S.busy=false; S.ov=null; render() }
 /** Разрешение на уведомления спрашиваем, пока лист ещё виден: при первом вопросе мозгу, пока он думает. После закрытия окна спросить уже нечем. */
 function maybeAskNotif(){ if (S.w.notif==='ok'||S.notifAsked||!S.ov) return; S.notifAsked=true; S.feed.push({t:'notifask'}); trace('Уведомления спрашиваем, пока лист виден: при закрытии листа окна уже нет, системный запрос показать нечем.','p') }
