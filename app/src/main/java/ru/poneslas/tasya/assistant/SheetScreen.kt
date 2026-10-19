@@ -60,7 +60,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         if (camera) {
             ru.poneslas.tasya.media.CameraScreen(session, state.current, ru.poneslas.tasya.core.Brains.byId(state.current.brain).maxImages,
                 onClose = { Sheet.camera.value = false },
-                onSend = { files -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото") })
+                onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото"); if (question.isNotBlank()) app.conversation.send(question, "голос") })
             return@TasyaTheme
         }
         val brain = ru.poneslas.tasya.core.Brains.byId(state.current.brain)

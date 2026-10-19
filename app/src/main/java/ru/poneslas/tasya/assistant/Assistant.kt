@@ -158,6 +158,7 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     override fun onHide() {
         // Запись останавливаем сами: система микрофон после hide() не выключает (Архитектура 3).
         SheetEvents.onHide?.invoke()
+        ru.poneslas.tasya.App.instance.conversation.touch() // «30 минут без дела» считаем от последнего закрытия листа
         Sheet.camera.value = false
         if (registry.currentState.isAtLeast(Lifecycle.State.CREATED)) registry.currentState = Lifecycle.State.CREATED
         Sheet.visible.value = false

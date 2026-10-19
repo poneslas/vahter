@@ -66,7 +66,7 @@ class Conversation(
 
     private fun edit(f: (Saved) -> Saved) = _state.update { it.copy(saved = f(it.saved)) }
 
-    fun selectMode(id: String) = edit { it.copy(mode = id) }
+    fun selectMode(id: String) = edit { it.copy(mode = id, lastUse = System.currentTimeMillis()) }
     fun setDraft(text: String) = _state.update { it.copy(drafts = it.drafts + (it.mode to text)) }
     fun updateSettings(f: (Settings) -> Settings) = edit { it.copy(settings = f(it.settings)) }
     fun updateModes(f: (List<Mode>) -> List<Mode>) = edit { it.copy(modes = f(it.modes)) }
