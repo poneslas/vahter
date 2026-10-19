@@ -100,13 +100,31 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             w.decorView.setViewTreeLifecycleOwner(this)
             w.decorView.setViewTreeSavedStateRegistryOwner(this)
             w.decorView.setViewTreeViewModelStoreOwner(this)
-            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            // Баги №16, №18: клавиатуру, полоску навигации, строку состояния и вырез считает только Compose (imePadding, safeDrawing).
+            // Рамка сессии (fitsSystemWindows в разметке помощника) сдвигала лист сама и не на всю высоту клавиатуры — отключаем её ниже.
+            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(w, false)
+            w.attributes = w.attributes.apply { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS }
+            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) // без сдвига окна: система его сдвигала (pan) на 688 px поверх imePadding
         }
         Sheet.session = this
         context.registerReceiver(screenOff, android.content.IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onCreateContentView(): View = ComposeView(context).apply {
+        // Рамки сессии над нашим видом не должны сами отступать от клавиатуры и полос — это делает Compose (баг №16).
+        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                var p = v.parent
+                while (p is android.view.ViewGroup) {
+                    p.fitsSystemWindows = false
+                    p.setPadding(0, 0, 0, 0)
+                    p.setOnApplyWindowInsetsListener { _, insets -> insets }
+                    p = p.parent
+                }
+                v.requestApplyInsets()
+            }
+            override fun onViewDetachedFromWindow(v: View) {}
+        })
         setViewTreeLifecycleOwner(this@AssistSession)
         setViewTreeSavedStateRegistryOwner(this@AssistSession)
         setViewTreeViewModelStoreOwner(this@AssistSession)
@@ -124,6 +142,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
+        // Сессия сама выставляет режим клавиатуры при показе — перекрываем, иначе окно сдвигается поверх imePadding (баг №16).
+        window.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         val app = ru.poneslas.tasya.App.instance
         val conv = app.conversation
         val settings = conv.state.value.settings

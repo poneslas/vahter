@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -60,13 +68,28 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         if (session.context.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) onNeedPerm(android.Manifest.permission.CAMERA)
         else Sheet.camera.value = true
     }
+    var camFull by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(camera) { if (!camera) camFull = false }
+    // Переключили режим — камера закрывается, остаётся обычный лист.
+    androidx.compose.runtime.LaunchedEffect(state.mode) { Sheet.camera.value = Sheet.camera.value && state.current.accepts.photo }
+    val cameraPanel: @Composable (Modifier, Boolean) -> Unit = { m, full ->
+        ru.poneslas.tasya.media.CameraPanel(session, state.current, ru.poneslas.tasya.core.Brains.byId(state.current.brain).maxImages, full,
+            onClose = { Sheet.camera.value = false }, onCollapse = { camFull = false },
+            onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото"); if (question.isNotBlank()) app.conversation.send(question, "голос") },
+            modifier = m)
+    }
     TasyaTheme {
-        if (camera) {
-            ru.poneslas.tasya.media.CameraScreen(session, state.current, ru.poneslas.tasya.core.Brains.byId(state.current.brain).maxImages,
-                onClose = { Sheet.camera.value = false },
-                onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото"); if (question.isNotBlank()) app.conversation.send(question, "голос") })
-            return@TasyaTheme
-        }
+        if (camera && camFull) { cameraPanel(Modifier.fillMaxSize(), true); return@TasyaTheme }
+        // Баг №16. Окно помощника система при клавиатуре сдвигает вверх (прокрутка к полю) — отключить нельзя.
+        // Поэтому отступ снизу = высота клавиатуры минус уже сделанный сдвиг; без этого лист уезжал выше клавиатуры.
+        val d = androidx.compose.ui.platform.LocalDensity.current
+        val view = androidx.compose.ui.platform.LocalView.current
+        val imePx = imeBottom(d)
+        var pan by remember { mutableStateOf(0) }
+        androidx.compose.runtime.LaunchedEffect(imePx) { val loc = IntArray(2); view.getLocationOnScreen(loc); pan = (-loc[1]).coerceAtLeast(0) }
+        val navPx = navBottom(d)
+        // С клавиатурой полоска навигации под ней — её отступ не нужен.
+        val bottomPad = with(d) { (if (imePx > 0) (imePx - pan).coerceAtLeast(0) else navPx).toDp() }
         val brain = ru.poneslas.tasya.core.Brains.byId(state.current.brain)
         val keyV by app.keyVersion.collectAsState()
         val connected = remember(keyV, brain.id) { app.hasKey(brain.id) }
@@ -77,7 +100,9 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         ) {
             // .sheet: отступ 8 от краёв, скругление 30, бумага, поля 8 сверху / 12 снизу
             Column(
-                Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(8.dp)
+                Modifier.fillMaxWidth().animateContentSize()
+                    .then(if (camera) Modifier.windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top)).padding(top = 40.dp).fillMaxHeight() else Modifier)
+                    .padding(bottom = bottomPad).padding(8.dp)
                     .shadow(24.dp, RoundedCornerShape(30.dp), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(30.dp)).background(Ink.paper)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
@@ -110,11 +135,20 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         withStyle(SpanStyle(color = Ink.ink, fontWeight = FontWeight.SemiBold)) { append(state.current.title) }
                         append(if (connected) " · на связи" else " · нет ключа · только команды телефона")
                     }, fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    IconBtn(Ic.expand, "Развернуть в приложение", size = 36.dp, tint = Ink.soft, onClick = onExpand)
-                    IconBtn(Ic.gear, "Настройки", size = 36.dp, tint = Ink.soft, onClick = onSettings)
-                    IconBtn(Ic.x, "Закрыть", size = 36.dp, tint = Ink.soft, onClick = onClose)
+                    if (camera) {
+                        IconBtn(Ic.expand, androidx.compose.ui.res.stringResource(ru.poneslas.tasya.R.string.cam_fullscreen), size = 36.dp, tint = Ink.soft) { camFull = true }
+                        IconBtn(Ic.x, androidx.compose.ui.res.stringResource(ru.poneslas.tasya.R.string.cam_close), size = 36.dp, tint = Ink.soft) { Sheet.camera.value = false }
+                    } else {
+                        IconBtn(Ic.expand, "Развернуть в приложение", size = 36.dp, tint = Ink.soft, onClick = onExpand)
+                        IconBtn(Ic.gear, "Настройки", size = 36.dp, tint = Ink.soft, onClick = onSettings)
+                        IconBtn(Ic.x, "Закрыть", size = 36.dp, tint = Ink.soft, onClick = onClose)
+                    }
                 }
                 }
+                if (camera) {
+                    cameraPanel(Modifier.weight(1f).padding(top = 6.dp), false)
+                    ru.poneslas.tasya.ui.ModeTabs(state, app.conversation::selectMode, onAddMode)
+                } else {
                 Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 420.dp))
                 LiveLine(live)
@@ -131,8 +165,12 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     onCamera = ::openCamera,
                     onGallery = { ru.poneslas.tasya.media.PickerActivity.launchFromSheet(session) },
                 )
+                }
             }
         }
     }
 }
 
+
+@Composable private fun imeBottom(d: androidx.compose.ui.unit.Density) = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(d)
+@Composable private fun navBottom(d: androidx.compose.ui.unit.Density) = androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(d)

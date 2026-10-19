@@ -9,4 +9,31 @@
     <string name="bar_cancel">Отмена</string>
     <string name="download_no_network">Телефон не может связаться с сервером. Проверьте интернет: Wi-Fi может быть подключён без доступа в сеть. Если включён «Частный DNS», поставьте «Автоматически» или попробуйте мобильный интернет.</string>
     <string name="model_verification_failed">Модель скачана, но проверка установки не пройдена</string>
+    <!-- Камера в листе -->
+    <string name="cam_close">Закрыть камеру</string>
+    <string name="cam_retake">Переснять</string>
+    <string name="cam_undo">Отменить последнее</string>
+    <string name="cam_crop">Обрезать</string>
+    <string name="cam_circle">Обвести</string>
+    <string name="cam_arrow">Стрелка</string>
+    <string name="cam_hint_crop">Тяните за углы и стороны рамки</string>
+    <string name="cam_hint_circle">Обведите пальцем</string>
+    <string name="cam_hint_arrow">Проведите от начала к острию</string>
+    <string name="cam_reset">Сбросить</string>
+    <string name="cam_done">Готово</string>
+    <string name="cam_add">Оставить кадр и снять ещё</string>
+    <string name="cam_send">Отправить</string>
+    <string name="cam_send_all">Отправить все кадры</string>
+    <string name="cam_ask_voice">Зажмите и спросите голосом</string>
+    <string name="cam_listening">Слушаю…</string>
+    <string name="cam_recognizing">Распознаю…</string>
+    <string name="cam_no_frame">Кадр не получен — камера не показывает изображение.</string>
+    <string name="cam_unavailable">Камера недоступна: %1$s</string>
+    <string name="cam_no_picture">Камера не показывает изображение. Закройте и откройте ещё раз; если повторится — перезапустите телефон.</string>
+    <string name="cam_need_mic">Нужен доступ к микрофону</string>
+    <string name="cam_need_voice">Голос ещё не скачан: Настройки → Голос</string>
+    <string name="cam_frame_edit">Кадр %1$d: править</string>
+    <string name="cam_frame_delete">Удалить кадр %1$d</string>
+    <string name="cam_fullscreen">Камера на весь экран</string>
+    <string name="cam_collapse">Вернуть камеру в лист</string>
 </resources>
