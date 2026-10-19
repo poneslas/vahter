@@ -339,7 +339,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 /* ─── лист ассистента ─── */
 .ov{position:absolute;inset:0;z-index:20}
 .ov .dim{position:absolute;inset:0;background:rgba(14,26,54,.32);transition:opacity .3s}
-.sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--paper);border-radius:30px;display:flex;flex-direction:column;padding:8px 0 12px;height:auto;max-height:calc(100% - 50px);box-shadow:0 -8px 30px -12px rgba(14,26,54,.4);transform-origin:50% 100%;transition:left .35s cubic-bezier(.3,.8,.3,1),right .35s cubic-bezier(.3,.8,.3,1),bottom .35s cubic-bezier(.3,.8,.3,1),max-height .35s cubic-bezier(.3,.8,.3,1),border-radius .35s}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:30px 30px 0 0;display:flex;flex-direction:column;padding:8px 0 20px;height:auto;max-height:calc(100% - 50px);box-shadow:0 -8px 30px -12px rgba(14,26,54,.4);transform-origin:50% 100%;transition:left .35s cubic-bezier(.3,.8,.3,1),right .35s cubic-bezier(.3,.8,.3,1),bottom .35s cubic-bezier(.3,.8,.3,1),max-height .35s cubic-bezier(.3,.8,.3,1),border-radius .35s}
 .sheet.pop{animation:pop .42s cubic-bezier(.34,1.45,.64,1) both}
 @keyframes pop{from{transform:scale(.35);opacity:0}30%{opacity:1}}
 .sheet.full{left:0;right:0;bottom:0;max-height:100%;height:100%;border-radius:32px;padding-top:40px}

@@ -100,15 +100,15 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             interactionSource = remember { MutableInteractionSource() }, indication = null) { },
             contentAlignment = Alignment.BottomCenter,
         ) {
-            // .sheet: отступ 8 от краёв, скругление 30, бумага, поля 8 сверху / 12 снизу
+            // .sheet: на всю ширину, скруглены только верхние углы (как нижние панели Android и One UI), бумага до низа экрана;
+            // отступ под полоску жестов и клавиатуру — внутри листа.
             Column(
                 Modifier.fillMaxWidth().animateContentSize()
                     .then(if (camera) Modifier.windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top)).padding(top = 40.dp).fillMaxHeight() else Modifier)
-                    .padding(bottom = bottomPad).padding(8.dp)
-                    .shadow(24.dp, RoundedCornerShape(30.dp), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
-                    .clip(RoundedCornerShape(30.dp)).background(Ink.paper)
+                    .shadow(24.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
+                    .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)).background(Ink.paper)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                    .padding(top = 8.dp, bottom = 0.dp),
+                    .padding(top = 8.dp, bottom = bottomPad),
             ) {
                 // .grab 36×4 и шапка: потянуть вниз — закрыть лист, вверх — развернуть в приложение (баг №5)
                 val density = androidx.compose.ui.platform.LocalDensity.current
