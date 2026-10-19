@@ -242,13 +242,13 @@ fun Composer(
 
     Column(Modifier.background(Ink.paper)) {
         // .mpicker: меню скрепки над полем
-        if (menu) Column(Modifier.padding(start = 10.dp, bottom = 4.dp).widthIn(min = 230.dp)
+        if (menu) Column(Modifier.padding(start = 16.dp, bottom = 4.dp).widthIn(min = 230.dp)
             .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
             .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
             if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_kamera), tr(R.string.cmp_snyat_i_otpravit)) { menu = false; onCamera() }
             if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_galereya), tr(R.string.cmp_sistemnyy_vybor_foto)) { menu = false; onGallery() }
         }
-        Box(Modifier.padding(start = 12.dp, end = 0.dp, top = 2.dp, bottom = 2.dp)) {
+        Box(Modifier.padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)) {
             VoiceRow(
                 voice = voice,
                 field = {

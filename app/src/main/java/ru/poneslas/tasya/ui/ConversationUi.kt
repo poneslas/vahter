@@ -79,11 +79,13 @@ fun Feed(
     state: Conversation.State, onAct: (FeedItem.Act, Boolean) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {},
     modifier: Modifier = Modifier, inSheet: Boolean = true, onChip: ((String) -> Unit)? = null,
 ) {
-    val list = rememberLazyListState()
+    // Баг №20: у каждого режима своё положение ленты; при переключении — сразу в конец, без анимации.
+    val list = remember(state.mode) { androidx.compose.foundation.lazy.LazyListState((state.feed.size - 1).coerceAtLeast(0)) }
+    LaunchedEffect(state.mode) { if (state.feed.isNotEmpty()) list.scrollToItem(state.feed.size - 1, 1_000_000) }
     LaunchedEffect(state.feed.size, (state.feed.lastOrNull() as? FeedItem.Ai)?.text?.length) {
-        if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1)
+        if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1, 1_000_000)
     }
-    val pad = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 12.dp)
+    val pad = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)
     if (state.feed.isEmpty()) {
         Column(modifier.padding(pad), verticalArrangement = Arrangement.Bottom) {
             if (inSheet || state.mode != ru.poneslas.tasya.core.Modes.MAIN) {
@@ -315,7 +317,7 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () ->
         Modifier.fillMaxWidth().padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
-        contentPadding = PaddingValues(horizontal = 12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
     ) {
         items(state.tabs, key = { it.id }) { m ->
             val on = m.id == state.mode

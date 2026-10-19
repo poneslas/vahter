@@ -269,6 +269,8 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     var skip: Pair<String, () -> Unit>? = tr(R.string.pg_pozzhe) to next
     var primary: Pair<String, () -> Unit>? = tr(R.string.pg_dalee) to next
 
+    // Шаг 0 — приветствие: девиз и 4 карточки с живыми сценами (ui/Intro.kt).
+    if (step == 0) { ru.poneslas.tasya.ui.Intro { step = 1 }; return }
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 22.dp, bottom = 22.dp)) {
         if (step == 3) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(top = 14.dp)) { KeyEditor(Brains.deepseek, onboarding = true) }

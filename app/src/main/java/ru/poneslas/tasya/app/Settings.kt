@@ -63,9 +63,9 @@ import ru.poneslas.tasya.ui.Ink
 /** .topbar: [назад] заголовок 19 / подзаголовок 12 с точкой связи, справа — действия. */
 @Composable
 fun TopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?, dot: Color? = null, backIcon: Int = Ic.back, titleIcon: Int? = null, actions: @Composable () -> Unit = {}) {
-    Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 52.dp).padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 52.dp).padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) IconBtn(backIcon, tr(R.string.kit_nazad), onClick = onBack)
-        Column(Modifier.weight(1f).padding(start = 6.dp)) {
+        Column(Modifier.weight(1f).padding(start = if (onBack != null) 6.dp else 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (titleIcon != null) { Icon(painterResource(titleIcon), null, Modifier.size(20.dp), tint = Ink.ink); Spacer(Modifier.width(8.dp)) }
                 Text(title, fontSize = 19.sp, lineHeight = 1.2.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)

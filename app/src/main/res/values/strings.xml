@@ -551,4 +551,44 @@
     <string name="restart_yes">Стереть</string>
     <string name="restart_no">Отмена</string>
     <string name="restart_hint_longpress">Удерживайте название режима — начать заново</string>
+    <!-- Приветствие (ui/Intro.kt; сцены — как docs/design/prototype/intro.css) -->
+    <string name="intro_0_h">Зажал кнопку — сказал — сделано</string>
+    <string name="intro_0_p">Как Алиса или Gemini — только быстрее, без рекламы и с моделью, которую выбираете вы.</string>
+    <string name="intro_1_h">Не чат, а кнопка</string>
+    <string name="intro_1_p">Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.</string>
+    <string name="intro_2_h">Объяснили один раз</string>
+    <string name="intro_2_p">Переводчик, гид по меню, справка о товаре — задача уже внутри. Говорите только суть.</string>
+    <string name="intro_3_h">Навёл камеру — узнал, что это</string>
+    <string name="intro_3_p">Где нужен глаз, сразу открывается камера: вывеска, меню, товар.</string>
+    <string name="intro_4_h">Сказал — сделано</string>
+    <string name="intro_4_p">Будильник, таймер, календарь, звонок — без лишних шагов. Работает мгновенно, даже без интернета.</string>
+    <string name="intro_skip">Пропустить</string>
+    <string name="intro_next">Далее</string>
+    <string name="intro_setup">Настроить</string>
+    <string-array name="intro_steps">
+        <item>Разблокировать</item><item>Найти приложение</item><item>Новый чат</item><item>Объяснить задачу</item><item>Напечатать вопрос</item>
+    </string-array>
+    <string name="intro_online">на связи</string>
+    <string name="intro_assistant">Ассистент</string>
+    <string name="intro_tab_tr">Переводчик</string>
+    <string name="intro_tab_gastro">Гастрогид</string>
+    <string name="intro_tab_what">Что это?</string>
+    <string name="intro_modes">Режимы</string>
+    <string name="intro_modes_sub">задача уже внутри</string>
+    <string name="intro_s1_q">Сколько варить гречку?</string>
+    <string name="intro_s1_a">15–20 минут на слабом огне, 1 : 2 с водой.</string>
+    <string name="intro_s2_t1">★ переводи на китайский</string>
+    <string name="intro_s2_q1">Где здесь туалет?</string>
+    <string name="intro_s2_a1">洗手间在哪里？ Xǐshǒujiān zài nǎlǐ?</string>
+    <string name="intro_s2_t2">★ не остро, без свинины</string>
+    <string name="intro_s2_a2">Судак на гриле и морс — под ваши вкусы.</string>
+    <string name="intro_s2_t3">★ что это и нормальная ли цена</string>
+    <string name="intro_s2_a3">Пуэр, 15 лет выдержки. Цена обычная.</string>
+    <string name="intro_s3_a">Пуэр, 15 лет выдержки — хороший. Цена обычная, брать можно.</string>
+    <string name="intro_s4_q">Будильник на 7 и таймер на минуту</string>
+    <string name="intro_s4_r1">Будильник поставлен · 7:00</string>
+    <string name="intro_s4_r1s">прозвенит через 9 ч</string>
+    <string name="intro_s4_r2">Таймер запущен · 1:00</string>
+    <string name="intro_s4_r2s">осталось 0:59</string>
+    <string name="intro_s4_off">✈ без интернета — тоже работает</string>
 </resources>

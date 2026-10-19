@@ -139,7 +139,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
                     }
                 // .hdr: точка · «Режим · на связи» 12 · ⤢ ⚙ ✕ (36, приглушённые)
-                Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(9.dp).clip(CircleShape).background(if (connected) Ink.server else Ink.local))
                     Spacer(Modifier.width(8.dp))
                     // Долгое нажатие на название режима — «Начать заново» (с подтверждением карточкой в ленте).

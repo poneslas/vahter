@@ -197,7 +197,7 @@ fun CameraPanel(
         // ── видоискатель ──
         BoxWithConstraints(
             Modifier.weight(1f).fillMaxWidth()
-                .then(if (full) Modifier else Modifier.padding(horizontal = 12.dp).clip(RoundedCornerShape(24.dp)))
+                .then(if (full) Modifier else Modifier.padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)))
                 .background(Color(0xFF0B0D12)),
         ) {
             val boxW = with(density) { maxWidth.toPx() }; val boxH = with(density) { maxHeight.toPx() }
