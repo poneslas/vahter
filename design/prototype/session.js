@@ -17,6 +17,8 @@ function openOverlay(src){
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function openCamera(first){
+  if (S.w.perms.camera!=='ok'){ const msg=`<span class="st">Нужен доступ к камере</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">Спросит приложение — лист на секунду развернётся.</span><br><button class="recbtn" data-permfix="camera" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`;
+    if (!S.ov) S.ov={pop:false}; S.ov.live=msg; S.ov.liveQ=false; trace('Камера в листе тоже требует разрешения. Окно разрешения из листа на S24 уходит под лист — спрашиваем через приложение, потом камера в листе стартует без повторного вопроса.','p'); return render() }
   S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first,tool:null,frozen:false,marks:[],crop:null,frames:[],editIdx:null}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
   trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера — CameraX прямо в листе: на эмуляторе видоискатель через ~320 мс после вызова (пробник). Запасной путь — своя активность, ~530 мс.','p'); render() }
 function uploadPhoto(img, q, via){

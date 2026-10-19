@@ -327,6 +327,7 @@ function render(){
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick(); else if (S.screen==='sysperm') base=sysPerm();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
+  if (S.unlocking) base += `<div class="unlk"><div class="fp">${I.lock}</div><b>Разблокируйте</b><small>Приложите палец к сканеру</small></div>`;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
   document.querySelectorAll('#scr .fieldarea').forEach(grow);
   if (typeof tourCheck==='function') tourCheck();

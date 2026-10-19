@@ -8,6 +8,7 @@ const PHR={
   logs:{t:'Почисти старые логи на сервере',w:['почисти','старые','логи','на','сервере'],fin:'Почисти старые логи на сервере.'},
   table:{t:'Забронируй столик на субботу',w:['забронируй','столик','на','субботу'],fin:'Забронируй столик на субботу.'},
   move:{t:'Перенеси банк на пятницу',w:['перенеси','банк','на','пятницу'],fin:'Перенеси банк на пятницу.'},
+  dnd:{t:'Включи «Не беспокоить»',w:['включи','не','беспокоить'],fin:'Включи «Не беспокоить».'},
   call:{t:'Позвони маме',w:['позвони','маме'],fin:'Позвони маме.'},
   alarmfz:{t:'Поставь мне алярмер на семь',w:['поставь','мне','алярмер','на','семь'],fin:'Поставь мне алярмер на семь.'},
   alarm:{t:'Поставь будильник',w:['поставь','будильник'],fin:'Поставь будильник.'},
@@ -16,7 +17,7 @@ const PHR={
   pr:{t:'(диктовка промпта)',w:['если','есть','рыба','на','гриле','—','советуй','её','первой'],fin:'Если есть рыба на гриле — советуй её первой.'},
   toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
-const guessKey = v => { v=v.toLowerCase(); return /позвони/.test(v)?'call':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
+const guessKey = v => { v=v.toLowerCase(); return /беспокоить/.test(v)?'dnd':/позвони/.test(v)?'call':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
   const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
   if (S.mode!=='main') return deliverMode(text, via);
@@ -98,6 +99,9 @@ async function route(key,my){
   const B=brainOf();
   if (!brainReady(B)){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:B.kind==='api'?'Мозг не подключён':'Hermes не подключён',text:'Команды телефона работают и так.',btns:[['Подключить',B.kind==='api'?'brainsetup':'connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
   if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи — отправлю, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
+  if (key==='dnd'){
+    if (S.w.perms.dnd!=='ok'){ S.feed.push({t:'card',who:'p',head:'Телефон · «Не беспокоить»',title:'Нужен доступ к «Не беспокоить»',text:'Android выдаёт его один раз на отдельном экране настроек.',btns:[['Открыть','permfix:dnd','pri'],['Отмена','x','gh']]}); trace('Своё правило «Не беспокоить» без особого доступа не включить (SecurityException, пробник). Просим при первой просьбе — не в первом запуске.','p'); return }
+    addAct({t:'act',i:'🌙',x:'Не беспокоить · включено',s:'на телефоне',btn:'Отменить',kind:'C',id:Date.now()},{tool:'dnd.set',who:'по правилам',phrase:'включи не беспокоить',params:'on=true',confirm:'сразу',lock:S.w.locked}); return }
   if (key==='call'){ const P=S.policy['call.dial'];
     if (P==='off'){ await stream(my,'<p>Звонить мне не разрешено — это в Настройках → «Действия на телефоне».</p>',{fast:true}); return }
     if (!permOk('contacts')){ S.feed.push({t:'card',who:'h',head:`${B.title} просит · звонок`,title:'Нет доступа к контактам',text:'Без него не найду «маму». Можно продиктовать номер.',btns:[[S.w.perms.contacts==='ask'?'Разрешить доступ':'Открыть настройки','permfix:contacts','pri'],['Отмена','x','gh']]}); trace('Мозг вызвал call.dial, а доступа к контактам у Android нет — мозг получил понятный отказ (no_android_permission), пользователю — карточка с исправлением.','e'); return }
@@ -118,7 +122,7 @@ async function route(key,my){
   if (key==='ask'){ if(!await think(my,[{i:'📅',t:'Смотрю календарь',phone:true,d:'phone.calendar.query · завтра · 2 события',ms:'0,3 с'}])) return;
     await stream(my,'<p>Завтра две встречи: в <b>10:00</b> банк, в <b>15:30</b> созвон с Олей. Утро свободно.</p>',{fast:true}); trace('Короткий ответ — одно сообщение, целиком в листе.','h'); return }
   if (key==='move'){ if(!await think(my,[{i:'📅',t:'Ищу встречу с банком',phone:true,d:'phone.calendar.query',ms:'0,2 с'}])) return;
-    S.feed.push({t:'card',who:'h',head:'Hermes просит · календарь',title:'Встреча с банком',kv:[['Было','чт, 18 окт, 10:00'],['Станет','пт, 19 окт, 10:00–10:30']],btns:S.w.locked?[['Разблокировать и перенести','unlockmove','pri'],['Отмена','x','gh']]:[['Перенести','move','pri'],['Изменить','x'],['Отмена','x','gh']]}); return }
+    S.feed.push({t:'card',who:'h',head:`${B.title} просит · календарь`,title:'Встреча с банком',kv:[['Было','чт, 18 окт, 10:00'],['Станет','пт, 19 окт, 10:00–10:30']],btns:S.w.locked?[['Разблокировать и перенести','unlockmove','pri'],['Отмена','x','gh']]:[['Перенести','move','pri'],['Изменить','x'],['Отмена','x','gh']]}); return }
   if (key==='backup'){
     if(!await stream(my,'<p>Посмотрю, что уже стоит на сервере, и соберу план.</p>',{fast:true,interim:true})) return;
     trace('Сообщение 1 — промежуточное (on_interim_message): короткое, приглушённое.','h');

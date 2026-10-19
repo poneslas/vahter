@@ -83,7 +83,7 @@ const TOOLS=[
 ].map(([id,title,group,def,o])=>({id,title,group,def,...(o||{})}));
 /** Слова — как в системном диалоге разрешений Android. */
 /** Системные доступы Android, от которых зависят действия. Состояние: ok — выдан, ask — ещё не спрашивали, denied — отказано (окно больше не покажется — только настройки). */
-const SYS_PERMS={calendar:'Календарь',location:'Местоположение',contacts:'Контакты',dnd:'«Не беспокоить»'};
+const SYS_PERMS={camera:'Камера',calendar:'Календарь',location:'Местоположение',contacts:'Контакты',dnd:'«Не беспокоить»'};
 const permOk = k => !k || S.w.perms[k]==='ok';
 /** Не работает: Android отказал в доступе. «Ещё не спрашивали» — не поломка: спросим при первом использовании. */
 const toolBlocked = x => S.policy[x.id]!=='off' && !!x.perm && S.w.perms[x.perm]==='denied';
@@ -102,7 +102,7 @@ function modeSummary(m){
   return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
 
 const fresh = () => { const o = ({
-  w:{ net:'wifi', key:'none', server:'none', side:'power', profile:'samsung', perms:{calendar:'ok',location:'ask',contacts:'ok',dnd:'ask'}, model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
+  w:{ net:'wifi', key:'none', server:'none', side:'power', profile:'samsung', perms:{camera:'ok',calendar:'ok',location:'ask',contacts:'ok',dnd:'ask'}, model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,

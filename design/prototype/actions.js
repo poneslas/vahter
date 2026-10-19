@@ -136,7 +136,7 @@ function cardBtn(b){
   if (b.startsWith('permfix:')) return permFix(b.slice(8));
   if (b==='call_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='call_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📞',x:'Звонилка · Мама',s:'номер набран — звоните вы',btn:'',kind:'E',id:Date.now()},{tool:'call.dial',who:brainOf().title,phrase:'позвони маме',params:'contact=«Мама»',confirm:'«Позвонить» нажатием',lock:S.w.locked}); trace('Звонилка открывается поверх, лист перед этим прячется (иначе на S24 она окажется под листом).','p'); return render() }
   if (b==='alarm_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='alarm_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'⏰',x:'Будильник · 7:00',s:brainOf().title+' → телефон · через 9 ч',btn:'Открыть Часы',kind:'D',id:Date.now()},{tool:'alarm.set',who:brainOf().title,phrase:'поставь мне алярмер на семь',params:'time=07:00',confirm:'«Поставить» нажатием',lock:S.w.locked}); return render() }
-  if (b==='unlock'){ S.w.locked=false; return render() }
+  if (b==='unlock'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock')); if(i>=0) S.feed.splice(i,1); return cardBtn('alarm_ok') }) }
   if (b==='brainsetup'){ S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; return render() }
   if (b==='restart'){ S.feed=[]; trace('Разговор режима начат заново.','p'); return render() }
   if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
@@ -153,10 +153,13 @@ function permFix(k){ const st=S.w.perms[k], fromSheet=!!S.ov;
   if (fromSheet){ S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat' }
   if (st==='ask' && k!=='dnd'){ S.permKind=k; S.permSheet=fromSheet; S.dialog={title:`Разрешить приложению «Тася» доступ: ${SYS_PERMS[k]}?`,opts:[[k==='location'?'При использовании приложения':'Разрешить','sysperm_ok'],['Не разрешать','sysperm_no','sec2']]}; return render() }
   S.permKind=k; S.permRet2={screen:S.screen,page:S.page,sheet:fromSheet?'home':null}; S.screen='sysperm'; trace(k==='dnd'?'Доступ к «Не беспокоить» — особый: только системный экран, окна разрешения нет.':'Отказано раньше — Android больше не покажет окно, ведём в системные настройки приложения.','p'); return render() }
+/** Разблокировка из листа (проверено на S24): лист прячется, своя активность поверх блокировки просит отпечаток, после — лист возвращается и выполняет действие. */
+async function unlockFromSheet(then){ const keep=S.ov; S.ov=null; S.unlocking=true; render(); trace('Лист спрятан → своя активность (setShowWhenLocked) → запрос разблокировки, когда окно получило фокус. Из onCreate система отменяет его через ~180 мс.','p');
+  await wait(1100); S.unlocking=false; S.w.locked=false; S.screen='home'; S.ov=keep||{pop:false}; render(); trace('Отпечаток принят — лист вернулся и выполняет отложенное действие.','i'); return then() }
 async function dlgAct(k){
   if (k&&k.startsWith('permfix:')) return permFix(k.slice(8));
   if (k==='tooledit'){ const x=toolById(S.editTool); S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
-  if (k==='sysperm_ok'||k==='sysperm_no'){ S.w.perms[S.permKind]=k==='sysperm_ok'?'ok':'denied'; if(S.permSheet){ S.permSheet=false; S.screen='home'; openOverlay('снова') } return render() }
+  if (k==='sysperm_ok'||k==='sysperm_no'){ S.w.perms[S.permKind]=k==='sysperm_ok'?'ok':'denied'; if(S.permKind==='camera'&&k==='sysperm_ok') trace('Камера разрешена в приложении — лист вернулся, видоискатель открылся.','i'); if(S.permSheet){ S.permSheet=false; S.screen='home'; openOverlay('снова') } return render() }
   if (k==='mic_ok'){ S.w.mic='ok'; if(permBack()){ S.pendingSide=false; return } if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
   if (k==='mic_no'){ S.w.mic='denied'; if(permBack()) return; if(S.ov) openOverlay('снова'); return render() }
   if (k==='notif_no'){ if(permBack()) return; return render() }
@@ -166,7 +169,7 @@ async function dlgAct(k){
   if (k==='notif_ok'){ S.w.notif='ok'; S.feeds && Object.keys(S.feeds).forEach(id=>S.feeds[id]=S.feeds[id].filter(f=>f.t!=='notifask')); trace('Уведомления разрешены.','i'); if(permBack()) return; return render() }
   if (k==='dlnow') return startDl(true);
   if (k==='unlock_set'){ S.w.locked=false; S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render() }
-  if (k==='unlock_move'){ S.w.locked=false; S.screen='home'; render(); await wait(300); return cardBtn('move') }
+  if (k==='unlock_move'){ return unlockFromSheet(()=>cardBtn('move')) }
   render();
 }
 function roleCheck(){ if(S.onboarded&&S.w.role!=='ours') trace(`При запуске: isRoleHeld = false — роль помощника у Gemini. Одним баннером в разговоре, не экраном с галочками.`,'e') }
