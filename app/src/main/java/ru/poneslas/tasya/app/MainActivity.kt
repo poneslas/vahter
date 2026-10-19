@@ -43,6 +43,7 @@ import ru.poneslas.tasya.assistant.Sheet
 import ru.poneslas.tasya.core.BrainDesc
 import ru.poneslas.tasya.core.Brains
 import ru.poneslas.tasya.core.LockScope
+import ru.poneslas.tasya.core.ReturnToAssistant
 import ru.poneslas.tasya.core.Policy
 import ru.poneslas.tasya.ui.Composer
 import ru.poneslas.tasya.ui.Feed
@@ -85,6 +86,7 @@ class MainActivity : ComponentActivity() {
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         i.getStringExtra(EXTRA_ASK_PERM)?.let { perm -> askMicThenSheet = true; requestPermissions(arrayOf(perm), REQ_MIC) }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
+        if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { if (stack.last() != "settings") stack.add("settings"); stack.add("mode:" + App.instance.conversation.addMode()) }
     }
 
     fun go(page: String) { stack.add(page) }
@@ -143,7 +145,7 @@ class MainActivity : ComponentActivity() {
             onDraft = app.conversation::setDraft,
             onSend = { t, v -> app.conversation.send(t, v) },
             onSelectMode = app.conversation::selectMode,
-            onAddMode = { go("settings") },
+            onAddMode = { go("mode:" + app.conversation.addMode()) },
             onLive = { live = it },
             onGallery = { ru.poneslas.tasya.media.PickerActivity.launchFromApp(this@MainActivity) },
         )
@@ -163,7 +165,14 @@ class MainActivity : ComponentActivity() {
             Item("Боковая кнопка", SideKey.describe(this@MainActivity)) { SideKey.open(this@MainActivity) }
             Section("Режимы")
             state.modes.forEach { m ->
-                Item(m.title, if (m.id == "main") "Основной разговор · действия телефона" else m.prompt.take(60) + "…") { go("mode:${m.id}") }
+                Item(m.title, when { m.id == "main" -> "Основной разговор · действия телефона"; !m.enabled -> "Выключен"
+                    m.prompt.isBlank() -> "Промпт не задан"; else -> m.prompt.take(60) + "…" }) { go("mode:${m.id}") }
+            }
+            Item("Новый режим", "Свой промпт, вкладка в листе") { go("mode:" + app.conversation.addMode()) }
+            Item("Возврат к Ассистенту", returnLabel(state.settings.returnToAssistant)) {
+                dialog = ChoiceDialog("Возврат к Ассистенту", ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
+                    app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }
+                }
             }
             Section("Голос")
             Item("Распознавание речи", app.voiceStatus()) { go("voice") }
@@ -185,6 +194,12 @@ class MainActivity : ComponentActivity() {
             Section("О программе")
             Item("Версия", packageManager.getPackageInfo(packageName, 0).versionName ?: "")
         }
+    }
+
+    private fun returnLabel(r: ReturnToAssistant) = when (r) {
+        ReturnToAssistant.MIN30 -> "Через 30 минут без использования"
+        ReturnToAssistant.ALWAYS -> "Всегда открывать Ассистента"
+        ReturnToAssistant.NEVER -> "Оставаться в последнем режиме"
     }
 
     private fun lockLabel(s: LockScope) = when (s) {
@@ -258,6 +273,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_FROM_SHEET = "from_sheet"
         const val EXTRA_SETTINGS = "settings"
+        const val EXTRA_NEW_MODE = "new_mode"
         const val EXTRA_ASK_PERM = "ask_perm"
         const val REQ_MIC = 11
     }

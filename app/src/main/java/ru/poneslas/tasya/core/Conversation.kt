@@ -79,6 +79,20 @@ class Conversation(
     private fun remove(modeId: String, id: Long) = edit { s -> s.copy(feeds = s.feeds + (modeId to s.feeds[modeId].orEmpty().filterNot { it.id == id })) }
     private fun appendHistory(modeId: String, msg: ChatMsg) = edit { it.copy(histories = it.histories + (modeId to (it.histories[modeId].orEmpty() + msg))) }
 
+    /** «+»: новый режим. id выдаётся один раз и не меняется при переименовании (для Hermes это ключ сессии). */
+    fun addMode(): String {
+        val id = "m-" + java.util.UUID.randomUUID().toString().take(4)
+        updateModes { it + Mode(id = id, title = "Новый режим", icon = "star", placeholder = "Вопрос или задача") }
+        return id
+    }
+
+    fun editMode(id: String, f: (Mode) -> Mode) = updateModes { list -> list.map { if (it.id == id) f(it) else it } }
+
+    fun deleteMode(id: String) = edit { s ->
+        s.copy(modes = s.modes.filterNot { it.id == id }, feeds = s.feeds - id, histories = s.histories - id,
+            mode = if (s.mode == id) Modes.MAIN else s.mode)
+    }
+
     /** «Начать заново»: стереть разговор режима с телефона. */
     fun restart(modeId: String = _state.value.mode) = edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId) }
 

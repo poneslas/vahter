@@ -39,7 +39,7 @@ import ru.poneslas.tasya.ui.TasyaTheme
 
 /** Лист поверх любого приложения: шапка (режим · связь, развернуть, настройки, закрыть), лента, живая строка, строка ввода. */
 @Composable
-fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, session: AssistSession) {
+fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, session: AssistSession, onAddMode: () -> Unit = onSettings) {
     val app = App.instance
     val state by app.conversation.state.collectAsState()
     var live by remember { mutableStateOf<String?>(null) }
@@ -85,7 +85,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     onDraft = app.conversation::setDraft,
                     onSend = { text, via -> app.conversation.send(text, via) },
                     onSelectMode = app.conversation::selectMode,
-                    onAddMode = onSettings,
+                    onAddMode = onAddMode,
                     onLive = { live = it },
                     autoListen = Sheet.autoListen,
                     onNeedMic = { onNeedPerm(android.Manifest.permission.RECORD_AUDIO) },

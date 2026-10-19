@@ -1,6 +1,17 @@
 package ru.poneslas.tasya.app
 
 import android.Manifest
+import ru.poneslas.tasya.core.Primary
+import ru.poneslas.tasya.core.Modes
+import ru.poneslas.tasya.core.Mode
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
@@ -88,23 +99,102 @@ fun VoiceBlock() {
 @Composable
 fun ModePage(activity: MainActivity, id: String) {
     val app = App.instance
-    val state by app.conversation.state.collectAsState()
+    val conv = app.conversation
+    val state by conv.state.collectAsState()
     val m = state.modes.firstOrNull { it.id == id } ?: return
-    TopBar(m.title, if (m.builtin) "встроенный режим" else "свой режим · id ${m.id}", onBack = activity::back)
+    val main = m.id == Modes.MAIN
+    val ed: ((Mode) -> Mode) -> Unit = { f -> conv.editMode(m.id, f) }
+    TopBar(m.title, if (m.builtin) "встроенный режим" else "свой режим · id ${m.id}, не меняется", onBack = activity::back)
     ScrollPage {
-        Section("Что делать")
-        Text(if (m.id == "main") "Основной разговор: без своего промпта, все действия телефона." else m.prompt,
-            fontSize = 15.sp, color = Ink.ink, modifier = Modifier.padding(horizontal = 22.dp))
-        Section("Принимает")
-        Item(listOfNotNull("голос".takeIf { m.accepts.voice }, "текст", "фото".takeIf { m.accepts.photo }, "файл".takeIf { m.accepts.file }).joinToString(", "))
-        if (m.id != "main") SwitchItem("Режим включён", "Показывается во вкладках", m.enabled) {
-            app.conversation.updateModes { list -> list.map { if (it.id == m.id) it.copy(enabled = !it.enabled) else it } }
+        if (!main) {
+            Field("Название", m.title, "Как назвать вкладку") { v -> ed { it.copy(title = v) } }
+            Section("Значок")
+            Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                MODE_ICONS.forEach { (k, glyph) ->
+                    Box(Modifier.size(36.dp).clip(CircleShape).background(Ink.surf).border(if (m.icon == k) 2.dp else 0.dp, Ink.ink, CircleShape)
+                        .clickable { ed { it.copy(icon = k) } }, contentAlignment = Alignment.Center) { Text(glyph, fontSize = 17.sp) }
+                }
+            }
         }
+        Section("Что делать")
+        if (main) Note("Основной режим: без своего промпта, все действия телефона.")
+        else {
+            Field(null, m.prompt, "Например: переводи всё на китайский и добавляй пиньинь", minLines = 3) { v -> ed { it.copy(prompt = v) } }
+            Dictate { text -> ed { it.copy(prompt = (it.prompt.trim() + " " + text).trim()) } }
+            Field("Подсказка в пустом разговоре", m.hint, "Что сюда присылать") { v -> ed { it.copy(hint = v) } }
+            Field("Подсказка в поле ввода", m.placeholder, "Вопрос к фото") { v -> ed { it.copy(placeholder = v) } }
+        }
+        Section("Принимает")
+        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Chip("Голос", m.accepts.voice, locked = main) { ed { it.copy(accepts = it.accepts.copy(voice = !it.accepts.voice)) } }
+            Chip("Текст", true, locked = true) {}
+            Chip("Фото", m.accepts.photo) { ed { it.copy(accepts = it.accepts.copy(photo = !it.accepts.photo), primary = if (it.accepts.photo) Primary.VOICE else it.primary) } }
+        }
+        if (m.accepts.photo && !main) {
+            Section("Главное")
+            Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Chip("Голос", m.primary == Primary.VOICE) { ed { it.copy(primary = Primary.VOICE) } }
+                Chip("Фото", m.primary == Primary.PHOTO) { ed { it.copy(primary = Primary.PHOTO) } }
+            }
+            Note(if (m.primary == Primary.PHOTO) "Большая кнопка — камера. С боковой кнопки — сразу видоискатель. Спросить голосом — микрофон в поле."
+                 else "Большая кнопка — микрофон. С боковой кнопки — сразу слушает.")
+        }
+        if (!main) SwitchItem("Действия телефона", if (m.tools) "Включены — таймер, будильник" else "Выключены — ответ быстрее", m.tools) { ed { it.copy(tools = !it.tools) } }
+        if (!main) SwitchItem("Режим включён", "Показывается во вкладках", m.enabled) { ed { it.copy(enabled = !it.enabled) } }
         Section("Мозг")
-        Item(Brains.byId(m.brain).title, "История режима хранится на телефоне и целиком уходит мозгу с каждой репликой.")
+        Item(Brains.byId(m.brain).title + if (m.accepts.photo) " · нужен со зрением" else "", "История режима хранится на телефоне и целиком уходит мозгу с каждой репликой.")
         val n = state.saved.feeds[m.id].orEmpty().size
-        Item("Начать заново", if (n > 0) "Стереть разговор режима — $n сообщ." else "Разговор пуст") { if (n > 0) app.conversation.restart(m.id) }
+        Item("Начать заново", if (n > 0) "Стереть разговор режима — $n сообщ." else "Разговор пуст") { if (n > 0) conv.restart(m.id) }
+        if (!m.builtin) {
+            var ask by remember { mutableStateOf(false) }
+            Item(if (ask) "Точно удалить? Нажмите ещё раз" else "Удалить режим", "Вместе с разговором", warn = true) {
+                if (ask) { activity.back(); conv.deleteMode(m.id) } else ask = true
+            }
+        }
     }
+}
+
+val MODE_ICONS = listOf("spark" to "✦", "transl" to "文", "lens" to "🔍", "food" to "🍽", "cart" to "🛒", "flight" to "✈", "book" to "📖", "star" to "★", "edit" to "✎")
+
+@Composable
+private fun Field(label: String?, value: String, placeholder: String, minLines: Int = 1, onChange: (String) -> Unit) {
+    if (label != null) Section(label)
+    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(14.dp)).background(Ink.surf)
+        .border(1.dp, Ink.line, RoundedCornerShape(14.dp)).padding(14.dp)) {
+        if (value.isEmpty()) Text(placeholder, color = Ink.faint, fontSize = 15.sp)
+        BasicTextField(value, onChange, textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink), minLines = minLines,
+            cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun Chip(label: String, on: Boolean, locked: Boolean = false, onClick: () -> Unit) {
+    Text(label, fontSize = 14.sp, color = if (on) androidx.compose.ui.graphics.Color.White else Ink.ink,
+        modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Ink.surf)
+            .border(1.dp, Ink.line, RoundedCornerShape(50)).clickable(enabled = !locked, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp))
+}
+
+/** Надиктовать в промпт: нажать — пишет, нажать ещё раз — текст дописывается в конец. */
+@Composable
+private fun Dictate(onText: (String) -> Unit) {
+    val app = App.instance
+    val rec = app.recognizer
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var on by remember { mutableStateOf(false) }
+    val partial by rec.partial.collectAsState()
+    val ok = rec.available && ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(40.dp).clip(CircleShape).background(if (on) Ink.danger else Ink.ink).clickable(enabled = ok) {
+            if (!on) { rec.start(); on = true }
+            else { on = false; scope.launch { rec.stop()?.takeIf { it.isNotBlank() }?.let(onText) } }
+        }, contentAlignment = Alignment.Center) { Text(if (on) "■" else "🎙", color = androidx.compose.ui.graphics.Color.White, fontSize = 16.sp) }
+        Text(when { !ok -> "Надиктовать можно, когда голос скачан и микрофон разрешён"; on -> partial.ifEmpty { "Слушаю… нажмите ещё раз — допишется" }
+            else -> "Нажмите и надиктуйте — допишется в конец. Можно поправить руками." },
+            fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(start = 12.dp))
+    }
+    DisposableEffect(Unit) { onDispose { if (on) rec.cancel() } }
 }
 
 /**
