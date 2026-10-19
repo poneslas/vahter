@@ -18,3 +18,4 @@ reference/
 
 # sherpa-onnx AAR качается сборкой (sha256 закреплён)
 app/libs/
+out/
