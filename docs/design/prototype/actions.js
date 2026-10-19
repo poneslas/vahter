@@ -39,7 +39,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Тася — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
   if (t.dataset.micperm){ S.w.mic=t.dataset.micperm; return render() }
   if (t.dataset.side){ S.w.side=t.dataset.side; S.dismissed=null; return render() }
-  if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); addAct({t:'act',i:'⏰',x:'Будильник · '+t.dataset.chip,s:'на телефоне · через 21 ч',btn:'Открыть Часы',kind:'D',id:Date.now()},{tool:'alarm.set',who:'по правилам',phrase:'поставь будильник → '+t.dataset.chip,params:'time='+t.dataset.chip,confirm:'выбор варианта',lock:S.w.locked}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
+  if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); addAct({t:'act',i:'⏰',x:'Будильник поставлен · '+t.dataset.chip,s:'на телефоне · прозвенит через 21 ч',btn:'Открыть будильники',kind:'D',id:Date.now()},{tool:'alarm.set',who:'по правилам',phrase:'поставь будильник → '+t.dataset.chip,params:'time='+t.dataset.chip,confirm:'выбор варианта',lock:S.w.locked}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
   if (t.dataset.cardbtn) return cardBtn(t.dataset.cardbtn);
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
@@ -47,6 +47,9 @@ document.addEventListener('click', async e=>{
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.page='mode'; return render() }
   switch(a){
+    case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
+    case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
+    case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'intronext': S.introStep=(S.introStep||0)+1; return render();
     case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('button'); return render();
     case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
@@ -135,10 +138,12 @@ document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfi
   if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
+  if (b==='restartyes'){ S.feed=[]; trace('Разговор режима стёрт — меню ⋮, долгое нажатие на название в листе или «начни заново» голосом.','p'); return render() }
+  if (b==='restartno'){ S.feed=S.feed.filter(f=>!(f.t==='card'&&f.btns.some(x=>x[1]==='restartyes'))); return render() }
   if (b.startsWith('permfix:')) return permFix(b.slice(8));
   if (b==='call_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='call_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📞',x:'Звонилка · Мама',s:'номер набран — звоните вы',btn:'',kind:'E',id:Date.now()},{tool:'call.dial',who:brainOf().title,phrase:'позвони маме',params:'contact=«Мама»',confirm:'«Позвонить» нажатием',lock:S.w.locked}); trace('Звонилка открывается поверх, лист перед этим прячется (иначе на S24 она окажется под листом).','p'); return render() }
   if (b==='unlock_any'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock_any')); if(i>=0) S.feed.splice(i,1); const me=[...S.feed].reverse().find(f=>f.t==='me'); if(me){ S.feed.splice(S.feed.lastIndexOf(me),1); return deliver(me.x,me.via) } render() }) }
-  if (b==='alarm_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='alarm_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'⏰',x:'Будильник · 7:00',s:brainOf().title+' → телефон · через 9 ч',btn:'Открыть Часы',kind:'D',id:Date.now()},{tool:'alarm.set',who:brainOf().title,phrase:'поставь мне алярмер на семь',params:'time=07:00',confirm:'«Поставить» нажатием',lock:S.w.locked}); return render() }
+  if (b==='alarm_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='alarm_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'⏰',x:'Будильник поставлен · 7:00',s:brainOf().title+' → телефон · прозвенит через 9 ч',btn:'Открыть будильники',kind:'D',id:Date.now()},{tool:'alarm.set',who:brainOf().title,phrase:'поставь мне алярмер на семь',params:'time=07:00',confirm:'«Поставить» нажатием',lock:S.w.locked}); return render() }
   if (b==='unlock'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock')); if(i>=0) S.feed.splice(i,1); return cardBtn('alarm_ok') }) }
   if (b==='brainsetup'){ S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; return render() }
   if (b==='restart'){ S.feed=[]; trace('Разговор режима начат заново.','p'); return render() }

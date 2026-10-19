@@ -126,7 +126,7 @@ function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
   <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div>
-    <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button></div>
+    <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button><button class="iconbtn" data-act="restartask" aria-label="Начать заново">${I.more}</button></div>
   ${bannerHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
   ${S.ov?'':liveHtml()}${S.ov?'':composerHtml()}</div>`;
@@ -140,6 +140,7 @@ function settings(){
     <div class="lh">Вызов</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
+    <div class="lirow">${li(I.mic,'Слушать сразу при вызове','Боковая кнопка: запись начинается сама. Из уведомлений и приложения — нет')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
     ${li(I.hist,'Возвращаться к Ассистенту', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[1],'returnpick')}
     <div class="lh">Режимы</div>
     ${S.modes.map(m=>`<div class="lirow">${li(I[m.icon],esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
@@ -160,24 +161,25 @@ function settings(){
   </div></div></div>`;
 }
 function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; return settings() } const A=m.accepts, main=m.id==='main';
-  const tog=(k,t,ic,lock)=>lock?`<span class="mchip" aria-pressed="true" style="cursor:default">${ic}${t}</span>`:`<button class="mchip" data-maccept="${k}" aria-pressed="${A[k]}">${ic}${t}</button>`;
+  const tog=(k,t,ic,lock)=>(lock||m.builtin)?`<span class="mchip" aria-pressed="true" style="cursor:default">${ic}${t}</span>`:`<button class="mchip" data-maccept="${k}" aria-pressed="${A[k]}">${ic}${t}</button>`;
   const field=(k,label,ph)=>`<label class="fl"><span>${label}</span><input class="fin" data-mfield="${k}" value="${esc(m[k])}" placeholder="${ph}"></label>`;
   const sw=(on,k,t,s,ic)=>`<div class="lirow">${li(ic,t,s)}<button class="swbtn" data-mbool="${k}" role="switch" aria-checked="${on}"><span class="sw ${on?'':'off'}"></span></button></div>`;
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${I[m.icon]}${esc(m.title)}</b><small>${m.builtin?'встроенный режим':'свой режим · id '+m.id+', не меняется'}</small></div></div>
   <div class="scroll"><div class="mform">
-    ${main?'':`<div class="mrow">${field('title','Название','Как назвать вкладку')}</div>
+    ${m.builtin&&!main?'<div class="note">Встроенный режим: его можно включить или выключить в «Настройках». Чтобы сделать по-своему — создайте свой режим «+».</div>':''}
+    ${main||m.builtin?'':`<div class="mrow">${field('title','Название','Как назвать вкладку')}</div>
     <div><div class="lh">Значок</div><div class="icons">${MODE_ICONS.map(k=>`<button class="icb" data-micon="${k}" aria-pressed="${m.icon===k}" aria-label="${k}">${I[k]}</button>`).join('')}</div></div>`}
-    <div><div class="lh">Что делать</div>${main?'<p class="mnote">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':`<textarea class="fieldarea ${S.rec&&S.rec.into==='prompt'?'dictating':''}" data-prompt="${m.id}" rows="1" ${S.rec&&S.rec.into==='prompt'?'readonly':''}>${esc(S.rec&&S.rec.into==='prompt'&&recText()?(m.prompt.trim()+' '+recText()).trim():m.prompt)}</textarea>
+    <div><div class="lh">Что делать</div>${main?'<p class="mnote">Основной режим: без своего промпта, все действия телефона, сюда приходят ответы по расписанию.</p>':m.builtin?`<p style="margin:0;font-size:13.5px">${esc(m.prompt)}</p>`:`<textarea class="fieldarea ${S.rec&&S.rec.into==='prompt'?'dictating':''}" data-prompt="${m.id}" rows="1" ${S.rec&&S.rec.into==='prompt'?'readonly':''}>${esc(S.rec&&S.rec.into==='prompt'&&recText()?(m.prompt.trim()+' '+recText()).trim():m.prompt)}</textarea>
       <div class="dict">${S.rec&&S.rec.into==='prompt'
         ? (S.rec.mode==='locked'
             ? `<button class="iconbtn" data-act="reccancel" aria-label="Отменить">${I.x}</button><span class="dlive"><span class="rdot"></span>Пишу в поле · ${recTime()}</span><button class="recbtn" data-act="recsend" style="background:var(--ink);color:#fff">Готово</button>`
             : `<button class="dmic on" data-mic data-into="prompt" aria-label="Говорите">${I.mic}</button><span class="dlive"><span class="rdot"></span>Пишу в поле · отпустите — останется</span>`)
         : `<button class="dmic" data-mic data-into="prompt" aria-label="Надиктовать">${I.mic}</button><span class="dhint">Зажмите и надиктуйте — допишется в конец. Можно поправить руками.</span>`}</div>`}</div>
-    ${main?'':`${field('hint','Подсказка в пустом разговоре','Что сюда присылать')}${field('placeholder','Подсказка в поле ввода','Вопрос к фото')}`}
+    ${main||m.builtin?'':`${field('hint','Подсказка в пустом разговоре','Что сюда присылать')}${field('placeholder','Подсказка в поле ввода','Вопрос к фото')}`}
     <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('file','Файл',I.doc)}</div></div>
     ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки и ярлыка — сразу видоискатель. Спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки и ярлыка — сразу слушает.'}</p></div>`:''}
     <div class="setcard">${main?li(I.shield,'Действия телефона','Все — таймер, календарь, будильник…'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены — таймер, календарь, будильник…':'Выключены — меньше инструментов, ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для режима','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
-    <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}${li(I.hist,'Начать заново',(S.feeds[m.id]||[]).length?`Стереть разговор режима — ${(S.feeds[m.id]||[]).length} сообщ.`:'Разговор пуст','restart')}</div>
+    <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}</div>
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
     ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
   </div></div></div>` }
@@ -289,17 +291,18 @@ function thumbHtml(img){ if(img.kind==='album') return `<div class="alb">${img.i
 function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen==='cam2';
   const tools=[['crop','Обрезать',I.crop],['circle','Обвести',I.circle],['arrow','Стрелка',I.arrow]];
   const hint={crop:'Выделите нужную часть',circle:'Обведите пальцем',arrow:'Проведите от начала к острию'}[c.tool];
-  return `<div class="layer cam2">
-  <div class="vf ${c.frozen?'frozen':''}" ${c.tool?'data-draw':''}><i class="th ${c.subj}"></i>${marksSvg(c.marks,c.crop,c.draft)}</div>
-  ${statusBar(false)}
+  const ins=!c.full;
+  const vf=`<div class="vf ${c.frozen?'frozen':''}" ${c.tool?'data-draw':''}><i class="th ${c.subj}"></i>${marksSvg(c.marks,c.crop,c.draft)}</div>`;
+  const hdr=`<button class="grab" aria-label="Развернуть"></button><div class="hdr"><span class="ldot"></span><span><b style="color:var(--ink);font-weight:600">${esc(m.title)}</b> · на связи</span><span class="sp"></span><button class="iconbtn" data-act="camfull" aria-label="Камера на весь экран">${I.expand}</button><button class="iconbtn" data-act="camcancel" aria-label="Закрыть камеру">${I.x}</button></div>`;
+  return `<div class="layer cam2 ${ins?'insheet':''}">${ins?`${statusBar(true)}<div class="csheet">${hdr}<div class="vfwrap">${vf}`:`${vf}${statusBar(false)}`}
   <div class="ctop"><button class="cbtn" data-act="${c.frozen?'camretake':'camcancel'}" aria-label="${c.frozen?'Переснять':'Закрыть камеру'}">${I.x}</button><span class="modeName2">${I[m.icon]} ${esc(m.title)}</span>${c.frozen&&(c.marks.length||c.crop)?`<button class="cbtn" data-act="camundo" aria-label="Отменить последнее">${I.undo}</button>`:'<span style="width:40px"></span>'}</div>
   ${hint?`<div class="chint">${hint}</div>`:''}
   ${qrec?`<div class="q">${recText()||'Слушаю…'}</div>`:''}
-  <div class="cbottom">
+  ${ins?'</div>':''}<div class="cbottom">
     ${c.frames.length?`<div class="cstrip">${c.frames.map((f,i)=>`<div class="cfr ${c.editIdx===i?'on':''}"><button class="cfrb" data-frame="${i}" aria-label="Кадр ${i+1}: править"><span class="thw" style="${thumbStyle(f,64,60,24)}">${thumbHtml(f)}</span></button><button class="cfrx" data-framedel="${i}" aria-label="Удалить кадр ${i+1}">${I.x}</button></div>`).join('')}</div>`:''}
     <div class="ctools">${tools.map(([k,t,ic])=>`<button class="ctool" data-ctool="${k}" aria-pressed="${c.tool===k}">${ic}<span>${t}</span></button>`).join('')}</div>
     <div class="crow"><button class="cplus" data-act="camadd" aria-label="Оставить кадр и снять ещё" ${c.editIdx==null&&c.frames.length>=camMax()-1?'disabled':''}>${I.plus}</button><button class="csend" data-act="camsend" aria-label="Отправить${c.frames.length?' все кадры':''}">${I.send}${(c.frames.length+(c.editIdx==null?1:0))>1?`<b class="ccount">${c.frames.length+(c.editIdx==null?1:0)}</b>`:''}</button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button></div>
-  </div></div>` }
+  </div>${ins?modeTabs()+'</div>':''}</div>` }
 function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();

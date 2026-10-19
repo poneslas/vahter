@@ -1,6 +1,6 @@
 /* Модель данных и состояние экрана (в Android — data-классы, DataStore, ViewModel state). */
 /* ───────── состояние ───────── */
-const MODEL_TOTAL = 225539522 + 24110855;
+const MODEL_TOTAL = 224893347; // GigaAM v3 e2e, один файл (как у Гига Писаря для Android)
 const mb = b => (b/1048576).toFixed(0);
 /**
  * Режим — отдельный разговор с готовым промптом. Хранится на телефоне, уходит мозгу с каждой репликой
@@ -65,10 +65,12 @@ const BRAINS=[
 const TOOL_GROUPS=['Часы','Календарь','Телефон','Приложения и связь'];
 const TOOLS=[
   ['alarm.set','Будильник','Часы','auto',{safe:true}],
+  ['alarm.dismiss','Выключение будильника','Часы','auto',{safe:true}],
   ['timer.set','Таймер','Часы','auto',{safe:true}],
+  ['timer.stop','Остановка таймера','Часы','auto',{safe:true}],
   ['alarm.next','Ближайший будильник','Часы','auto',{safe:true}],
   ['calendar.query','Просмотр календаря','Календарь','auto',{perm:'calendar'}],
-  ['calendar.add','Создание событий','Календарь','ask',{perm:'calendar'}],
+  ['calendar.add','Создание и удаление событий','Календарь','ask',{perm:'calendar'}],
   ['torch.set','Фонарик','Телефон','auto',{safe:true}],
   ['volume.set','Громкость','Телефон','auto'],
   ['dnd.set','Не беспокоить','Телефон','auto',{perm:'dnd'}],
