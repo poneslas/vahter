@@ -223,17 +223,16 @@ private fun BoxScope.SceneButton() {
                 Spacer(Modifier.weight(1f))
                 Text(stringResource(R.string.intro_usual_time), fontSize = 11.sp, color = Ink.soft, modifier = Modifier.graphicsLayer { alpha = ramp(t, .44f, .50f) })
             }
-            Spacer(Modifier.height(6.dp))
-            steps.forEachIndexed { i, st ->
-                val d = .03f + i * .085f
-                val on = ramp(t, d, d + .04f)
-                val done = ramp(t, d + .05f, d + .08f)
-                Row(Modifier.padding(vertical = 2.dp).graphicsLayer { alpha = .35f + .65f * on }, verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(14.dp).clip(CircleShape).background(lerp(Color(0xFFD3D8CE), Ink.soft, done)), contentAlignment = Alignment.Center) {
-                        if (done > .5f) Text("✓", fontSize = 8.sp, lineHeight = 8.sp, color = Color.White)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Text("${i + 1}. $st", fontSize = 12.sp, color = Ink.ink)
+            Spacer(Modifier.height(8.dp))
+            // Путь в обычном ИИ-приложении: шаг за шагом, через стрелки.
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
+                itemVerticalAlignment = Alignment.CenterVertically) {
+                steps.forEachIndexed { i, st ->
+                    val d = .03f + i * .085f
+                    val on = ramp(t, d, d + .04f)
+                    if (i > 0) Text("→", fontSize = 12.sp, color = Ink.soft, modifier = Modifier.graphicsLayer { alpha = on })
+                    Text(st, fontSize = 11.5.sp, color = Ink.ink, modifier = Modifier.graphicsLayer { alpha = .25f + .75f * on; scaleX = .9f + .1f * on; scaleY = .9f + .1f * on }
+                        .clip(RoundedCornerShape(8.dp)).background(Color.White).border(1.dp, Ink.line, RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp))
                 }
             }
         }

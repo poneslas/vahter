@@ -10,10 +10,13 @@ const WAVE = '<div class="wave">' + '<i></i>'.repeat(7) + '</div>';
 
 function introScene(k) {
   if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span></div>`;
-  if (k === 1) return `<div class="sc sc1"><div class="phone"><span class="sidekey"></span></div>
-    <div class="steps2"><span>Разблокировать</span><span>Найти приложение</span><span>Новый чат</span><span>Объяснить задачу</span><span>Напечатать вопрос</span></div>
-    <div class="ms"><div class="g"></div><div class="h"><i></i><b>Ассистент</b> · на связи</div>${WAVE}
-      <div class="me">Сколько варить гречку?</div><div class="ai">15–20 минут на слабом огне, 1 : 2 с водой.</div></div></div>`;
+  if (k === 1) {
+    const st = ['Разблокировать','Найти приложение','Новый чат','Объяснить задачу','Напечатать вопрос'];
+    return `<div class="sc sc1"><div class="usual"><div class="lbl">ИИ-приложение<em>5 шагов · ~20 с</em></div>
+      <div class="chain">${st.map((s,i)=>(i?'<i>→</i>':'')+`<span>${s}</span>`).join('')}</div></div>
+      <div class="tasy"><div class="lbl"><b>Тася · по кнопке</b><span class="key">⏻ кнопка</span><em>1 нажатие · ~2 с</em></div>${WAVE}
+        <div class="me">Сколько варить гречку?</div><div class="ai">15–20 минут на слабом огне, 1 : 2 с водой.</div></div></div>`;
+  }
   if (k === 2) return `<div class="sc sc2"><div class="ms"><div class="g"></div><div class="h"><i></i><b>Режимы</b> · задача уже внутри</div>
     <div>
       <div class="pane"><span class="task">★ переводи на китайский</span><div class="me">Где здесь туалет?</div><div class="ai">洗手间在哪里？<br><small style="color:var(--soft)">Xǐshǒujiān zài nǎlǐ?</small></div></div>
