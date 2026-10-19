@@ -73,7 +73,15 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
     var camFull by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(camera) { if (!camera) camFull = false }
     // Переключили режим — камера закрывается, остаётся обычный лист.
-    androidx.compose.runtime.LaunchedEffect(state.mode) { Sheet.camera.value = Sheet.camera.value && state.current.accepts.photo }
+    // Смена вкладки: камера остаётся только если новый режим — фото-режим (там камера — главное действие).
+    var lastMode by remember { mutableStateOf(state.mode) }
+    androidx.compose.runtime.LaunchedEffect(state.mode) {
+        if (state.mode != lastMode) {
+            lastMode = state.mode
+            val c = state.current
+            Sheet.camera.value = Sheet.camera.value && c.primary == ru.poneslas.tasya.core.Primary.PHOTO && c.accepts.photo
+        }
+    }
     val cameraPanel: @Composable (Modifier, Boolean) -> Unit = { m, full ->
         ru.poneslas.tasya.media.CameraPanel(session, state.current, ru.poneslas.tasya.core.Brains.byId(state.current.brain).maxImages, full,
             onClose = { Sheet.camera.value = false }, onCollapse = { camFull = false },
@@ -103,7 +111,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             // .sheet: на всю ширину, скруглены только верхние углы (как нижние панели Android и One UI), бумага до низа экрана;
             // отступ под полоску жестов и клавиатуру — внутри листа.
             Column(
-                Modifier.fillMaxWidth().animateContentSize()
+                Modifier.fillMaxWidth()
                     .then(if (camera) Modifier.windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top)).padding(top = 40.dp).fillMaxHeight() else Modifier)
                     .shadow(24.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)).background(Ink.paper)
@@ -151,9 +159,13 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     cameraPanel(Modifier.weight(1f).padding(top = 6.dp), false)
                     ru.poneslas.tasya.ui.ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
-                Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 420.dp))
-                LiveLine(live)
+                // Волна записи — поверх низа ленты, а не отдельной строкой: высота листа при записи не меняется.
+                Box(Modifier.fillMaxWidth()) {
+                    Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp))
+                    ru.poneslas.tasya.ui.RecPill(Modifier.align(Alignment.BottomCenter))
+                }
+                LiveLine(live, pill = false)
                 Composer(
                     state = state,
                     voice = app.voice,

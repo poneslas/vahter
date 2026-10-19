@@ -310,19 +310,24 @@ private fun PickItem(icon: Int, title: String, sub: String, onClick: () -> Unit)
     }
 }
 
-/** Над полем: волна Писаря, пока идёт запись или распознавание; иначе — короткое сообщение. */
+/** Волна Писаря, пока идёт запись или распознавание. */
 @Composable
-fun LiveLine(live: String?) {
+fun RecPill(modifier: Modifier = Modifier) {
     val phase by RecUi.phase.collectAsState()
+    if (phase == RecUi.Phase.IDLE) return
     val ctx = LocalContext.current
     val voice = App.instance.voice
-    if (phase != RecUi.Phase.IDLE) {
-        val pill = remember { RecordingPill.PillView(ctx) }
-        LaunchedEffect(phase) { if (phase == RecUi.Phase.LISTENING) pill.listen { voice.level } else pill.process() }
-        DisposableEffect(Unit) { onDispose { pill.stop() } }
-        Box(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) { AndroidView({ pill }) }
-        return
-    }
+    val pill = remember { RecordingPill.PillView(ctx) }
+    LaunchedEffect(phase) { if (phase == RecUi.Phase.LISTENING) pill.listen { voice.level } else pill.process() }
+    DisposableEffect(Unit) { onDispose { pill.stop() } }
+    Box(modifier.padding(vertical = 6.dp), contentAlignment = Alignment.Center) { AndroidView({ pill }) }
+}
+
+/** Над полем: волна записи ([pill]; в листе она поверх ленты) или короткое сообщение. */
+@Composable
+fun LiveLine(live: String?, pill: Boolean = true) {
+    val phase by RecUi.phase.collectAsState()
+    if (phase != RecUi.Phase.IDLE) { if (pill) RecPill(Modifier.fillMaxWidth()); return }
     if (live == null) return
     val (status, text) = live.split("|", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
