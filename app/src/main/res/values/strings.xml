@@ -556,12 +556,12 @@
     <string name="intro_0_p">Как Алиса или Gemini — только быстрее, без рекламы и с моделью, которую выбираете вы.</string>
     <string name="intro_1_h">Не чат, а кнопка</string>
     <string name="intro_1_p">Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.</string>
-    <string name="intro_2_h">Объяснили один раз</string>
-    <string name="intro_2_p">Переводчик, гид по меню, справка о товаре — задача уже внутри. Говорите только суть.</string>
-    <string name="intro_3_h">Навёл камеру — узнал, что это</string>
-    <string name="intro_3_p">Где нужен глаз, сразу открывается камера: вывеска, меню, товар.</string>
+    <string name="intro_2_h">Настроил один раз</string>
+    <string name="intro_2_p">Язык перевода, вкусы, аллергия — режим помнит ваши правила. Дальше хватает одной кнопки.</string>
+    <string name="intro_3_h">Сразу камера или голос</string>
+    <string name="intro_3_p">Режим сам решает, с чего начать: меню и вывески — камерой, вопросы — голосом. На одно нажатие меньше.</string>
     <string name="intro_4_h">Сказал — сделано</string>
-    <string name="intro_4_p">Будильник, таймер, календарь, звонок — без лишних шагов. Работает мгновенно, даже без интернета.</string>
+    <string name="intro_4_p">Будильник, таймер, календарь, звонок — мгновенно, прямо на телефоне, даже без интернета.</string>
     <string name="intro_skip">Пропустить</string>
     <string name="intro_next">Далее</string>
     <string name="intro_setup">Настроить</string>
@@ -591,4 +591,17 @@
     <string name="intro_s4_r2">Таймер запущен · 1:00</string>
     <string name="intro_s4_r2s">осталось 0:59</string>
     <string name="intro_s4_off">✈ без интернета — тоже работает</string>
+    <string name="intro_usual">Обычный чат</string>
+    <string name="intro_usual_time">5 шагов · ~20 с</string>
+    <string name="intro_ours">Тася</string>
+    <string name="intro_key">⏻ кнопка</string>
+    <string name="intro_ours_time">1 нажатие · ~2 с</string>
+    <string name="intro_setup_title">Мой Гастрогид</string>
+    <string name="intro_setup_once">настроили один раз</string>
+    <string-array name="intro_rules">
+        <item>не остро</item><item>больше белка</item><item>аллергия на орехи</item>
+    </string-array>
+    <string name="intro_rules_answer">Судак на гриле с овощами — белок, без орехов и острого.</string>
+    <string name="intro_mode_voice">голос</string>
+    <string name="intro_mode_photo">камера</string>
 </resources>

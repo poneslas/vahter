@@ -35,6 +35,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
@@ -310,18 +312,34 @@ private fun PickItem(icon: Int, title: String, sub: String, onClick: () -> Unit)
     }
 }
 
-/** Волна Писаря, пока идёт запись или распознавание. */
+/**
+ * Волна записи Таси — как столбики значка на приветствии: янтарные к синим, скруглённые, на светлой «таблетке».
+ * Пишет — высота от громкости (LevelMeter Писаря) с живым дрожанием; распознаёт — спокойная бегущая волна.
+ */
 @Composable
 fun RecPill(modifier: Modifier = Modifier) {
     val phase by RecUi.phase.collectAsState()
     if (phase == RecUi.Phase.IDLE) return
-    val ctx = LocalContext.current
     val voice = App.instance.voice
-    val pill = remember { RecordingPill.PillView(ctx) }
-    LaunchedEffect(phase) { if (phase == RecUi.Phase.LISTENING) pill.listen { voice.level } else pill.process() }
-    DisposableEffect(Unit) { onDispose { pill.stop() } }
-    Box(modifier.padding(vertical = 6.dp), contentAlignment = Alignment.Center) { AndroidView({ pill }) }
+    val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "wave")
+    val w by tr.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.LinearEasing)), label = "w")
+    var level by remember { mutableFloatStateOf(0f) }
+    // громкость с микрофона: быстро вверх, медленно вниз (как у Писаря)
+    LaunchedEffect(phase) { while (true) { val l = voice.level; level = if (l > level) l else level * .86f + l * .14f; delay(32) } }
+    val bars = 9
+    Row(modifier.padding(vertical = 6.dp).clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
+        .padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        for (i in 0 until bars) {
+            val k = i / (bars - 1f)
+            val center = 1f - kotlin.math.abs(k - .5f) * 1.2f
+            val wob = .5f + .5f * kotlin.math.sin((w + k * .7f) * 2f * Math.PI.toFloat())
+            val h = if (phase == RecUi.Phase.LISTENING) 6f + 20f * (.25f * wob + .75f * level * center).toFloat().coerceIn(0f, 1f) else 6f + 10f * wob
+            Box(Modifier.size(4.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerpColor(Ink.local, Ink.server, k)))
+        }
+    }
 }
+
+private fun lerpColor(a: Color, b: Color, f: Float) = Color(a.red + (b.red - a.red) * f, a.green + (b.green - a.green) * f, a.blue + (b.blue - a.blue) * f, 1f)
 
 /** Над полем: волна записи ([pill]; в листе она поверх ленты) или короткое сообщение. */
 @Composable
