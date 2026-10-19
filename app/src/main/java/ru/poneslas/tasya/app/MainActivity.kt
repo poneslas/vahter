@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
     private fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
-        if (i.getBooleanExtra(EXTRA_ASK_MIC, false)) { askMicThenSheet = true; requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQ_MIC) }
+        i.getStringExtra(EXTRA_ASK_PERM)?.let { perm -> askMicThenSheet = true; requestPermissions(arrayOf(perm), REQ_MIC) }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
     }
 
@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
             IconBtn("⚙", "Настройки") { go("settings") }
         }
         if (!connected) Banner("Мозг не подключён — работают только команды телефона.", "Подключить") { go("brain:${brain.id}") }
-        Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, modifier = Modifier.weight(1f).fillMaxWidth())
+        Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach, modifier = Modifier.weight(1f).fillMaxWidth())
         LiveLine(live)
         Composer(
             state = state, recognizer = app.recognizer,
@@ -145,6 +145,7 @@ class MainActivity : ComponentActivity() {
             onSelectMode = app.conversation::selectMode,
             onAddMode = { go("settings") },
             onLive = { live = it },
+            onGallery = { ru.poneslas.tasya.media.PickerActivity.launchFromApp(this@MainActivity) },
         )
     }
 
@@ -257,7 +258,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_FROM_SHEET = "from_sheet"
         const val EXTRA_SETTINGS = "settings"
-        const val EXTRA_ASK_MIC = "ask_mic"
+        const val EXTRA_ASK_PERM = "ask_perm"
         const val REQ_MIC = 11
     }
 }

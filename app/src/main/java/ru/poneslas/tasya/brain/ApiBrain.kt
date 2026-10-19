@@ -118,7 +118,8 @@ class ApiBrain(
             put("content", buildJsonArray {
                 if (!m.content.isNullOrBlank()) add(buildJsonObject { put("type", "text"); put("text", m.content) })
                 for (img in m.images) add(buildJsonObject {
-                    put("type", "image_url"); put("image_url", buildJsonObject { put("url", img) })
+                    val url = if (img.startsWith("data:")) img else ru.poneslas.tasya.media.Attachments.dataUrl(java.io.File(img))
+                    put("type", "image_url"); put("image_url", buildJsonObject { put("url", url) })
                 })
             })
         } else if (m.content != null) put("content", m.content) else put("content", "")

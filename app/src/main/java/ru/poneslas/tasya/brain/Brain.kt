@@ -20,7 +20,7 @@ interface Brain {
 data class ChatMsg(
     val role: String,                       // system | user | assistant | tool
     val content: String? = null,
-    val images: List<String> = emptyList(), // data:image/jpeg;base64,… — только у user
+    val images: List<String> = emptyList(), // пути к JPEG в файлах приложения; в base64 — только при отправке
     val toolCalls: List<ToolCallMsg> = emptyList(),
     val toolCallId: String? = null,
 )

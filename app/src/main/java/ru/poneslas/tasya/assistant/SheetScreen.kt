@@ -39,11 +39,22 @@ import ru.poneslas.tasya.ui.TasyaTheme
 
 /** Лист поверх любого приложения: шапка (режим · связь, развернуть, настройки, закрыть), лента, живая строка, строка ввода. */
 @Composable
-fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedMic: () -> Unit) {
+fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, session: AssistSession) {
     val app = App.instance
     val state by app.conversation.state.collectAsState()
     var live by remember { mutableStateOf<String?>(null) }
+    val camera by Sheet.camera.collectAsState()
+    fun openCamera() {
+        if (session.context.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) onNeedPerm(android.Manifest.permission.CAMERA)
+        else Sheet.camera.value = true
+    }
     TasyaTheme {
+        if (camera) {
+            ru.poneslas.tasya.media.CameraScreen(session, state.current, ru.poneslas.tasya.core.Brains.byId(state.current.brain).maxImages,
+                onClose = { Sheet.camera.value = false },
+                onSend = { files -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото") })
+            return@TasyaTheme
+        }
         Box(Modifier.fillMaxSize().background(Color(0x66000000)).clickable(
             interactionSource = remember { MutableInteractionSource() }, indication = null) { /* затемнение лист не закрывает */ },
             contentAlignment = Alignment.BottomCenter,
@@ -66,7 +77,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     HeaderButton("⚙", "Настройки", onSettings)
                     HeaderButton("✕", "Закрыть", onClose)
                 }
-                Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 420.dp))
+                Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 420.dp))
                 LiveLine(live)
                 Composer(
                     state = state,
@@ -77,7 +88,9 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     onAddMode = onSettings,
                     onLive = { live = it },
                     autoListen = Sheet.autoListen,
-                    onNeedMic = onNeedMic,
+                    onNeedMic = { onNeedPerm(android.Manifest.permission.RECORD_AUDIO) },
+                    onCamera = ::openCamera,
+                    onGallery = { ru.poneslas.tasya.media.PickerActivity.launchFromSheet(session) },
                 )
             }
         }

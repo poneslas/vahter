@@ -82,18 +82,69 @@ class Conversation(
     /** «Начать заново»: стереть разговор режима с телефона. */
     fun restart(modeId: String = _state.value.mode) = edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId) }
 
+    /** Вложение ждёт отправки: 2 с на «✕» и на вопрос; начат вопрос — ждёт его (Продукт 5.17). */
+    private data class Pending(val modeId: String, val meId: Long, val paths: List<String>, val via: String)
+    private var pendingAttach: Pending? = null
+
+    /** Снимки или фото из галереи → пузырь в ленте; уходят мозгу одной репликой (альбом). */
+    fun attach(paths: List<String>, via: String) {
+        if (paths.isEmpty()) return
+        pendingAttach?.let { commit(it, "") }
+        val mode = _state.value.current
+        val meId = nextId()
+        val p = Pending(mode.id, meId, paths, via)
+        pendingAttach = p
+        touch()
+        push(mode.id, FeedItem.Me(meId, "", via, paths, status = "Готовлю…"))
+        scope.launch {
+            kotlinx.coroutines.delay(2000)
+            while (pendingAttach === p) {
+                val draft = _state.value.drafts[p.modeId].orEmpty()
+                if (draft.isBlank()) { commit(p, ""); break }
+                replace(p.modeId, p.meId) { (it as FeedItem.Me).copy(status = "ждёт ваш вопрос") }
+                kotlinx.coroutines.delay(300)
+            }
+        }
+    }
+
+    /** «✕» на пузыре: отменить, пока не ушло; начатый вопрос остаётся в поле. */
+    fun cancelAttach(meId: Long) {
+        val p = pendingAttach ?: return
+        if (p.meId != meId) return
+        pendingAttach = null
+        remove(p.modeId, p.meId)
+    }
+
+    private fun commit(p: Pending, text: String) {
+        if (pendingAttach !== p) return
+        pendingAttach = null
+        replace(p.modeId, p.meId) { (it as FeedItem.Me).copy(text = text, status = null) }
+        val mode = _state.value.modes.firstOrNull { it.id == p.modeId } ?: return
+        val images = p.paths
+        val n = p.paths.size
+        val note = if (n > 1) "[$n кадра, по порядку] " else ""
+        toBrain(mode, (note + text).trim(), images)
+    }
+
     /** Отправить реплику: сначала локальные правила, потом мозг режима. */
-    fun send(text: String, via: String, images: List<String> = emptyList(), imageThumbs: List<String> = emptyList()) {
+    fun send(text: String, via: String) {
         val clean = text.trim()
-        if (clean.isEmpty() && images.isEmpty()) return
         val s = _state.value
         val mode = s.current
+        // Вложение ещё не ушло — вопрос уходит вместе с ним одной репликой.
+        pendingAttach?.takeIf { it.modeId == mode.id }?.let { p ->
+            _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
+            commit(p, clean); return
+        }
+        if (clean.isEmpty()) return
         _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
         touch()
-        push(mode.id, FeedItem.Me(nextId(), clean, via, imageThumbs))
+        push(mode.id, FeedItem.Me(nextId(), clean, via))
+        if (mode.tools && localRule(mode, clean)) return
+        toBrain(mode, clean, emptyList())
+    }
 
-        if (mode.tools && images.isEmpty() && localRule(mode, clean)) return
-
+    private fun toBrain(mode: Mode, clean: String, images: List<String>) {
         val userMsg = ChatMsg("user", clean.ifEmpty { null }, images = images)
         appendHistory(mode.id, userMsg)
         val history = _state.value.saved.histories[mode.id].orEmpty()

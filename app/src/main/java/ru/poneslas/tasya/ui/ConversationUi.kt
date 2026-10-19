@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -57,7 +58,7 @@ import kotlin.math.hypot
 
 /** Лента разговора текущего режима. Пустой режим — подсказка из поля режима (hint). */
 @Composable
-fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (FeedItem.Card, String) -> Unit, modifier: Modifier = Modifier) {
+fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {}, modifier: Modifier = Modifier) {
     val list = rememberLazyListState()
     LaunchedEffect(state.feed.size, (state.feed.lastOrNull() as? FeedItem.Ai)?.text?.length) {
         if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1)
@@ -76,13 +77,29 @@ fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (Feed
         items(state.feed, key = { it.id }) { item ->
             when (item) {
                 is FeedItem.Me -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    Column(
+                  Column(horizontalAlignment = Alignment.End) {
+                    if (item.images.isNotEmpty()) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            item.images.take(4).forEach { path ->
+                                val bmp = remember(path) { ru.poneslas.tasya.media.Attachments.thumb(path, 300) }
+                                if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), null,
+                                    Modifier.size(width = if (item.images.size > 1) 76.dp else 150.dp, height = if (item.images.size > 1) 110.dp else 200.dp).clip(RoundedCornerShape(12.dp)),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(item.status?.let { "$it · " }.orEmpty() + item.via, fontSize = 11.sp, color = Ink.faint)
+                            if (item.status != null) Text("  ✕", fontSize = 14.sp, color = Ink.soft, modifier = Modifier.clickable { onCancelAttach(item.id) }.padding(4.dp))
+                        }
+                    }
+                    if (item.text.isNotEmpty() || item.images.isEmpty()) Column(
                         Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp))
                             .background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         Text(item.text, fontSize = 15.sp, color = Ink.ink)
                         Text(item.via, fontSize = 11.sp, color = Ink.faint, modifier = Modifier.align(Alignment.End))
                     }
+                  }
                 }
                 is FeedItem.Ai -> Row(verticalAlignment = Alignment.Top) {
                     Box(Modifier.padding(top = 8.dp, end = 8.dp).size(7.dp).clip(CircleShape).background(Ink.server))
@@ -186,7 +203,11 @@ fun Composer(
     onLive: (String?) -> Unit,
     autoListen: kotlinx.coroutines.flow.StateFlow<Int>? = null,
     onNeedMic: (() -> Unit)? = null,
+    onCamera: (() -> Unit)? = null,
+    onGallery: (() -> Unit)? = null,
 ) {
+    var menu by remember { mutableStateOf(false) }
+    val photoMain = state.current.primary == ru.poneslas.tasya.core.Primary.PHOTO && state.current.accepts.photo && onCamera != null
     val scope = rememberCoroutineScope()
     var rec by remember { mutableStateOf<RecMode?>(null) }
     var dx by remember { mutableStateOf(0f) }
@@ -227,6 +248,8 @@ fun Composer(
     }
     val micOn by recognizer.recording.collectAsState()
     LaunchedEffect(micOn) { if (!micOn && rec != null) { rec = null; dx = 0f; dy = 0f; onLive(null) } }
+    // Переключение режима отменяет запись — ничего не уходит (Продукт 5.17).
+    LaunchedEffect(state.mode) { if (rec != null) finish("cancel") }
     // Вызов кнопкой: голосовой режим сразу пишет без рук (замочек).
     val auto = autoListen?.collectAsState()?.value ?: 0
     LaunchedEffect(auto) {
@@ -245,6 +268,10 @@ fun Composer(
     }
 
     Column(Modifier.background(Ink.paper)) {
+        if (menu) Column(Modifier.padding(start = 12.dp).clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp)).padding(6.dp)) {
+            if (onCamera != null && !photoMain) Text("📷  Камера", fontSize = 15.sp, color = Ink.ink, modifier = Modifier.clickable { menu = false; onCamera() }.padding(horizontal = 12.dp, vertical = 10.dp))
+            if (onGallery != null) Text("🖼  Галерея", fontSize = 15.sp, color = Ink.ink, modifier = Modifier.clickable { menu = false; onGallery() }.padding(horizontal = 12.dp, vertical = 10.dp))
+        }
         Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
@@ -260,13 +287,22 @@ fun Composer(
                         Text("‹ влево — отмена", fontSize = 13.sp, color = Ink.faint.copy(alpha = (1f - dx / cancelPx).coerceIn(.25f, 1f)),
                             modifier = Modifier.clickable { finish("cancel") })
                     }
-                } else {
-                    if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 15.sp)
-                    BasicTextField(
-                        value = state.draft, onValueChange = onDraft,
-                        textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink),
-                        cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth(),
-                    )
+                } else Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Слева в поле — только скрепка; справа — микрофон фото-режима (Продукт 5.17).
+                    val canAttach = state.current.accepts.photo && (onGallery != null || (onCamera != null && !photoMain))
+                    if (canAttach) Text("📎", fontSize = 18.sp, modifier = Modifier.clickable { menu = !menu }.padding(end = 10.dp))
+                    Box(Modifier.weight(1f)) {
+                        if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 15.sp)
+                        BasicTextField(
+                            value = state.draft, onValueChange = onDraft,
+                            textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink),
+                            cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    if (photoMain && state.draft.isEmpty() && state.current.accepts.voice)
+                        Text("🎙", fontSize = 18.sp, modifier = Modifier.clickable {
+                            if (micOk()) { rec = RecMode.LOCKED; t0 = System.currentTimeMillis(); recognizer.start() }
+                        }.padding(start = 10.dp))
                 }
             }
             Spacer(Modifier.size(8.dp))
@@ -277,9 +313,14 @@ fun Composer(
                     .offset { IntOffset(-dx.toInt().coerceAtMost(cancelPx.toInt()), -dy.toInt().coerceAtMost(lockPx.toInt())) }
                     .size((48 * scale).dp).clip(CircleShape)
                     .background(if (rec == RecMode.HOLD) Ink.local else Ink.ink)
-                    .pointerInput(hasText, rec) {
+                    .pointerInput(hasText, rec, photoMain) {
                         awaitEachGesture {
                             val down = awaitFirstDown()
+                            if (!hasText && rec == null && photoMain) {
+                                // Фото-режим: большая кнопка — камера.
+                                if (waitForUpOrCancellation() != null) onCamera?.invoke()
+                                return@awaitEachGesture
+                            }
                             if (hasText) {
                                 val up = waitForUpOrCancellation()
                                 if (up != null) onSend(state.draft, "клавиатура")
@@ -318,7 +359,7 @@ fun Composer(
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(if (hasText || rec == RecMode.LOCKED) "↑" else "🎙", color = Color.White, fontSize = 20.sp)
+                Text(if (hasText || rec == RecMode.LOCKED) "↑" else if (photoMain && rec == null) "📷" else "🎙", color = Color.White, fontSize = 20.sp)
             }
         }
         ModeTabs(state, onSelectMode, onAddMode)

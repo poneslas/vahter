@@ -123,7 +123,7 @@ sealed interface FeedItem {
 
     /** Реплика пользователя. [via] — «голос», «клавиатура», «фото»… [images] — миниатюры (пути к файлам). */
     @Serializable
-    data class Me(override val id: Long, val text: String, val via: String, val images: List<String> = emptyList()) : FeedItem
+    data class Me(override val id: Long, val text: String, val via: String, val images: List<String> = emptyList(), val status: String? = null) : FeedItem
 
     /** Ответ мозга. [done] = false, пока идёт поток. */
     @Serializable

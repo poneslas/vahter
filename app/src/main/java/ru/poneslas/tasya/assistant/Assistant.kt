@@ -68,6 +68,8 @@ object Sheet {
     val prepareHooks = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
     /** Счётчик «начать запись без рук» — меняется при вызове кнопкой. */
     val autoListen = MutableStateFlow(0)
+    /** Камера в листе открыта. */
+    val camera = MutableStateFlow(false)
 
     /** Свернуть приложение обратно в лист (Архитектура 3.1: finish + showSession). */
     fun show(args: Bundle = Bundle()) = service?.showSession(args, 0)
@@ -111,7 +113,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
                 onClose = { hide() },
                 onExpand = { expand() },
                 onSettings = { openApp(settings = true) },
-                onNeedMic = { openApp(settings = false, askMic = true) },
+                onNeedPerm = { perm -> openApp(settings = false, askPerm = perm) },
+                session = this@AssistSession,
             )
         }
     }
@@ -142,12 +145,19 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
         registry.currentState = Lifecycle.State.RESUMED
         Sheet.visible.value = true
         // Вызов кнопкой (не из уведомления и не из приложения): голосовой режим сразу слушает без рук.
-        if ((src == null || src == "unlock") && conv.state.value.current.primary == ru.poneslas.tasya.core.Primary.VOICE) Sheet.autoListen.value++
+        val cur = conv.state.value.current
+        if (src == null || src == "unlock") {
+            // Главное действие режима при вызове кнопкой: голос — сразу слушает, фото — сразу камера.
+            if (cur.primary == ru.poneslas.tasya.core.Primary.PHOTO && cur.accepts.photo &&
+                context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
+            else if (cur.primary == ru.poneslas.tasya.core.Primary.VOICE) Sheet.autoListen.value++
+        }
     }
 
     override fun onHide() {
         // Запись останавливаем сами: система микрофон после hide() не выключает (Архитектура 3).
         SheetEvents.onHide?.invoke()
+        Sheet.camera.value = false
         if (registry.currentState.isAtLeast(Lifecycle.State.CREATED)) registry.currentState = Lifecycle.State.CREATED
         Sheet.visible.value = false
         super.onHide()
@@ -178,11 +188,11 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     /** Развернуть лист в приложение: сначала запуск активности, потом hide (на скрытой сессии запуск не работает). */
     private fun expand() = openApp(settings = false)
 
-    fun openApp(settings: Boolean, askMic: Boolean = false) {
+    fun openApp(settings: Boolean, askPerm: String? = null) {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_FROM_SHEET, true)
             .putExtra(MainActivity.EXTRA_SETTINGS, settings)
-            .putExtra(MainActivity.EXTRA_ASK_MIC, askMic)
+            .putExtra(MainActivity.EXTRA_ASK_PERM, askPerm)
         runCatching { startAssistantActivity(intent) }
         hide()
     }
