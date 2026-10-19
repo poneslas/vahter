@@ -77,7 +77,7 @@ class ApiBrain(
 
     private fun stepTitle(name: String) = when (name) {
         "alarm_set" -> "Ставлю будильник"; "alarm_dismiss" -> "Выключаю будильник"; "alarm_next" -> "Смотрю будильники"
-        "timer_set" -> "Запускаю таймер"; "calendar_query" -> "Смотрю календарь"; "calendar_add" -> "Создаю событие"
+        "timer_set" -> "Запускаю таймер"; "timer_stop" -> "Останавливаю таймер"; "calendar_delete" -> "Удаляю событие"; "note_delete", "place_delete" -> "Забываю"; "calendar_query" -> "Смотрю календарь"; "calendar_add" -> "Создаю событие"
         "torch_set" -> "Фонарик"; "volume_set" -> "Громкость"; "dnd_set" -> "Не беспокоить"; "media_control" -> "Музыка"
         "location_get" -> "Узнаю местоположение"; "place_save" -> "Запоминаю место"; "place_list" -> "Смотрю сохранённые места"
         "note_add" -> "Запоминаю"; "note_find" -> "Ищу в заметках"; "app_open" -> "Открываю приложение"; "settings_open" -> "Открываю настройки"

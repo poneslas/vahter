@@ -178,6 +178,8 @@ class Conversation(
                 journal = { tool, params, title, status -> journal(tool, params, title, status, who, phrase) },
                 notes = { _state.value.saved.notes },
                 saveNote = { n -> edit { it.copy(notes = (it.notes + n).takeLast(500)) } },
+                deleteNote = ::deleteNote,
+                timers = { _state.value.saved.feeds.values.flatten().filterIsInstance<FeedItem.Act>().filter { it.countdown && it.state == "done" }.mapNotNull { it.at } },
             )
             try {
                 brainFor(mode).send(Turn(mode, history), tools).collect { e ->
@@ -243,6 +245,8 @@ class Conversation(
         return true
     }
 
+    private fun deleteNote(id: Long) = edit { it.copy(notes = it.notes.filterNot { n -> n.id == id }) }
+
     private fun journal(tool: String, params: String, title: String, status: String, who: String, phrase: String) {
         val locked = context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
         edit { it.copy(journal = (it.journal + JournalEntry(nextId(), System.currentTimeMillis(), title, who, phrase, tool, params, status, locked)).takeLast(300)) }
@@ -284,6 +288,9 @@ class Conversation(
             "torch" -> P.torch(context, false).isSuccess
             "vol" -> P.volumeRaw(context, parts[1], parts[2].toInt()).isSuccess
             "dnd" -> P.dndRestore(context, parts[1].toInt()).isSuccess
+            "alarm" -> PhoneActions.setAlarm(context, parts[2].toInt(), parts[3].toInt()).isSuccess
+            "media" -> P.media(context, parts[1]).isSuccess
+            "note" -> { deleteNote(parts[2].toLong()); true }
             else -> false
         }
         // Отменили — строка гаснет и говорит, что сделано; модель узнаёт из истории режима.

@@ -115,6 +115,8 @@ data class Settings(
     /** Только то, что пользователь менял; остальное — по умолчанию из реестра ([ru.poneslas.tasya.actions.Registry]). */
     val policy: Map<String, Policy> = emptyMap(),
     val onboarded: Boolean = false,
+    /** Голосовой режим при вызове помощника сразу пишет (Бэклог №13). Только вызов — не уведомление и не возврат. */
+    val listenOnCall: Boolean = true,
 )
 
 /** Элемент ленты разговора. */

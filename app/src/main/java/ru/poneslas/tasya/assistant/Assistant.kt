@@ -135,8 +135,10 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             hide()
             return
         }
+        // Вызов помощника: боковая кнопка, жест, экран блокировки. Уведомление, приложение, камера, выбор фото — не вызов.
+        val call = src == null || src == "unlock" || src == "keyguard"
         // Режим запоминается; после 30 минут без дела кнопка снова открывает Ассистента (Продукт 5.17).
-        if (src == null) {
+        if (call && src != "unlock") {
             val idle = System.currentTimeMillis() - conv.state.value.saved.lastUse
             val back = when (settings.returnToAssistant) {
                 ru.poneslas.tasya.core.ReturnToAssistant.ALWAYS -> true
@@ -149,11 +151,11 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
         Sheet.visible.value = true
         // Вызов кнопкой (не из уведомления и не из приложения): голосовой режим сразу слушает без рук.
         val cur = conv.state.value.current
-        if (src == null || src == "unlock") {
-            // Главное действие режима при вызове кнопкой: голос — сразу слушает, фото — сразу камера.
+        if (call) {
+            // Главное действие режима при вызове: фото — сразу камера; голос — сразу слушает, если включено «Слушать сразу при вызове».
             if (cur.primary == ru.poneslas.tasya.core.Primary.PHOTO && cur.accepts.photo &&
                 context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
-            else if (cur.primary == ru.poneslas.tasya.core.Primary.VOICE) Sheet.autoListen.value++
+            else if (cur.primary == ru.poneslas.tasya.core.Primary.VOICE && settings.listenOnCall) Sheet.autoListen.value++
         }
     }
 

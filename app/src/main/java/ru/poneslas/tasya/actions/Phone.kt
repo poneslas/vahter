@@ -59,6 +59,10 @@ object Phone {
         return Launch.activity(ctx, i)
     }
 
+    /** Выключить звенящий таймер. Идущий таймер другому приложению не остановить — только показать таймеры. */
+    fun dismissTimer(ctx: Context): Result<Unit> = Launch.activity(ctx, Intent(AlarmClock.ACTION_DISMISS_TIMER))
+    fun showTimers(ctx: Context): Result<Unit> = Launch.activity(ctx, Intent(AlarmClock.ACTION_SHOW_TIMERS))
+
     /** Ближайший будильник любого приложения (системный). */
     fun nextAlarm(ctx: Context): Long? = ctx.getSystemService(AlarmManager::class.java).nextAlarmClock?.triggerTime
 

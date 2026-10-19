@@ -114,10 +114,13 @@ fun ModePage(activity: MainActivity, id: String) {
     val state by conv.state.collectAsState()
     val m = state.modes.firstOrNull { it.id == id } ?: return
     val main = m.id == Modes.MAIN
+    // Встроенные режимы только включаются и выключаются (Бэклог №14): остальное — для просмотра.
+    val ro = m.builtin
     val ed: ((Mode) -> Mode) -> Unit = { f -> conv.editMode(m.id, f) }
     TopBar(m.title, if (m.builtin) "встроенный режим" else "свой режим · id ${m.id}, не меняется", onBack = activity::back, titleIcon = Ic.mode(m.icon))
     FormPage {
-        if (!main) {
+        if (ro) Note("Встроенный режим: его можно включить или выключить в «Настройках» и начать разговор заново. Чтобы сделать по-своему — создайте свой режим «+».")
+        if (!ro) {
             Field("Название", m.title, "Как назвать вкладку") { v -> ed { it.copy(title = v) } }
             Column {
                 Lh("Значок")
@@ -135,21 +138,22 @@ fun ModePage(activity: MainActivity, id: String) {
         Column {
             Lh("Что делать")
             if (main) MNote("Основной режим: без своего промпта, все действия телефона.")
+            else if (ro) Text(m.prompt, fontSize = 13.5.sp, color = Ink.ink)
             else {
                 Area(m.prompt, "Например: переводи всё на китайский и добавляй пиньинь") { v -> ed { it.copy(prompt = v) } }
                 Dictate { text -> ed { it.copy(prompt = (it.prompt.trim() + " " + text).trim()) } }
             }
         }
-        if (!main) {
+        if (!ro) {
             Field("Подсказка в пустом разговоре", m.hint, "Что сюда присылать") { v -> ed { it.copy(hint = v) } }
             Field("Подсказка в поле ввода", m.placeholder, "Вопрос к фото") { v -> ed { it.copy(placeholder = v) } }
         }
         Column {
             Lh("Принимает")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                MChip("Голос", m.accepts.voice, Ic.mic, onClick = if (main) null else ({ ed { it.copy(accepts = it.accepts.copy(voice = !it.accepts.voice)) } }))
+                MChip("Голос", m.accepts.voice, Ic.mic, onClick = if (ro) null else ({ ed { it.copy(accepts = it.accepts.copy(voice = !it.accepts.voice)) } }))
                 MChip("Текст", true, Ic.kbd)
-                MChip("Фото", m.accepts.photo, Ic.cam) { ed { it.copy(accepts = it.accepts.copy(photo = !it.accepts.photo), primary = if (it.accepts.photo) Primary.VOICE else it.primary) } }
+                MChip("Фото", m.accepts.photo, Ic.cam, onClick = if (ro) null else ({ ed { it.copy(accepts = it.accepts.copy(photo = !it.accepts.photo), primary = if (it.accepts.photo) Primary.VOICE else it.primary) } }))
             }
         }
         if (m.accepts.photo && !main) Column {
@@ -158,7 +162,7 @@ fun ModePage(activity: MainActivity, id: String) {
                 listOf(Primary.VOICE to ("Голос" to Ic.mic), Primary.PHOTO to ("Фото" to Ic.cam)).forEach { (v, tl) ->
                     val on = m.primary == v
                     Row(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (on) Color.White else Color.Transparent)
-                        .clickable { ed { it.copy(primary = v) } }.padding(9.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                        .clickable(enabled = !ro) { ed { it.copy(primary = v) } }.padding(9.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(painterResource(tl.second), null, Modifier.size(16.dp), tint = Ink.ink)
                         Spacer(Modifier.width(6.dp))
                         Text(tl.first, fontSize = 14.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
@@ -169,7 +173,8 @@ fun ModePage(activity: MainActivity, id: String) {
                 else "Большая кнопка — микрофон. С боковой кнопки — сразу слушает.")
         }
         SetCard {
-            if (main) Item("Действия телефона", "Все — таймер, будильник", icon = Ic.shield)
+            if (main) Item("Действия телефона", "Все — будильник, таймер, календарь, звонки…", icon = Ic.shield)
+            else if (ro) Item("Действия телефона", if (m.tools) "Включены" else "Выключены", icon = Ic.shield)
             else Item("Действия телефона", if (m.tools) "Включены — таймер, будильник" else "Выключены — меньше инструментов, ответ быстрее",
                 icon = Ic.shield, end = { Sw(m.tools) }) { ed { it.copy(tools = !it.tools) } }
             Item("Язык речи", "Русский (GigaAM). Другие языки — позже", icon = Ic.wave)

@@ -27,6 +27,7 @@
         <package android:name="org.telegram.messenger" />
         <package android:name="com.whatsapp" />
         <intent><action android:name="android.intent.action.DISMISS_ALARM" /></intent>
+        <intent><action android:name="android.intent.action.DISMISS_TIMER" /></intent>
         <!-- «Открыть приложение»: список того, что есть на рабочем столе -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.DIAL" /></intent>

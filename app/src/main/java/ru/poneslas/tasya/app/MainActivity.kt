@@ -106,7 +106,7 @@ class MainActivity : ComponentActivity() {
     fun choose(d: ChoiceDialog) { dialog = d }
 
     /** Свернуть обратно в лист: finish + showSession (Архитектура 3.1). */
-    private fun collapse() { finish(); Sheet.show() }
+    private fun collapse() { finish(); Sheet.show(Bundle().apply { putString("src", "app") }) }
 
     @Composable
     private fun Screen() {
@@ -185,6 +185,8 @@ class MainActivity : ComponentActivity() {
                 startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
             }
             Item("Боковая кнопка", SideKey.describe(this@MainActivity), icon = Ic.btn) { SideKey.open(this@MainActivity) }
+            Item("Слушать сразу при вызове", "Боковая кнопка: запись начинается сама. Из уведомлений и приложения — нет",
+                icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
             Item("Возвращаться к Ассистенту", returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
                 dialog = ChoiceDialog("Возвращаться к Ассистенту", ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
                     app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }

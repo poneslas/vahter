@@ -62,7 +62,8 @@ object Notifier {
 class OpenSheetReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         intent.getStringExtra("mode")?.let { App.instance.conversation.selectMode(it) }
-        if (Sheet.show(Bundle()) == null) {
+        // Баг №10: из уведомления — на разговор с ответом, без камеры и без записи.
+        if (Sheet.show(Bundle().apply { putString("src", "notification") }) == null) {
             context.startActivity(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }

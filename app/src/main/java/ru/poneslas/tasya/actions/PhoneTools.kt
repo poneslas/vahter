@@ -38,6 +38,9 @@ class PhoneTools(
     private val journal: (tool: String, params: String, title: String, status: String) -> Unit,
     private val notes: () -> List<Note>,
     private val saveNote: (Note) -> Unit,
+    private val deleteNote: (Long) -> Unit,
+    /** Когда должны прозвенеть таймеры, которые ставили мы (по строкам разговора). */
+    private val timers: () -> List<Long>,
 ) : ToolHost {
 
     private fun spec(name: String, desc: String, props: String, required: String = "") = ToolSpec(name, desc,
@@ -46,16 +49,19 @@ class PhoneTools(
     override fun specs(mode: Mode): List<ToolSpec> = if (!mode.tools) emptyList() else listOf(
         spec("alarm_set", "Поставить будильник в «Часах».",
             """"time":{"type":"string","description":"ЧЧ:ММ, 24 часа"},"label":{"type":"string","description":"Подпись, до 40 символов"}""", "\"time\""),
-        spec("alarm_dismiss", "Выключить ближайшее срабатывание будильника (по времени или подписи). Удалить будильник нельзя — только выключить ближайшее.",
-            """"time":{"type":"string","description":"ЧЧ:ММ, если известно"},"label":{"type":"string"}"""),
+        spec("alarm_dismiss", "Только для БУДИЛЬНИКОВ (не таймеров): попросить «Часы» выключить ближайшее срабатывание. «Часы» могут показать список — результат не гарантирован.",
+            """"time":{"type":"string","description":"ЧЧ:ММ — только если человек сам назвал время будильника"},"label":{"type":"string"}"""),
         spec("alarm_next", "Узнать, когда прозвенит ближайший будильник на телефоне.", ""),
         spec("timer_set", "Запустить таймер в «Часах».",
             """"seconds":{"type":"integer","description":"1–86400"},"label":{"type":"string"}""", "\"seconds\""),
+        spec("timer_stop", "Остановить или выключить таймер («выключи таймер», «хватит звенеть»).", ""),
         spec("calendar_query", "События календаря телефона за период.",
             """"from":{"type":"string","description":"Дата начала ГГГГ-ММ-ДД"},"days":{"type":"integer","description":"Сколько дней, по умолчанию 1"}""", "\"from\""),
         spec("calendar_add", "Создать событие в календаре телефона.",
             """"title":{"type":"string"},"start":{"type":"string","description":"ГГГГ-ММ-ДДTЧЧ:ММ или ГГГГ-ММ-ДД для события на весь день"},"minutes":{"type":"integer","description":"Длительность, по умолчанию 60"},"location":{"type":"string"}""",
             "\"title\",\"start\""),
+        spec("calendar_delete", "Удалить событие календаря по названию (ищет в ближайшие 60 дней).",
+            """"title":{"type":"string","description":"Слова из названия"},"date":{"type":"string","description":"ГГГГ-ММ-ДД, если известно"}""", "\"title\""),
         spec("torch_set", "Включить или выключить фонарик.", """"on":{"type":"boolean"}""", "\"on\""),
         spec("volume_set", "Громкость: задать в процентах или прибавить/убавить шагами.",
             """"stream":{"type":"string","enum":["media","ring","alarm","notification"],"description":"media — музыка и видео"},"percent":{"type":"integer","description":"0–100"},"step":{"type":"integer","description":"+1 громче, −1 тише"}""",
@@ -67,8 +73,10 @@ class PhoneTools(
         spec("place_save", "Запомнить текущее место под названием («здесь припарковался»).",
             """"name":{"type":"string"}""", "\"name\""),
         spec("place_list", "Сохранённые места с расстоянием от текущего.", ""),
+        spec("place_delete", "Забыть сохранённое место.", """"name":{"type":"string"}""", "\"name\""),
         spec("note_add", "Запомнить заметку на телефоне.", """"text":{"type":"string"}""", "\"text\""),
         spec("note_find", "Найти заметки (пустой запрос — последние).", """"query":{"type":"string"}"""),
+        spec("note_delete", "Забыть заметку («забудь про парковку»).", """"query":{"type":"string","description":"Слова из заметки"}""", "\"query\""),
         spec("app_open", "Открыть приложение по названию.", """"name":{"type":"string"}""", "\"name\""),
         spec("settings_open", "Открыть экран системных настроек.",
             """"screen":{"type":"string","enum":[${Phone.settingsScreens.keys.joinToString(",") { "\"$it\"" }}]}""", "\"screen\""),
@@ -109,7 +117,11 @@ class PhoneTools(
             return err("no_permission", "Нет доступа Android «$titles». В разговоре появилась строка с кнопкой «Разрешить» — попроси нажать её и повторить.")
         }
         val r = runCatching { run(name, a, policy) }.getOrElse { e -> err("failed", "Не получилось: ${e.message ?: e.javaClass.simpleName}") }
-        journal(t.id, argumentsJson, t.title, if (r.contains("\"ok\":true")) "выполнено" else Regex("\"message\":\"([^\"]*)").find(r)?.groupValues?.get(1) ?: "не выполнено")
+        journal(t.id, argumentsJson, t.title, when {
+            r.contains("\"uncertain\":true") -> "передано, итог неизвестен"
+            r.contains("\"ok\":true") -> "выполнено"
+            else -> Regex("\"message\":\"([^\"]*)").find(r)?.groupValues?.get(1)?.substringBefore(". ")?.substringBefore(" — ")?.take(80) ?: "не выполнено"
+        })
         return r
     }
 
@@ -142,10 +154,25 @@ class PhoneTools(
             val what = hm?.let { "%d:%02d".format(it.first, it.second) } ?: label ?: "ближайший"
             if (!ask(policy, "Выключить будильник · $what", "Ближайшее срабатывание")) declined
             else Phone.dismissAlarm(context, hm?.first, hm?.second, label).fold(
-                { act("⏰", "Будильник выключен · $what", "ближайшее срабатывание", "Открыть будильники", "alarms")
-                  res(true) { put("note", "Выключено ближайшее срабатывание; сам будильник в «Часах» остался") } },
+                { act("⏰", "Будильник · $what — попросил «Часы» выключить", "если «Часы» показали список — выключите там", "Открыть будильники", "alarms",
+                      state = "info", undo = hm?.let { "Вернуть" }, undoAction = hm?.let { "alarm:set:${it.first}:${it.second}" })
+                  res(true) { put("uncertain", true); put("note", "Просьба передана «Часам»; выключен ли будильник — неизвестно, «Часы» могли показать список. Так и скажи.") } },
                 { act("⏰", "Будильник не выключен · $what", "«Часы» не умеют выключать по просьбе", "Открыть будильники", "alarms", state = "fail")
                   err("unsupported", "«Часы» на этом телефоне не выключают будильник по просьбе других приложений") })
+        }
+        "timer_stop" -> {
+            // Звенит — то, что ставили мы и чьё время вышло последние 15 минут. Идущий таймер Android остановить не даёт.
+            val now = System.currentTimeMillis()
+            val ringing = timers().any { it in (now - 15 * 60_000)..now }
+            if (ringing) Phone.dismissTimer(context).fold(
+                { act("⏱", "Таймер выключен", "звенящий таймер в «Часах»"); res(true) },
+                { Phone.showTimers(context); act("⏱", "Таймер не выключен", "«Часы» не ответили — открыл таймеры", "Открыть таймеры", "timers", state = "fail")
+                  err("clock_unavailable", "«Часы» не выключили таймер; открыты таймеры — выключить нужно там") })
+            else {
+                Phone.showTimers(context)
+                act("⏱", "Таймер идёт — остановите в «Часах»", "Android не даёт остановить его из другого приложения", "Открыть таймеры", "timers", state = "info")
+                err("cannot_stop_running", "Идущий таймер Android не даёт остановить из другого приложения. Открыты таймеры в «Часах» — остановить нужно там. Не говори, что таймер остановлен.")
+            }
         }
         "alarm_next" -> {
             val at = Phone.nextAlarm(context)
@@ -190,6 +217,17 @@ class PhoneTools(
                 { e -> val why = if (e.message == "no_calendar") "на телефоне нет календаря, куда можно записывать" else "календарь не принял событие"
                        act("📅", "Событие не создано · $title", why, state = "fail"); err("calendar_failed", why.replaceFirstChar { it.uppercase() }) })
         }
+        "calendar_delete" -> {
+            val q = a.str("title")?.lowercase() ?: return err("no_title", "Какое событие удалить?")
+            val from = a.str("date")?.let { Phone.parseIso(it)?.first } ?: (System.currentTimeMillis() - 86_400_000L)
+            val found = Phone.io { Phone.events(context, from, from + 60 * 86_400_000L) }.filter { e -> q.split(' ').filter { it.length > 2 }.any { e.title.lowercase().contains(it.take(5)) } }
+            val e = found.firstOrNull() ?: return err("not_found", "Событие «$q» не найдено в ближайшие 60 дней")
+            val when_ = if (e.allDay) Phone.dayHm(e.begin).substringBeforeLast(',') + " · весь день" else Phone.dayHm(e.begin)
+            if (!ask(Policy.ASK, "Удалить событие · ${e.title}", when_)) declined
+            else Phone.deleteEvent(context, e.id).fold(
+                { act("📅", "Событие удалено · ${e.title}", when_); res(true) { if (found.size > 1) put("note", "Похожих событий было ${found.size}; удалено ближайшее") } },
+                { err("calendar_failed", "Календарь не удалил событие") })
+        }
         "torch_set" -> {
             val on = a.bool("on") ?: true
             Phone.torch(context, on).fold(
@@ -216,7 +254,9 @@ class PhoneTools(
         "media_control" -> {
             val action = a.str("action") ?: "toggle"
             val word = mapOf("play" to "играет", "pause" to "пауза", "next" to "следующий трек", "previous" to "предыдущий трек").getOrDefault(action, "пауза / играет")
-            Phone.media(context, action).fold({ act("🎵", "Музыка · $word", "в приложении, которое играет"); res(true) }, { err("media_failed", "Нечем управлять — ничего не играет") })
+            val back = when (action) { "pause" -> "Играть" to "media:play"; "play" -> "Пауза" to "media:pause"; else -> null }
+            Phone.media(context, action).fold({ act("🎵", "Музыка · $word", "в приложении, которое играет", undo = back?.first, undoAction = back?.second); res(true) },
+                { err("media_failed", "Нечем управлять — ничего не играет") })
         }
         "location_get" -> {
             if (!ask(policy, "Узнать местоположение", "Координаты уйдут модели")) declined
@@ -231,8 +271,9 @@ class PhoneTools(
             val nm = a.str("name") ?: return err("no_name", "Нужно название места")
             val l = Phone.location(context) ?: return err("no_location", "Местоположение недоступно — включите геолокацию")
             val addr = Phone.address(context, l)
-            saveNote(Note(System.currentTimeMillis(), nm, System.currentTimeMillis(), place = true, lat = l.latitude, lon = l.longitude, address = addr))
-            act("📍", "Место сохранено · $nm", addr ?: "%.4f, %.4f".format(l.latitude, l.longitude), "Карта", "map:${l.latitude}:${l.longitude}:$nm")
+            val id = System.currentTimeMillis()
+            saveNote(Note(id, nm, id, place = true, lat = l.latitude, lon = l.longitude, address = addr))
+            act("📍", "Место сохранено · $nm", addr ?: "%.4f, %.4f".format(l.latitude, l.longitude), "Карта", "map:${l.latitude}:${l.longitude}:$nm", undo = "Удалить", undoAction = "note:del:$id")
             res(true)
         }
         "place_list" -> {
@@ -249,14 +290,24 @@ class PhoneTools(
         }
         "note_add" -> {
             val text = a.str("text") ?: return err("no_text", "Пустая заметка")
-            saveNote(Note(System.currentTimeMillis(), text, System.currentTimeMillis()))
-            act("📝", "Запомнил", text.take(80)); res(true)
+            val id = System.currentTimeMillis()
+            saveNote(Note(id, text, id))
+            act("📝", "Заметка сохранена", text.take(80), undo = "Удалить", undoAction = "note:del:$id"); res(true)
         }
         "note_find" -> {
             val q = a.str("query")?.lowercase()
             val found = notes().filter { !it.place && (q == null || q.split(' ').any { w -> w.length > 2 && it.text.lowercase().contains(w.take(5)) }) }.takeLast(20)
             act("📝", "Заметки · ${found.size}", found.lastOrNull()?.text?.take(60) ?: "ничего не нашлось", state = "info")
             buildJsonObject { put("ok", true); put("notes", buildJsonArray { found.forEach { add(buildJsonObject { put("text", it.text); put("saved", Phone.iso(it.at)) }) } }) }.toString()
+        }
+        "note_delete", "place_delete" -> {
+            val place = fn == "place_delete"
+            val q = (a.str("query") ?: a.str("name"))?.lowercase() ?: return err("no_query", "Что забыть?")
+            val n = notes().filter { it.place == place }.lastOrNull { nt -> q.split(' ').filter { it.length > 2 }.ifEmpty { listOf(q) }.any { nt.text.lowercase().contains(it.take(5)) } }
+                ?: return err("not_found", if (place) "Такого места нет" else "Такой заметки нет")
+            deleteNote(n.id)
+            act(if (place) "📍" else "📝", if (place) "Место забыто · ${n.text}" else "Заметка удалена", if (place) (n.address ?: "") else n.text.take(80))
+            res(true)
         }
         "app_open" -> {
             val nm = a.str("name") ?: return err("no_name", "Нужно название приложения")
