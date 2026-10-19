@@ -156,7 +156,12 @@ class Conversation(
         _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
         touch()
         push(mode.id, FeedItem.Me(nextId(), clean, via))
-        if (mode.tools && localRule(mode, clean)) return
+        if (mode.tools) {
+            // Составная фраза («будильник на 7 и таймер на минуту») — мозгу: он разложит на шаги.
+            // Без сети — по частям локально; что не понято, честно сказать (Бэклог №19).
+            if (Rules.isCompound(clean)) { if (!online() && localParts(mode, clean)) return }
+            else if (localRule(mode, clean)) return
+        }
         toBrain(mode, clean, emptyList())
     }
 
@@ -217,7 +222,22 @@ class Conversation(
     }
 
     /** Точные короткие команды — без мозга и без сети (Архитектура 5). */
-    private fun localRule(mode: Mode, text: String): Boolean {
+    private fun online(): Boolean {
+        val cm = context.getSystemService(android.net.ConnectivityManager::class.java)
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    /** Без сети: каждую часть составной фразы — локальным правилом; непонятые — одной честной строкой. */
+    private fun localParts(mode: Mode, text: String): Boolean {
+        val parts = Rules.parts(text)
+        val missed = parts.filterNot { localRule(mode, it, fromCompound = true) }
+        if (missed.size == parts.size) return false
+        if (missed.isNotEmpty()) push(mode.id, FeedItem.Err(nextId(), tr(R.string.conv_offline_missed, missed.joinToString("», «"))))
+        return true
+    }
+
+    private fun localRule(mode: Mode, text: String, fromCompound: Boolean = false): Boolean {
         val m = Rules.match(text) ?: return false
         val s = _state.value.settings
         val policyId = when (m) { is Rules.Match.Timer -> "timer.set"; is Rules.Match.Alarm -> "alarm.set"; is Rules.Match.Torch -> "torch.set" }

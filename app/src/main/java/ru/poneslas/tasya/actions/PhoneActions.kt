@@ -54,6 +54,19 @@ object Rules {
 
     private fun number(word: String): Int? = word.toIntOrNull() ?: numbers[word]
 
+    /** Связки между просьбами: «и», «а ещё», «потом», «затем», «плюс», запятая, точка с запятой. */
+    private val joiner = Regex("(?iu)\\s*(?:[,;]\\s*(?:а потом|а затем|а ещё|а еще|а также|и потом|и ещё|и еще|потом|затем|и|а)?|\\s(?:а потом|а затем|а ещё|а еще|а также|и потом|и ещё|и еще|потом|затем|плюс|и)\\s)\\s*")
+
+    /** Части составной фразы; одна часть — фраза одиночная (Бэклог №19). */
+    fun parts(phrase: String): List<String> = phrase.split(joiner).map { it.trim(' ', '.', '!', '?') }.filter { it.isNotBlank() }
+
+    /** В фразе больше одной просьбы: по связке или по двум разным действиям — такую фразу локальное правило не берёт. */
+    fun isCompound(phrase: String): Boolean {
+        val w = phrase.lowercase()
+        val kinds = listOf("таймер", "будильник", "фонар").count { w.contains(it) }
+        return kinds > 1 || parts(phrase).size > 1
+    }
+
     fun match(phrase: String): Match? {
         val words = phrase.lowercase().replace(Regex("[.,!?]"), " ").split(Regex("\\s+")).filter { it.isNotBlank() }
         // «включи / выключи фонарик» — коротко и без вариантов

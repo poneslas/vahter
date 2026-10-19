@@ -541,4 +541,5 @@
         <item quantity="many">%d шагов</item>
         <item quantity="other">%d шага</item>
     </plurals>
+    <string name="conv_offline_missed">Нет сети — без неё понял не всё: «%1$s». Повторите это отдельно или когда появится сеть.</string>
 </resources>
