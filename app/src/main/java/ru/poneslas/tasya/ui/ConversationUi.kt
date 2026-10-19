@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.ui
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -87,10 +89,10 @@ fun Feed(
             if (inSheet || state.mode != ru.poneslas.tasya.core.Modes.MAIN) {
                 Text(state.current.hint, color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em, modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp))
             } else {
-                Text("Зажмите боковую кнопку в любом приложении — или напишите здесь.", color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
+                Text(tr(R.string.feed_zazhmite_bokovuyu_knopku_v_lyubom), color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 24.dp))
                 if (onChip != null) FlowRow(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("Таймер на пять минут", "Разбуди в 7:30", "Как настроить бэкап сервера?").forEach { c ->
+                    listOf(tr(R.string.feed_taymer_na_pyat_minut), tr(R.string.feed_razbudi_v_7_30), tr(R.string.feed_kak_nastroit_bekap_servera)).forEach { c ->
                         Text(c, fontSize = 13.sp, color = Ink.ink, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.surf)
                             .border(1.dp, Ink.line, RoundedCornerShape(50)).clickable { onChip(c) }.padding(horizontal = 12.dp, vertical = 6.dp))
                     }
@@ -137,12 +139,12 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
                     }
                     if (item.status != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).clip(CircleShape).background(Color(0x8C000000))
                         .clickable { onCancel(item.id) }, contentAlignment = Alignment.Center) {
-                        Icon(painterResource(Ic.x), "Отменить отправку", Modifier.size(16.dp), tint = Color.White)
+                        Icon(painterResource(Ic.x), tr(R.string.feed_otmenit_otpravku), Modifier.size(16.dp), tint = Color.White)
                     }
                 }
                 if (item.status != null) {
                     Text(item.status, fontSize = 11.5.sp, color = Ink.soft)
-                    if (item.text.isEmpty()) Text("Можно дописать вопрос — уйдёт вместе с фото", fontSize = 11.5.sp, color = Ink.faint)
+                    if (item.text.isEmpty()) Text(tr(R.string.feed_mozhno_dopisat_vopros_uydet_vmeste), fontSize = 11.5.sp, color = Ink.faint)
                 } else if (item.text.isEmpty()) Text(item.via, fontSize = 10.5.sp, color = Ink.faint)
             }
             if (item.text.isNotEmpty()) Column(
@@ -180,10 +182,10 @@ private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) 
             val left = at - now
             append(" · ")
             append(when {
-                item.countdown && left > 0 -> "осталось " + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
-                item.countdown -> "прозвенел"
-                left > 0 -> "прозвенит " + ru.poneslas.tasya.actions.Phone.inText(left)
-                else -> "прозвенел"
+                item.countdown && left > 0 -> tr(R.string.feed_ostalos) + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
+                item.countdown -> tr(R.string.feed_prozvenel)
+                left > 0 -> tr(R.string.feed_prozvenit) + ru.poneslas.tasya.actions.Phone.inText(left)
+                else -> tr(R.string.feed_prozvenel)
             })
         }
     }
@@ -217,7 +219,7 @@ private fun StepsItem(item: FeedItem.Steps) {
     var open by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.serverT)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(if (item.running) item.titles.last() else "${item.titles.size} ${plural(item.titles.size, "шаг", "шага", "шагов")}",
+            Text(if (item.running) item.titles.last() else ru.poneslas.tasya.trp(R.plurals.feed_steps, item.titles.size),
                 fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = Ink.serverD, modifier = Modifier.weight(1f))
             Icon(painterResource(Ic.chev), null, Modifier.size(14.dp).graphicsLayer { rotationZ = if (open) 180f else 0f }, tint = Ink.serverD)
         }
@@ -322,7 +324,7 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () ->
                     .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
         }
         item {
-            Box(Modifier.padding(start = 2.dp).size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = "Новый режим", onClick = onAdd),
+            Box(Modifier.padding(start = 2.dp).size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = tr(R.string.feed_novyy_rezhim), onClick = onAdd),
                 contentAlignment = Alignment.Center) { Text("+", fontSize = 17.sp, color = Ink.soft) }
         }
     }

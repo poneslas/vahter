@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.assistant
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -75,7 +77,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
     val cameraPanel: @Composable (Modifier, Boolean) -> Unit = { m, full ->
         ru.poneslas.tasya.media.CameraPanel(session, state.current, ru.poneslas.tasya.core.Brains.byId(state.current.brain).maxImages, full,
             onClose = { Sheet.camera.value = false }, onCollapse = { camFull = false },
-            onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) "альбом · ${files.size}" else "фото"); if (question.isNotBlank()) app.conversation.send(question, "голос") },
+            onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) tr(R.string.sheet_albom_1_s, files.size) else tr(R.string.sheet_foto)); if (question.isNotBlank()) app.conversation.send(question, tr(R.string.sheet_golos)) },
             modifier = m)
     }
     TasyaTheme {
@@ -124,7 +126,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     )
                 }
                 Column(dragArea.graphicsLayer { translationY = drag.coerceAtLeast(0f) * 0.4f }) {
-                    Box(Modifier.fillMaxWidth().height(20.dp).clickable(onClickLabel = "Развернуть", onClick = onExpand), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth().height(20.dp).clickable(onClickLabel = tr(R.string.sheet_razvernut), onClick = onExpand), contentAlignment = Alignment.Center) {
                         Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
                     }
                 // .hdr: точка · «Режим · на связи» 12 · ⤢ ⚙ ✕ (36, приглушённые)
@@ -133,15 +135,15 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     Spacer(Modifier.width(6.dp))
                     Text(buildAnnotatedString {
                         withStyle(SpanStyle(color = Ink.ink, fontWeight = FontWeight.SemiBold)) { append(state.current.title) }
-                        append(if (connected) " · на связи" else " · нет ключа · только команды телефона")
+                        append(if (connected) tr(R.string.sheet_na_svyazi) else tr(R.string.sheet_net_klyucha_tolko_komandy_telefona))
                     }, fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     if (camera) {
                         IconBtn(Ic.expand, androidx.compose.ui.res.stringResource(ru.poneslas.tasya.R.string.cam_fullscreen), size = 36.dp, tint = Ink.soft) { camFull = true }
                         IconBtn(Ic.x, androidx.compose.ui.res.stringResource(ru.poneslas.tasya.R.string.cam_close), size = 36.dp, tint = Ink.soft) { Sheet.camera.value = false }
                     } else {
-                        IconBtn(Ic.expand, "Развернуть в приложение", size = 36.dp, tint = Ink.soft, onClick = onExpand)
-                        IconBtn(Ic.gear, "Настройки", size = 36.dp, tint = Ink.soft, onClick = onSettings)
-                        IconBtn(Ic.x, "Закрыть", size = 36.dp, tint = Ink.soft, onClick = onClose)
+                        IconBtn(Ic.expand, tr(R.string.sheet_razvernut_v_prilozhenie), size = 36.dp, tint = Ink.soft, onClick = onExpand)
+                        IconBtn(Ic.gear, tr(R.string.sheet_nastroyki), size = 36.dp, tint = Ink.soft, onClick = onSettings)
+                        IconBtn(Ic.x, tr(R.string.sheet_zakryt), size = 36.dp, tint = Ink.soft, onClick = onClose)
                     }
                 }
                 }

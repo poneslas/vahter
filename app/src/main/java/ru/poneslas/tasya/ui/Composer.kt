@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.ui
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -110,7 +112,7 @@ fun VoiceRow(
 
     fun ready(): Boolean {
         if (!voice.hasMic()) { onNeedMicNow(); return false }
-        if (!voice.installed.value) { onMessageNow("Голос ещё не скачан: Настройки → Голос"); return false }
+        if (!voice.installed.value) { onMessageNow(tr(R.string.cmp_golos_eshche_ne_skachan_nastroyki)); return false }
         return true
     }
 
@@ -138,15 +140,15 @@ fun VoiceRow(
             when (r) {
                 is Voice.Result.Text -> onTextNow(r.text)
                 Voice.Result.TooShort -> Unit
-                Voice.Result.Empty -> onMessageNow("Ничего не расслышал — пустая запись")
-                is Voice.Result.Failed -> onMessageNow("Не распознал: ${r.message}")
+                Voice.Result.Empty -> onMessageNow(tr(R.string.cmp_nichego_ne_rasslyshal_pustaya_zapis))
+                is Voice.Result.Failed -> onMessageNow(tr(R.string.cmp_ne_raspoznal_1_s, r.message))
             }
         }
     }
 
     fun startHandsFree() {
         if (voice.recording.value || !ready()) return
-        if (!voice.start()) { onMessageNow("Микрофон не завёлся — звук не идёт"); return }
+        if (!voice.start()) { onMessageNow(tr(R.string.cmp_mikrofon_ne_zavelsya_zvuk_ne)); return }
         button.setState(RecordingButton.State.RECORDING)
         button.handsFree = true
         showChrome(handsFree = true)
@@ -156,7 +158,7 @@ fun VoiceRow(
         button.onRecordingStart = {
             when {
                 !ready() -> button.setState(RecordingButton.State.IDLE)
-                !voice.start() -> { button.setState(RecordingButton.State.IDLE); onMessageNow("Микрофон не завёлся — звук не идёт") }
+                !voice.start() -> { button.setState(RecordingButton.State.IDLE); onMessageNow(tr(R.string.cmp_mikrofon_ne_zavelsya_zvuk_ne)) }
                 else -> showChrome(handsFree = false)
             }
         }
@@ -243,8 +245,8 @@ fun Composer(
         if (menu) Column(Modifier.padding(start = 10.dp, bottom = 4.dp).widthIn(min = 230.dp)
             .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
             .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
-            if (onCamera != null && !photoMain) PickItem(Ic.cam, "Камера", "снять и отправить") { menu = false; onCamera() }
-            if (onGallery != null) PickItem(Ic.image, "Галерея", "системный выбор фото") { menu = false; onGallery() }
+            if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_kamera), tr(R.string.cmp_snyat_i_otpravit)) { menu = false; onCamera() }
+            if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_galereya), tr(R.string.cmp_sistemnyy_vybor_foto)) { menu = false; onGallery() }
         }
         Box(Modifier.padding(start = 12.dp, end = 0.dp, top = 2.dp, bottom = 2.dp)) {
             VoiceRow(
@@ -257,23 +259,23 @@ fun Composer(
                             .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(start = if (canAttach) 4.dp else 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (canAttach) InTool(Ic.clip, "Прикрепить") { menu = !menu }
+                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_prikrepit)) { menu = !menu }
                         Box(Modifier.weight(1f)) {
                             if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
                             BasicTextField(state.draft, onDraft, textStyle = BaseText.copy(fontSize = 14.5.sp),
                                 cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
                         }
-                        if (photoMain && !hasText && state.current.accepts.voice) InTool(Ic.mic, "Спросить голосом без рук") { handsFreeTick++ }
+                        if (photoMain && !hasText && state.current.accepts.voice) InTool(Ic.mic, tr(R.string.cmp_sprosit_golosom_bez_ruk)) { handsFreeTick++ }
                     }
                 },
                 trailing = when {
-                    hasText -> { { RoundAction(Ic.send, "Отправить") { onSend(state.draft, "клавиатура") } } }
-                    photoMain -> { { RoundAction(Ic.cam, "Камера") { onCamera?.invoke() } } }
+                    hasText -> { { RoundAction(Ic.send, tr(R.string.cmp_otpravit)) { onSend(state.draft, tr(R.string.cmp_klaviatura)) } } }
+                    photoMain -> { { RoundAction(Ic.cam, tr(R.string.cmp_kamera)) { onCamera?.invoke() } } }
                     else -> null
                 },
-                onText = { text -> onSend((state.draft + " " + text).trim(), "голос") },
+                onText = { text -> onSend((state.draft + " " + text).trim(), tr(R.string.sheet_golos)) },
                 onMessage = ::flash,
-                onNeedMic = { if (onNeedMic != null) onNeedMic() else flash("Нужен доступ к микрофону") },
+                onNeedMic = { if (onNeedMic != null) onNeedMic() else flash(tr(R.string.cmp_nuzhen_dostup_k_mikrofonu)) },
                 autoListen = autoFlow,
                 cancelKey = state.mode,
             )
@@ -342,7 +344,7 @@ fun TryVoice() {
             field = {
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
                     .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (text.isEmpty()) Text("Попробуйте здесь…", color = Ink.faint, fontSize = 15.sp)
+                    if (text.isEmpty()) Text(tr(R.string.cmp_poprobuyte_zdes), color = Ink.faint, fontSize = 15.sp)
                     BasicTextField(text, { text = it }, textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink),
                         cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
                 }

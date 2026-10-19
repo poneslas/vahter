@@ -26,7 +26,10 @@ class Store(context: Context) {
     private val file = File(context.filesDir, "state.json")
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    fun load(): Saved = runCatching { json.decodeFromString(Saved.serializer(), file.readText()) }.getOrElse { Saved() }
+    fun load(): Saved = runCatching { json.decodeFromString(Saved.serializer(), file.readText()) }.getOrElse { Saved() }.let { s ->
+        // Встроенные режимы не редактируются (Бэклог №14), их тексты — из ресурсов на языке телефона (№15), а не из сохранённого.
+        s.copy(modes = s.modes.map { m -> Modes.builtin.firstOrNull { it.id == m.id }?.let { b -> m.copy(title = b.title, hint = b.hint, placeholder = b.placeholder, prompt = b.prompt, icon = b.icon) } ?: m })
+    }
 
     fun save(s: Saved) {
         val tmp = File(file.path + ".tmp")

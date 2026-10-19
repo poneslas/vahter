@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.media
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -23,7 +25,7 @@ class PickerActivity : ComponentActivity() {
         app.scope.launch {
             val files = uris.mapNotNull { runCatching { Attachments.fromUri(applicationContext, it) }.getOrNull() }
             finish()
-            if (files.isNotEmpty()) app.conversation.attach(files.map { it.path }, if (files.size > 1) "альбом · ${files.size}" else "фото")
+            if (files.isNotEmpty()) app.conversation.attach(files.map { it.path }, if (files.size > 1) tr(R.string.sheet_albom_1_s, files.size) else tr(R.string.sheet_foto))
             delay(150)
             if (intent.getBooleanExtra("fromSheet", true)) Sheet.show(Bundle().apply { putString("src", "picker") })
         }

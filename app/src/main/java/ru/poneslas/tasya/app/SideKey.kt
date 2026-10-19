@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.app
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -28,10 +30,10 @@ object SideKey {
     }
 
     fun describe(ctx: Context) = when (read(ctx)) {
-        State.ASSISTANT -> "Нажатие и удержание — цифровой помощник"
-        State.DOUBLE -> "Помощник — на двойном нажатии. Для удержания: Нажатие и удержание → Цифровой помощник"
-        State.OTHER -> "Удержание открывает Bixby или меню выключения"
-        State.UNKNOWN -> "Проверка кнопки зависит от телефона"
+        State.ASSISTANT -> tr(R.string.side_nazhatie_i_uderzhanie_tsifrovoy_pomoshch)
+        State.DOUBLE -> tr(R.string.side_pomoshchnik_na_dvoynom_nazhatii_dlya)
+        State.OTHER -> tr(R.string.side_uderzhanie_otkryvaet_bixby_ili_menyu)
+        State.UNKNOWN -> tr(R.string.side_proverka_knopki_zavisit_ot_telefona)
     }
 
     fun open(ctx: Context) {

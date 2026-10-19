@@ -21,6 +21,15 @@ import ru.poneslas.tasya.assistant.SheetEvents
 import ru.poneslas.tasya.pisar.model.ModelDownload
 import ru.poneslas.tasya.voice.Voice
 
+/**
+ * Строка интерфейса из ресурсов (мультиязычность, Бэклог №15). Работает и в Compose, и вне его —
+ * тексты, которые раньше были зашиты в код, перенесены в res/values/strings.xml (tools/i18n/extract.py).
+ */
+fun tr(@androidx.annotation.StringRes id: Int, vararg args: Any?): String = App.instance.getString(id, *args)
+
+/** Множественное число из ресурсов: «1 шаг / 2 шага / 5 шагов» — правила языка знает Android. */
+fun trp(@androidx.annotation.PluralsRes id: Int, n: Int): String = App.instance.resources.getQuantityString(id, n, n)
+
 /** Один процесс: сервис помощника, лист и приложение делят один разговор. */
 class App : Application() {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -66,9 +75,9 @@ class App : Application() {
     }
 
     fun voiceStatus(): String = when (val s = ModelDownload.state.value) {
-        is ModelDownload.State.Running -> "Загрузка модели: ${s.percent} %"
-        is ModelDownload.State.Failed -> "Не скачалась — попробуйте ещё раз"
-        else -> if (voice.installed.value) "GigaAM на телефоне · работает без интернета" else "Не скачано · 225 МБ"
+        is ModelDownload.State.Running -> tr(R.string.app_zagruzka_modeli_1_s, s.percent)
+        is ModelDownload.State.Failed -> tr(R.string.app_ne_skachalas_poprobuyte_eshche_raz)
+        else -> if (voice.installed.value) tr(R.string.app_gigaam_na_telefone_rabotaet_bez) else tr(R.string.app_ne_skachano_225_mb)
     }
 
     companion object {

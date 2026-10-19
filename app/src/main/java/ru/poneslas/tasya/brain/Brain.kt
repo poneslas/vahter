@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.brain
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -58,7 +60,7 @@ enum class ErrorKind { AUTH, BALANCE, RATE, CONTEXT, NETWORK, OTHER }
 class FakeBrain : Brain {
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         delay(400)
-        val answer = "Мозг не подключён. Добавьте ключ DeepSeek: Настройки → Мозги → DeepSeek."
+        val answer = tr(R.string.brain_mozg_ne_podklyuchen_dobavte_klyuch)
         emit(BrainEvent.Delta(answer))
         emit(BrainEvent.History(ChatMsg("assistant", answer)))
         emit(BrainEvent.MessageEnd)

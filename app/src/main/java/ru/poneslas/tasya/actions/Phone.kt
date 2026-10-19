@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.actions
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.NotificationManager
@@ -76,7 +78,7 @@ object Phone {
             CalendarContract.Instances.ALL_DAY, CalendarContract.Instances.EVENT_LOCATION, CalendarContract.Instances.CALENDAR_DISPLAY_NAME)
         val out = mutableListOf<Event>()
         ctx.contentResolver.query(uri, proj, null, null, CalendarContract.Instances.BEGIN + " ASC")?.use { c ->
-            while (c.moveToNext() && out.size < 50) out += Event(c.getLong(0), c.getString(1) ?: "(без названия)", c.getLong(2), c.getLong(3), c.getInt(4) == 1, c.getString(5), c.getString(6))
+            while (c.moveToNext() && out.size < 50) out += Event(c.getLong(0), c.getString(1) ?: tr(R.string.ph_bez_nazvaniya), c.getLong(2), c.getLong(3), c.getInt(4) == 1, c.getString(5), c.getString(6))
         }
         return out
     }
@@ -123,7 +125,7 @@ object Phone {
     }
 
     val streams = mapOf("media" to AudioManager.STREAM_MUSIC, "ring" to AudioManager.STREAM_RING, "alarm" to AudioManager.STREAM_ALARM, "notification" to AudioManager.STREAM_NOTIFICATION)
-    val streamTitles = mapOf("media" to "музыки и видео", "ring" to "звонка", "alarm" to "будильника", "notification" to "уведомлений")
+    val streamTitles = mapOf("media" to tr(R.string.ph_muzyki_i_video), "ring" to tr(R.string.ph_zvonka), "alarm" to tr(R.string.ph_budilnika), "notification" to tr(R.string.ph_uvedomleniy))
 
     /** Громкость в процентах: возвращает (было, стало). */
     fun volume(ctx: Context, stream: String, percent: Int?, step: Int?): Result<Pair<Int, Int>> = runCatching {
@@ -231,25 +233,25 @@ object Phone {
     }
 
     val settingsScreens = linkedMapOf(
-        "main" to ("Настройки" to Settings.ACTION_SETTINGS),
+        "main" to (tr(R.string.sheet_nastroyki) to Settings.ACTION_SETTINGS),
         "wifi" to ("Wi-Fi" to Settings.ACTION_WIFI_SETTINGS),
         "bluetooth" to ("Bluetooth" to Settings.ACTION_BLUETOOTH_SETTINGS),
-        "mobile" to ("Мобильная сеть" to Settings.ACTION_NETWORK_OPERATOR_SETTINGS),
-        "airplane" to ("Режим полёта" to Settings.ACTION_AIRPLANE_MODE_SETTINGS),
-        "display" to ("Экран" to Settings.ACTION_DISPLAY_SETTINGS),
-        "sound" to ("Звуки и вибрация" to Settings.ACTION_SOUND_SETTINGS),
-        "battery" to ("Батарея" to Intent.ACTION_POWER_USAGE_SUMMARY),
-        "location" to ("Местоположение" to Settings.ACTION_LOCATION_SOURCE_SETTINGS),
-        "apps" to ("Приложения" to Settings.ACTION_APPLICATION_SETTINGS),
-        "notifications" to ("Уведомления" to "android.settings.NOTIFICATION_SETTINGS"),
-        "dnd" to ("Не беспокоить" to "android.settings.ZEN_MODE_SETTINGS"),
-        "storage" to ("Память" to Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
-        "security" to ("Безопасность" to Settings.ACTION_SECURITY_SETTINGS),
-        "language" to ("Язык" to Settings.ACTION_LOCALE_SETTINGS),
-        "date" to ("Дата и время" to Settings.ACTION_DATE_SETTINGS),
-        "accessibility" to ("Специальные возможности" to Settings.ACTION_ACCESSIBILITY_SETTINGS),
-        "assistant" to ("Цифровой помощник" to Settings.ACTION_VOICE_INPUT_SETTINGS),
-        "this_app" to ("Тася — сведения о приложении" to Settings.ACTION_APPLICATION_DETAILS_SETTINGS),
+        "mobile" to (tr(R.string.ph_mobilnaya_set) to Settings.ACTION_NETWORK_OPERATOR_SETTINGS),
+        "airplane" to (tr(R.string.ph_rezhim_poleta) to Settings.ACTION_AIRPLANE_MODE_SETTINGS),
+        "display" to (tr(R.string.set_ekran) to Settings.ACTION_DISPLAY_SETTINGS),
+        "sound" to (tr(R.string.ph_zvuki_i_vibratsiya) to Settings.ACTION_SOUND_SETTINGS),
+        "battery" to (tr(R.string.ph_batareya) to Intent.ACTION_POWER_USAGE_SUMMARY),
+        "location" to (tr(R.string.ph_mestopolozhenie) to Settings.ACTION_LOCATION_SOURCE_SETTINGS),
+        "apps" to (tr(R.string.ph_prilozheniya) to Settings.ACTION_APPLICATION_SETTINGS),
+        "notifications" to (tr(R.string.set_uvedomleniya) to "android.settings.NOTIFICATION_SETTINGS"),
+        "dnd" to (tr(R.string.ph_ne_bespokoit) to "android.settings.ZEN_MODE_SETTINGS"),
+        "storage" to (tr(R.string.set_pamyat) to Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
+        "security" to (tr(R.string.ph_bezopasnost) to Settings.ACTION_SECURITY_SETTINGS),
+        "language" to (tr(R.string.ph_yazyk) to Settings.ACTION_LOCALE_SETTINGS),
+        "date" to (tr(R.string.ph_data_i_vremya) to Settings.ACTION_DATE_SETTINGS),
+        "accessibility" to (tr(R.string.ph_spetsialnye_vozmozhnosti) to Settings.ACTION_ACCESSIBILITY_SETTINGS),
+        "assistant" to (tr(R.string.set_tsifrovoy_pomoshchnik) to Settings.ACTION_VOICE_INPUT_SETTINGS),
+        "this_app" to (tr(R.string.ph_tasya_svedeniya_o_prilozhenii) to Settings.ACTION_APPLICATION_DETAILS_SETTINGS),
     )
 
     fun openSettings(ctx: Context, screen: String): Result<String> {
@@ -303,9 +305,9 @@ object Phone {
         val s = (ms / 1000).coerceAtLeast(0)
         val h = s / 3600; val m = s / 60 % 60
         return when {
-            h > 0 -> "через $h ч" + if (m > 0) " $m мин" else ""
-            m > 0 -> "через $m мин"
-            else -> "через $s с"
+            h > 0 -> tr(R.string.ph_cherez_1_s_ch, h) + if (m > 0) tr(R.string.ph_1_s_min, m) else ""
+            m > 0 -> tr(R.string.ph_cherez_1_s_min, m)
+            else -> tr(R.string.ph_cherez_1_s_s, s)
         }
     }
 

@@ -1,5 +1,6 @@
 package ru.poneslas.tasya.media
 
+import ru.poneslas.tasya.tr
 import android.graphics.Bitmap
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
@@ -441,6 +442,6 @@ private fun testFrame(ctx: android.content.Context, w: Int, h: Int): Bitmap? {
     p.shader = android.graphics.LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF36506B.toInt(), 0xFFE8A317.toInt(), android.graphics.Shader.TileMode.CLAMP)
     c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
     p.shader = null; p.color = 0xFFFFFFFF.toInt(); p.textSize = w / 12f; p.textAlign = android.graphics.Paint.Align.CENTER
-    c.drawText("МЕНЮ · тестовый кадр", w / 2f, h / 2f, p)
+    c.drawText(tr(R.string.cam_menyu_testovyy_kadr), w / 2f, h / 2f, p)
     return b
 }

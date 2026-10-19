@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.core
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import kotlinx.serialization.Serializable
 
 /**
@@ -23,7 +25,7 @@ data class Mode(
     val title: String,
     val icon: String,
     val hint: String = "",
-    val placeholder: String = "Вопрос или задача",
+    val placeholder: String = tr(R.string.mode_vopros_ili_zadacha),
     val prompt: String = "",
     val accepts: Accepts = Accepts(),
     val primary: Primary = Primary.VOICE,
@@ -38,34 +40,34 @@ object Modes {
 
     val builtin = listOf(
         Mode(
-            id = MAIN, title = "Ассистент", icon = "spark", builtin = true, tools = true,
-            hint = "Спросите что угодно или попросите телефон: таймер, будильник.",
-            placeholder = "Спросить или попросить",
+            id = MAIN, title = tr(R.string.mode_assistent), icon = "spark", builtin = true, tools = true,
+            hint = tr(R.string.mode_sprosite_chto_ugodno_ili_poprosite),
+            placeholder = tr(R.string.mode_sprosit_ili_poprosit),
             accepts = Accepts(voice = true, photo = true, file = false),
         ),
         Mode(
-            id = "translate", title = "Переводчик", icon = "transl", builtin = true,
-            hint = "Скажите или напишите — переведу. Можно сфотографировать надпись или меню.",
-            placeholder = "Что перевести?",
+            id = "translate", title = tr(R.string.mode_perevodchik), icon = "transl", builtin = true,
+            hint = tr(R.string.mode_skazhite_ili_napishite_perevedu_mozhno),
+            placeholder = tr(R.string.mode_chto_perevesti),
             accepts = Accepts(voice = true, photo = true),
-            prompt = "Всё не на русском — переведи на русский. Всё на русском — переведи на китайский, добавь пиньинь. Коротко, без вступлений. Не сохраняй это в память.",
+            prompt = tr(R.string.mode_vse_ne_na_russkom_perevedi),
         ),
         Mode(
-            id = "whatsthis", title = "Что это?", icon = "lens", builtin = true, primary = Primary.PHOTO,
-            hint = "Сфотографируйте товар, вывеску или меню — коротко объясню, что это.",
-            placeholder = "Вопрос к фото",
+            id = "whatsthis", title = tr(R.string.mode_chto_eto), icon = "lens", builtin = true, primary = Primary.PHOTO,
+            hint = tr(R.string.mode_sfotografiruyte_tovar_vyvesku_ili_menyu),
+            placeholder = tr(R.string.mode_vopros_k_foto),
             accepts = Accepts(voice = true, photo = true),
-            prompt = "Пользователь в поездке. По фото коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.",
+            prompt = tr(R.string.mode_polzovatel_v_poezdke_po_foto),
         ),
     )
 
     /** Пример своего режима — как если бы его создали через «+». */
     val sample = Mode(
-        id = "m-4c1e", title = "Гастрогид", icon = "food", primary = Primary.PHOTO,
-        hint = "Сфотографируйте меню — выберу под ваши вкусы.",
-        placeholder = "Вопрос к меню",
+        id = "m-4c1e", title = tr(R.string.mode_gastrogid), icon = "food", primary = Primary.PHOTO,
+        hint = tr(R.string.mode_sfotografiruyte_menyu_vyberu_pod_vashi),
+        placeholder = tr(R.string.mode_vopros_k_menyu),
         accepts = Accepts(voice = true, photo = true),
-        prompt = "Я пришлю фото меню (может быть несколько кадров). Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.",
+        prompt = tr(R.string.mode_ya_prishlyu_foto_menyu_mozhet),
     )
 }
 

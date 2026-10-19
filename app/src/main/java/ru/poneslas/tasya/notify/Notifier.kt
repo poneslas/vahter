@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.notify
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -25,8 +27,8 @@ object Notifier {
 
     fun init(ctx: Context) {
         ctx.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, "Ответы", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Ответ пришёл, пока лист был закрыт"
+            NotificationChannel(CHANNEL, tr(R.string.ntf_otvety), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr(R.string.ntf_otvet_prishel_poka_list_byl)
             },
         )
     }
@@ -43,11 +45,11 @@ object Notifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val public = Notification.Builder(ctx, CHANNEL).setSmallIcon(android.R.drawable.sym_action_chat)
-            .setContentTitle(mode.title).setContentText("Ответ готов").build()
+            .setContentTitle(mode.title).setContentText(tr(R.string.ntf_otvet_gotov)).build()
         val n = Notification.Builder(ctx, CHANNEL)
             .setSmallIcon(android.R.drawable.sym_action_chat)
             .setContentTitle(mode.title)
-            .setContentText(if (hide) "Ответ готов" else text.lineSequence().take(2).joinToString(" ").take(200))
+            .setContentText(if (hide) tr(R.string.ntf_otvet_gotov) else text.lineSequence().take(2).joinToString(" ").take(200))
             .setStyle(if (hide) null else Notification.BigTextStyle().bigText(text.take(1000)))
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setPublicVersion(public)

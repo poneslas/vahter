@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.brain
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -40,7 +42,7 @@ class ApiBrain(
 
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         val key = apiKey() ?: run {
-            emit(BrainEvent.Error("Мозг не подключён — нет ключа DeepSeek.", ErrorKind.AUTH)); return@flow
+            emit(BrainEvent.Error(tr(R.string.brain_mozg_ne_podklyuchen_net_klyucha), ErrorKind.AUTH)); return@flow
         }
         val history = turn.history.toMutableList()
         val specs = tools.specs(turn.mode)
@@ -51,13 +53,13 @@ class ApiBrain(
             val result = try {
                 stream(key, body) { delta -> emit(BrainEvent.Delta(delta)) }
             } catch (e: ApiError) {
-                emit(BrainEvent.Error(e.message ?: "Ошибка мозга", e.kind)); return@flow
+                emit(BrainEvent.Error(e.message ?: tr(R.string.brain_oshibka_mozga), e.kind)); return@flow
             } catch (e: UnknownHostException) {
-                emit(BrainEvent.Error("Нет связи с ${desc.title}.", ErrorKind.NETWORK)); return@flow
+                emit(BrainEvent.Error(tr(R.string.brain_net_svyazi_s_1_s, desc.title), ErrorKind.NETWORK)); return@flow
             } catch (e: SocketTimeoutException) {
-                emit(BrainEvent.Error("${desc.title} долго не отвечает.", ErrorKind.NETWORK)); return@flow
+                emit(BrainEvent.Error(tr(R.string.brain_1_s_dolgo_ne_otvechaet, desc.title), ErrorKind.NETWORK)); return@flow
             } catch (e: IOException) {
-                emit(BrainEvent.Error("Связь оборвалась: ${e.message ?: "ошибка сети"}.", ErrorKind.NETWORK)); return@flow
+                emit(BrainEvent.Error(tr(R.string.brain_svyaz_oborvalas_1_s, e.message ?: tr(R.string.brain_oshibka_seti)), ErrorKind.NETWORK)); return@flow
             }
             val assistant = ChatMsg("assistant", result.text.ifEmpty { null }, toolCalls = result.toolCalls)
             history += assistant
@@ -76,24 +78,24 @@ class ApiBrain(
     }.flowOn(Dispatchers.IO)
 
     private fun stepTitle(name: String) = when (name) {
-        "alarm_set" -> "Ставлю будильник"; "alarm_dismiss" -> "Выключаю будильник"; "alarm_next" -> "Смотрю будильники"
-        "timer_set" -> "Запускаю таймер"; "timer_stop" -> "Останавливаю таймер"; "calendar_delete" -> "Удаляю событие"; "note_delete", "place_delete" -> "Забываю"; "calendar_query" -> "Смотрю календарь"; "calendar_add" -> "Создаю событие"
-        "torch_set" -> "Фонарик"; "volume_set" -> "Громкость"; "dnd_set" -> "Не беспокоить"; "media_control" -> "Музыка"
-        "location_get" -> "Узнаю местоположение"; "place_save" -> "Запоминаю место"; "place_list" -> "Смотрю сохранённые места"
-        "note_add" -> "Запоминаю"; "note_find" -> "Ищу в заметках"; "app_open" -> "Открываю приложение"; "settings_open" -> "Открываю настройки"
-        "call_dial" -> "Набираю номер"; "message_draft" -> "Готовлю сообщение"
-        else -> "Действие на телефоне"
+        "alarm_set" -> tr(R.string.brain_stavlyu_budilnik); "alarm_dismiss" -> tr(R.string.brain_vyklyuchayu_budilnik); "alarm_next" -> tr(R.string.brain_smotryu_budilniki)
+        "timer_set" -> tr(R.string.brain_zapuskayu_taymer); "timer_stop" -> tr(R.string.brain_ostanavlivayu_taymer); "calendar_delete" -> tr(R.string.brain_udalyayu_sobytie); "note_delete", "place_delete" -> tr(R.string.brain_zabyvayu); "calendar_query" -> tr(R.string.brain_smotryu_kalendar); "calendar_add" -> tr(R.string.brain_sozdayu_sobytie)
+        "torch_set" -> tr(R.string.reg_fonarik); "volume_set" -> tr(R.string.reg_gromkost); "dnd_set" -> tr(R.string.ph_ne_bespokoit); "media_control" -> tr(R.string.brain_muzyka)
+        "location_get" -> tr(R.string.brain_uznayu_mestopolozhenie); "place_save" -> tr(R.string.brain_zapominayu_mesto); "place_list" -> tr(R.string.brain_smotryu_sokhranennye_mesta)
+        "note_add" -> tr(R.string.brain_zapominayu); "note_find" -> tr(R.string.brain_ishchu_v_zametkakh); "app_open" -> tr(R.string.brain_otkryvayu_prilozhenie); "settings_open" -> tr(R.string.brain_otkryvayu_nastroyki)
+        "call_dial" -> tr(R.string.brain_nabirayu_nomer); "message_draft" -> tr(R.string.brain_gotovlyu_soobshchenie)
+        else -> tr(R.string.brain_deystvie_na_telefone)
     }
 
     private fun systemPrompt(turn: Turn): String {
         val now = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm", Locale("ru")).format(Date())
-        val base = "Ты — голосовой ассистент на телефоне Android. Отвечай по-русски, коротко и по делу; " +
-            "речь пользователя распознана автоматически и может содержать ошибки — понимай смысл. " +
-            "Если для просьбы есть функция телефона — вызывай её, а не объясняй, как сделать вручную; результат функции уже виден человеку строкой в разговоре — не пересказывай его подробно. " +
-            "У тебя нет доступа к интернету: о погоде, новостях, курсах, расписаниях и других свежих данных честно скажи, что эта модель в интернет не ходит, " +
-            "и предложи подключить личного агента (Hermes) — он умеет искать в сети. Не перечисляй свои функции вместо ответа. " +
-            "Сейчас: $now."
-        return if (turn.mode.prompt.isBlank()) base else "$base\n\nРежим «${turn.mode.title}»: ${turn.mode.prompt}"
+        val base = tr(R.string.brain_ty_golosovoy_assistent_na_telefone) +
+            tr(R.string.brain_rech_polzovatelya_raspoznana_avtomatiche) +
+            tr(R.string.brain_esli_dlya_prosby_est_funktsiya) +
+            tr(R.string.brain_u_tebya_net_dostupa_k) +
+            tr(R.string.brain_i_predlozhi_podklyuchit_lichnogo_agenta) +
+            tr(R.string.brain_seychas_1_s, now)
+        return if (turn.mode.prompt.isBlank()) base else tr(R.string.brain_1_s_rezhim_2_s, base, turn.mode.title, turn.mode.prompt)
     }
 
     private fun requestBody(turn: Turn, history: List<ChatMsg>, specs: List<ToolSpec>): String {
@@ -156,12 +158,12 @@ class ApiBrain(
             if (code != 200) {
                 val err = c.errorStream?.bufferedReader()?.readText().orEmpty()
                 throw when {
-                    code == 401 -> ApiError("Ключ не принят — проверьте его в настройках мозга.", ErrorKind.AUTH)
-                    code == 402 -> ApiError("На счёте ${desc.title} закончились деньги.", ErrorKind.BALANCE)
-                    code == 429 -> ApiError("${desc.title} ограничивает запросы. Попробуйте через минуту.", ErrorKind.RATE)
-                    code == 400 && err.contains("context", true) -> ApiError("Разговор слишком длинный для модели.", ErrorKind.CONTEXT)
-                    code >= 500 -> ApiError("У ${desc.title} сбой ($code). Попробуйте позже.", ErrorKind.OTHER)
-                    else -> ApiError("Ошибка ${desc.title} ($code): ${err.take(200)}", ErrorKind.OTHER)
+                    code == 401 -> ApiError(tr(R.string.brain_klyuch_ne_prinyat_proverte_ego), ErrorKind.AUTH)
+                    code == 402 -> ApiError(tr(R.string.brain_na_schete_1_s_zakonchilis, desc.title), ErrorKind.BALANCE)
+                    code == 429 -> ApiError(tr(R.string.brain_1_s_ogranichivaet_zaprosy_poprobuyte, desc.title), ErrorKind.RATE)
+                    code == 400 && err.contains("context", true) -> ApiError(tr(R.string.brain_razgovor_slishkom_dlinnyy_dlya_modeli), ErrorKind.CONTEXT)
+                    code >= 500 -> ApiError(tr(R.string.brain_u_1_s_sboy_2, desc.title, code), ErrorKind.OTHER)
+                    else -> ApiError(tr(R.string.brain_oshibka_1_s_2_s, desc.title, code, err.take(200)), ErrorKind.OTHER)
                 }
             }
             val text = StringBuilder()
@@ -203,19 +205,19 @@ class ApiBrain(
         c.outputStream.use {
             it.write(buildJsonObject {
                 put("model", desc.model); put("max_tokens", 1)
-                put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", "Ответь одной буквой: да") }) })
+                put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", tr(R.string.brain_otvet_odnoy_bukvoy_da)) }) })
             }.toString().toByteArray())
         }
         val code = c.responseCode
         val ms = System.currentTimeMillis() - t0
         c.disconnect()
         when (code) {
-            200 -> Result2(true, "отвечает · ${"%.1f".format(ms / 1000.0)} с")
-            401 -> Result2(false, "Ключ не принят. Проверьте, что он скопирован целиком и не отозван.")
-            402 -> Result2(false, "Ключ верный, но на счёте нет денег.")
-            else -> Result2(false, "Ответ $code — попробуйте позже.")
+            200 -> Result2(true, tr(R.string.brain_otvechaet_1_s_s, "%.1f".format(ms / 1000.0)))
+            401 -> Result2(false, tr(R.string.brain_klyuch_ne_prinyat_proverte_chto))
+            402 -> Result2(false, tr(R.string.brain_klyuch_vernyy_no_na_schete))
+            else -> Result2(false, tr(R.string.brain_otvet_1_s_poprobuyte_pozzhe, code))
         }
-    }.getOrElse { Result2(false, "Нет связи с ${desc.url.removePrefix("https://")}.") }
+    }.getOrElse { Result2(false, tr(R.string.brain_net_svyazi_s_1_s, desc.url.removePrefix("https://"))) }
 
     data class Result2(val ok: Boolean, val text: String)
 }

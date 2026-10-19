@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.app
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,7 +64,7 @@ import ru.poneslas.tasya.ui.Ink
 @Composable
 fun TopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?, dot: Color? = null, backIcon: Int = Ic.back, titleIcon: Int? = null, actions: @Composable () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 52.dp).padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (onBack != null) IconBtn(backIcon, "Назад", onClick = onBack)
+        if (onBack != null) IconBtn(backIcon, tr(R.string.kit_nazad), onClick = onBack)
         Column(Modifier.weight(1f).padding(start = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (titleIcon != null) { Icon(painterResource(titleIcon), null, Modifier.size(20.dp), tint = Ink.ink); Spacer(Modifier.width(8.dp)) }
@@ -241,16 +243,16 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, onDone: (() -> Unit
     val has = remember(keyV) { app.hasKey(brain.id) }
 
     Column(Modifier.fillMaxWidth()) {
-        H2(if (onboarding) "Мозг" else "Ключ ${brain.title}")
-        Text(if (onboarding) "Отвечать будет ${brain.title} — нужен ключ API с platform.deepseek.com. Ключ хранится в защищённом хранилище телефона."
-            else "Хранится в защищённом хранилище телефона (Keystore).", color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+        H2(if (onboarding) tr(R.string.kit_mozg) else tr(R.string.kit_klyuch_1_s, brain.title))
+        Text(if (onboarding) tr(R.string.kit_otvechat_budet_1_s_nuzhen, brain.title)
+            else tr(R.string.kit_khranitsya_v_zashchishchennom_khranilish), color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).border(1.5.dp, if (status?.first == false) Ink.danger else Ink.ink, RoundedCornerShape(12.dp)).padding(12.dp)) {
             if (key.isEmpty()) Text(if (has) "sk-••••••••••••••••" else "sk-…", color = if (has) Ink.ink else Ink.faint)
             BasicTextField(key, { key = it.trim() }, singleLine = true, textStyle = BaseText, cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-            TextButton("Вставить") { clipboard.getText()?.text?.trim()?.let { key = it } }
-            PrimaryButton(if (checking) "Проверяю…" else "Проверить", enabled = !checking && key.length > 10) {
+            TextButton(tr(R.string.kit_vstavit)) { clipboard.getText()?.text?.trim()?.let { key = it } }
+            PrimaryButton(if (checking) tr(R.string.kit_proveryayu) else tr(R.string.kit_proverit), enabled = !checking && key.length > 10) {
                 checking = true; status = null
                 scope.launch {
                     val r = withContext(Dispatchers.IO) { app.apiBrain(brain).check(key) }
@@ -260,8 +262,8 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, onDone: (() -> Unit
                 }
             }
         }
-        status?.let { (ok, text) -> Note(if (ok == true) "Готово: ${brain.model} $text. Режимы отвечают через ${brain.title}." else text, ok) }
-        if (onboarding) Text("Свой сервер Hermes — с памятью, поиском и Telegram — можно подключить потом: Настройки → «Мозги».",
+        status?.let { (ok, text) -> Note(if (ok == true) tr(R.string.kit_gotovo_1_s_2_s, brain.model, text, brain.title) else text, ok) }
+        if (onboarding) Text(tr(R.string.kit_svoy_server_hermes_s_pamyatyu),
             fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(top = 12.dp))
     }
 }

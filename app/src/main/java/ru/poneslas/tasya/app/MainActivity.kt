@@ -1,5 +1,7 @@
 package ru.poneslas.tasya.app
 
+import ru.poneslas.tasya.R
+import ru.poneslas.tasya.tr
 import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Bundle
@@ -146,14 +148,14 @@ class MainActivity : ComponentActivity() {
         val keyV by app.keyVersion.collectAsState()
         val connected = remember(keyV, brain.id) { app.hasKey(brain.id) }
         // chat(): [свернуть] заголовок режима, точка связи · «DeepSeek · на связи», шестерёнка
-        TopBar(state.current.title, "${brain.title} · ${if (connected) "на связи" else "нет ключа · только команды телефона"}",
+        TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
             onBack = if (fromSheet) ({ collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
-            IconBtn(Ic.gear, "Настройки") { go("settings") }
+            IconBtn(Ic.gear, tr(R.string.sheet_nastroyki)) { go("settings") }
         }
-        if (!connected) Banner("Мозг не подключён — работают только команды телефона.",
-            actions = listOf("Подключить" to { go("brain:${brain.id}") }))
+        if (!connected) Banner(tr(R.string.set_mozg_ne_podklyuchen_rabotayut_tolko),
+            actions = listOf(tr(R.string.set_podklyuchit) to { go("brain:${brain.id}") }))
         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
-            modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, "клавиатура") })
+            modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_klaviatura)) })
         LiveLine(live)
         Composer(
             state = state, voice = app.voice,
@@ -178,76 +180,76 @@ class MainActivity : ComponentActivity() {
         val notif = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
         val installed by app.voice.installed.collectAsState()
         val dl by ru.poneslas.tasya.pisar.model.ModelDownload.state.collectAsState()
-        TopBar("Настройки", onBack = ::back)
+        TopBar(tr(R.string.sheet_nastroyki), onBack = ::back)
         ScrollPage {
-            Section("Вызов")
-            Item("Цифровой помощник", if (roleHeld) "Тася" else "Не выбран — боковая кнопка откроет другого помощника", warn = !roleHeld, icon = Ic.spark) {
+            Section(tr(R.string.set_vyzov))
+            Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (roleHeld) tr(R.string.set_tasya) else tr(R.string.set_ne_vybran_bokovaya_knopka_otkroet), warn = !roleHeld, icon = Ic.spark) {
                 startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
             }
-            Item("Боковая кнопка", SideKey.describe(this@MainActivity), icon = Ic.btn) { SideKey.open(this@MainActivity) }
-            Item("Слушать сразу при вызове", "Боковая кнопка: запись начинается сама. Из уведомлений и приложения — нет",
+            Item(tr(R.string.set_bokovaya_knopka), SideKey.describe(this@MainActivity), icon = Ic.btn) { SideKey.open(this@MainActivity) }
+            Item(tr(R.string.set_slushat_srazu_pri_vyzove), tr(R.string.set_bokovaya_knopka_zapis_nachinaetsya_sama),
                 icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
-            Item("Возвращаться к Ассистенту", returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
-                dialog = ChoiceDialog("Возвращаться к Ассистенту", ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
+            Item(tr(R.string.set_vozvrashchatsya_k_assistentu), returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
+                dialog = ChoiceDialog(tr(R.string.set_vozvrashchatsya_k_assistentu), ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
                     app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }
                 }
             }
-            Section("Режимы")
+            Section(tr(R.string.set_rezhimy))
             state.modes.forEach { m ->
                 if (m.id == Modes.MAIN) Item(m.title, modeSummary(m), icon = Ic.mode(m.icon)) { go("mode:${m.id}") }
                 else ItemWithSwitch(m.title, modeSummary(m), Ic.mode(m.icon), m.enabled,
                     onToggle = { app.conversation.editMode(m.id) { it.copy(enabled = !it.enabled) } }) { go("mode:${m.id}") }
             }
-            Item("Новый режим", "Название, промпт, что принимает", icon = Ic.plus) { go("mode:" + app.conversation.addMode()) }
-            Section("Голос")
+            Item(tr(R.string.feed_novyy_rezhim), tr(R.string.set_nazvanie_prompt_chto_prinimaet), icon = Ic.plus) { go("mode:" + app.conversation.addMode()) }
+            Section(tr(R.string.set_golos))
             val pct = (dl as? ru.poneslas.tasya.pisar.model.ModelDownload.State.Running)?.percent
-            Item("Распознавание речи", when { installed -> "На телефоне · 225 МБ"; pct != null -> "Качается: $pct %"; else -> "Не скачано · 225 МБ" },
+            Item(tr(R.string.set_raspoznavanie_rechi), when { installed -> tr(R.string.set_na_telefone_225_mb); pct != null -> tr(R.string.set_kachaetsya_1_s, pct); else -> tr(R.string.app_ne_skachano_225_mb) },
                 warn = !installed && pct == null, icon = Ic.wave) { go("voice") }
-            Item("Микрофон", if (mic) "Только пока идёт запись" else "Спросим, когда понадобится", icon = Ic.mic) {
+            Item(tr(R.string.set_mikrofon), if (mic) tr(R.string.set_tolko_poka_idet_zapis) else tr(R.string.set_sprosim_kogda_ponadobitsya), icon = Ic.mic) {
                 if (!mic) requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 1)
             }
-            Section("Мозги")
+            Section(tr(R.string.set_mozgi))
             Brains.all.forEach { b ->
                 val api = b.kind == BrainDesc.Kind.API
                 val has = app.hasKey(b.id)
-                Item(b.title, if (api) (if (has) "${b.model} · ключ есть" else "Нет ключа") else "Свой сервер: память, поиск, Telegram · скоро",
+                Item(b.title, if (api) (if (has) tr(R.string.set_1_s_klyuch_est, b.model) else tr(R.string.set_net_klyucha)) else tr(R.string.set_svoy_server_pamyat_poisk_telegram),
                     warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { go(if (api) "brain:${b.id}" else "hermes") }
             }
-            Section("Уведомления")
-            Item("Уведомления", if (notif) "Когда пришёл ответ, а лист закрыт" else "Выключены", icon = Ic.bell, end = { Sw(notif) }) {
+            Section(tr(R.string.set_uvedomleniya))
+            Item(tr(R.string.set_uvedomleniya), if (notif) tr(R.string.set_kogda_prishel_otvet_a_list) else tr(R.string.set_vyklyucheny), icon = Ic.bell, end = { Sw(notif) }) {
                 if (!notif) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
                 else startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, packageName))
             }
-            Section("Действия")
-            val R = ru.poneslas.tasya.actions.Registry
-            val pol = R.all.map { R.policy(state.settings, it.id) }
-            val blockedN = R.all.count { R.policy(state.settings, it.id) != Policy.OFF && it.special != null && R.missing(this@MainActivity, it).isNotEmpty() }
-            Item("Действия на телефоне", if (blockedN > 0) "Нет доступа — $blockedN" else "Разрешено ${pol.count { it == Policy.AUTO }}, спрашивать ${pol.count { it == Policy.ASK }}, не разрешено ${pol.count { it == Policy.OFF }}",
+            Section(tr(R.string.set_deystviya))
+            val REG = ru.poneslas.tasya.actions.Registry
+            val pol = REG.all.map { REG.policy(state.settings, it.id) }
+            val blockedN = REG.all.count { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(this@MainActivity, it).isNotEmpty() }
+            Item(tr(R.string.set_deystviya_na_telefone), if (blockedN > 0) tr(R.string.set_net_dostupa_1_s, blockedN) else tr(R.string.set_razresheno_1_s_sprashivat_2, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
                 warn = blockedN > 0, icon = Ic.shield) { go("actions") }
-            Item("Журнал действий", "Сегодня — ${state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }}", icon = Ic.list) { go("journal") }
+            Item(tr(R.string.set_zhurnal_deystviy), tr(R.string.set_segodnya_1_s, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { go("journal") }
             Divider()
-            Item("О программе", "Версия ${packageManager.getPackageInfo(packageName, 0).versionName ?: ""}", icon = Ic.info)
+            Item(tr(R.string.set_o_programme), tr(R.string.set_versiya_1_s, packageManager.getPackageInfo(packageName, 0).versionName ?: ""), icon = Ic.info)
         }
     }
 
     /** model.js, modeSummary(). */
     private fun modeSummary(m: ru.poneslas.tasya.core.Mode): String {
-        if (m.id == Modes.MAIN) return "Основной разговор · все действия телефона"
-        val ins = listOfNotNull("фото".takeIf { m.accepts.photo }, "файл".takeIf { m.accepts.file })
-        return listOfNotNull(if (m.builtin) null else "Свой", if (m.primary == ru.poneslas.tasya.core.Primary.PHOTO) "сразу камера" else "голос",
+        if (m.id == Modes.MAIN) return tr(R.string.set_osnovnoy_razgovor_vse_deystviya_telefona)
+        val ins = listOfNotNull(tr(R.string.sheet_foto).takeIf { m.accepts.photo }, tr(R.string.set_fayl).takeIf { m.accepts.file })
+        return listOfNotNull(if (m.builtin) null else tr(R.string.set_svoy), if (m.primary == ru.poneslas.tasya.core.Primary.PHOTO) tr(R.string.set_srazu_kamera) else tr(R.string.sheet_golos),
             ins.joinToString(", ").ifEmpty { null }).joinToString(" · ")
     }
 
     private fun returnLabel(r: ReturnToAssistant) = when (r) {
-        ReturnToAssistant.MIN30 -> "Через 30 минут без дела"
-        ReturnToAssistant.NEVER -> "Никогда — открывать последний режим"
-        ReturnToAssistant.ALWAYS -> "Всегда — боковая кнопка открывает Ассистента"
+        ReturnToAssistant.MIN30 -> tr(R.string.set_cherez_30_minut_bez_dela)
+        ReturnToAssistant.NEVER -> tr(R.string.set_nikogda_otkryvat_posledniy_rezhim)
+        ReturnToAssistant.ALWAYS -> tr(R.string.set_vsegda_bokovaya_knopka_otkryvaet_assiste)
     }
 
     private fun lockLabel(s: LockScope) = when (s) {
-        LockScope.OFF -> "Не открывать"
-        LockScope.SAFE -> "Только будильник, таймер, фонарик"
-        LockScope.ON -> "Открывать"
+        LockScope.OFF -> tr(R.string.set_ne_otkryvat)
+        LockScope.SAFE -> tr(R.string.set_tolko_budilnik_taymer_fonarik)
+        LockScope.ON -> tr(R.string.set_otkryvat)
     }
 
     /** brainPage(): карточка «Адрес / Модель», ключ, «Умеет», пояснение. */
@@ -256,18 +258,18 @@ class MainActivity : ComponentActivity() {
         val app = App.instance
         val b = Brains.byId(id)
         val state by app.conversation.state.collectAsState()
-        TopBar(b.title, "OpenAI-совместимый API", onBack = ::back)
+        TopBar(b.title, tr(R.string.set_openai_sovmestimyy_api), onBack = ::back)
         FormPage {
-            SetCard { Item("Адрес", b.url, icon = Ic.srv); Item("Модель", b.model, icon = Ic.spark) }
+            SetCard { Item(tr(R.string.set_adres), b.url, icon = Ic.srv); Item(tr(R.string.set_model), b.model, icon = Ic.spark) }
             KeyEditor(b)
             Column {
-                Text("Умеет", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Text(tr(R.string.set_umeet), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    MChip("Фото", b.vision); MChip("Действия телефона", b.tools); MChip("Память", b.memory); MChip("Сервер, поиск", b.server)
+                    MChip(tr(R.string.set_foto), b.vision); MChip(tr(R.string.set_deystviya_telefona), b.tools); MChip(tr(R.string.set_pamyat), b.memory); MChip(tr(R.string.set_server_poisk), b.server)
                 }
             }
-            val users = state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { "нет" }
-            MNote("Режимы на этом мозге: $users. История каждого хранится на телефоне и целиком уходит с каждой репликой; одинаковое начало разговора провайдер берёт из кэша — дешевле и быстрее.")
+            val users = state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_net) }
+            MNote(tr(R.string.set_rezhimy_na_etom_mozge_1, users))
         }
     }
 
@@ -277,42 +279,42 @@ class MainActivity : ComponentActivity() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
         @Suppress("UNUSED_VARIABLE") val r = resumed.intValue // перечитать доступы после системных окон
-        val R = ru.poneslas.tasya.actions.Registry
-        TopBar("Действия на телефоне", "что выполняется сразу, а что — после вопроса", onBack = ::back)
+        val REG = ru.poneslas.tasya.actions.Registry
+        TopBar(tr(R.string.set_deystviya_na_telefone), tr(R.string.set_chto_vypolnyaetsya_srazu_a_chto), onBack = ::back)
         ScrollPage {
-            val blocked = R.all.filter { R.policy(state.settings, it.id) != Policy.OFF && it.special != null && R.missing(this@MainActivity, it).isNotEmpty() }
+            val blocked = REG.all.filter { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(this@MainActivity, it).isNotEmpty() }
             if (blocked.isNotEmpty()) {
                 val t = blocked.first()
-                Banner("«${t.title}» не работает: нет доступа ${R.specialTitle(t.special!!)}. Его включают один раз в настройках телефона.",
-                    actions = listOf("Исправить" to { ru.poneslas.tasya.actions.Phone.openDndAccess(this@MainActivity); Unit }))
+                Banner(tr(R.string.set_1_s_ne_rabotaet_net, t.title, REG.specialTitle(t.special!!)),
+                    actions = listOf(tr(R.string.set_ispravit) to { ru.poneslas.tasya.actions.Phone.openDndAccess(this@MainActivity); Unit }))
             }
-            R.groups.forEach { g ->
+            REG.groups.forEach { g ->
                 Section(g)
-                R.all.filter { it.group == g }.forEach { t ->
-                    val p = R.policy(state.settings, t.id)
-                    val miss = R.missing(this@MainActivity, t)
+                REG.all.filter { it.group == g }.forEach { t ->
+                    val p = REG.policy(state.settings, t.id)
+                    val miss = REG.missing(this@MainActivity, t)
                     val sub = when {
                         p == Policy.OFF || miss.isEmpty() -> null
-                        t.special != null -> "нет доступа: ${miss.joinToString(", ")}"
-                        else -> "доступ «${miss.joinToString(", ")}» спросим при первом разе"
+                        t.special != null -> tr(R.string.set_net_dostupa_1_s_2, miss.joinToString(", "))
+                        else -> tr(R.string.set_dostup_1_s_sprosim_pri, miss.joinToString(", "))
                     }
                     Item(t.title, sub, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger },
                         minHeight = 52.dp) {
-                        val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to "Разрешено")) + listOf("ASK" to "Спрашивать", "OFF" to "Не разрешено")
+                        val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to tr(R.string.set_razresheno))) + listOf("ASK" to tr(R.string.set_sprashivat), "OFF" to tr(R.string.set_ne_razresheno))
                         dialog = ChoiceDialog(t.title, opts, p.name) { v ->
                             app.conversation.updateSettings { it.copy(policy = it.policy + (t.id to Policy.valueOf(v))) }
                         }
                     }
                 }
             }
-            Section("Экран блокировки")
-            Item("На заблокированном экране", lockLabel(state.settings.lockScope), icon = Ic.lock) {
-                dialog = ChoiceDialog("На заблокированном экране", LockScope.entries.map { it.name to lockLabel(it) }, state.settings.lockScope.name) { v ->
+            Section(tr(R.string.set_ekran_blokirovki))
+            Item(tr(R.string.set_na_zablokirovannom_ekrane), lockLabel(state.settings.lockScope), icon = Ic.lock) {
+                dialog = ChoiceDialog(tr(R.string.set_na_zablokirovannom_ekrane), LockScope.entries.map { it.name to lockLabel(it) }, state.settings.lockScope.name) { v ->
                     app.conversation.updateSettings { it.copy(lockScope = LockScope.valueOf(v)) }
                 }
             }
-            Item("Журнал действий", "Сегодня — ${state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }}", icon = Ic.list) { go("journal") }
-            MNote("«Разрешено» — выполняется сразу, в разговоре видно, что сделано. «Спрашивать» — сначала показывается и ждёт «Да». Сообщения только готовятся — отправляете вы.",
+            Item(tr(R.string.set_zhurnal_deystviy), tr(R.string.set_segodnya_1_s, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { go("journal") }
+            MNote(tr(R.string.set_razresheno_vypolnyaetsya_srazu_v_razgovo),
                 Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 20.dp))
         }
     }
@@ -320,32 +322,32 @@ class MainActivity : ComponentActivity() {
     /** Hermes: ещё не подключается — честно говорим и описываем, что будет (бэклог; Продукт 2, 4). */
     @Composable
     private fun HermesPage() {
-        TopBar("Hermes", "свой сервер · скоро", onBack = ::back)
+        TopBar("Hermes", tr(R.string.set_svoy_server_skoro), onBack = ::back)
         FormPage {
-            Note("Ещё не работает. Подключение Hermes появится в следующей версии — сейчас все режимы отвечают через DeepSeek.")
-            Text("Hermes — личный агент на вашем сервере или компьютере (открытый проект Nous Research). Отвечает на всё, что сложнее команд телефона, " +
-                "а разговоры, память и расписание хранятся у вас.", color = Ink.soft)
+            Note(tr(R.string.set_eshche_ne_rabotaet_podklyuchenie_hermes))
+            Text(tr(R.string.set_hermes_lichnyy_agent_na_vashem) +
+                tr(R.string.set_a_razgovory_pamyat_i_raspisanie), color = Ink.soft)
             Column {
-                Text("Что будет уметь", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Text(tr(R.string.set_chto_budet_umet), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
                 SetCard {
-                    Item("Память между днями", "Помнит, о чём говорили вчера и неделю назад", icon = Ic.hist)
-                    Item("Поиск в интернете", "Погода, новости, цены, расписания — со ссылками на источники", icon = Ic.lens)
-                    Item("Команды на сервере", "Проверить бэкапы, посмотреть логи; опасное — только после вашего «Да»", icon = Ic.srv)
-                    Item("Расписание", "Напоминания и отчёты в нужное время — приходят сообщением в разговор", icon = Ic.bell)
-                    Item("План длинных задач", "Видно, какой шаг сейчас и что уже сделано", icon = Ic.list)
-                    Item("Файлы и картинки", "Присылает PDF, таблицы, картинки — открыть или поделиться", icon = Ic.doc)
-                    Item("Тот же разговор в Telegram", "Начали голосом в листе — продолжили в Telegram", icon = Ic.chat)
-                    Item("Действия телефона", "Будильник, календарь, звонки — как у DeepSeek", icon = Ic.shield)
+                    Item(tr(R.string.set_pamyat_mezhdu_dnyami), tr(R.string.set_pomnit_o_chem_govorili_vchera), icon = Ic.hist)
+                    Item(tr(R.string.set_poisk_v_internete), tr(R.string.set_pogoda_novosti_tseny_raspisaniya_so), icon = Ic.lens)
+                    Item(tr(R.string.set_komandy_na_servere), tr(R.string.set_proverit_bekapy_posmotret_logi_opasnoe), icon = Ic.srv)
+                    Item(tr(R.string.set_raspisanie), tr(R.string.set_napominaniya_i_otchety_v_nuzhnoe), icon = Ic.bell)
+                    Item(tr(R.string.set_plan_dlinnykh_zadach), tr(R.string.set_vidno_kakoy_shag_seychas_i), icon = Ic.list)
+                    Item(tr(R.string.set_fayly_i_kartinki), tr(R.string.set_prisylaet_pdf_tablitsy_kartinki_otkryt), icon = Ic.doc)
+                    Item(tr(R.string.set_tot_zhe_razgovor_v_telegram), tr(R.string.set_nachali_golosom_v_liste_prodolzhili), icon = Ic.chat)
+                    Item(tr(R.string.set_deystviya_telefona), tr(R.string.set_budilnik_kalendar_zvonki_kak_u), icon = Ic.shield)
                 }
             }
             Column {
-                Text("Как будет подключаться", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Text(tr(R.string.set_kak_budet_podklyuchatsya), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
                 SetCard {
-                    Item("Ссылка из Telegram", "Боту Hermes — команда /tasya_pair", icon = Ic.chat, trailing = "скоро", trailingColor = Ink.faint)
-                    Item("QR с экрана компьютера", "Та же команда на сервере", icon = Ic.qr, trailing = "скоро", trailingColor = Ink.faint)
-                    Item("Ввести адрес", "Владелец сервера подтвердит код", icon = Ic.pen, trailing = "скоро", trailingColor = Ink.faint)
+                    Item(tr(R.string.set_ssylka_iz_telegram), tr(R.string.set_botu_hermes_komanda_tasya_pair), icon = Ic.chat, trailing = tr(R.string.set_skoro), trailingColor = Ink.faint)
+                    Item(tr(R.string.set_qr_s_ekrana_kompyutera), tr(R.string.set_ta_zhe_komanda_na_servere), icon = Ic.qr, trailing = tr(R.string.set_skoro), trailingColor = Ink.faint)
+                    Item(tr(R.string.set_vvesti_adres), tr(R.string.set_vladelets_servera_podtverdit_kod), icon = Ic.pen, trailing = tr(R.string.set_skoro), trailingColor = Ink.faint)
                 }
-                MNote("Каждый режим можно будет перевести на Hermes отдельно: «Ассистент» — на сервер, «Переводчик» — оставить на DeepSeek.")
+                MNote(tr(R.string.set_kazhdyy_rezhim_mozhno_budet_perevesti))
             }
         }
     }
@@ -356,23 +358,23 @@ class MainActivity : ComponentActivity() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
         var open by remember { mutableStateOf<Long?>(null) }
-        TopBar("Журнал действий", "только на телефоне", onBack = ::back)
+        TopBar(tr(R.string.set_zhurnal_deystviy), tr(R.string.set_tolko_na_telefone), onBack = ::back)
         ScrollPage {
             val list = state.saved.journal.reversed()
-            if (list.isEmpty()) MNote("Пока пусто. Здесь будет всё, что делалось на телефоне: будильники, таймеры, календарь, звонки.", Modifier.padding(horizontal = 22.dp))
+            if (list.isEmpty()) MNote(tr(R.string.set_poka_pusto_zdes_budet_vse), Modifier.padding(horizontal = 22.dp))
             list.groupBy { java.text.SimpleDateFormat("d MMMM, EEEE", java.util.Locale("ru")).format(java.util.Date(it.at)) }.forEach { (day, items) ->
-                Section(if (android.text.format.DateUtils.isToday(items.first().at)) "Сегодня" else day)
+                Section(if (android.text.format.DateUtils.isToday(items.first().at)) tr(R.string.set_segodnya) else day)
                 items.forEach { j ->
                     Row(Modifier.fillMaxWidth().clickable { open = if (open == j.id) null else j.id }.padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(java.text.SimpleDateFormat("H:mm", java.util.Locale.ROOT).format(java.util.Date(j.at)), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.width(40.dp))
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(j.title, fontSize = 14.5.sp, fontWeight = FontWeight.Medium)
-                            Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == "выполнено") Ink.soft else Ink.danger)
+                            Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == tr(R.string.conv_vypolneno)) Ink.soft else Ink.danger)
                         }
                     }
                     if (open == j.id) Column(Modifier.padding(start = 76.dp, end = 22.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        listOf("Фраза" to "«${j.phrase}»", "Действие" to "${j.tool} ${j.params}", "Экран" to if (j.locked) "заблокирован" else "открыт").forEach { (k, v) ->
+                        listOf(tr(R.string.set_fraza) to "«${j.phrase}»", tr(R.string.set_deystvie) to "${j.tool} ${j.params}", tr(R.string.set_ekran) to if (j.locked) tr(R.string.set_zablokirovan) else tr(R.string.set_otkryt)).forEach { (k, v) ->
                             Row { Text(k, fontSize = 12.5.sp, color = Ink.faint, modifier = Modifier.width(80.dp)); Text(v, fontSize = 12.5.sp) }
                         }
                     }
@@ -381,7 +383,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> "Разрешено"; Policy.ASK -> "Спрашивать"; Policy.OFF -> "Не разрешено" }
+    private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.set_razresheno); Policy.ASK -> tr(R.string.set_sprashivat); Policy.OFF -> tr(R.string.set_ne_razresheno) }
 
     /** dialog() с radio: .scrim прижат к низу, .dlg.rdlg — скругление 30, пункты .ropt, внизу «Отмена». */
     @Composable
@@ -398,7 +400,7 @@ class MainActivity : ComponentActivity() {
                         Text(label, fontSize = 14.5.sp, color = Color(0xFF14171F), modifier = Modifier.padding(start = 14.dp))
                     }
                 }
-                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton("Отмена", color = Ink.brain, onClick = close) }
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton(tr(R.string.conv_otmena), color = Ink.brain, onClick = close) }
             }
         }
     }
