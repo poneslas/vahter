@@ -139,8 +139,10 @@ class RecordingBar(
         val hintWidth = hintPaint.measureText(hint)
         val gap = 14 * density
         val shift = if (handsFree) 0f else cancelProgress * 40 * density
+        // Тася: «‹ ‹ Отмена» — посередине поля, но не налезая на время.
         val hintX =
-            if (side < 0) timeX + timeWidth + gap - shift else timeX - gap - hintWidth + shift
+            if (side < 0) maxOf((w - hintWidth) / 2f, timeX + timeWidth + gap) - shift
+            else minOf((w - hintWidth) / 2f, timeX - gap - hintWidth) + shift
         hintPaint.alpha = (255 * (1f - cancelProgress)).toInt().coerceIn(0, 255)
         // The hint slides toward "cancel" but never over the time.
         canvas.save()
