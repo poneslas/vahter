@@ -1,0 +1,156 @@
+{
+ "model": "deepseek-chat",
+ "album": [
+  {
+   "ok": true,
+   "ttft_s": 2.3537120819091797,
+   "total_s": 2.409731149673462,
+   "usage": {
+    "prompt_tokens": 1012,
+    "completion_tokens": 1,
+    "total_tokens": 1013,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 1012
+   },
+   "answer": "1",
+   "request_mb": 0.35,
+   "images": 1,
+   "tokens_per_image": 994
+  },
+  {
+   "ok": true,
+   "ttft_s": 3.1882522106170654,
+   "total_s": 3.348449230194092,
+   "usage": {
+    "prompt_tokens": 4992,
+    "completion_tokens": 1,
+    "total_tokens": 4993,
+    "prompt_tokens_details": {
+     "cached_tokens": 896
+    },
+    "prompt_cache_hit_tokens": 896,
+    "prompt_cache_miss_tokens": 4096
+   },
+   "answer": "5",
+   "request_mb": 1.37,
+   "images": 5,
+   "tokens_per_image": 995
+  },
+  {
+   "ok": true,
+   "ttft_s": 2.651020050048828,
+   "total_s": 2.7052719593048096,
+   "usage": {
+    "prompt_tokens": 9935,
+    "completion_tokens": 1,
+    "total_tokens": 9936,
+    "prompt_tokens_details": {
+     "cached_tokens": 4864
+    },
+    "prompt_cache_hit_tokens": 4864,
+    "prompt_cache_miss_tokens": 5071
+   },
+   "answer": "9",
+   "request_mb": 2.98,
+   "images": 10,
+   "tokens_per_image": 992
+  }
+ ],
+ "cache": {
+  "ok": true,
+  "ttft_s": 2.644024133682251,
+  "total_s": 2.940410852432251,
+  "usage": {
+   "prompt_tokens": 9947,
+   "completion_tokens": 43,
+   "total_tokens": 9990,
+   "prompt_tokens_details": {
+    "cached_tokens": 9728
+   },
+   "prompt_cache_hit_tokens": 9728,
+   "prompt_cache_miss_tokens": 219
+  },
+  "answer": "Первая картинка в основном синяя и коричневая: на ней изображено синее море, голубое небо и коричнево-зелёные горы.",
+  "request_mb": 2.98,
+  "images": 10
+ },
+ "size": [
+  {
+   "ok": true,
+   "ttft_s": 2.2411410808563232,
+   "total_s": 2.284925937652588,
+   "usage": {
+    "prompt_tokens": 1012,
+    "completion_tokens": 1,
+    "total_tokens": 1013,
+    "prompt_tokens_details": {
+     "cached_tokens": 768
+    },
+    "prompt_cache_hit_tokens": 768,
+    "prompt_cache_miss_tokens": 244
+   },
+   "answer": "1",
+   "request_mb": 0.35,
+   "image_kb": 263
+  },
+  {
+   "ok": true,
+   "ttft_s": 2.873328924179077,
+   "total_s": 2.9280099868774414,
+   "usage": {
+    "prompt_tokens": 1012,
+    "completion_tokens": 1,
+    "total_tokens": 1013,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 1012
+   },
+   "answer": "1",
+   "request_mb": 1.23,
+   "image_kb": 923
+  },
+  {
+   "ok": true,
+   "ttft_s": 3.3422703742980957,
+   "total_s": 3.3864781856536865,
+   "usage": {
+    "prompt_tokens": 1012,
+    "completion_tokens": 1,
+    "total_tokens": 1013,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 1012
+   },
+   "answer": "1",
+   "request_mb": 3.06,
+   "image_kb": 2295
+  },
+  {
+   "ok": true,
+   "ttft_s": 5.14783787727356,
+   "total_s": 5.148154973983765,
+   "usage": {
+    "prompt_tokens": 1012,
+    "completion_tokens": 1,
+    "total_tokens": 1013,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 1012
+   },
+   "answer": "1",
+   "request_mb": 23.82,
+   "image_kb": 17865
+  }
+ ],
+ "maxImages_tested_ok": 10,
+ "maxImageKB_tested_ok": 17865
+}
