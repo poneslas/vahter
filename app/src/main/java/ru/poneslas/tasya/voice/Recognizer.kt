@@ -164,6 +164,15 @@ class SherpaRecognizer(private val context: Context, private val models: Models,
         }
     }
 
+    /** Для проверки на файлах (отладочная сборка). */
+    suspend fun decodeForTest(audio: FloatArray): String {
+        val off = offline ?: return "(модель не загружена)"
+        return withContext(Dispatchers.Default) {
+            val s = off.createStream(); s.acceptWaveform(audio + FloatArray(4000), 16000); off.decode(s)
+            off.getResult(s).text.trim().also { s.release() }
+        }
+    }
+
     override fun cancel() {
         stopMic()
         samples.clear()
