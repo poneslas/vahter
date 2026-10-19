@@ -13,6 +13,7 @@
         <intent><action android:name="android.intent.action.SET_ALARM" /></intent>
         <intent><action android:name="android.intent.action.SHOW_TIMERS" /></intent>
         <intent><action android:name="android.intent.action.SHOW_ALARMS" /></intent>
+        <package android:name="com.android.settings" />
         <package android:name="org.telegram.messenger" />
         <package android:name="com.whatsapp" />
     </queries>
@@ -57,5 +58,6 @@
             </intent-filter>
             <meta-data android:name="android.speech" android:resource="@xml/recognition_service" />
         </service>
+        <receiver android:name=".notify.OpenSheetReceiver" android:exported="false" />
     </application>
 </manifest>

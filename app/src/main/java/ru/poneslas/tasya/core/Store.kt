@@ -1,0 +1,34 @@
+package ru.poneslas.tasya.core
+
+import android.content.Context
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import ru.poneslas.tasya.brain.ChatMsg
+import java.io.File
+
+/**
+ * Хранение на телефоне: режимы, настройки, ленты и истории режимов — один JSON-файл.
+ * История режима целиком уходит мозгу с каждой репликой (2.2); на телефоне она одна.
+ */
+@Serializable
+data class Saved(
+    val modes: List<Mode> = Modes.builtin + Modes.sample,
+    val mode: String = Modes.MAIN,
+    val feeds: Map<String, List<FeedItem>> = emptyMap(),
+    val histories: Map<String, List<ChatMsg>> = emptyMap(),
+    val settings: Settings = Settings(),
+    val lastUse: Long = 0,
+)
+
+class Store(context: Context) {
+    private val file = File(context.filesDir, "state.json")
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    fun load(): Saved = runCatching { json.decodeFromString(Saved.serializer(), file.readText()) }.getOrElse { Saved() }
+
+    fun save(s: Saved) {
+        val tmp = File(file.path + ".tmp")
+        tmp.writeText(json.encodeToString(Saved.serializer(), s))
+        tmp.renameTo(file)
+    }
+}

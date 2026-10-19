@@ -3,17 +3,18 @@ package ru.poneslas.tasya.app
 import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
+import android.provider.Settings as AndroidSettings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -21,21 +22,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.poneslas.tasya.App
 import ru.poneslas.tasya.assistant.Sheet
+import ru.poneslas.tasya.core.BrainDesc
+import ru.poneslas.tasya.core.Brains
+import ru.poneslas.tasya.core.LockScope
+import ru.poneslas.tasya.core.Policy
 import ru.poneslas.tasya.ui.Composer
 import ru.poneslas.tasya.ui.Feed
 import ru.poneslas.tasya.ui.Ink
@@ -45,9 +53,10 @@ import ru.poneslas.tasya.ui.TasyaTheme
 /** Приложение — тот же разговор, что в листе, на весь экран; плюс настройки (Продукт 5.1, 5.11). */
 class MainActivity : ComponentActivity() {
     private var fromSheet by mutableStateOf(false)
-    private var page by mutableStateOf(Page.CHAT)
+    private val stack = mutableStateListOf("chat")
+    private var dialog by mutableStateOf<ChoiceDialog?>(null)
 
-    enum class Page { CHAT, SETTINGS }
+    data class ChoiceDialog(val title: String, val options: List<Pair<String, String>>, val current: String, val onPick: (String) -> Unit)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,81 +70,178 @@ class MainActivity : ComponentActivity() {
         readIntent(intent)
     }
 
+    override fun onResume() { super.onResume(); App.instance.appVisible.value = true }
+    override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
+
     private fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
-        if (i.getBooleanExtra(EXTRA_SETTINGS, false)) page = Page.SETTINGS
+        if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
     }
 
+    fun go(page: String) { stack.add(page) }
+    fun back() { if (stack.size > 1) stack.removeAt(stack.lastIndex) else finish() }
+    fun choose(d: ChoiceDialog) { dialog = d }
+
     /** Свернуть обратно в лист: finish + showSession (Архитектура 3.1). */
-    private fun collapse() {
-        finish()
-        Sheet.show()
-    }
+    private fun collapse() { finish(); Sheet.show() }
 
     @Composable
     private fun Screen() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
-        var live by remember { mutableStateOf<String?>(null) }
-        BackHandler(page == Page.SETTINGS) { page = Page.CHAT }
-        Column(Modifier.fillMaxSize().background(Ink.paper).systemBarsPadding().imePadding()) {
-            when (page) {
-                Page.CHAT -> {
-                    Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (fromSheet) IconText("⌄", "Свернуть в лист") { collapse() }
-                        Column(Modifier.padding(start = 10.dp).weight(1f)) {
-                            Text(state.current.title, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
-                            Text("DeepSeek · на связи", fontSize = 12.sp, color = Ink.soft)
-                        }
-                        IconText("⚙", "Настройки") { page = Page.SETTINGS }
+        BackHandler(stack.size > 1) { back() }
+        Box(Modifier.fillMaxSize().background(Ink.paper)) {
+            Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
+                if (!state.settings.onboarded) {
+                    Onboarding(this@MainActivity) { app.conversation.updateSettings { it.copy(onboarded = true) } }
+                } else {
+                    val page = stack.last()
+                    when {
+                        page == "chat" -> Chat()
+                        page == "settings" -> SettingsPage()
+                        page.startsWith("brain:") -> BrainPage(page.removePrefix("brain:"))
+                        page == "actions" -> ActionsPage()
+                        page == "voice" -> VoicePage(onBack = ::back)
+                        page.startsWith("mode:") -> ModePage(this@MainActivity, page.removePrefix("mode:"))
                     }
-                    Feed(state, onAct = { app.conversation.onActButton(it) }, modifier = Modifier.weight(1f).fillMaxWidth())
-                    LiveLine(live)
-                    Composer(
-                        state = state, recognizer = app.recognizer,
-                        onDraft = app.conversation::setDraft,
-                        onSend = { t, v -> app.conversation.send(t, v) },
-                        onSelectMode = app.conversation::selectMode,
-                        onAddMode = { page = Page.SETTINGS },
-                        onLive = { live = it },
-                    )
                 }
-                Page.SETTINGS -> SettingsPage(onBack = { page = Page.CHAT })
             }
+            dialog?.let { d -> Choice(d) { dialog = null } }
         }
     }
 
     @Composable
-    private fun SettingsPage(onBack: () -> Unit) {
+    private fun ColumnScope.Chat() {
+        val app = App.instance
+        val state by app.conversation.state.collectAsState()
+        var live by remember { mutableStateOf<String?>(null) }
+        val brain = Brains.byId(state.current.brain)
+        val keyV by app.keyVersion.collectAsState()
+        val connected = remember(keyV, brain.id) { app.hasKey(brain.id) }
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (fromSheet) IconBtn("⌄", "Свернуть в лист") { collapse() }
+            Column(Modifier.padding(start = 10.dp).weight(1f)) {
+                Text(state.current.title, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
+                Text("${brain.title} · ${if (connected) "на связи" else "нет ключа"}", fontSize = 12.sp, color = if (connected) Ink.soft else Ink.danger)
+            }
+            IconBtn("⚙", "Настройки") { go("settings") }
+        }
+        if (!connected) Banner("Мозг не подключён — работают только команды телефона.", "Подключить") { go("brain:${brain.id}") }
+        Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, modifier = Modifier.weight(1f).fillMaxWidth())
+        LiveLine(live)
+        Composer(
+            state = state, recognizer = app.recognizer,
+            onDraft = app.conversation::setDraft,
+            onSend = { t, v -> app.conversation.send(t, v) },
+            onSelectMode = app.conversation::selectMode,
+            onAddMode = { go("settings") },
+            onLive = { live = it },
+        )
+    }
+
+    @Composable
+    private fun SettingsPage() {
+        val app = App.instance
+        val state by app.conversation.state.collectAsState()
         val roleHeld = getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
-        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconText("←", "Назад", onBack)
-            Text("Настройки", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(start = 10.dp))
+        TopBar("Настройки", onBack = ::back)
+        ScrollPage {
+            Section("Вызов")
+            Item("Цифровой помощник", if (roleHeld) "Тася" else "Не выбран — боковая кнопка откроет другого помощника", warn = !roleHeld) {
+                startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
+            }
+            Item("Боковая кнопка", SideKey.describe(this@MainActivity)) { SideKey.open(this@MainActivity) }
+            Section("Режимы")
+            state.modes.forEach { m ->
+                Item(m.title, if (m.id == "main") "Основной разговор · действия телефона" else m.prompt.take(60) + "…") { go("mode:${m.id}") }
+            }
+            Section("Голос")
+            Item("Распознавание речи", app.voiceStatus()) { go("voice") }
+            Section("Мозги")
+            Brains.all.forEach { b ->
+                val api = b.kind == BrainDesc.Kind.API
+                val has = app.hasKey(b.id)
+                Item(b.title, if (api) (if (has) "${b.model} · ключ есть" else "Нет ключа") else "Свой сервер: память, поиск, Telegram — следующий этап",
+                    warn = api && !has) { if (api) go("brain:${b.id}") }
+            }
+            Section("Действия")
+            Item("Действия на телефоне", "что выполняется сразу, а что — после вопроса") { go("actions") }
+            Section("Экран блокировки")
+            Item("На заблокированном экране", lockLabel(state.settings.lockScope)) {
+                dialog = ChoiceDialog("На заблокированном экране", LockScope.entries.map { it.name to lockLabel(it) }, state.settings.lockScope.name) { v ->
+                    app.conversation.updateSettings { it.copy(lockScope = LockScope.valueOf(v)) }
+                }
+            }
+            Section("О программе")
+            Item("Версия", packageManager.getPackageInfo(packageName, 0).versionName ?: "")
         }
-        Section("Вызов")
-        Item("Цифровой помощник", if (roleHeld) "Тася" else "Не выбран — боковая кнопка откроет другого помощника", warn = !roleHeld) {
-            startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))
-        }
-        Section("О программе")
-        Item("Версия", packageManager.getPackageInfo(packageName, 0).versionName ?: "") {}
+    }
+
+    private fun lockLabel(s: LockScope) = when (s) {
+        LockScope.OFF -> "Не открывать"
+        LockScope.SAFE -> "Только будильник, таймер, фонарик"
+        LockScope.ON -> "Открывать"
     }
 
     @Composable
-    private fun Section(title: String) =
-        Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.server, modifier = Modifier.padding(start = 22.dp, top = 18.dp, bottom = 6.dp))
-
-    @Composable
-    private fun Item(title: String, subtitle: String, warn: Boolean = false, onClick: () -> Unit) {
-        Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 22.dp, vertical = 12.dp)) {
-            Text(title, fontSize = 16.sp, color = Ink.ink)
-            Text(subtitle, fontSize = 13.sp, color = if (warn) Ink.danger else Ink.soft)
+    private fun BrainPage(id: String) {
+        val b = Brains.byId(id)
+        TopBar(b.title, "OpenAI-совместимый API", onBack = ::back)
+        ScrollPage {
+            Item("Адрес", b.url)
+            Item("Модель", b.model)
+            Section("Ключ")
+            KeyEditor(b)
+            Section("Умеет")
+            Item("Фото, действия телефона", "Памяти между днями и поиска нет — это умеет Hermes")
+            Text("История каждого режима хранится на телефоне и целиком уходит с каждой репликой; одинаковое начало провайдер берёт из кэша.",
+                fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(22.dp))
         }
     }
 
     @Composable
-    private fun IconText(glyph: String, label: String, onClick: () -> Unit) {
-        Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
-            Text(glyph, fontSize = 20.sp, color = Ink.ink)
+    private fun ActionsPage() {
+        val app = App.instance
+        val state by app.conversation.state.collectAsState()
+        TopBar("Действия на телефоне", "что выполняется сразу, а что — после вопроса", onBack = ::back)
+        ScrollPage {
+            Section("Часы")
+            listOf("alarm.set" to "Будильник", "timer.set" to "Таймер").forEach { (id, title) ->
+                val p = state.settings.policy[id] ?: Policy.ASK
+                Item(title, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger }) {
+                    dialog = ChoiceDialog(title, listOf("AUTO" to "Разрешить", "ASK" to "Спрашивать каждый раз", "OFF" to "Не разрешать"), p.name) { v ->
+                        app.conversation.updateSettings { it.copy(policy = it.policy + (id to Policy.valueOf(v))) }
+                    }
+                }
+            }
+            Text("«Разрешено» — выполняется сразу, в разговоре видно, что сделано. «Спрашивать» — сначала показывается и ждёт «Да».",
+                fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(22.dp))
+        }
+    }
+
+    private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> "Разрешено"; Policy.ASK -> "Спрашивать"; Policy.OFF -> "Не разрешено" }
+
+    @Composable
+    private fun Banner(text: String, action: String, onClick: () -> Unit) {
+        Row(Modifier.fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(14.dp)).background(Ink.surf).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(text, fontSize = 14.sp, color = Ink.ink, modifier = Modifier.weight(1f))
+            TextButton(action, onClick)
+        }
+    }
+
+    @Composable
+    private fun Choice(d: ChoiceDialog, close: () -> Unit) {
+        Box(Modifier.fillMaxSize().background(Color(0x88000000)).clickable { close() }, contentAlignment = Alignment.Center) {
+            Column(Modifier.padding(24.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf).clickable(enabled = false) {}.padding(20.dp)) {
+                Text(d.title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 8.dp))
+                d.options.forEach { (v, label) ->
+                    Row(Modifier.fillMaxWidth().clickable { d.onPick(v); close() }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(20.dp).clip(CircleShape).background(if (v == d.current) Ink.server else Ink.line))
+                        Text(label, fontSize = 15.sp, color = Ink.ink, modifier = Modifier.padding(start = 14.dp))
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton("Отмена", close) }
+            }
         }
     }
 

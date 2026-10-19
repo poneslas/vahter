@@ -12,3 +12,9 @@ build/
 .kotlin/
 local.properties
 *.apk
+
+# чужие исходники-образцы (Hermes, Писарь…), не в git
+reference/
+
+# sherpa-onnx AAR качается сборкой (sha256 закреплён)
+app/libs/

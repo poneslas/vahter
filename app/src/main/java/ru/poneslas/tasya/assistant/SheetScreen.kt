@@ -66,7 +66,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     HeaderButton("⚙", "Настройки", onSettings)
                     HeaderButton("✕", "Закрыть", onClose)
                 }
-                Feed(state, onAct = { app.conversation.onActButton(it) }, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 420.dp))
+                Feed(state, onAct = { app.conversation.onActButton(it) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp, max = 420.dp))
                 LiveLine(live)
                 Composer(
                     state = state,

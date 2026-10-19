@@ -57,7 +57,7 @@ import kotlin.math.hypot
 
 /** Лента разговора текущего режима. Пустой режим — подсказка из поля режима (hint). */
 @Composable
-fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, modifier: Modifier = Modifier) {
+fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, onCard: (FeedItem.Card, String) -> Unit, modifier: Modifier = Modifier) {
     val list = rememberLazyListState()
     LaunchedEffect(state.feed.size, (state.feed.lastOrNull() as? FeedItem.Ai)?.text?.length) {
         if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1)
@@ -105,6 +105,31 @@ fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, modifier: Mod
                             modifier = Modifier.clickable { onAct(item) }.padding(6.dp))
                     }
                 }
+                is FeedItem.Steps -> Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink.serverT).padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(if (item.running) "${item.titles.last()}…" else "${item.titles.size} ${plural(item.titles.size, "шаг", "шага", "шагов")}",
+                        fontSize = 13.sp, color = Color(0xFF2238B8), fontWeight = FontWeight.Medium)
+                }
+                is FeedItem.Card -> Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp)),
+                ) {
+                    Text(item.head, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (item.phone) Color(0xFF9A6A00) else Color(0xFF2238B8),
+                        modifier = Modifier.fillMaxWidth().background(if (item.phone) Ink.localT else Ink.serverT).padding(horizontal = 12.dp, vertical = 6.dp))
+                    Column(Modifier.padding(12.dp)) {
+                        Text(item.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
+                        if (item.text.isNotEmpty()) Text(item.text, fontSize = 14.sp, color = Ink.soft, modifier = Modifier.padding(top = 4.dp))
+                        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item.buttons.forEachIndexed { i, (label, action) ->
+                                Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                                    color = if (i == 0) Color.White else Ink.ink,
+                                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (i == 0) Ink.ink else Color.Transparent)
+                                        .clickable { onCard(item, action) }.padding(horizontal = 14.dp, vertical = 9.dp))
+                            }
+                        }
+                    }
+                }
                 is FeedItem.Err -> Text(
                     item.text, color = Ink.danger, fontSize = 14.sp,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink.dangerT).padding(10.dp),
@@ -115,6 +140,9 @@ fun Feed(state: Conversation.State, onAct: (FeedItem.Act) -> Unit, modifier: Mod
 }
 
 /** Вкладки режимов под полем ввода — видны всегда, последняя «+» (Продукт 5.17). */
+private fun plural(n: Int, one: String, few: String, many: String) =
+    if (n % 10 == 1 && n % 100 != 11) one else if (n % 10 in 2..4 && n % 100 !in 12..14) few else many
+
 @Composable
 fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () -> Unit) {
     LazyRow(
