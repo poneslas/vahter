@@ -23,7 +23,7 @@ let recTok=0;
 async function startRec(mode, into, silent){
   if (S.rec) return; if (!voiceOk()) return micUnavailable();
   // silent: запись включила боковая кнопка — в прототипе «речь» появится, когда выберете фразу в «Сказать»
-  S.rec={mode, key:into==='prompt'?'pr':into==='try'?'dict':silent?null:(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now()}; const my=++recTok; render();
+  S.rec={mode, key:into==='prompt'?'pr':into==='try'?'dict':silent?null:(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now(), side:silent==='side'}; const my=++recTok; render();
   while (S.rec && my===recTok){ await wait(320); if(!S.rec||my!==recTok) return; if(!S.rec.key) continue; const ph=PHR[S.rec.key]; if (S.rec.n<ph.w.length) S.rec.n++; S.keepScroll=true; render() }
 }
 function recText(){ const r=S.rec; if(!r||!r.key||!r.n) return ''; const ph=PHR[r.key]; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }

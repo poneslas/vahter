@@ -15,7 +15,7 @@ function openOverlay(src){
   if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пока можно писать. Чтобы говорить, разрешите микрофон в настройках.')}<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>`; return render() }
   if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }
   if (!curMode().accepts.voice){ O.live=`<span class="st">Режим без голоса</span>${sub('Пишите или пришлите фото.')}`; return render() }
-  if (isSide||src==='ярлык'){ render(); trace('Боковая кнопка (настройка по умолчанию): лист сразу пишет без рук — само нажатие и есть намерение. Отпускание боковой кнопки приложению недоступно, поэтому не «рация», а замочек: «Отправить» или «В поле».','p'); return startRec('locked',undefined,true) }
+  if (isSide||src==='ярлык'){ render(); trace('Боковая кнопка (настройка по умолчанию): лист сразу пишет без рук — само нажатие и есть намерение. Отпускание боковой кнопки приложению недоступно, поэтому не «рация», а замочек: «Отправить» или «В поле».','p'); return startRec('locked',undefined,isSide?'side':true) }
   O.live=`<span class="st">Зажмите микрофон и говорите</span>`; O.liveQ=true; trace(`Лист открыт ${src==='side'?'боковой кнопкой':src} и ждёт: без нажатия микрофон не пишет.`,'p'); render();
 }
 function openCamera(first){

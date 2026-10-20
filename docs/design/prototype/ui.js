@@ -375,6 +375,7 @@ function render(){
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
   document.querySelectorAll('#scr .fieldarea').forEach(grow);
   if (typeof tourCheck==='function') tourCheck();
+  $('#side')?.classList.toggle('pressed', !!(S.sideHeld || (S.rec&&S.rec.side&&S.ov)));   // обвязка демо: кнопка корпуса вдавлена, пока держат или пока идёт запись с неё
   document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2 });
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;

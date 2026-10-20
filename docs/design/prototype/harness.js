@@ -24,9 +24,11 @@ function setWorld(k,v){
 
 
 let holdT=null; const side=$('#side');
-side.addEventListener('pointerdown',()=>{ side.classList.add('hold'); holdT=setTimeout(()=>{ holdT=null; side.classList.remove('hold'); longPress() },450) });
-side.addEventListener('pointerup',()=>{ if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold'); S.ov=null; S.w.locked=true; S.screen='lock'; render() } });
-side.addEventListener('pointerleave',()=>{ if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold') } });
+const sideUp=()=>{ S.sideHeld=false; side.classList.toggle('pressed', !!(S.rec&&S.rec.side&&S.ov)) };   // отпустили мышь — вдавлена, только если с неё идёт запись
+side.addEventListener('pointerdown',()=>{ S.sideHeld=true; side.classList.add('hold','pressed'); holdT=setTimeout(()=>{ holdT=null; side.classList.remove('hold'); longPress() },450) });
+side.addEventListener('pointerup',()=>{ sideUp(); if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold'); S.ov=null; S.w.locked=true; S.screen='lock'; render() } });
+side.addEventListener('pointercancel',sideUp);
+side.addEventListener('pointerleave',()=>{ sideUp(); if(holdT){ clearTimeout(holdT); holdT=null; side.classList.remove('hold') } });
 side.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); longPress() } });
 function longPress(){
   if (S.w.side==='double'){ S.dialog={ic:'⏻',title:'Меню выключения',text:'Цифровой помощник висит на двойном нажатии — One UI переставил его сам после выдачи роли. Удержание открывает меню выключения.',opts:[['Понятно','x']]}; return render() }
