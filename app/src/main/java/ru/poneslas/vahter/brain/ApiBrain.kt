@@ -55,7 +55,7 @@ class ApiBrain(
             } catch (e: ApiError) {
                 emit(BrainEvent.Error(e.message ?: tr(R.string.brain_oshibka_mozga), e.kind)); return@flow
             } catch (e: UnknownHostException) {
-                emit(BrainEvent.Error(tr(R.string.brain_net_svyazi_s_1_s, desc.title), ErrorKind.NETWORK)); return@flow
+                emit(BrainEvent.Error(tr(R.string.brain_up_no_net, desc.title), ErrorKind.NETWORK)); return@flow
             } catch (e: SocketTimeoutException) {
                 emit(BrainEvent.Error(tr(R.string.brain_1_s_dolgo_ne_otvechaet, desc.title), ErrorKind.NETWORK)); return@flow
             } catch (e: IOException) {

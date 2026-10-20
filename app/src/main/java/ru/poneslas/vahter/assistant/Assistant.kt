@@ -173,6 +173,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
         // Вызов кнопкой (не из уведомления и не из приложения): голосовой режим сразу слушает без рук.
         val cur = conv.state.value.current
         if (call) {
+            // Повторный вызов при открытой камере закрывает её; фото-режим откроет камеру заново ниже.
+            Sheet.camera.value = false
             // Главное действие режима при вызове: фото — сразу камера; голос — сразу слушает, если включено «Слушать сразу при вызове».
             if (cur.primary == ru.poneslas.vahter.core.Primary.PHOTO && cur.accepts.photo &&
                 context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true

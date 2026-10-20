@@ -229,6 +229,8 @@ fun Composer(
     onNeedMic: (() -> Unit)? = null,
     onCamera: (() -> Unit)? = null,
     onGallery: (() -> Unit)? = null,
+    /** Подсказка в поле вместо подсказки режима: «Команда агенту» без мозга, «Вы к кому?» в пустом разговоре Ассистента. */
+    placeholder: String? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -263,7 +265,7 @@ fun Composer(
                     ) {
                         if (canAttach) InTool(Ic.clip, tr(R.string.cmp_prikrepit)) { menu = !menu }
                         Box(Modifier.weight(1f)) {
-                            if (state.draft.isEmpty()) Text(state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
+                            if (state.draft.isEmpty()) Text(placeholder ?: state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
                             BasicTextField(state.draft, onDraft, textStyle = BaseText.copy(fontSize = 14.5.sp),
                                 cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
                         }
@@ -329,6 +331,7 @@ fun RecPill(modifier: Modifier = Modifier) {
     val bars = 9
     Row(modifier.padding(vertical = 6.dp).clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
         .padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (phase == RecUi.Phase.LISTENING) Text(tr(R.string.rec_listening), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(end = 6.dp))
         for (i in 0 until bars) {
             val k = i / (bars - 1f)
             val center = 1f - kotlin.math.abs(k - .5f) * 1.2f
@@ -340,6 +343,25 @@ fun RecPill(modifier: Modifier = Modifier) {
 }
 
 private fun lerpColor(a: Color, b: Color, f: Float) = Color(a.red + (b.red - a.red) * f, a.green + (b.green - a.green) * f, a.blue + (b.blue - a.blue) * f, 1f)
+
+/** Подсказка в поле строки ввода (ui.js, composerHtml): без мозга — «Команда агенту»; Ассистент, пока ничего не спрашивали, — «Вы к кому?». */
+fun composerPlaceholder(state: Conversation.State, connected: Boolean): String? = when {
+    state.mode != ru.poneslas.vahter.core.Modes.MAIN -> null
+    !connected -> tr(R.string.cmp_komanda_agentu)
+    state.feed.none { it is ru.poneslas.vahter.core.FeedItem.Me } -> tr(R.string.cmp_vy_k_komu)
+    else -> null
+}
+
+/** Пока мозг не начал отвечать — «Звоню наверх · DeepSeek…» (ui.js: st h shim). */
+@Composable
+fun UpLine(state: Conversation.State) {
+    if (!state.busy || state.feed.lastOrNull() is ru.poneslas.vahter.core.FeedItem.Ai) return
+    val brain = ru.poneslas.vahter.core.Brains.byId(state.current.brain).title
+    val tr2 = androidx.compose.animation.core.rememberInfiniteTransition(label = "up")
+    val a by tr2.animateFloat(.45f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900), androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
+    Text(tr(R.string.live_up, brain), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Ink.serverD,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).alpha(a))
+}
 
 /** Над полем: волна записи ([pill]; в листе она поверх ленты) или короткое сообщение. */
 @Composable

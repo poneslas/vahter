@@ -170,10 +170,12 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp))
                     ru.poneslas.vahter.ui.RecPill(Modifier.align(Alignment.BottomCenter))
                 }
+                ru.poneslas.vahter.ui.UpLine(state)
                 LiveLine(live, pill = false)
                 Composer(
                     state = state,
                     voice = app.voice,
+                    placeholder = ru.poneslas.vahter.ui.composerPlaceholder(state, connected),
                     onDraft = app.conversation::setDraft,
                     onSend = { text, via -> app.conversation.send(text, via) },
                     onSelectMode = app.conversation::selectMode,

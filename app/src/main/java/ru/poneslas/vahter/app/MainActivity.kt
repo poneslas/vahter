@@ -83,6 +83,32 @@ class MainActivity : ComponentActivity() {
 
     private var askMicThenSheet = false
 
+    /** Наше окно-лист (не системное): объяснение перед повторным запросом микрофона или переход в настройки. */
+    data class PermSheet(val title: String, val text: String, val go: String, val onGo: () -> Unit)
+    private var permSheet by mutableStateOf<PermSheet?>(null)
+
+    /**
+     * Микрофон, как в Android 11+ (Продукт 5.13): первый раз — системное окно; после одного отказа — наше объяснение
+     * и снова системное; после второго система больше не спрашивает — наше окно ведёт в настройки разрешений.
+     */
+    fun askMic() {
+        val mic = android.Manifest.permission.RECORD_AUDIO
+        if (checkSelfPermission(mic) == android.content.pm.PackageManager.PERMISSION_GRANTED) { if (askMicThenSheet) { askMicThenSheet = false; collapse() }; return }
+        when {
+            shouldShowRequestPermissionRationale(mic) -> permSheet = PermSheet(tr(R.string.mic_why_h), tr(R.string.mic_why_p), tr(R.string.mic_why_go)) { requestMic() }
+            App.instance.conversation.state.value.settings.micAsked -> permSheet = PermSheet(tr(R.string.mic_off_h), tr(R.string.mic_off_p), tr(R.string.mic_off_go)) {
+                askMicThenSheet = false
+                startActivity(Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)))
+            }
+            else -> requestMic()
+        }
+    }
+
+    private fun requestMic() {
+        App.instance.conversation.updateSettings { it.copy(micAsked = true) }
+        requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQ_MIC)
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray, deviceId: Int) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
         if (requestCode == REQ_MIC && askMicThenSheet) { askMicThenSheet = false; collapse() }
@@ -99,7 +125,7 @@ class MainActivity : ComponentActivity() {
         sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
-        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
+        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == android.Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
         i.getStringExtra(EXTRA_PAGE)?.let { p -> stack.clear(); stack.add("chat"); if (p != "chat") { if (p != "settings" && !p.startsWith("onb:")) stack.add("settings"); stack.add(p) } }
         // Полоска промпта в листе → страница режима; «Назад» с неё возвращает лист, а не настройки.
@@ -145,6 +171,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             dialog?.let { d -> Choice(d) { dialog = null } }
+            permSheet?.let { d -> PermSheetUi(d) { permSheet = null; if (askMicThenSheet) { askMicThenSheet = false; collapse() } } }
         }
     }
 
@@ -160,16 +187,19 @@ class MainActivity : ComponentActivity() {
         TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
             onBack = if (fromSheet) ({ collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
             IconBtn(Ic.gear, tr(R.string.sheet_nastroyki)) { go("settings") }
-            // ⋮ — меню разговора: «Начать заново» (с подтверждением карточкой в ленте).
+            // ⋮ — меню разговора (ui.js, chatMenu): изменить режим, журнал действий, начать заново (неактивно, пока разговор пуст).
             Box {
                 var menu by remember { mutableStateOf(false) }
                 IconBtn(Ic.more, tr(R.string.restart_more)) { menu = true }
                 androidx.compose.material3.DropdownMenu(menu, { menu = false }, containerColor = Ink.surf,
                     shape = RoundedCornerShape(16.dp)) {
-                    androidx.compose.material3.DropdownMenuItem(
-                        text = { Text(tr(R.string.restart_menu), fontSize = 15.sp, color = Ink.ink) },
-                        leadingIcon = { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.hist), null, Modifier.size(20.dp), tint = Ink.soft) },
-                        onClick = { menu = false; app.conversation.askRestart() })
+                    @Composable fun row(icon: Int, label: String, enabled: Boolean = true, onClick: () -> Unit) = androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(label, fontSize = 15.sp, color = if (enabled) Ink.ink else Ink.faint) },
+                        leadingIcon = { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(icon), null, Modifier.size(20.dp), tint = if (enabled) Ink.soft else Ink.faint) },
+                        enabled = enabled, onClick = { menu = false; onClick() })
+                    row(Ic.edit, tr(R.string.chat_menu_edit_mode)) { go("mode:${state.mode}") }
+                    row(Ic.list, tr(R.string.set_zhurnal_deystviy)) { go("journal") }
+                    row(Ic.hist, tr(R.string.restart_menu), enabled = state.feed.isNotEmpty()) { app.conversation.askRestart() }
                 }
             }
         }
@@ -178,15 +208,17 @@ class MainActivity : ComponentActivity() {
         PromptStrip(state.current, onEdit = { go("mode:$it") })
         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
             modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_klaviatura)) })
+        ru.poneslas.vahter.ui.UpLine(state)
         LiveLine(live)
         Composer(
             state = state, voice = app.voice,
+            placeholder = ru.poneslas.vahter.ui.composerPlaceholder(state, connected),
             onDraft = app.conversation::setDraft,
             onSend = { t, v -> app.conversation.send(t, v) },
             onSelectMode = app.conversation::selectMode,
             onAddMode = { go("mode:" + app.conversation.addMode()) },
             onLive = { live = it },
-            onNeedMic = { requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 1) },
+            onNeedMic = ::askMic,
             onGallery = { ru.poneslas.vahter.media.PickerActivity.launchFromApp(this@MainActivity) },
         )
         androidx.compose.foundation.layout.Spacer(Modifier.navigationBarsPadding())
@@ -209,7 +241,7 @@ class MainActivity : ComponentActivity() {
                 startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
             }
             Item(tr(R.string.set_bokovaya_knopka), SideKey.describe(this@MainActivity), icon = Ic.btn) { SideKey.open(this@MainActivity) }
-            Item(tr(R.string.set_slushat_srazu_pri_vyzove), tr(R.string.set_bokovaya_knopka_zapis_nachinaetsya_sama),
+            Item(tr(R.string.set_slushat_srazu_pri_vyzove), tr(if (state.settings.listenOnCall) R.string.set_bokovaya_knopka_zapis_nachinaetsya_sama else R.string.set_zapis_po_nazhatiyu),
                 icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
             Item(tr(R.string.set_vozvrashchatsya_k_assistentu), returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
                 dialog = ChoiceDialog(tr(R.string.set_vozvrashchatsya_k_assistentu), ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
@@ -227,8 +259,9 @@ class MainActivity : ComponentActivity() {
             val pct = (dl as? ru.poneslas.vahter.pisar.model.ModelDownload.State.Running)?.percent
             Item(tr(R.string.set_raspoznavanie_rechi), when { installed -> tr(R.string.set_na_telefone_225_mb); pct != null -> tr(R.string.set_kachaetsya_1_s, pct); else -> tr(R.string.app_ne_skachano_225_mb) },
                 warn = !installed && pct == null, icon = Ic.wave) { go("voice") }
-            Item(tr(R.string.set_mikrofon), if (mic) tr(R.string.set_tolko_poka_idet_zapis) else tr(R.string.set_sprosim_kogda_ponadobitsya), icon = Ic.mic) {
-                if (!mic) requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 1)
+            val micOff = !mic && state.settings.micAsked && !shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)
+            Item(tr(R.string.set_mikrofon), tr(when { mic -> R.string.set_tolko_poka_idet_zapis; micOff -> R.string.set_mikrofon_zapreshchen; else -> R.string.set_sprosim_kogda_ponadobitsya }), warn = micOff, icon = Ic.mic) {
+                if (!mic) askMic()
             }
             Section(tr(R.string.set_mozgi))
             Brains.all.forEach { b ->
@@ -406,6 +439,26 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.set_razresheno); Policy.ASK -> tr(R.string.set_sprashivat); Policy.OFF -> tr(R.string.set_ne_razresheno) }
+
+    /** Наше окно-лист (app.css, .osheet): ручка, значок, заголовок, текст; справа действие, слева от него «Не сейчас». */
+    @Composable
+    private fun PermSheetUi(d: PermSheet, close: () -> Unit) {
+        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0x730A0E18)).clickable(onClick = close), contentAlignment = Alignment.BottomCenter) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(Ink.paper).clickable(enabled = false) {}
+                .navigationBarsPadding().padding(start = 22.dp, end = 22.dp, top = 10.dp, bottom = 22.dp)) {
+                Box(Modifier.fillMaxWidth().padding(bottom = 14.dp), contentAlignment = Alignment.Center) { Box(Modifier.size(32.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab)) }
+                Box(Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Ink.localT), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.mic), null, Modifier.size(22.dp), tint = Ink.localD)
+                }
+                Text(d.title, fontSize = 21.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
+                Text(d.text, fontSize = 14.5.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 18.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(tr(R.string.not_now), onClick = close)
+                    PrimaryButton(d.go) { permSheet = null; d.onGo() }
+                }
+            }
+        }
+    }
 
     /** dialog() с radio: .scrim прижат к низу, .dlg.rdlg — скругление 30, пункты .ropt, внизу «Отмена». */
     @Composable

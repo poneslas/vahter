@@ -25,7 +25,7 @@
     <string name="cam_send">Отправить</string>
     <string name="cam_send_all">Отправить все кадры</string>
     <string name="cam_ask_voice">Зажмите и спросите голосом</string>
-    <string name="cam_listening">Слушаю…</string>
+    <string name="cam_listening">Вахтёр слушает…</string>
     <string name="cam_recognizing">Распознаю…</string>
     <string name="cam_no_frame">Кадр не получен — камера не показывает изображение.</string>
     <string name="cam_unavailable">Камера недоступна: %1$s</string>
@@ -145,7 +145,7 @@
     <string name="set_ne_vybran_bokovaya_knopka_otkroet">Не выбран — боковая кнопка откроет другого помощника</string>
     <string name="set_bokovaya_knopka">Боковая кнопка</string>
     <string name="set_slushat_srazu_pri_vyzove">Слушать сразу при вызове</string>
-    <string name="set_bokovaya_knopka_zapis_nachinaetsya_sama">Боковая кнопка: запись начинается сама. Из уведомлений и приложения — нет</string>
+    <string name="set_bokovaya_knopka_zapis_nachinaetsya_sama">Запись начинается сама</string>
     <string name="set_vozvrashchatsya_k_assistentu">Возвращаться к Ассистенту</string>
     <string name="set_rezhimy">Режимы</string>
     <string name="set_nazvanie_prompt_chto_prinimaet">Название, промпт, что принимает</string>
@@ -155,7 +155,7 @@
     <string name="set_kachaetsya_1_s">Качается: %1$s %%</string>
     <string name="set_mikrofon">Микрофон</string>
     <string name="set_tolko_poka_idet_zapis">Только пока идёт запись</string>
-    <string name="set_sprosim_kogda_ponadobitsya">Спросим, когда понадобится</string>
+    <string name="set_sprosim_kogda_ponadobitsya">Спросит при первой записи</string>
     <string name="set_mozgi">Мозги</string>
     <string name="set_1_s_klyuch_est">%1$s · ключ есть</string>
     <string name="set_net_klyucha">Нет ключа</string>
@@ -266,12 +266,12 @@
     <string name="pg_glavnoe">Главное</string>
     <string name="pg_bolshaya_knopka_kamera_s_bokovoy">Большая кнопка — камера. С боковой кнопки — сразу видоискатель. Спросить голосом — микрофон в поле.</string>
     <string name="pg_bolshaya_knopka_mikrofon_s_bokovoy">Большая кнопка — микрофон. С боковой кнопки — сразу слушает.</string>
-    <string name="pg_vse_budilnik_taymer_kalendar_zvonki">Все — будильник, таймер, календарь, звонки…</string>
+    <string name="pg_vse_budilnik_taymer_kalendar_zvonki">Все</string>
     <string name="pg_vklyucheny">Включены</string>
-    <string name="pg_vklyucheny_taymer_budilnik">Включены — таймер, будильник</string>
-    <string name="pg_vyklyucheny_menshe_instrumentov_otvet_by">Выключены — меньше инструментов, ответ быстрее</string>
+    <string name="pg_vklyucheny_taymer_budilnik">Включены</string>
+    <string name="pg_vyklyucheny_menshe_instrumentov_otvet_by">Выключены · ответ быстрее</string>
     <string name="pg_yazyk_rechi">Язык речи</string>
-    <string name="pg_russkiy_gigaam_drugie_yazyki_pozzhe">Русский (GigaAM). Другие языки — позже</string>
+    <string name="pg_russkiy_gigaam_drugie_yazyki_pozzhe">Русский</string>
     <string name="pg_nuzhen_so_zreniem">\u0020· нужен со зрением</string>
     <string name="pg_steret_razgovor_rezhima_1_s">Стереть разговор режима — %1$s сообщ.</string>
     <string name="pg_razgovor_pust">Разговор пуст</string>
@@ -291,7 +291,7 @@
     <string name="pg_list_mozhno_otkryt_otsyuda_bokovuyu">Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».</string>
     <string name="pg_nachat">Начать</string>
     <string name="pg_vyberite_vahter">Выберите «Вахтёр»</string>
-    <string name="pg_bokovaya_knopka_tsifrovoy_pomoshchnik">Боковая кнопка → цифровой помощник</string>
+    <string name="pg_bokovaya_knopka_tsifrovoy_pomoshchnik">Боковая кнопка</string>
     <string name="pg_gotovo_zazhmite_mikrofon_i_skazhite">Готово — зажмите микрофон и скажите что-нибудь</string>
     <string name="pg_zagruzka_modeli_1_s_mozhno">Загрузка модели: %1$s %% — можно идти дальше, докачается само.</string>
     <string name="pg_eshche_raz">Ещё раз</string>
@@ -494,7 +494,7 @@
     <string name="brain_mozg_ne_podklyuchen_net_klyucha">Мозг не подключён — нет ключа DeepSeek.</string>
     <string name="brain_oshibka_mozga">Ошибка мозга</string>
     <string name="brain_net_svyazi_s_1_s">Нет связи с %1$s.</string>
-    <string name="brain_1_s_dolgo_ne_otvechaet">%1$s долго не отвечает.</string>
+    <string name="brain_1_s_dolgo_ne_otvechaet">Наверху не берут трубку: %1$s долго не отвечает.</string>
     <string name="brain_oshibka_seti">ошибка сети</string>
     <string name="brain_svyaz_oborvalas_1_s">Связь оборвалась: %1$s.</string>
     <string name="brain_stavlyu_budilnik">Ставлю будильник</string>
@@ -527,7 +527,7 @@
     <string name="brain_1_s_rezhim_2_s">%1$s\n\nРежим «%2$s»: %3$s</string>
     <string name="brain_klyuch_ne_prinyat_proverte_ego">Ключ не принят — проверьте его в настройках мозга.</string>
     <string name="brain_na_schete_1_s_zakonchilis">На счёте %1$s закончились деньги.</string>
-    <string name="brain_1_s_ogranichivaet_zaprosy_poprobuyte">%1$s ограничивает запросы. Попробуйте через минуту.</string>
+    <string name="brain_1_s_ogranichivaet_zaprosy_poprobuyte">Наверху перерыв: %1$s ограничивает запросы. Попробуйте через минуту.</string>
     <string name="brain_razgovor_slishkom_dlinnyy_dlya_modeli">Разговор слишком длинный для модели.</string>
     <string name="brain_u_1_s_sboy_2">У %1$s сбой (%2$s). Попробуйте позже.</string>
     <string name="brain_oshibka_1_s_2_s">Ошибка %1$s (%2$s): %3$s</string>
@@ -557,21 +557,21 @@
     <string name="restart_no">Отмена</string>
     <string name="restart_hint_longpress">Удерживайте название режима — начать заново</string>
     <!-- Приветствие (ui/Intro.kt; сцены — как docs/design/prototype/intro.css) -->
-    <string name="intro_0_h">Зажал кнопку — сказал — сделано</string>
-    <string name="intro_0_p">Как Алиса или Gemini — только быстрее, без рекламы и с моделью, которую выбираете вы.</string>
-    <string name="intro_1_h">Не чат, а кнопка</string>
+    <string name="intro_0_h">Вахтёр. Всегда на месте</string>
+    <string name="intro_0_p">Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.</string>
+    <string name="intro_1_h">Своих — без очереди</string>
     <string name="intro_1_p">Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.</string>
-    <string name="intro_2_h">Настроил один раз</string>
+    <string name="intro_2_h">Запомнил с первого раза</string>
     <string name="intro_2_p">Язык перевода, вкусы, аллергия — режим помнит ваши правила. Дальше хватает одной кнопки.</string>
-    <string name="intro_3_h">Сразу камера или голос</string>
-    <string name="intro_3_p">Режим сам решает, с чего начать: меню и вывески — камерой, вопросы — голосом. На одно нажатие меньше.</string>
-    <string name="intro_4_h">Сказал — сделано</string>
-    <string name="intro_4_p">Будильник, таймер, календарь, звонок — мгновенно, прямо на телефоне, даже без интернета.</string>
+    <string name="intro_3_h">Знает, кто зачем пришёл</string>
+    <string name="intro_3_p">Меню и вывески — сразу камерой, вопросы — сразу голосом. На одно нажатие меньше.</string>
+    <string name="intro_4_h">Сначала сам, сложное — наверх</string>
+    <string name="intro_4_p">Будильник, таймер, календарь, звонок — делает сам, прямо на телефоне. Что сложнее — звонит наверх, вашему мозгу.</string>
     <string name="intro_skip">Пропустить</string>
     <string name="intro_next">Далее</string>
     <string name="intro_setup">Настроить</string>
     <string-array name="intro_steps">
-        <item>Разблокировать</item><item>Найти приложение</item><item>Новый чат</item><item>Объяснить задачу</item><item>Напечатать вопрос</item>
+        <item>Разблокировать</item><item>Найти приложение</item><item>Открыть</item><item>Новый чат</item>
     </string-array>
     <string name="intro_online">на связи</string>
     <string name="intro_assistant">Ассистент</string>
@@ -581,7 +581,7 @@
     <string name="intro_modes">Режимы</string>
     <string name="intro_modes_sub">задача уже внутри</string>
     <string name="intro_s1_q">Сколько варить гречку?</string>
-    <string name="intro_s1_a">15–20 минут на слабом огне, 1 : 2 с водой.</string>
+    <string name="intro_s1_a">15–20 минут, воды вдвое больше.</string>
     <string name="intro_s2_t1">★ переводи на китайский</string>
     <string name="intro_s2_q1">Где здесь туалет?</string>
     <string name="intro_s2_a1">洗手间在哪里？ Xǐshǒujiān zài nǎlǐ?</string>
@@ -595,18 +595,73 @@
     <string name="intro_s4_r1s">прозвенит через 9 ч</string>
     <string name="intro_s4_r2">Таймер запущен · 1:00</string>
     <string name="intro_s4_r2s">осталось 0:59</string>
-    <string name="intro_s4_off">✈ без интернета — тоже работает</string>
+    <string name="intro_s4_off">✈ нет связи — вахтёр всё равно на месте</string>
     <string name="intro_usual">ИИ-приложение</string>
     <string name="intro_usual_time">5 шагов · ~20 с</string>
-    <string name="intro_ours">Вахтёр · по кнопке</string>
+    <string name="intro_ours">Вахтёр</string>
     <string name="intro_key">⏻ кнопка</string>
     <string name="intro_ours_time">1 нажатие · ~2 с</string>
     <string name="intro_setup_title">Мой Гастрогид</string>
     <string name="intro_setup_once">настроили один раз</string>
     <string-array name="intro_rules">
-        <item>не остро</item><item>больше белка</item><item>аллергия на орехи</item>
+        <item>Не ем острое и свинину</item><item>Аллергия на орехи</item><item>Бюджет до 1500 ₽, советуй 2–3 блюда</item>
     </string-array>
     <string name="intro_rules_answer">Судак на гриле с овощами — белок, без орехов и острого.</string>
     <string name="intro_mode_voice">голос</string>
     <string name="intro_mode_photo">камера</string>
+
+    <!-- 0.6.0: Вахтёр, приветствие v3, проба голоса, отказы в микрофоне -->
+    <string name="set_zapis_po_nazhatiyu">Запись по нажатию</string>
+    <string name="set_mikrofon_zapreshchen">Запрещён</string>
+    <string name="brain_up_no_net">Наверх не дозвониться: нет связи с %1$s.</string>
+    <string name="live_up">Звоню наверх · %1$s…</string>
+    <string name="rec_listening">Вахтёр слушает</string>
+    <string name="cmp_komanda_agentu">Команда агенту</string>
+    <string name="cmp_vy_k_komu">Вы к кому?</string>
+    <string name="chat_menu_edit_mode">Изменить режим</string>
+    <string name="intro_post">Вахтёр · на месте</string>
+    <string name="intro_free">без очереди</string>
+    <string name="intro_ticket">№%1$d</string>
+    <string name="intro_question">🎙 вопрос</string>
+    <string name="intro_hold">Зажать</string>
+    <string name="intro_loc">🔒 Чужих не пустит: голос остаётся на телефоне</string>
+    <string name="intro_my_mode">мой режим</string>
+    <string name="intro_start_with">"Начинать с: "</string>
+    <string name="intro_start_cam">📷 камеры</string>
+    <string name="intro_stamp">всё запомнил</string>
+    <string name="intro_later">через неделю, в ресторане…</string>
+    <string name="intro_one_press">" · одно нажатие"</string>
+    <string name="intro_s2_answer">Судак на гриле и морс — 1200 ₽.</string>
+    <string name="intro_say">говорите…</string>
+    <string name="intro_cap_voice">🎙 сразу голос</string>
+    <string name="intro_cap_cam">📷 сразу камера</string>
+    <string name="intro_s4_up">☎ сложное — звонок наверх: DeepSeek или Hermes</string>
+    <string name="onb_voice_p">Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз %1$s МБ, дальше голос не уходит с телефона и работает без интернета.</string>
+    <string name="onb_voice_model">GigaAM</string>
+    <string name="onb_voice_model_sub">модель Сбера, на телефоне</string>
+    <string name="onb_voice_lock">🔒 голос остаётся здесь · ✈ без интернета</string>
+    <string name="try_h">Попробуйте голосом</string>
+    <string name="try_p_side">Так же работает в листе — зажмите боковую кнопку в любом приложении.</string>
+    <string name="try_p_noside">Так же работает в листе. Боковую кнопку настроите потом — шестерёнка, «Вызов».</string>
+    <string name="try_ph">Здесь появится текст. Можно поправить руками.</string>
+    <string name="try_hint">Зажмите микрофон и говорите</string>
+    <string name="try_loading">Распознавание докачивается — %1$d %%. Попробовать можно будет здесь же.</string>
+    <string name="try_none">Голос не скачан — его можно скачать потом в настройках.</string>
+    <string name="try_denied">Микрофон запрещён — разрешите его в настройках телефона.</string>
+    <string name="try_ask">Нажмите на микрофон — Android спросит доступ.</string>
+    <string name="try_t1a">Зажать</string>
+    <string name="try_t1b">" — говорить, "</string>
+    <string name="try_t1c">отпустить</string>
+    <string name="try_t1d">" — текст готов"</string>
+    <string name="try_t2a">Длинная диктовка</string>
+    <string name="try_t2b">" — потяните кнопку вверх, к замку: запись пойдёт без пальца"</string>
+    <string name="try_t3a">Передумали</string>
+    <string name="try_t3b">" — потяните влево, запись отменится"</string>
+    <string name="mic_why_h">Голосу нужен микрофон</string>
+    <string name="mic_why_p">Запись идёт, только пока вы держите кнопку, и не уходит с телефона. Без микрофона остаётся клавиатура.</string>
+    <string name="mic_why_go">Продолжить</string>
+    <string name="mic_off_h">Доступ к микрофону закрыт</string>
+    <string name="mic_off_p">Android больше не спрашивает сам. Откройте настройки: Разрешения → Микрофон → «При использовании приложения».</string>
+    <string name="mic_off_go">Открыть настройки</string>
+    <string name="not_now">Не сейчас</string>
 </resources>
