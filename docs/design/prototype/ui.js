@@ -321,8 +321,8 @@ function marksSvg(marks, crop, draft){
   return `<svg class="marks" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FF3B30"/></marker></defs>
     ${cr?`<path class="cropdim" fill-rule="evenodd" d="M0 0H100V100H0Z M${cr.x} ${cr.y}h${cr.w}v${cr.h}h${-cr.w}Z"/><rect class="croprect" x="${cr.x}" y="${cr.y}" width="${cr.w}" height="${cr.h}"/>`:''}
     <g class="ink">${all.map(path).join('')}</g></svg>` }
-/** Размер миниатюры — в пропорциях снимка (кадр телефона 400×820), с учётом обрезки; иначе пометки съедут. */
-function thumbStyle(img,H=200,maxW=230,minW=110){ if(img.kind==='album') return 'width:206px'; const c=img.crop, a=(c?c.w:100)*(400/820)/(c?c.h:100); let h=H, w=h*a; if(w>maxW){ w=maxW; h=w/a } if(w<minW){ w=minW; h=Math.min(H*1.3,w/a) } return `width:${Math.round(w)}px;height:${Math.round(h)}px` }
+/** Размер миниатюры — в пропорциях снимка (как был виден в видоискателе; по умолчанию кадр телефона 400×820), с учётом обрезки; иначе пометки съедут. */
+function thumbStyle(img,H=200,maxW=230,minW=110){ if(img.kind==='album') return 'width:206px'; const c=img.crop, a=(c?c.w:100)*(img.ar||400/820)/(c?c.h:100); let h=H, w=h*a; if(w>maxW){ w=maxW; h=w/a } if(w<minW){ w=minW; h=Math.min(H*1.3,w/a) } return `width:${Math.round(w)}px;height:${Math.round(h)}px` }
 /** Миниатюра снимка в разговоре: обрезка применена, пометки впечены. */
 function thumbHtml(img){ if(img.kind==='album') return `<div class="alb">${img.items.map(x=>`<div class="thw" style="${thumbStyle(x,130,100,48)}">${thumbHtml(x)}</div>`).join('')}</div>`; const c=img.crop; const inner=`<i class="th ${img.cls}"></i>${img.marks&&img.marks.length?marksSvg(img.marks,null):''}`;
   return c ? `<span class="cropbox" style="width:${10000/c.w}%;height:${10000/c.h}%;left:${-c.x*100/c.w}%;top:${-c.y*100/c.h}%">${inner}</span>` : inner }

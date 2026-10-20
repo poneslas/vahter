@@ -586,3 +586,4 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .composer .micbtn{width:52px;height:52px}
 /* камера в листе: больше свободного места над листом — видно, что это лист поверх приложения, а не отдельный экран */
 .cam2.insheet .csheet{top:124px}
+.cam2 .cfrb .thw>.th{display:block;width:100%;height:100%}

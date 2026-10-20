@@ -44,7 +44,9 @@ async function runUpload(b){
     S.keepScroll=true; render() } }
 /** Лента кадров: «＋» оставляет текущий кадр и возвращает живой видоискатель; «Отправить» оставляет текущий и отправляет всё. */
 const camMax = () => brainOf().caps.maxImages||10;
-function camCurrent(){ const c=S.cam; return {cls:c.subj,marks:c.marks.slice(),crop:c.crop} }
+/** Пропорции снимка = пропорции видоискателя в момент съёмки: в листе он шире, чем на весь экран (400×820). */
+const vfAspect=()=>{ const v=$('#scr .vf'); const r=v&&v.getBoundingClientRect(); return r&&r.height?r.width/r.height:400/820 };
+function camCurrent(){ const c=S.cam; return {cls:c.subj,marks:c.marks.slice(),crop:c.crop,ar:vfAspect()} }
 function camLive(){ Object.assign(S.cam,{frozen:false,tool:null,marks:[],crop:null,editIdx:null}) }
 /** Положить текущий кадр в ленту (или сохранить правки кадра из ленты). Возвращает все кадры. */
 function camCommit(forSend){ const c=S.cam;
@@ -68,7 +70,7 @@ document.addEventListener('pointerup',()=>{ if(!draw||!S.cam) return; const d=dr
   else if ((d.k==='circle'&&d.pts.length>3)||(d.k==='arrow'&&Math.hypot(d.a[0]-d.b[0],d.a[1]-d.b[1])>5)) S.cam.marks.push(d);
   render() });
 async function shotGo(q){
-  const c=S.cam; const cur={cls:c.subj,marks:c.marks.slice(),crop:c.crop}; const items=camCommit(true); const img=items.length>1?{kind:'album',items}:{kind:'photo',...items[0]}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app') S.ov={pop:false}; S.cam=null;
+  const c=S.cam; const cur={cls:c.subj,marks:c.marks.slice(),crop:c.crop,ar:vfAspect()}; const items=camCommit(true); const img=items.length>1?{kind:'album',items}:{kind:'photo',...items[0]}; S.screen=S.camRet.screen; S.ov=S.camRet.ov||S.ov; if(!S.ov && S.screen!=='app') S.ov={pop:false}; S.cam=null;
   uploadPhoto(img, q||'', (q?'голос · ':'')+(items.length>1?`альбом · ${items.length}`:'фото'));
   trace(q?'Снимок и вопрос: сразу обратно в разговор, фото грузится в пузыре.':'Спуск — сразу обратно в разговор. Фото грузится прямо в пузыре: пока грузится (не меньше 2 секунд), можно нажать «✕» или дописать вопрос — уйдёт вместе с фото.','p');
   if(!q) setTimeout(()=>$('#cin')?.focus(),50); }
