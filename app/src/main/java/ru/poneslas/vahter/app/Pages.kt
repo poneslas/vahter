@@ -422,14 +422,14 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.key_connect)) to { key.connect(scope) }
             }
         }
-        // .nav: «Позже» или пусто · точки · кнопка
-        // Кнопка справа берёт сколько нужно (не ломает слово при крупном шрифте); точки — посередине оставшегося места.
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { skip?.let { (t, a) -> TextButton(t, onClick = a) } }
-            Row(Modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) 4.dp else 6.dp)) {
+        // .nav: «Позже» или пусто · точки · кнопка. Точки — строго по центру экрана, как в прототипе; кнопка справа берёт
+        // сколько нужно и не ломает слово при крупном шрифте.
+        Box(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            Box(Modifier.align(Alignment.CenterStart)) { skip?.let { (t, a) -> TextButton(t, onClick = a) } }
+            Row(Modifier.align(Alignment.Center), horizontalArrangement = Arrangement.spacedBy(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) 4.dp else 6.dp)) {
                 repeat(steps) { i -> Box(Modifier.size(if (i == step) 20.dp else 7.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(if (i == step) Ink.ink else Ink.swOff)) }
             }
-            Box(Modifier.widthIn(min = 96.dp), contentAlignment = Alignment.CenterEnd) {
+            Box(Modifier.align(Alignment.CenterEnd)) {
                 primary?.let { (t, a) -> PrimaryButton(t, enabled = !(step == steps - 1 && !hasKey && !key.canCheck), onClick = a) }
             }
         }
