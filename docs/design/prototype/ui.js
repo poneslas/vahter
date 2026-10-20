@@ -248,13 +248,19 @@ function onb(){
   if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${keyBody(true)}</div>${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Открыть','onbnext']:null)}</div></div>`;
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
-  if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка',S.w.side==='assistant'?'Готово':S.w.side==='bixby'?'Сейчас Bixby':'Сейчас меню выключения','sysside',false,S.w.side==='assistant'?I.ok:'')}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %. Пока настройте кнопку.</p>`:''}`; if(ok) skip=null }
+  // Пропустить, не поняв, нельзя: пока не настроено, главная кнопка — «Настроить» (открывает по очереди), «Позже» — через предупреждение.
+  // На незнакомом телефоне боковой кнопки может не быть — требуем только помощника, вызов — «Домой» или жест.
+  if (st==='button'){ const role=S.w.role==='ours', known=S.w.profile!=='unknown', ok=btnDone();
+    art=ok?'<div class="bdone">✓</div>':'<div style="font-size:64px">⏻</div>'; h='Боковая кнопка';
+    p=ok?(known?'Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.':'Готово: Вахтёр — помощник телефона.'):'Два переключателя в настройках телефона — Android не даёт сделать это из приложения. «Настроить» откроет их по очереди.';
+    const sideSum=S.sideOk?'Зажатие — цифровой помощник':S.w.side==='bixby'?'Сейчас Bixby':S.w.side==='double'?'Помощник — на двойном нажатии':'Сейчас меню выключения';
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${known?li(I.btn,'Боковая кнопка',S.sideOk?sideSum:'Не настроено · '+sideSum.toLowerCase(),'sysside',!S.sideOk,S.sideOk?I.ok:''):li(I.btn,'Вызов','Долгое нажатие «Домой» или жест')}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
+    if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
   if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
-    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
+    if (st==='voice' && S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
   if (st==='try') return tryStep();
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }

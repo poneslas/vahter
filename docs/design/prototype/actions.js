@@ -62,11 +62,10 @@ document.addEventListener('click', async e=>{
     case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'intronext': S.introStep=(S.introStep||0)+1; return render();
     case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('voice'); return render();
-    case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null;
-      if (S.onbStep<ONB.length-1){ S.onbStep++; if (ONB[S.onbStep]==='try' && (S.w.model==='none'||S.w.model==='broken')) S.onbStep++;   // голос не качали — пробовать нечем
-        return render() }
-      // с последнего шага — дальше как «onbdone»
-    case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
+    case 'onbnext': return onbNext();
+    case 'onbdone': return onbDone();
+    case 'btnsetup': return btnSetup();
+    case 'btnlater': return btnLater();
     case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
     case 'sysside': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysside'; return render();
     case 'sysmic': S.ret={screen:S.screen,page:S.page,ov:S.ov}; S.ov=null; S.screen='sysmic'; trace('Android больше не покажет окно разрешения после двух отказов — ведём прямо в системный экран разрешений приложения (ACTION_APPLICATION_DETAILS_SETTINGS).','p'); return render();
@@ -184,7 +183,21 @@ function askMic(){
   if (S.micNo){ S.dialog={ours:true,ic:'🎙',title:'Голосу нужен микрофон',text:'Запись идёт, только пока вы держите кнопку, и не уходит с телефона. Без микрофона остаётся клавиатура.',opts:[['Продолжить','micsys'],['Не сейчас','x','sec2']]}; return render() }
   return micSys() }
 function micSys(){ S.dialog={ic:'🎙',title:'Разрешить приложению «Вахтёр» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render() }
+function onbNext(){
+  if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null;
+  if (S.onbStep>=ONB.length-1) return onbDone();
+  S.onbStep++; if (ONB[S.onbStep]==='try' && (S.w.model==='none'||S.w.model==='broken')) S.onbStep++;   // голос не качали — пробовать нечем
+  return render() }
+function onbDone(){ S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render() }
+/** Шаг «Боковая кнопка»: «Настроить» открывает по очереди то, что ещё не настроено; «Позже» — один раз наше предупреждение. */
+const btnDone=()=>S.w.role==='ours'&&(S.w.profile==='unknown'||S.sideOk);
+function btnSetup(){ S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen=S.w.role!=='ours'?'sysrole':'sysside'; trace(S.screen==='sysrole'?'«Настроить» → экран «Цифровой помощник»: выберите «Вахтёр» и вернитесь.':'«Настроить» → экран боковой кнопки Samsung: «Нажатие и удержание» → «Цифровой помощник».','p'); return render() }
+function btnLater(){
+  if (btnDone()||S.btnWarned) return onbNext();
+  S.btnWarned=true; S.dialog={ours:true,ic:'⏻',title:'Кнопка пока откроет '+(S.w.side==='bixby'?'Bixby':S.w.role==='ours'?'не Вахтёра':'Gemini'),text:'Без этого Вахтёра можно будет открыть только из приложения. Настроить можно и потом: шестерёнка → «Вызов».',opts:[['Настроить','btnsetup'],['Всё равно позже','btnskip','sec2']]}; return render() }
 async function dlgAct(k){
+  if (k==='btnsetup') return btnSetup();
+  if (k==='btnskip') return onbNext();
   if (k==='micsys') return micSys();
   if (k==='sysmicgo'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() }
   if (k&&k.startsWith('permfix:')) return permFix(k.slice(8));
