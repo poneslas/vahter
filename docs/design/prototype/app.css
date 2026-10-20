@@ -575,3 +575,5 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .live.recl{min-height:0;padding:2px 16px 4px;display:flex;justify-content:center}
 .recpill{display:inline-flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
 .recpill .eq i,.tshot .eq i{background:linear-gradient(var(--local),var(--server))}
+.micbtn.proc{position:relative}
+.micbtn.proc::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--server);border-right-color:var(--server);animation:spin .9s linear infinite}

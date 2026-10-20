@@ -29,17 +29,20 @@ async function startRec(mode, into, silent){
 }
 function recText(){ const r=S.rec; if(!r||!r.key||!r.n) return ''; const ph=PHR[r.key]; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }
 async function finishRec(how){
-  const r=S.rec; if(!r) return; const text=recText(); recTok++; S.rec=null;
+  // Как в приложении: GigaAM распознаёт всю запись после отпускания — фраза целиком, с пунктуацией (по ходу слов нет).
+  const r=S.rec; if(!r) return; const text=r.key&&r.n?PHR[r.key].fin:''; recTok++; S.rec=null;
   if (r.into==='prompt'){ const m=modeById(S.editMode); if(how!=='cancel' && text){ m.prompt=(m.prompt.trim()+' '+text).trim(); trace('Надиктовано локально (GigaAM) и дописано в конец промпта — тот же компонент, что в листе.','p') } S.keepScroll=true; return render() }
-  if (r.into==='try'){ if(how!=='cancel' && text){ (S.tryShots=S.tryShots||[]).push({text, ms:300+Math.round(Math.random()*350)}); trace('Проба в первом запуске: распознано на телефоне за доли секунды, никуда не отправлено.','p') } return render() }
+  if (r.into==='try'){ if(how==='cancel' || !text) return render(); const ms=await recognize(); (S.tryShots=S.tryShots||[]).push({text, ms}); trace('Проба в первом запуске: распознано на телефоне за доли секунды, никуда не отправлено.','p'); return render() }
   if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
   if (S.screen==='cam2' && S.cam){ trace('Отпустил микрофон на камере — снимок и вопрос уходят вместе одним сообщением.','p'); return shotGo(text) }
-  if (S.ov){ S.ov.live=`<span class="st p">Распознаю</span>${esc(text)}`; S.ov.liveQ=false } render(); await wait(380);
+  await recognize();
   if (how==='release') how='send';   // отпустил — отправить; если в поле был текст, он уходит вместе с голосом
   const full = r.into==='append' ? (S.draft+' '+text) : text; S.draft=''; S.draftVoice=false;
   trace(r.mode==='hold'?'Отпустил — отправлено (push-to-talk, как в Писаре). Чистовик GigaAM уже с пунктуацией.':'«Отправить» из замочка — отправлено.','p');
   return deliver(full,'голос');
 }
+/** Распознавание после отпускания: кнопка крутит дугу, над полем — спокойная волна; пауза как на S24 (0,4–0,9 с). */
+async function recognize(){ const ms=400+Math.round(Math.random()*500); S.recog=true; render(); await wait(ms); S.recog=false; return ms }
 function micUnavailable(){
   if (S.w.mic==='ask'){ if(S.ov){ S.ov.live=`<span class="st">Нужен доступ к микрофону</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">Спросит приложение — лист на секунду развернётся.</span><br><button class="recbtn" data-act="permmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`; return render() } return askMic() }
   if (S.w.mic==='denied' && !S.ov && S.w.model==='ready') return askMic();   // вне листа — наше окно с переходом в настройки
