@@ -60,7 +60,10 @@ document.addEventListener('click', async e=>{
     case 'cm:restart': S.chatMenu=false; S.keepScroll=true;   // дальше — как раньше: карточка «Стереть разговор?»
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();
-    case 'modes0': case 'modes1': S.modesK=+a.slice(-1); S.modesAt=Date.now(); return render();
+    case 'noop': return;
+    case 'addtile': S.dialog={ic:'▦',title:'Добавить плитку «Вахтёр» в быстрые настройки?',opts:[['Добавить','tile_ok'],['Отмена','x','sec2']]}; trace('Плитку предлагает добавить сама система — StatusBarManager.requestAddTileService (Android 13+).','p'); return render();
+    case 'brainfromsheet': S.brainRet={screen:S.screen}; S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; trace('Из листа — на экран мозга в приложении; «Назад» вернёт лист.','p'); return render();
+    case 'brainback': { const R=S.brainRet; S.brainRet=null; S.page='chat'; S.screen=R?.screen||'home'; openOverlay('снова — назад с экрана мозга'); return render() }
     case 'onbnext': return onbNext();
     case 'onbdone': return onbDone();
     case 'btnsetup': return btnSetup();
@@ -94,11 +97,11 @@ document.addEventListener('click', async e=>{
     case 'brainsetup': S.ov=null; S.screen='app'; S.keyCheck=null; if(S.onboarded){ S.editBrain='deepseek'; S.page='brain' } else S.onbStep=ONB.indexOf('brain'); return render();
     case 'keypaste': { const el=$('#apikey'); if(el) el.value='sk-••••••••••••••••3f9a'; return }
     case 'keycheck': { const K=S.keyCheck={stage:'run',checks:[{id:'fmt',t:'Формат ключа',s:''},{id:'net',t:'api.deepseek.com',s:''},{id:'auth',t:'Ключ принят',s:''},{id:'model',t:'Модель отвечает',s:''},{id:'vision',t:'Понимает фото',s:''}]}; render();
-      for (const c of K.checks){ c.s='run'; render(); await wait(350); if(S.keyCheck!==K) return;
-        if (c.id==='net' && S.w.net==='none'){ c.s='bad'; K.stage='bad'; K.err='Нет интернета на телефоне.'; return render() }
-        if (c.id==='auth' && S.w.key==='bad'){ c.s='bad'; K.stage='bad'; K.err='Ключ не принят (401). Проверьте, что скопирован целиком и не отозван.'; return render() }
+      for (const c of K.checks){ c.s='run'; await wait(260); if(S.keyCheck!==K) return;
+        if (c.id==='net' && S.w.net==='none'){ c.s='bad'; K.stage='bad'; K.err='Нет связи с api.deepseek.com — проверьте интернет.'; return render() }
+        if (c.id==='auth' && S.w.key==='bad'){ c.s='bad'; K.stage='bad'; K.err='Ключ не принят — скопирован не целиком или отозван.'; return render() }
         c.s='ok'; c.d={fmt:'sk-…, 35 символов',net:'отвечает',auth:'баланс есть',model:'deepseek-chat · 0,6 с',vision:'да — фото-режимы доступны'}[c.id] }
-      K.stage='done'; S.w.key='ok'; S.dismissed=null; trace('Ключ проверен пробным запросом и сохранён в Keystore. Дальше приложение говорит с DeepSeek напрямую — без своего сервера.','i'); return render() }
+      K.ms='0,4 с'; K.stage='done'; S.w.key='ok'; S.dismissed=null; trace('Ключ проверен пробным запросом и сохранён в Keystore. Дальше приложение говорит с DeepSeek напрямую — без своего сервера.','i'); return render() }
     case 'addbrain': S.dialog={title:'Добавить мозг',text:'Любой OpenAI-совместимый API: адрес, имя модели, ключ. После проверки он появится в выборе мозга у режимов.',opts:[['Понятно','x']]}; return render();
     case 'brainpick': { const m=modeById(S.editMode); const ok=S.brains.filter(b=>!m.accepts.photo||b.caps.vision); S.dialog={title:'Мозг режима',radio:ok.map(b=>[b.id,b.title]),cur:m.brain,key:'__brain'}; return render() }
     case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
@@ -186,9 +189,14 @@ function onbNext(){
   if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null;
   if (S.onbStep>=ONB.length-1) return onbDone();
   S.onbStep++; if (ONB[S.onbStep]==='try' && (S.w.model==='none'||S.w.model==='broken')) S.onbStep++;   // голос не качали — пробовать нечем
-  if (ONB[S.onbStep]==='modes'){ S.modesK=0; S.modesAt=Date.now() }
   return render() }
-function onbDone(){ S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render() }
+function onbDone(){ S.onboarded=true; S.page='chat';
+  // Финал — в лист: он интереснее полноэкранного приложения, и так Вахтёр будет выглядеть каждый день. Без роли помощника
+  // настоящего листа нет (showSession может только активный помощник) — тогда разговор в приложении и баннер.
+  if (S.w.role!=='ours'){ trace('Помощник не выбран — показать лист нельзя: разговор в приложении, сверху баннер.','i'); return render() }
+  S.screen='home'; S.mode='main'; S.firstSheet=true; S.sideCue=true; S.firstClose=true; openOverlay('финал мастера');
+  trace('Мастер закончился листом: приложение уходит, VoiceInteractionService.showSession() — тот же лист, что по боковой кнопке. Сверху один раз — откуда он берётся.','p');
+  setTimeout(()=>{ if(S.sideCue){ S.sideCue=false; render() } },6000) }
 /** Шаг «Боковая кнопка»: «Настроить» открывает по очереди то, что ещё не настроено; «Позже» — один раз наше предупреждение. */
 const btnDone=()=>S.w.role==='ours'&&(S.w.profile==='unknown'||S.sideOk);
 function btnSetup(){ S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen=S.w.role!=='ours'?'sysrole':'sysside'; trace(S.screen==='sysrole'?'«Настроить» → экран «Цифровой помощник»: выберите «Вахтёр» и вернитесь.':'«Настроить» → экран боковой кнопки Samsung: «Нажатие и удержание» → «Цифровой помощник».','p'); return render() }
@@ -198,6 +206,7 @@ function btnLater(){
 async function dlgAct(k){
   if (k==='btnsetup') return btnSetup();
   if (k==='btnskip') return onbNext();
+  if (k==='tile_ok'){ S.tileAdded=true; trace('Плитка добавлена: шторка → «Вахтёр» открывает лист.','p'); return render() }
   if (k==='micsys') return micSys();
   if (k==='sysmicgo'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() }
   if (k&&k.startsWith('permfix:')) return permFix(k.slice(8));

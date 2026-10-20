@@ -39,8 +39,9 @@ function promptHtml(){
   return `<button class="mprompt" data-act="editmode:${m.id}"><span>${esc(m.prompt)}</span>${I.edit}</button>`;
 }
 function feedHtml(inSheet){
+  if (!S.feed.length && inSheet && S.firstSheet && S.mode==='main') return sheetEmpty();
   if (!S.feed.length && curMode().hint && (inSheet || S.mode!=='main')) return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
-  if (!S.feed.length) return inSheet ? '<div class="feed"></div>' : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
+  if (!S.feed.length) return inSheet ? sheetEmpty() : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
   return `<div class="feed">${S.feed.map(it=>itemHtml(it,inSheet)).join('')}</div>`;
 }
 function itemHtml(it,inSheet){
@@ -114,8 +115,8 @@ function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accep
 /** o.into='try' — проба диктовки в первом запуске: та же кнопка и те же жесты, без вкладок режимов и вложений. */
 function composerHtml(o={}){
   const tabs=o.into?'':modeTabs(), into=o.into?` data-into="${o.into}"`:'';
-  // «Вы к кому?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
-  const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вы к кому?';
+  // «Вам чего?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
+  const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вам чего?';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'recmic':''} ${S.recog?'proc':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   // Запись — как в приложении (кнопка, полоса и замок Писаря, pisar/overlay): белая полоса «● 0:07 ‹ ‹ Отмена», к кнопке — без скругления;
   // кнопка красная с ореолами; над ней белый замок. Без рук — на кнопке «Отправить», замок закрыт (зелёный кружок).
@@ -123,6 +124,7 @@ function composerHtml(o={}){
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
   if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="lockcue shut">${I.lock}</div><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
+  if (o.into==='try') return `<div class="cwrap"><div class="composer"><div class="tryhint">Зажмите и говорите</div>${mic}</div></div>`;
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
   const canAttach = A.file || A.photo;
@@ -195,15 +197,17 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>vahter:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
     ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
   </div></div></div>` }
-function keyBody(onb){ const K=S.keyCheck, b=brainById('deepseek');
-  const ck=K?K.checks.map(c=>`<div class="ck ${c.s}"><span class="s">${c.s==='ok'?'✓':c.s==='bad'?'!':''}</span><span>${c.t}${c.d?`<small>${c.d}</small>`:''}</span></div>`).join(''):'';
-  return `${onb?'<div class="klbl">Ключ DeepSeek API — с platform.deepseek.com. Хранится в защищённом хранилище телефона.</div>':'<div class="h2">Ключ DeepSeek</div><p style="color:var(--soft);margin:0 0 12px">Хранится в защищённом хранилище телефона (Keystore).</p>'}
-    <input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="sk-…" autocomplete="off" spellcheck="false">
-    <div style="display:flex;justify-content:flex-end;gap:6px;margin:8px 0 12px"><button class="tbtn" data-act="keypaste">Вставить</button><button class="fbtn" data-act="keycheck">Проверить</button></div>
-    ${K?`<div class="checks">${ck}</div>`:''}${K&&K.stage==='bad'?`<div class="note bad">${K.err}</div>`:''}${S.w.key==='ok'&&K&&K.stage==='done'?'<div class="note ok">Готово. Режимы отвечают через DeepSeek.</div>':''}
-    ${onb?'<p class="khm">Hermes — подключить потом: Настройки → «Мозги».</p>':''}` }
+/** Ключ DeepSeek. Проверки (формат, связь, ключ, модель, фото) идут внутри — на экране одна строка: «Подключаю…», итог или что не так. */
+function keyBody(onb){ const K=S.keyCheck;
+  const res = !K ? '' : K.stage==='run' ? '<div class="kres run"><span class="spin"></span>Подключаю…</div>'
+    : K.stage==='bad' ? `<div class="kres bad"><b>!</b>${K.err}</div>`
+    : `<div class="kres ok"><b>✓</b><span>DeepSeek подключён · отвечает за ${K.ms}<small>понимает фото — фото-режимы доступны</small></span></div>`;
+  return `${onb?'':'<div class="h2">Ключ DeepSeek</div><p style="color:var(--soft);margin:0 0 12px">Хранится в защищённом хранилище телефона (Keystore).</p>'}
+    <div class="kfld"><input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="Ключ API · sk-…" autocomplete="off" spellcheck="false"><button class="intool" data-act="keypaste" aria-label="Вставить">${I.paste}</button></div>
+    ${onb?'<p class="klbl">Где взять ключ? <b>platform.deepseek.com</b> → API keys. Хранится в защищённом хранилище телефона.</p>':'<div style="display:flex;justify-content:flex-end;margin:8px 0 12px"><button class="fbtn" data-act="keycheck">Проверить</button></div>'}
+    ${res}${onb?`<div class="khm">${I.info}<span>Другие модели — в настройках</span></div>`:''}` }
 function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title);
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="${S.brainRet?'brainback':'settings'}" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
   <div class="scroll"><div class="mform">
     <div class="setcard">${li(I.srv,'Адрес',b.url)}${li(I.spark,'Модель',b.model)}</div>
     ${keyBody(false)}
@@ -240,15 +244,16 @@ function about(){
 }
 
 /* Первый запуск — один мастер: каждый экран сначала объясняет (живая сцена), потом сразу настраивает то, о чём рассказал.
-   Голос первым: модель качается, пока настраивают кнопку; потом проба, режимы, мозг — последним. */
-const ONB=['welcome','voice','button','try','modes','brain'];
+   Голос первым: модель качается, пока настраивают кнопку; потом проба, свои режимы, «сразу голос / камера», мозг — последним; финал — в листе. */
+const ONB=['welcome','voice','button','try','rules','quick','brain'];
 function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
 function onb(){
   const st=ONB[S.onbStep];
   if (st==='try') return tryStep();
-  if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="wscroll" id="wscroll"><div class="art">${introScene('brain')}</div>
-    <h2>Сначала сам, сложное — наверх</h2><p>Будильник, таймер, звонок — телефон делает сам, даже без сети. Сложное — наверх: DeepSeek в облаке по ключу или свой сервер Hermes.</p>${keyBody(true)}</div>
-    ${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Открыть','onbnext']:null)}</div></div>`;
+  if (st==='brain'){ const K=S.keyCheck, done=S.w.key==='ok'&&K&&K.stage==='done', run=K&&K.stage==='run';
+    return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="wscroll" id="wscroll"><div class="art">${introScene('brain')}</div>
+    <h2>Подключите мозг</h2><p>Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</p>${keyBody(true)}</div>
+    ${navBar(done?null:['Позже','onbnext'], done?['Открыть','onbnext']:run?['Подключаю…','noop']:['Подключить','keycheck'])}</div></div>` }
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
@@ -256,20 +261,28 @@ function onb(){
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null;
     if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>` }
-  // Сцена — гонка «приложение против кнопки», под ней сразу оба переключателя. Пропустить, не поняв, нельзя: пока не настроено,
-  // главная кнопка — «Настроить» (открывает по очереди), «Позже» — через предупреждение. На незнакомом телефоне боковой кнопки
-  // может не быть — требуем только помощника, вызов — «Домой» или жест.
-  if (st==='button'){ const role=S.w.role==='ours', known=S.w.profile!=='unknown', ok=btnDone();
+  // Сцена — гонка «приложение против кнопки», под ней — что настроить. Единственное действие на любом Android — «Цифровой помощник»
+  // (роль есть везде с Android 10). Кнопка Samsung «Цифровой помощник» открывает того, кто выбран помощником: если удержание
+  // уже на нём (по умолчанию в One UI 7+), выбрали Вахтёра — кнопка заработала сама, вторая строка сразу с ✓. Иначе — «Настроить».
+  // Незнакомый телефон: что на кнопке, не прочитать — проба «зажмите кнопку», не вышло — способы вызова и плитка в шторке.
+  if (st==='button'){ const role=S.w.role==='ours', known=S.w.profile!=='unknown', ok=btnDone(), sideReady=known&&S.sideOk;
     art=introScene(1); h='Своих — без очереди';
-    p=ok?(known?'Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.':'Готово: Вахтёр — помощник телефона.')
+    p=ok?(known?'Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.':S.sideProbe==='yes'?'Готово: Вахтёр открывается кнопкой.':'Готово: Вахтёр — помощник телефона.')
+      :sideReady?'Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Кнопка уже открывает помощника — осталось выбрать помощником Вахтёра.'
       :known?'Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Включается в настройках телефона, «Настроить» откроет их по очереди.'
       :'Вызвали помощника — и сразу вопрос, без приложений и новых чатов. Помощника выбирают в настройках телефона, «Настроить» откроет нужный экран.';
-    const sideSum=S.sideOk?'Зажатие — цифровой помощник':S.w.side==='bixby'?'Сейчас Bixby':S.w.side==='double'?'Помощник — на двойном нажатии':'Сейчас меню выключения';
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${known?li(I.btn,'Боковая кнопка',S.sideOk?sideSum:'Не настроено · '+sideSum.toLowerCase(),'sysside',!S.sideOk,S.sideOk?I.ok:''):li(I.btn,'Вызов','Долгое нажатие «Домой» или жест')}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
+    const sideSum={bixby:'сейчас Bixby',double:'помощник — на двойном нажатии',power:'сейчас меню выключения'}[S.w.side];
+    const row2 = known
+      ? (S.sideOk ? li(I.btn,'Боковая кнопка','Зажатие — цифровой помощник · настраивать не нужно','sysside',false,I.ok) : li(I.btn,'Боковая кнопка','Не настроено · '+sideSum,'sysside',true))
+      : !role ? li(I.btn,'Вызов','Кнопка или жест — зависит от телефона')
+      : S.sideProbe==='yes' ? li(I.btn,'Вызов','Работает — открылся лист',null,false,I.ok)
+      : S.sideProbe==='no' ? li(I.btn,'Вызов','Долгое нажатие «Домой» или жест из угла','sysside')+(S.tileAdded?li(I.list,'Плитка в шторке','Добавлена',null,false,I.ok):li(I.list,'Плитка в шторке','Вахтёр — из быстрых настроек','addtile'))
+      : `<div class="sprobe"><span>${I.btn}</span><p>Зажмите кнопку, на которой у вас помощник. Открылся лист?</p><div class="ba"><button class="tbtn" data-act="sideno">Нет</button><button class="tbtn" data-act="sideyes">Да</button></div></div>`;
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${row2}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
     if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
-  // Режимы: две сцены сменяют друг друга сами (таймер в intro.js) или по переключателю. Настраивать нечего.
-  if (st==='modes'){ const k=S.modesK||0; art=`<div>${introScene(k?3:2)}<div class="mtog"><button class="${k?'':'on'}" data-act="modes0">Помнит правила</button><button class="${k?'on':''}" data-act="modes1">Сразу нужное</button></div></div>`;
-    h='Запомнил, кто зачем пришёл'; p='Режим помнит ваши правила — язык перевода, вкусы, аллергию — и открывается сразу как надо: вопросы — голосом, меню и вывески — камерой.'; skip=null }
+  // Режимы — два экрана: свои режимы (правила один раз) и «сразу нужное» (на одно нажатие меньше). Настраивать нечего.
+  if (st==='rules'){ art=introScene(2); h='Запомнил с первого раза'; p='Создайте свой режим: опишите правила один раз — язык перевода, вкусы, аллергию. Дальше хватает одной кнопки.'; skip=null }
+  if (st==='quick'){ art=introScene(3); h='Знает, кто зачем пришёл'; p='Переводчик открывается сразу голосом, «Что это?» — сразу камерой. На одно нажатие меньше.'; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
@@ -277,18 +290,21 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
   <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
     <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
   <div class="lock">🔒 чужих не пустит: голос остаётся здесь</div></div>` }
-/** Первый запуск, последний шаг: проба диктовки, как «Попробуйте здесь…» в Писаре, — но настоящей кнопкой листа. */
-/** Первый запуск: проба голоса — показать, что пишется быстро. Одна настоящая строка ввода листа; надиктованное — пузырями
- *  над ней с отметкой «готово за 0,4 с · на телефоне». Чего не хватает — одной строкой посередине; микрофон спрашивает сама кнопка. */
+/** Первый запуск: проба диктовки — листок, как «Попробуйте здесь…» в Писаре. Последняя фраза крупно, под ней — за сколько
+ *  распознано на телефоне; прошлые мельче выше. Поля ввода и вкладок нет: мозгу ничего не уходит. Кнопка и жесты — те же, что в листе. */
 function tryStep(){
-  const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', live=rec?recText():'', shots=S.tryShots||[];
+  const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[];
   const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %`:S.w.model!=='ready'?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
-  const feed = shots.map(x=>`<div class="tshot"><div class="me">${esc(x.text)}</div><span class="tfast">⚡ ${(x.ms/1000).toFixed(1).replace('.',',')} с · на телефоне</span></div>`).join('')
-    + (rec||S.recog?`<div class="tshot"><div class="me tlive"><div class="eq sm" data-mode="${rec?'speak':'wave'}"></div></div></div>`:'');
-  const empty = !shots.length&&!rec&&!S.recog ? `<div class="tempty">${why?`<span class="twhy">${why}</span>`:'<span class="tarrow">Скажите что-нибудь — текст появится здесь</span>'}</div>` : '';
+  const sec = ms => (ms/1000).toFixed(1).replace('.',',');
+  const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
+  const main = rec ? `<div class="tnow"><div class="eq" data-mode="speak"></div><span class="tst">Слушаю…</span></div>`
+    : S.recog ? `<div class="tnow"><div class="eq" data-mode="wave"></div><span class="tst">Распознаю на телефоне…</span></div>`
+    : last ? `<div class="tnow txt" data-k="${shots.length}"><div class="tbig">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)} с</span></div>`
+    : `<div class="tnow"><span class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь — текст появится здесь'}</span></div>`;
   return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2>
-    <p>Зажмите микрофон, скажите фразу и отпустите. ${side?'Так же — в листе по боковой кнопке.':'Так же работает в листе.'}</p>
-    <div class="tfeed">${empty}${feed}</div>
+    <p>Зажмите микрофон, скажите фразу и отпустите. Распознаётся на телефоне, никуда не уходит.</p>
+    <div class="tpaper">${old.length&&!rec&&!S.recog?`<div class="told">${old.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div>`:''}${main}</div>
+    <p class="tside">${side?'Так же — в листе по боковой кнопке.':'Так же — в листе Вахтёра.'}</p>
     ${rec||S.recog?'':'<div class="ttips"><span>⌃ вверх — без рук</span><span>‹ влево — отмена</span></div>'}
     ${composerHtml({into:'try'})}${navBar(null,['Далее','onbnext'])}</div></div>` }
 function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
@@ -350,6 +366,17 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
     <div class="crow"><button class="cplus" data-act="camadd" aria-label="Оставить кадр и снять ещё" ${c.editIdx==null&&c.frames.length>=camMax()-1?'disabled':''}>${I.plus}</button><button class="csend" data-act="camsend" aria-label="Отправить${c.frames.length?' все кадры':''}">${I.send}${(c.frames.length+(c.editIdx==null?1:0))>1?`<b class="ccount">${c.frames.length+(c.editIdx==null?1:0)}</b>`:''}</button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button></div>
   </div>${ins?modeTabs()+'</div>':''}</div>` }
 function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Вахтёр</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
+/** Пустой лист в первый раз (финал мастера) и пока ничего не спрашивали: «Вам чего?» и чипы, которые работают без мозга. */
+function sheetEmpty(){
+  if (S.mode!=='main' || !S.firstSheet) return '<div class="feed"></div>';
+  const c=['⏰ Поставь будильник','⏱ Таймер на 5 минут'].concat(brainReady()?['Что посмотреть в Казани?']:[]);
+  return `<div class="feed"><div class="sempty"><b>Вам чего?</b><div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div></div></div>` }
+/** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
+function sheetStrip(){
+  if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
+  if (curMode().id==='main' && !brainReady() && brainOf().kind==='api') return `<div class="ostrip"><span>🧠</span><p>Мозг не подключён — пока только команды телефона</p><button class="tbtn" data-act="brainfromsheet">Подключить</button></div>`;
+  return '' }
+function sideCue(){ if (!S.sideCue || !S.ov) return ''; return `<div class="sidecue">${S.w.profile==='unknown'?'Так же — долгое нажатие «Домой»':'Так открывается по боковой кнопке'}<i></i></div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
@@ -358,9 +385,9 @@ function overlay(){
       <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
       <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button>
       <button class="iconbtn" data-act="close" aria-label="Закрыть">${I.x}</button></div>
-    ${promptHtml()}<div class="scroll" id="oscroll">${feedHtml(true)}</div>
+    ${promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(true)}</div>
     ${liveHtml()}${composerHtml()}
-  </div></div>`;
+  </div>${sideCue()}</div>`;
 }
 function dialog(){ const D=S.dialog; if(!D) return '';
   if (D.radio) return `<div class="scrim"><div class="dlg rdlg"><h3>${D.title}</h3>${D.radio.map(([v,t])=>`<button class="ropt" data-radio="${v}"><span class="rad ${D.cur===v?'on':''}"></span>${t}</button>`).join('')}<div class="dfoot"><button class="tbtn" data-dlgclose>Отмена</button></div></div></div>`;
@@ -371,7 +398,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep+'|'+(S.modesK||0)],['.scv',()=>'voice']];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();

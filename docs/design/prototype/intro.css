@@ -207,28 +207,24 @@
 .scv .lock{margin-top:10px;font-size:12px;font-weight:500;color:var(--local-d);background:var(--local-t);border-radius:999px;padding:5px 12px;white-space:nowrap;opacity:0;animation:svl var(--T) infinite}
 @keyframes svl{0%,52%{opacity:0;transform:translateY(6px)}58%,96%{opacity:1;transform:none}100%{opacity:0}}
 
-/* ── мастер, «Режимы»: две сцены сменяют друг друга (правила режима ↔ два телефона), переключатель под ними ── */
-.mtog{display:flex;gap:6px;justify-content:center;margin-top:12px}
-.mtog button{font:inherit;font-size:12.5px;font-weight:500;color:var(--soft);background:#ECEEE8;border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
-.mtog button.on{color:var(--ink);background:var(--local-t);box-shadow:inset 0 0 0 1.5px var(--local)}
-
-/* ── мастер, «Мозг»: простое — сам на телефоне (даже без сети); сложное — пакет вверх, к DeepSeek в облаке или своему Hermes, ответ обратно ── */
+/* ── мастер, «Мозг»: простое — сам на телефоне (даже без сети); сложное — пакет вверх, к «Мозгу Вахтёра» в облаке, ответ обратно.
+   Мозг абстрактный: под именем тихо сменяется DeepSeek · OpenAI · Hermes ── */
 .sc5{--T:7s;height:290px}
-.sc5 .ups{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:6px}
+.sc5 .ups{position:absolute;left:0;right:0;top:0;display:flex;justify-content:center}
 .sc5 .up{flex:1;min-width:0;display:flex;gap:8px;align-items:center;border-radius:16px;padding:9px 10px;background:var(--surf);border:1.5px solid var(--line);height:66px}
 .sc5 .up b{display:block;font-size:13.5px}
 .sc5 .up small{display:block;font-size:10.5px;line-height:1.25;color:var(--soft)}
 .sc5 .ui{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:18px}
-.sc5 .ds{border-color:var(--server);background:var(--server-t);animation:dsg var(--T) infinite}
-.sc5 .ds .ui{background:#fff;color:var(--server)}
-.sc5 .ds small{color:var(--server)}
+.sc5 .mz{flex:none;width:232px;position:relative;border-color:var(--server);background:var(--server-t);animation:dsg var(--T) infinite}
+.sc5 .mz .ui{background:#fff;font-size:17px}
+.sc5 .mz b{font-size:15px}
+.sc5 .mz .cl{position:absolute;right:12px;top:8px;font-size:22px;color:#B7C2F4}
+.sc5 .who{position:relative;height:14px;overflow:hidden;color:var(--server)!important}
+.sc5 .who i{position:absolute;left:0;font-style:normal;opacity:0;animation:who 6s infinite}
+.sc5 .who i:nth-child(2){animation-delay:2s}.sc5 .who i:nth-child(3){animation-delay:4s}
+@keyframes who{0%{opacity:0;transform:translateY(8px)}6%,30%{opacity:1;transform:none}36%,100%{opacity:0;transform:translateY(-8px)}}
 @keyframes dsg{0%,58%{box-shadow:0 0 0 0 rgba(47,75,232,0)}61%,66%{box-shadow:0 0 0 6px rgba(47,75,232,.22)}72%,100%{box-shadow:0 0 0 0 rgba(47,75,232,0)}}
-.sc5 .hm{border-style:dashed}
-.sc5 .srv{background:#ECEEE8;display:flex;flex-direction:column;gap:3px;padding:6px 6px}
-.sc5 .srv i{display:block;height:4px;width:18px;border-radius:2px;background:#8A93A5}
-.sc5 .srv i:first-child{background:var(--ok)}
-.sc5 .or{flex:none;font-size:11px;color:var(--soft)}
-.sc5 .wire{position:absolute;top:70px;height:44px;left:calc(25% - 4px);width:2px;background:repeating-linear-gradient(var(--server) 0 4px,transparent 4px 8px);opacity:.55}
+.sc5 .wire{position:absolute;top:70px;height:44px;left:calc(50% - 1px);width:2px;background:repeating-linear-gradient(var(--server) 0 4px,transparent 4px 8px);opacity:.55}
 .sc5 .pk{position:absolute;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--server);top:40px;opacity:0;animation:pk var(--T) infinite}
 @keyframes pk{0%,50%{top:40px;opacity:0}51%{opacity:1}59%{top:-6px;opacity:1;background:var(--server)}61%,64%{top:-6px;opacity:0}65%{top:-6px;opacity:1;background:var(--local)}72%{top:40px;opacity:1;background:var(--local)}73%,100%{top:40px;opacity:0}}
 .sc5 .ms{top:112px;border-radius:22px}

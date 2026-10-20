@@ -33,20 +33,13 @@ function introScene(k) {
       </div>`;
   }
   if (k === 'brain') return `<div class="sc sc5">
-    <div class="ups"><div class="up ds"><span class="ui">☁</span><span><b>DeepSeek</b><small>облако · по ключу</small></span></div><span class="or">или</span>
-      <div class="up hm"><span class="ui srv"><i></i><i></i><i></i></span><span><b>Hermes</b><small>свой сервер: память, поиск, Telegram</small></span></div></div>
+    <div class="ups"><div class="up mz"><span class="ui">🧠</span><span><b>Мозг Вахтёра</b><small class="who"><i>DeepSeek</i><i>OpenAI</i><i>Hermes</i></small></span><span class="cl">☁</span></div></div>
     <div class="wire"><i class="pk"></i></div>
     <div class="ms"><div class="g"></div><div class="h"><i></i><b>Ассистент</b> · на связи</div>
       <div class="pa"><div class="act2"><span class="ic">⏰<span class="ok">✓</span></span><span><b>Будильник поставлен · 7:00</b><small>сам, на телефоне</small></span></div>
         <div class="act2"><span class="ic">⏱<span class="ok">✓</span></span><span><b>Таймер запущен · 1:00</b><small>осталось 0:59</small></span></div>
         <span class="off">✈ нет сети — всё равно сам</span></div>
-      <div class="pb"><div class="me">Спланируй выходные в Казани</div><div class="ca"><div class="call">☎ Звоню наверх · DeepSeek…</div>
+      <div class="pb"><div class="me">Спланируй выходные в Казани</div><div class="ca"><div class="call">☎ Звоню наверх…</div>
         <div class="ai">Суббота — Кремль и Баумана, воскресенье — Свияжск на теплоходе.</div></div></div></div></div>`;
 }
 
-/* «Режимы»: сцены сменяют друг друга, каждая — один свой цикл (правила — 6 с, два телефона — 2 × 3,6 с). */
-setInterval(() => {
-  if (S.screen !== 'app' || S.onboarded || ONB[S.onbStep] !== 'modes' || S.dialog) return;
-  if (Date.now() - (S.modesAt || 0) < (S.modesK ? 7200 : 6000)) return;
-  S.modesK = S.modesK ? 0 : 1; S.modesAt = Date.now(); render();
-}, 300);

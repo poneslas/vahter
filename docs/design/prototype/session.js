@@ -83,7 +83,9 @@ function permBack(){ const R=S.permRet; if(!R) return false; S.permRet=null; S.s
 /** На заблокированном экране по умолчанию ничего не открывается: сначала разблокировка (тот же путь, что проверен на S24), микрофон до неё не включается. */
 async function lockGate(src){ S.ov=null; S.unlocking=true; render(); trace('На заблокированном экране — «Не открывать» (по умолчанию): сначала разблокировка, микрофон не включается. Настройки → Действия на телефоне → Экран блокировки.','p');
   await wait(1100); S.unlocking=false; S.w.locked=false; S.screen='home'; openOverlay(src) }
-function closeOverlay(){ token++; S.busy=false; S.ov=null; render() }
+function closeOverlay(){ token++; S.busy=false; S.ov=null; S.sideCue=false;
+  if (S.firstClose){ S.firstClose=false; S.toast={title:'Вахтёр на месте',text:'Зажмите боковую кнопку, когда понадобится.'}; setTimeout(()=>{ S.toast=null; render() },4000) }
+  render() }
 /** Разрешение на уведомления спрашиваем, пока лист ещё виден: при первом вопросе мозгу, пока он думает. После закрытия окна спросить уже нечем. */
 function maybeAskNotif(){ if (S.w.notif==='ok'||S.notifAsked||!S.ov) return; S.notifAsked=true; S.feed.push({t:'notifask'}); trace('Уведомления спрашиваем, пока лист виден: при закрытии листа окна уже нет, системный запрос показать нечем.','p') }
 async function expand(msgId){

@@ -105,7 +105,7 @@ function modeSummary(m){
   return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
 
 const fresh = () => { const o = ({
-  w:{ net:'wifi', key:'none', server:'none', side:'power', profile:'samsung', perms:{camera:'ok',calendar:'ok',location:'ask',contacts:'ok',dnd:'ask'}, model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
+  w:{ net:'wifi', key:'none', server:'none', side:'assistant', profile:'samsung', perms:{camera:'ok',calendar:'ok',location:'ask',contacts:'ok',dnd:'ask'}, model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
   modelPct:0, screen:'home', page:'chat', onbStep:0, onboarded:false,
   dialog:null, toast:null, ov:null, pair:null, tg:[], failNext:null,
   modes:[...clone(BUILTIN_MODES), clone(SAMPLE_CUSTOM)], brains:clone(BRAINS), keyCheck:null, mode:'main', feeds:{}, drafts:{}, editMode:null, shortcuts:false, attachMenu:false, pendingUp:null, idle:0,
