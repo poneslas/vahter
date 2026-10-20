@@ -130,7 +130,7 @@ function composerHtml(o={}){
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
   if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="lockcue shut">${I.lock}</div><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
-  if (o.into==='try') return `<div class="cwrap"><div class="composer"><div class="tryhint">Зажмите и говорите</div>${mic}</div></div>`;
+  if (o.into==='try') return `<div class="cwrap"><div class="composer"><div class="tryhint">вверх — без рук · влево — отмена</div>${o.pulse?mic.replace('class="micbtn','class="micbtn pulse'):mic}</div></div>`;
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
   const canAttach = A.file || A.photo;
@@ -297,23 +297,32 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
   <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
     <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
   <div class="lock">🔒 чужих не пустит: голос остаётся здесь</div></div>` }
-/** Первый запуск: проба диктовки — листок, как «Попробуйте здесь…» в Писаре. Последняя фраза крупно, под ней — за сколько
- *  распознано на телефоне; прошлые мельче выше. Поля ввода и вкладок нет: мозгу ничего не уходит. Кнопка и жесты — те же, что в листе. */
+/** Первый запуск: проба голоса. Герой экрана — эквалайзер Вахтёра. Пока распознавание качается, его столбики и есть полоска
+ *  загрузки: готовые шевелятся, остальные — точки, поперёк — шов («рот зашит», микрофон серый, «Пропустить»). Докачалось — шов
+ *  лопается, столбики оживают, кнопка один раз пульсирует. Дальше фраза — крупно прямо на фоне, без поля и подложки; прошлые
+ *  бледнеют выше. Внизу одна тихая строка жестов у кнопки — той же, что в листе. */
+const TEQ_N = 13;
+function teqLoading(pct){
+  const on = Math.round(pct/100*TEQ_N);
+  return `<div class="teq load">${Array.from({length:TEQ_N},(_,i)=>`<i class="${i<on?'on':''}" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('')}<span class="seam">${'<b></b>'.repeat(7)}</span></div>`;
+}
 function tryStep(){
-  const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[];
-  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %`:S.w.model!=='ready'?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
+  const rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[], loading=S.w.model==='loading', ready=S.w.model==='ready';
+  const freed = ready && S.modelReadyAt && Date.now()-S.modelReadyAt<1600;   // только что докачалось — шов лопается
+  const why = S.w.model!=='ready'&&!loading?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
   const sec = ms => (ms/1000).toFixed(1).replace('.',',');
   const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
-  const main = rec ? `<div class="tnow"><div class="eq" data-mode="speak"></div><span class="tst">Слушаю…</span></div>`
-    : S.recog ? `<div class="tnow"><div class="eq" data-mode="wave"></div><span class="tst">Распознаю на телефоне…</span></div>`
-    : last ? `<div class="tnow txt" data-k="${shots.length}"><div class="tbig">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)} с</span></div>`
-    : `<div class="tnow"><span class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь — текст появится здесь'}</span></div>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2>
-    <p>Зажмите микрофон, скажите фразу и отпустите. Распознаётся на телефоне, никуда не уходит.</p>
-    <div class="tpaper">${old.length&&!rec&&!S.recog?`<div class="told">${old.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div>`:''}${main}</div>
-    <p class="tside">${side?'Так же — в листе по боковой кнопке.':'Так же — в листе Вахтёра.'}</p>
-    ${rec||S.recog?'':'<div class="ttips"><span>⌃ вверх — без рук</span><span>‹ влево — отмена</span></div>'}
-    ${composerHtml({into:'try'})}${navBar(null,['Далее','onbnext'])}</div></div>` }
+  const hero = loading ? `${teqLoading(S.modelPct)}<div class="tpct">${S.modelPct}${'\u00a0'}%</div>`
+    : `<div class="teq live ${freed?'freed':''}"><div class="eq" data-mode="${rec?'speak':'wave'}"></div>${freed?`<span class="seam pop">${'<b></b>'.repeat(7)}</span>`:''}</div>`;
+  const text = loading ? '<div class="tcap">Вахтёр учит русский…</div>'
+    : rec ? '<div class="tcap">Слушаю…</div>' : S.recog ? '<div class="tcap">Распознаю на телефоне…</div>'
+    : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
+    : `<div class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь'}</div>`;
+  const p = loading ? 'Вахтёр пока учит русский — подождите или попробуйте потом в листе.' : 'Зажмите микрофон и скажите что-нибудь — проверим, как слышно.';
+  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2><p>${p}</p>
+    <div class="tstage">${old.length&&!rec&&!S.recog&&!loading?`<div class="told">${old.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div>`:''}
+      <div class="thero">${hero}</div><div class="ttext">${text}</div></div>
+    ${composerHtml({into:'try', pulse:freed})}${navBar(null, loading?['Пропустить','onbnext']:['Далее','onbnext'])}</div></div>` }
 function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
 function connectBody(onb){
@@ -417,7 +426,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.teq.freed',()=>S.modelReadyAt],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();
