@@ -45,8 +45,11 @@ document.addEventListener('click', async e=>{
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
-  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; if(S.ov){ S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается.') } S.page='mode'; return render() }
+  // «Назад» со страницы режима — туда, откуда пришли: лист, разговор или список режимов в настройках.
+  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.modeBack=S.ov?'sheet':S.page==='chat'||!S.page?'chat':'settings';
+    if(S.ov){ S.fromSheet={screen:S.screen==='app'?'home':S.screen}; S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается. «Назад» вернёт лист.') } S.page='mode'; return render() }
   switch(a){
+    case 'modeback': { const b=S.modeBack; S.modeBack=null; if(b==='sheet'){ const r=S.fromSheet; S.fromSheet=null; S.screen=r?.screen||'home'; S.page='chat'; openOverlay('снова — назад со страницы режима'); return render() } S.page=b==='chat'?'chat':'settings'; return render() }
     case 'promptreset': { const m=modeById(S.editMode), d=BUILTIN_MODES.find(b=>b.id===m.id); m.prompt=d.prompt; trace('Промпт встроенного режима — снова из текстов приложения: обновится с новой версией и языком.','i'); return render() }
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();

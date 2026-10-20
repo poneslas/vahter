@@ -169,7 +169,7 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
   const tog=(k,t,ic,lock)=>(lock||m.builtin)?`<span class="mchip" aria-pressed="true" style="cursor:default">${ic}${t}</span>`:`<button class="mchip" data-maccept="${k}" aria-pressed="${A[k]}">${ic}${t}</button>`;
   const field=(k,label,ph)=>`<label class="fl"><span>${label}</span><input class="fin" data-mfield="${k}" value="${esc(m[k])}" placeholder="${ph}"></label>`;
   const sw=(on,k,t,s,ic)=>`<div class="lirow">${li(ic,t,s)}<button class="swbtn" data-mbool="${k}" role="switch" aria-checked="${on}"><span class="sw ${on?'':'off'}"></span></button></div>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${I[m.icon]}${esc(m.title)}</b><small>${m.builtin?'встроенный режим':'свой режим · id '+m.id+', не меняется'}</small></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="modeback" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${I[m.icon]}${esc(m.title)}</b><small>${m.builtin?'встроенный режим':'свой режим · id '+m.id+', не меняется'}</small></div></div>
   <div class="scroll"><div class="mform">
     ${m.builtin&&!main?'<div class="note">Встроенный режим: промпт можно изменить, сам режим — включить или выключить в «Настройках». Чтобы настроить всё по-своему — создайте свой режим «+».</div>':''}
     ${main||m.builtin?'':`<div class="mrow">${field('title','Название','Как назвать вкладку')}</div>

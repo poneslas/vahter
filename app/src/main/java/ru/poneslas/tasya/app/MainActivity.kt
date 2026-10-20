@@ -96,16 +96,24 @@ class MainActivity : ComponentActivity() {
 
     private fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
+        sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
         i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
         i.getStringExtra(EXTRA_PAGE)?.let { p -> stack.clear(); stack.add("chat"); if (p != "chat") { if (p != "settings" && !p.startsWith("onb:")) stack.add("settings"); stack.add(p) } }
+        // Полоска промпта в листе → страница режима; «Назад» с неё возвращает лист, а не настройки.
+        i.getStringExtra(EXTRA_EDIT_MODE)?.let { id -> stack.clear(); stack.add("chat"); stack.add("mode:$id"); sheetReturn = "mode:$id" }
         if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { if (stack.last() != "settings") stack.add("settings"); stack.add("mode:" + App.instance.conversation.addMode()) }
     }
 
     fun go(page: String) { stack.add(page) }
-    fun back() { if (stack.size > 1) stack.removeAt(stack.lastIndex) else finish() }
+    /** Страница, с которой «Назад» сворачивает обратно в лист (пришли на неё из листа). */
+    private var sheetReturn: String? = null
+    fun back() {
+        if (sheetReturn != null && stack.last() == sheetReturn) { sheetReturn = null; collapse(); return }
+        if (stack.size > 1) stack.removeAt(stack.lastIndex) else finish()
+    }
     fun choose(d: ChoiceDialog) { dialog = d }
 
     /** Свернуть обратно в лист: finish + showSession (Архитектура 3.1). */
@@ -423,6 +431,7 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_FROM_SHEET = "from_sheet"
         const val EXTRA_SETTINGS = "settings"
         const val EXTRA_PAGE = "page"
+        const val EXTRA_EDIT_MODE = "editMode"
         const val EXTRA_NEW_MODE = "new_mode"
         const val EXTRA_ASK_PERM = "ask_perm"
         const val REQ_MIC = 11
