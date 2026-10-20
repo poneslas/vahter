@@ -152,10 +152,10 @@ function settings(){
     ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
-    ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросим, когда понадобится','askmic',w.mic==='denied')}
+    ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросит при первой записи','askmic',w.mic==='denied')}
     <div class="lh">Мозги</div>
     ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title, b.kind==='api'?(S.w.key==='ok'?`${b.model} · ключ есть`:S.w.key==='bad'?'Ключ не принимается':'Нет ключа'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Свой сервер: память, поиск, Telegram'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
-    ${li(I.plus,'Добавить мозг','Любой OpenAI-совместимый API: адрес, модель, ключ','addbrain')}
+    ${li(I.plus,'Добавить мозг','Адрес, модель и ключ','addbrain')}
     <div class="lh">Уведомления</div>
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
@@ -183,7 +183,7 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
     ${main||m.builtin?'':`${field('hint','Подсказка в пустом разговоре','Что сюда присылать')}${field('placeholder','Подсказка в поле ввода','Вопрос к фото')}`}
     <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('file','Файл',I.doc)}</div></div>
     ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки и ярлыка — сразу видоискатель. Спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки и ярлыка — сразу слушает.'}</p></div>`:''}
-    <div class="setcard">${main?li(I.shield,'Действия телефона','Все — таймер, календарь, будильник…'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены — таймер, календарь, будильник…':'Выключены — меньше инструментов, ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский (GigaAM). Другие языки — позже')}${li(I.wave,'Озвучка ответа','Позже: язык и голос для режима','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
+    <div class="setcard">${main?li(I.shield,'Действия телефона','Все'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены':'Выключены · ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский')}${li(I.wave,'Озвучка ответа','Позже','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
     <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}</div>
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>tasya:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
     ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
@@ -227,8 +227,8 @@ function about(){
     ${u.state==='checking'?'<div class="mnote">Проверяю…</div>':''}${u.state==='latest'?'<div class="note ok">Это последняя версия</div>':''}${u.state==='fail'?'<div class="note bad">Не удалось проверить: нет связи</div>':''}
   </div>
   <div class="list">
-    ${li(I.dl,'Проверить обновления','Сами проверяем при запуске и раз в 6 часов','check')}
-    ${li(I.wave,'Модели распознавания', S.w.model==='ready'?'GigaAM v3 · потоковая · определение речи':'Не скачаны','dl')}
+    ${li(I.dl,'Проверить обновления','Автоматически раз в 6 часов','check')}
+    ${li(I.wave,'Модели распознавания', S.w.model==='ready'?'Русский · 225 МБ':'Не скачаны','dl')}
   </div></div></div>`;
 }
 
@@ -242,7 +242,7 @@ function onb(){
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка → цифровой помощник',S.w.side==='assistant'?'Готово':S.w.side==='bixby'?'Сейчас Bixby':'Сейчас меню выключения','sysside',false,S.w.side==='assistant'?I.ok:'')}</div>`; if(ok) skip=null }
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка',S.w.side==='assistant'?'Готово':S.w.side==='bixby'?'Сейчас Bixby':'Сейчас меню выключения','sysside',false,S.w.side==='assistant'?I.ok:'')}</div>`; if(ok) skip=null }
   if (st==='voice'){ art='<div style="font-size:64px;letter-spacing:-4px">▂▅▇▅▂</div>'; h='Голос на телефоне'; p=`Один раз скачать ${mb(MODEL_TOTAL)} МБ. Голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
