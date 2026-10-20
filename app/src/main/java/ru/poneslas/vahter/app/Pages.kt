@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import ru.poneslas.vahter.core.Primary
@@ -250,8 +251,8 @@ private fun Dictate(onText: (String) -> Unit) {
 }
 
 /**
- * Первый запуск (ui.js, onb): приветствие → боковая кнопка → голос → проба голоса → мозг (последним).
- * Сначала всё, что работает на телефоне; ничего не блокирует: пропущенное потом напомнит баннер.
+ * Первый запуск (ui.js, onb): приветствие → голос → боковая кнопка (пока качается модель) → проба голоса → мозг (последним).
+ * Ничего не блокирует, но кнопку не пропустить, не заметив: пока не настроено — «Настроить», «Позже» — через предупреждение.
  */
 @Composable
 fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
@@ -264,11 +265,12 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     @Suppress("UNUSED_VARIABLE") val r = activity.resumed.intValue // баг №1: перечитать после возврата из системных окон
     val steps = 5
     val running = dl as? ModelDownload.State.Running
-    // Голос не качали — пробовать нечем: с шага «Голос» сразу к мозгу.
+    // Голос не качали — пробовать нечем: с кнопки сразу к мозгу.
     val next: () -> Unit = { if (step >= steps - 1) onDone() else step += if (step == 2 && !installed && running == null) 2 else 1 }
     val mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     val role = activity.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
     val hasKey = remember(keyV) { app.hasKey(Brains.deepseek.id) }
+    var btnWarned by remember { mutableStateOf(false) }
 
     var skip: Pair<String, () -> Unit>? = tr(R.string.pg_pozzhe) to next
     var primary: Pair<String, () -> Unit>? = tr(R.string.pg_dalee) to next
@@ -289,38 +291,62 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 if (hasKey) { skip = null; primary = tr(R.string.pg_otkryt) to onDone } else primary = null
             }
             3 -> { TryStep(activity, role, running?.percent, installed, mic); skip = null }
-            else -> {
-                val title = when (step) { 1 -> tr(R.string.set_bokovaya_knopka); else -> tr(R.string.pg_golos_na_telefone) }
-                val text = when (step) { 1 -> tr(R.string.pg_android_razreshaet_vybrat_pomoshchnika_t); else -> tr(R.string.onb_voice_p, "225") }
+            2 -> {
+                // Боковая кнопка: на незнакомом телефоне её может не быть — тогда требуем только помощника.
+                val side = SideKey.read(activity)
+                val known = side != SideKey.State.UNKNOWN
+                val ok = role && (!known || side == SideKey.State.ASSISTANT)
                 Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) {
-                    if (step == 1) Icon(painterResource(Ic.power), null, Modifier.size(64.dp), tint = Ink.ink) else ru.poneslas.vahter.ui.VoiceArt()
+                    if (ok) Box(Modifier.size(84.dp).clip(CircleShape).background(Ink.ok), contentAlignment = Alignment.Center) { Text("✓", fontSize = 44.sp, color = Color.White) }
+                    else Icon(painterResource(Ic.power), null, Modifier.size(64.dp), tint = Ink.ink)
                 }
-                Text(title, fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 10.dp))
-                Text(text, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
-                if (step == 1) SetCard {
-                    Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (role) tr(R.string.set_vahter) else tr(R.string.pg_vyberite_vahter), icon = Ic.spark, end = if (role) ({ Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }) else null) {
-                        activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))
-                    }
-                    Item(tr(R.string.pg_bokovaya_knopka_tsifrovoy_pomoshchnik), SideKey.describe(activity), icon = Ic.btn) { SideKey.open(activity) }
-                } else {
-                    val error = (dl as? ModelDownload.State.Failed)?.reason
-                    when {
-                        installed -> Note(tr(R.string.pg_gotovo), ok = true)
-                        running != null -> {
-                            Progress(running.percent)
-                            Text(tr(R.string.pg_zagruzka_modeli_1_s_mozhno, running.percent), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 8.dp))
+                Text(tr(R.string.set_bokovaya_knopka), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 10.dp))
+                Text(tr(if (!ok) (if (known) R.string.btn_p_todo else R.string.btn_p_todo_one) else if (known) R.string.btn_p_done else R.string.btn_p_done_nokey), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+                SetCard {
+                    Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (role) tr(R.string.set_vahter) else tr(R.string.btn_not_set, tr(R.string.btn_other_assistant)), warn = !role, icon = Ic.spark,
+                        end = if (role) ({ Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }) else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
+                    if (known) {
+                        val sideOk = side == SideKey.State.ASSISTANT
+                        val d = SideKey.describe(activity)
+                        Item(tr(R.string.set_bokovaya_knopka), if (sideOk) d else tr(R.string.btn_not_set, d.replaceFirstChar { it.lowercase() }), warn = !sideOk, icon = Ic.btn,
+                            end = if (sideOk) ({ Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }) else null) { SideKey.open(activity) }
+                    } else Item(tr(R.string.btn_call), tr(R.string.btn_call_sub), icon = Ic.btn)
+                }
+                running?.let { Text(tr(R.string.bg_dl, it.percent) + if (ok) "" else tr(R.string.bg_dl_hint), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 10.dp)) }
+                if (!ok) {
+                    // «Настроить» открывает по очереди то, что ещё не настроено.
+                    primary = tr(R.string.btn_setup) to { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) }
+                    skip = tr(R.string.pg_pozzhe) to {
+                        if (btnWarned) next() else {
+                            btnWarned = true
+                            activity.showSheet(MainActivity.PermSheet(tr(R.string.btn_warn_h), tr(R.string.btn_warn_p), tr(R.string.btn_setup), icon = Ic.power,
+                                later = tr(R.string.btn_warn_later), onLater = next) { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) })
                         }
-                        else -> {
-                            if (error != null) Note(tr(R.string.pg_oshibka_zagruzki_1_s, error), ok = false)
-                            // «Скачать» — и сразу системный запрос микрофона, пока качается модель (Продукт 5.13).
-                            primary = (if (error == null) tr(R.string.pg_skachat) else tr(R.string.pg_eshche_raz)) to {
-                                ModelDownload.start(ctx); if (!mic && !app.conversation.state.value.settings.micAsked) activity.askMic(); Unit
-                            }
+                    }
+                } else skip = null
+            }
+            else -> {
+                // Голос — первым: модель качается, пока настраивают кнопку.
+                Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.VoiceArt() }
+                Text(tr(R.string.pg_golos_na_telefone), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 10.dp))
+                Text(tr(R.string.onb_voice_p, "225"), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+                val error = (dl as? ModelDownload.State.Failed)?.reason
+                when {
+                    installed -> Note(tr(R.string.pg_gotovo), ok = true)
+                    running != null -> {
+                        Progress(running.percent)
+                        Text(tr(R.string.pg_zagruzka_modeli_1_s_mozhno, running.percent), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 8.dp))
+                    }
+                    else -> {
+                        if (error != null) Note(tr(R.string.pg_oshibka_zagruzki_1_s, error), ok = false)
+                        // «Скачать» — и сразу системный запрос микрофона, пока качается модель (Продукт 5.13).
+                        primary = (if (error == null) tr(R.string.pg_skachat) else tr(R.string.pg_eshche_raz)) to {
+                            ModelDownload.start(ctx); if (!mic && !app.conversation.state.value.settings.micAsked) activity.askMic(); Unit
                         }
                     }
-                    if (!mic && (installed || running != null)) SetCard(Modifier.padding(top = 12.dp)) {
-                        Item(tr(R.string.set_mikrofon), tr(R.string.pg_nuzhen_dlya_golosovogo_vvoda), icon = Ic.mic) { activity.askMic() }
-                    }
+                }
+                if (!mic && (installed || running != null)) SetCard(Modifier.padding(top = 12.dp)) {
+                    Item(tr(R.string.set_mikrofon), tr(R.string.pg_nuzhen_dlya_golosovogo_vvoda), icon = Ic.mic) { activity.askMic() }
                 }
             }
         }
@@ -335,17 +361,23 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     }
 }
 
+/** Одна диктовка на пробе: текст и сколько ждали распознавания после отпускания. */
+private data class Shot(val text: String, val ms: Long)
+
 /**
- * Проба голоса (ui.js, tryStep) — как «Попробуйте здесь…» в Писаре, но настоящей кнопкой листа: большое поле, куда дописывается
- * надиктованное (можно поправить руками), строка с кнопкой Писаря (зажать, замок вверх, отмена влево), три подсказки. Мозгу ничего не уходит.
- * Чего не хватает — написано в поле; микрофон спрашивает сама кнопка при нажатии.
+ * Проба голоса (ui.js, tryStep) — показать, что пишется быстро: одна настоящая строка ввода листа (кнопка Писаря: зажать,
+ * замок вверх, отмена влево), надиктованное — пузырями над ней с отметкой «⚡ 0,4 с · на телефоне». Мозгу ничего не уходит.
+ * Чего не хватает — одной строкой посередине; микрофон спрашивает сама кнопка.
  */
 @Composable
 private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: MainActivity, side: Boolean, pct: Int?, installed: Boolean, mic: Boolean) {
     val app = App.instance
-    var text by remember { mutableStateOf("") }
+    val shots = remember { androidx.compose.runtime.mutableStateListOf<Shot>() }
     var msg by remember { mutableStateOf<String?>(null) }
     val phase by ru.poneslas.vahter.ui.RecUi.phase.collectAsState()
+    // Время от отпускания (начало распознавания) до текста — его и показываем.
+    var t0 by remember { mutableStateOf(0L) }
+    LaunchedEffect(phase) { if (phase == ru.poneslas.vahter.ui.RecUi.Phase.PROCESSING) t0 = android.os.SystemClock.uptimeMillis() }
     val micAsked = app.conversation.state.collectAsState().value.settings.micAsked
     val why = when {
         !installed && pct != null -> tr(R.string.try_loading, pct)
@@ -354,37 +386,45 @@ private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: Mai
         !mic -> tr(R.string.try_ask)
         else -> null
     }
-    Text(tr(R.string.try_h), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 26.dp, bottom = 8.dp))
-    Text(tr(if (side) R.string.try_p_side else R.string.try_p_noside), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
     val rec = phase != ru.poneslas.vahter.ui.RecUi.Phase.IDLE
-    Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp).clip(RoundedCornerShape(18.dp)).background(Color.White)
-        .border(if (rec) 2.dp else 1.dp, if (rec) Ink.local else Ink.line, RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp)) {
-        if (text.isEmpty()) Text(if (rec) tr(R.string.rec_listening) + "…" else why ?: tr(R.string.try_ph), fontSize = 16.sp, color = Ink.soft)
-        BasicTextField(text, { text = it }, textStyle = BaseText.copy(fontSize = 16.sp, lineHeight = 1.4.em), cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxSize())
-    }
-    Column(Modifier.padding(top = 12.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        @Composable fun tip(vararg parts: Int) = Text(androidx.compose.ui.text.buildAnnotatedString {
-            parts.forEachIndexed { i, id -> if (i % 2 == 0) withStyleBold { append(tr(id)) } else append(tr(id)) }
-        }, fontSize = 13.5.sp, color = Ink.soft)
-        tip(R.string.try_t1a, R.string.try_t1b, R.string.try_t1c, R.string.try_t1d)
-        tip(R.string.try_t2a, R.string.try_t2b)
-        tip(R.string.try_t3a, R.string.try_t3b)
-    }
-    ru.poneslas.vahter.ui.VoiceRow(
-        voice = app.voice,
-        field = {
-            Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
-                .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text(msg ?: tr(R.string.try_hint), fontSize = 14.5.sp, color = Ink.soft, maxLines = 1)
+    Text(tr(R.string.try_h), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 26.dp, bottom = 8.dp))
+    Text(tr(R.string.try_p) + tr(if (side) R.string.try_p_side2 else R.string.try_p_noside2), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 8.dp))
+    val list = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(shots.size, rec) { if (shots.isNotEmpty() || rec) list.animateScrollToItem(shots.size + (if (rec) 1 else 0)) }
+    Box(Modifier.weight(1f).fillMaxWidth()) {
+        if (shots.isEmpty() && !rec) Text(why ?: tr(R.string.try_empty), fontSize = 14.5.sp, color = Ink.soft, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.align(Alignment.Center).padding(horizontal = 24.dp))
+        else androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp)) {
+            items(shots.size) { i ->
+                val s = shots[i]
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(s.text, fontSize = 15.sp, color = Ink.ink, modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)).background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp))
+                    Text(tr(R.string.try_fast, "%.1f".format(s.ms / 1000f).replace('.', ',')), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 9.dp, vertical = 2.dp))
+                }
             }
-        },
-        trailing = null,
-        onText = { t -> text = (text + " " + t).trim(); msg = null },
-        onMessage = { msg = it },
-        onNeedMic = activity::askMic,
-    )
-}
-
-private fun androidx.compose.ui.text.AnnotatedString.Builder.withStyleBold(block: androidx.compose.ui.text.AnnotatedString.Builder.() -> Unit) {
-    val i = pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold, color = Ink.ink)); block(); pop(i)
+            if (rec) item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.RecPill() } }
+        }
+    }
+    if (!rec) Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+        listOf(R.string.try_tip_up, R.string.try_tip_left).forEach { id ->
+            Text(tr(id), fontSize = 12.sp, color = Ink.soft, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.chipBg).padding(horizontal = 10.dp, vertical = 3.dp))
+        }
+    }
+    Box(Modifier.padding(top = 6.dp)) {
+        ru.poneslas.vahter.ui.VoiceRow(
+            voice = app.voice,
+            field = {
+                Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
+                    .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(msg ?: tr(R.string.try_hint), fontSize = 14.5.sp, color = Ink.soft, maxLines = 1)
+                }
+            },
+            trailing = null,
+            onText = { t -> shots += Shot(t, (android.os.SystemClock.uptimeMillis() - t0).coerceAtLeast(1)); msg = null },
+            onMessage = { msg = it },
+            onNeedMic = activity::askMic,
+        )
+    }
 }

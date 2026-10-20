@@ -84,8 +84,9 @@ class MainActivity : ComponentActivity() {
     private var askMicThenSheet = false
 
     /** Наше окно-лист (не системное): объяснение перед повторным запросом микрофона или переход в настройки. */
-    data class PermSheet(val title: String, val text: String, val go: String, val onGo: () -> Unit)
+    data class PermSheet(val title: String, val text: String, val go: String, val icon: Int = Ic.mic, val later: String? = null, val onLater: (() -> Unit)? = null, val onGo: () -> Unit)
     private var permSheet by mutableStateOf<PermSheet?>(null)
+    fun showSheet(s: PermSheet) { permSheet = s }
 
     /**
      * Микрофон, как в Android 11+ (Продукт 5.13): первый раз — системное окно; после одного отказа — наше объяснение
@@ -448,12 +449,12 @@ class MainActivity : ComponentActivity() {
                 .navigationBarsPadding().padding(start = 22.dp, end = 22.dp, top = 10.dp, bottom = 22.dp)) {
                 Box(Modifier.fillMaxWidth().padding(bottom = 14.dp), contentAlignment = Alignment.Center) { Box(Modifier.size(32.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab)) }
                 Box(Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Ink.localT), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.mic), null, Modifier.size(22.dp), tint = Ink.localD)
+                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(d.icon), null, Modifier.size(22.dp), tint = Ink.localD)
                 }
                 Text(d.title, fontSize = 21.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
                 Text(d.text, fontSize = 14.5.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 18.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(tr(R.string.not_now), onClick = close)
+                    TextButton(d.later ?: tr(R.string.not_now)) { val f = d.onLater; if (f != null) { permSheet = null; f() } else close() }
                     PrimaryButton(d.go) { permSheet = null; d.onGo() }
                 }
             }

@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
@@ -329,15 +330,15 @@ fun RecPill(modifier: Modifier = Modifier) {
     // громкость с микрофона: быстро вверх, медленно вниз (как у Писаря)
     LaunchedEffect(phase) { while (true) { val l = voice.level; level = if (l > level) l else level * .86f + l * .14f; delay(32) } }
     val bars = 9
-    Row(modifier.padding(vertical = 6.dp).clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
-        .padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (phase == RecUi.Phase.LISTENING) Text(tr(R.string.rec_listening), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(end = 6.dp))
+    // Компактно (ui.js, .recpill): маленькая «таблетка» без подписи — на телефоне широкая волна занимала полэкрана.
+    Row(modifier.padding(vertical = 4.dp).wrapContentWidth().clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
+        .padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.5.dp), verticalAlignment = Alignment.CenterVertically) {
         for (i in 0 until bars) {
             val k = i / (bars - 1f)
             val center = 1f - kotlin.math.abs(k - .5f) * 1.2f
             val wob = .5f + .5f * kotlin.math.sin((w + k * .7f) * 2f * Math.PI.toFloat())
-            val h = if (phase == RecUi.Phase.LISTENING) 6f + 20f * (.25f * wob + .75f * level * center).toFloat().coerceIn(0f, 1f) else 6f + 10f * wob
-            Box(Modifier.size(4.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerpColor(Ink.local, Ink.server, k)))
+            val h = if (phase == RecUi.Phase.LISTENING) 3f + 15f * (.25f * wob + .75f * level * center).toFloat().coerceIn(0f, 1f) else 3f + 8f * wob
+            Box(Modifier.size(3.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerpColor(Ink.local, Ink.server, k)))
         }
     }
 }
