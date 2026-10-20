@@ -26,7 +26,7 @@ function introScene(k) {
       <div class="rule"><i>2</i>Аллергия на орехи</div>
       <div class="rule"><i>3</i>Бюджет до 1500 ₽, советуй 2–3 блюда</div>
       <div class="start">Начинать с: <b>📷 камеры</b></div>
-      <div class="stamp">пропуск выдан</div></div>
+      <div class="stamp">всё запомнил</div></div>
     <div class="use"><div class="later">через неделю, в ресторане…</div>
       <div class="ms"><div class="g"></div><div class="h"><i></i><b>Гастрогид</b> · одно нажатие</div>
         <div class="thumb menu"></div>
