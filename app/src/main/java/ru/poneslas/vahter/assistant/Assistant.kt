@@ -123,13 +123,7 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             androidx.core.view.WindowCompat.setDecorFitsSystemWindows(w, false)
             // Лист прибит к низу экрана: рамка окна помощника не должна сама отступать от полосы жестов и строки состояния
             // (у окон помощника по умолчанию fitInsetsTypes = системные полосы — на One UI лист висел над полосой жестов).
-            w.attributes = w.attributes.apply {
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                fitInsetsTypes = 0
-                fitInsetsSides = 0
-            }
-            @Suppress("DEPRECATION") run { w.navigationBarColor = android.graphics.Color.TRANSPARENT }
-            w.isNavigationBarContrastEnforced = false
+            pinToBottom(w)
             w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) // без сдвига окна: система его сдвигала (pan) на 688 px поверх imePadding
         }
         Sheet.session = this
@@ -165,6 +159,21 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
                 session = this@AssistSession,
             )
         }
+    }
+
+    /**
+     * Лист прибит к низу экрана: рамка окна помощника не должна сама отступать от полосы жестов и строки состояния
+     * (у окон помощника по умолчанию fitInsetsTypes = системные полосы — лист висел над полосой жестов). Сессия при показе
+     * может вернуть параметры окна (видно при показе из приложения, в финале мастера) — поэтому и в onCreate, и в каждом onShow.
+     */
+    private fun pinToBottom(w: android.view.Window) {
+        w.attributes = w.attributes.apply {
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            fitInsetsTypes = 0
+            fitInsetsSides = 0
+        }
+        @Suppress("DEPRECATION") run { w.navigationBarColor = android.graphics.Color.TRANSPARENT }
+        w.isNavigationBarContrastEnforced = false
     }
 
     override fun onShow(args: Bundle?, showFlags: Int) {

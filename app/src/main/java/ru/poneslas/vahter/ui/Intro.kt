@@ -70,7 +70,12 @@ enum class WizScene { WELCOME, QUEUE, CHAT, KEYS, BRAIN }
 
 @Composable
 fun WizArt(k: WizScene) = Box(Modifier.widthIn(max = 340.dp).fillMaxWidth().height(if (k == WizScene.BRAIN) 290.dp else 300.dp)) {
-    when (k) { WizScene.WELCOME -> Logo(); WizScene.QUEUE -> SceneQueue(); WizScene.CHAT -> SceneChat(); WizScene.KEYS -> SceneKeys(); WizScene.BRAIN -> SceneBrain() }
+    // Сцены — иллюстрации фиксированного размера: крупный системный шрифт внутри не больше ×1,1, иначе подписи вылезают
+    // (эмулятор, ×1,3 — уже на грани). Заголовки и тексты мастера вокруг сцены растут как обычно.
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.1f))) {
+        when (k) { WizScene.WELCOME -> Logo(); WizScene.QUEUE -> SceneQueue(); WizScene.CHAT -> SceneChat(); WizScene.KEYS -> SceneKeys(); WizScene.BRAIN -> SceneBrain() }
+    }
 }
 
 // ── время ──────────────────────────────────────────────────────────────
@@ -299,44 +304,51 @@ private fun BoxScope.SceneQueue() {
 private fun SceneChat() {
     val t = loop(8000)
     val out = 1f - ramp(t, .97f, 1f)
+    val p = ramp(t, .03f, .78f)
     Row(Modifier.fillMaxSize().graphicsLayer { alpha = out }, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         // чат: просьба заново
-        Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(18.dp)).background(Color(0xFFE2E5EB)).padding(11.dp)) {
-            ColHead("💬", stringResource(R.string.wiz_chat), stringResource(R.string.wiz_chat_new), Color(0xFF5B6478))
-            val ask = stringResource(R.string.wiz_chat_ask)
-            val p = ramp(t, .03f, .78f)
-            // по строкам, как печатают: 9 ступенек
-            val shown = (ask.length * (kotlin.math.floor(p * 9f) / 9f)).toInt()
-            Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp)).background(Color.White).padding(horizontal = 9.dp, vertical = 8.dp)) {
-                Text(ask.take(shown), fontSize = 11.5.sp, lineHeight = 1.38.em, color = Ink.ink)
-            }
-            (20 * p).toInt().let { w -> Counter(androidx.compose.ui.res.pluralStringResource(R.plurals.wiz_chat_words, w, w), (40 * p).toInt(), Color(0xFF6B7487)) }
-        }
-        // свой режим: «как обычно»
-        Column(Modifier.weight(1f).fillMaxHeight().graphicsLayer { shadowElevation = 14f; shape = RoundedCornerShape(18.dp); clip = true }
-            .background(Ink.localT).border(2.dp, Ink.local, RoundedCornerShape(18.dp)).padding(11.dp)) {
-            ColHead("🍽", stringResource(R.string.intro_tab_gastro), stringResource(R.string.intro_my_mode), Ink.ink)
-            val th = ramp(t, .04f, .08f)
-            Box(Modifier.fillMaxWidth().height(58.dp)) {
-                Box(Modifier.fillMaxSize().graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }, contentAlignment = Alignment.CenterEnd) { MenuPhoto() }
-                val fl = window(t, .03f, .04f, .04f, .08f)
-                if (fl > 0f) Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .9f * fl)))
-            }
-            // подпись — что ушло: фото меню, а не документ
-            Text(stringResource(R.string.wiz_menu_sent), fontSize = 10.5.sp, color = Ink.localD, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                modifier = Modifier.fillMaxWidth().padding(top = 3.dp).graphicsLayer { alpha = th })
-            Ai(stringResource(R.string.intro_s2_answer), ramp(t, .10f, .14f), Modifier.padding(top = 3.dp))
-            androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                stringArrayResource(R.array.wiz_chat_checks).forEachIndexed { i, c ->
-                    val on = ramp(t, .15f + i * .03f, .18f + i * .03f)
-                    Text(c, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD, modifier = Modifier.graphicsLayer { alpha = on; scaleX = .6f + .4f * on; scaleY = .6f + .4f * on }
-                        .clip(RoundedCornerShape(50)).background(Color.White).padding(horizontal = 7.dp, vertical = 2.dp))
+        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFFE2E5EB)).padding(11.dp)) {
+                ColHead("💬", stringResource(R.string.wiz_chat), stringResource(R.string.wiz_chat_new), Color(0xFF5B6478))
+                val ask = stringResource(R.string.wiz_chat_ask)
+                // по строкам, как печатают: 9 ступенек
+                val shown = (ask.length * (kotlin.math.floor(p * 9f) / 9f)).toInt()
+                Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp)).background(Color.White).padding(horizontal = 9.dp, vertical = 8.dp)) {
+                    Text(ask.take(shown), fontSize = 11.5.sp, lineHeight = 1.38.em, color = Ink.ink, overflow = TextOverflow.Clip)
                 }
+                (20 * p).toInt().let { w -> Counter(androidx.compose.ui.res.pluralStringResource(R.plurals.wiz_chat_words, w, w), Color(0xFF6B7487)) }
             }
-            Spacer(Modifier.weight(1f))
-            Counter(stringResource(R.string.wiz_one_press), (3 * ramp(t, .03f, .14f)).toInt(), Ink.localD, power = true)
+            Stopwatch((40 * p).toInt(), Color(0xFF6B7487), Color(0xFFA9B0BE))
+        }
+        // свой режим: «как обычно» — ответ репликой, правила слышны в словах «как вы любите»
+        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.weight(1f).fillMaxWidth().graphicsLayer { shadowElevation = 14f; shape = RoundedCornerShape(18.dp); clip = true }
+                .background(Ink.localT).border(2.dp, Ink.local, RoundedCornerShape(18.dp)).padding(11.dp)) {
+                ColHead("🍽", stringResource(R.string.intro_tab_gastro), stringResource(R.string.intro_my_mode), Ink.ink)
+                val th = ramp(t, .04f, .08f)
+                Box(Modifier.fillMaxWidth().height(58.dp)) {
+                    Box(Modifier.fillMaxSize().graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }, contentAlignment = Alignment.CenterEnd) { MenuPhoto() }
+                    val fl = window(t, .03f, .04f, .04f, .08f)
+                    if (fl > 0f) Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .9f * fl)))
+                }
+                // подпись — что ушло: фото меню, а не документ
+                Text(stringResource(R.string.wiz_menu_sent), fontSize = 10.5.sp, color = Ink.localD, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth().padding(top = 3.dp).graphicsLayer { alpha = th })
+                Ai(stringResource(R.string.intro_s2_answer), ramp(t, .10f, .14f), Modifier.padding(top = 4.dp))
+                Spacer(Modifier.weight(1f))
+                Counter(stringResource(R.string.wiz_one_press), Ink.localD, power = true)
+            }
+            Stopwatch((3 * ramp(t, .03f, .14f)).toInt(), Ink.localD, Color(0xFFD9B977))
         }
     }
+}
+
+/** Секундомер под колонкой: крупные цифры, иконка часов приглушённая (intro.css, .sc6 .timer). */
+@Composable
+private fun Stopwatch(sec: Int, color: Color, icon: Color) = Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.stopwatch), null, Modifier.size(20.dp), tint = icon)
+    Spacer(Modifier.width(6.dp))
+    Text("0:%02d".format(sec), fontSize = 20.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold, color = color)
 }
 
 /** Шапка колонки: значок, название, под ним — пояснение (колонка узкая, в одну строку не помещается). */
@@ -350,13 +362,11 @@ private fun ColHead(icon: String, title: String, sub: String, color: Color) = Ro
     }
 }
 
-/** Нижняя строка колонки: «✎ 20 слов» / «⏻ 1 нажатие» слева, «0:40» справа. ⏻ — значком: в системном шрифте его нет. */
+/** Нижняя строка колонки: «✎ 20 слов» / «⏻ 1 нажатие». ⏻ — значком: в системном шрифте его нет. */
 @Composable
-private fun Counter(left: String, sec: Int, color: Color, power: Boolean = false) = Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun Counter(left: String, color: Color, power: Boolean = false) = Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
     if (power) { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.power), null, Modifier.size(12.dp), tint = color); Spacer(Modifier.width(4.dp)) }
-    Text(left, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
-    Spacer(Modifier.weight(1f))
-    Text("0:%02d".format(sec), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color)
+    Text(left, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 // ── 3. знает, кто зачем пришёл: режимы — кнопки; по очереди переворачиваются, на обороте — уже написанная просьба ──
@@ -495,7 +505,17 @@ private fun lerp(a: Color, b: Color, f: Float) = Color(a.red + (b.red - a.red) *
 // ── первый запуск, «Голос на телефоне»: речь → GigaAM на телефоне → текст; облако зачёркнуто (intro.css, .scv) ──
 
 @Composable
-fun VoiceArt() {
+fun VoiceArt() = CapFont { VoiceArtBody() }
+
+/** Иллюстрации мастера — фиксированного размера: системный крупный шрифт внутри не больше ×1,1. */
+@Composable
+private fun CapFont(content: @Composable () -> Unit) {
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.1f)), content = content)
+}
+
+@Composable
+private fun VoiceArtBody() {
     val t = loop(5000)
     Column(Modifier.height(280.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.height(44.dp), contentAlignment = Alignment.Center) {

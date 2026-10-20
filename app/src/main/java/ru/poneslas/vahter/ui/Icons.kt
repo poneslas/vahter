@@ -45,6 +45,7 @@ object Ic {
     val spark = R.drawable.ic_spark
     val srv = R.drawable.ic_srv
     val star = R.drawable.ic_star
+    val stopwatch = R.drawable.ic_stopwatch
     val transl = R.drawable.ic_transl
     val undo = R.drawable.ic_undo
     val warn = R.drawable.ic_warn

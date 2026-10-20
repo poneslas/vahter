@@ -58,6 +58,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -285,7 +295,21 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     var skip: Pair<String, () -> Unit>? = tr(R.string.pg_pozzhe) to next
     var primary: Pair<String, () -> Unit>? = tr(R.string.pg_dalee) to next
 
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 22.dp)) {
+    // Назад по мастеру: системный «Назад» и свайп вправо; свайп влево — вперёд, только если на экране уже можно «Далее».
+    // На пробе голоса свайпа нет: у кнопки микрофона жест «влево — отмена». Голос не качали — проба пропускается и назад.
+    val back: () -> Unit = { if (step > 0) { step -= if (step == 4 && !installed && running == null) 2 else 1; key.status = null } }
+    androidx.activity.compose.BackHandler(step > 0) { back() }
+    val canNext = androidx.compose.runtime.rememberUpdatedState { primary?.second === next }
+    val swipeBack = androidx.compose.runtime.rememberUpdatedState(back)
+    val swipeNext = androidx.compose.runtime.rememberUpdatedState(next)
+    val swipe = if (step == 3) Modifier else Modifier.pointerInput(step) {
+        var dx = 0f
+        detectHorizontalDragGestures(onDragStart = { dx = 0f }, onHorizontalDrag = { _, d -> dx += d }, onDragEnd = {
+            val px = 60.dp.toPx()
+            if (dx > px) swipeBack.value() else if (dx < -px && canNext.value()) swipeNext.value()
+        })
+    }
+    Column(Modifier.fillMaxSize().then(swipe).statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 22.dp)) {
         @Composable fun Art(k: ru.poneslas.vahter.ui.WizScene, minH: androidx.compose.ui.unit.Dp = 300.dp) =
             Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = minH), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.WizArt(k) }
         @Composable fun Head(h: String, p: String) {
@@ -377,14 +401,14 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                     }
                 } else skip = null
             }
-            3 -> { TryStep(activity, role && SideKey.read(activity) == SideKey.State.ASSISTANT, running?.percent, installed, mic); skip = null }
+            3 -> { TryStep(activity, running?.percent, installed, mic); skip = null; if (!installed && running != null) primary = tr(R.string.try_skip) to next }
             4 -> { Art(ru.poneslas.vahter.ui.WizScene.CHAT); Head(tr(R.string.wiz_rules_h), tr(R.string.wiz_rules_p)); skip = null }
             5 -> { Art(ru.poneslas.vahter.ui.WizScene.KEYS); Head(tr(R.string.intro_3_h), tr(R.string.wiz_quick_p)); skip = null }
             else -> {
                 // Мозг — последним. «Подключить» — главная кнопка внизу; подключили — «Открыть» ведёт в лист.
                 // Уведомления — здесь же, пока экран приложения открыт: из листа системное окно показать нечем.
                 // Как остальные шаги: сцена — в растягиваемой области (сжимается, если внизу стало больше), заголовок и ключ — внизу.
-                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(bottom = 10.dp), contentAlignment = Alignment.Center) {
                     val k = (maxHeight / 300.dp).coerceIn(.4f, 1f)
                     Box(Modifier.scale(k)) { ru.poneslas.vahter.ui.WizArt(ru.poneslas.vahter.ui.WizScene.BRAIN) }
                 }
@@ -399,12 +423,13 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
             }
         }
         // .nav: «Позже» или пусто · точки · кнопка
+        // Кнопка справа берёт сколько нужно (не ломает слово при крупном шрифте); точки — посередине оставшегося места.
         Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { skip?.let { (t, a) -> TextButton(t, onClick = a) } }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) 4.dp else 6.dp)) {
                 repeat(steps) { i -> Box(Modifier.size(if (i == step) 20.dp else 7.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(if (i == step) Ink.ink else Ink.swOff)) }
             }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            Box(Modifier.widthIn(min = 96.dp), contentAlignment = Alignment.CenterEnd) {
                 primary?.let { (t, a) -> PrimaryButton(t, enabled = !(step == steps - 1 && !hasKey && !key.canCheck), onClick = a) }
             }
         }
@@ -415,12 +440,14 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
 private data class Shot(val text: String, val ms: Long)
 
 /**
- * Проба голоса (ui.js, tryStep) — листок, как «Попробуйте здесь…» в Писаре: последняя фраза крупно, под ней «⚡ Распознано на
- * телефоне за 0,7 с», прошлые мельче выше. Поля ввода, скрепки и вкладок нет — мозгу ничего не уходит. Кнопка и жесты — те же,
- * что в листе (кнопка Писаря: зажать, замок вверх, отмена влево). Чего не хватает — в листке; микрофон спрашивает сама кнопка.
+ * Проба голоса (ui.js, tryStep). Герой экрана — эквалайзер Вахтёра ([TryEq]). Пока распознавание качается, его столбики и есть
+ * полоска загрузки: готовые шевелятся, остальные — точки, поперёк — шов («рот зашит»); микрофон не работает, справа «Пропустить».
+ * Докачалось — шов лопается, столбики оживают, кнопка один раз пульсирует. Дальше фраза — крупно прямо на фоне, без поля и подложки,
+ * «⚡ Распознано на телефоне за 0,7 с»; прошлые бледнеют выше. Внизу — одна тихая строка жестов у той же кнопки, что в листе
+ * (кнопка справа: при записи появляется полоса «‹ ‹ Отмена», кнопка не должна прыгать из-под пальца). Мозгу ничего не уходит.
  */
 @Composable
-private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: MainActivity, side: Boolean, pct: Int?, installed: Boolean, mic: Boolean) {
+private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Boolean, mic: Boolean) {
     val app = App.instance
     val shots = remember { androidx.compose.runtime.mutableStateListOf<Shot>() }
     var msg by remember { mutableStateOf<String?>(null) }
@@ -428,10 +455,17 @@ private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: Mai
     // Время от отпускания (начало распознавания) до текста — его и показываем.
     var t0 by remember { mutableStateOf(0L) }
     LaunchedEffect(phase) { if (phase == ru.poneslas.vahter.ui.RecUi.Phase.PROCESSING) t0 = android.os.SystemClock.uptimeMillis() }
+    // Докачалось, пока человек на этом экране, — шов лопается (один раз).
+    val freed = remember { androidx.compose.animation.core.Animatable(1f) }
+    var wasLoading by remember { mutableStateOf(!installed) }
+    LaunchedEffect(installed) {
+        if (installed && wasLoading) { freed.snapTo(0f); freed.animateTo(1f, androidx.compose.animation.core.tween(1600)) }
+        wasLoading = !installed
+    }
     val micAsked = app.conversation.state.collectAsState().value.settings.micAsked
+    val loading = !installed && pct != null
     val why = msg ?: when {
-        !installed && pct != null -> tr(R.string.try_loading, pct)
-        !installed -> tr(R.string.try_none)
+        !installed && pct == null -> tr(R.string.try_none)
         !mic && micAsked && !activity.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> tr(R.string.try_denied)
         !mic -> tr(R.string.try_ask)
         else -> null
@@ -439,50 +473,97 @@ private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: Mai
     val rec = phase == ru.poneslas.vahter.ui.RecUi.Phase.LISTENING
     val proc = phase == ru.poneslas.vahter.ui.RecUi.Phase.PROCESSING
     Text(tr(R.string.try_h), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 26.dp, bottom = 8.dp))
-    Text(tr(R.string.try_p2), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
-    // листок
-    Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(22.dp))
-        .padding(horizontal = 20.dp, vertical = 18.dp)) {
-        val old = if (rec || proc) emptyList() else shots.dropLast(1).takeLast(3)
+    Text(when { loading -> tr(R.string.try_p_loading); !installed -> tr(R.string.try_p_none); else -> tr(R.string.try_p_ready) }, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 8.dp))
+    // сцена без подложки: прошлые фразы — сверху, бледно; эквалайзер; фраза крупно
+    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        val old = if (rec || proc || loading) emptyList() else shots.dropLast(1).takeLast(3)
         if (old.isNotEmpty()) {
-            Column(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                old.forEachIndexed { i, s -> Text(s.text, fontSize = 14.sp, lineHeight = 1.35.em, color = if (i == old.lastIndex) Ink.soft else Ink.faint) }
+            Column(Modifier.fillMaxWidth().weight(1f, fill = false).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                old.forEachIndexed { i, sh -> Text(sh.text, fontSize = 14.sp, lineHeight = 1.35.em, color = if (i == old.lastIndex) Ink.soft else Color(0xFFB4BAC4), maxLines = 2) }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFECEEE8)))
         }
-        Column(Modifier.weight(1f).fillMaxWidth().padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)) {
+        TryEq(loading = !installed, pct = pct ?: 0, active = rec, calm = proc, freed = freed.value)   // голоса нет — точки со швом
+        if (loading) Text("${pct}\u00A0%", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD, modifier = Modifier.padding(top = 8.dp))
+        Column(Modifier.fillMaxWidth().heightIn(min = 96.dp).padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val last = shots.lastOrNull()
+            val center = androidx.compose.ui.text.style.TextAlign.Center
             when {
-                rec || proc -> {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.DictEq(1f, bars = 13, maxH = 56f, w = 7.dp, calm = proc) }
-                    Text(tr(if (rec) R.string.try_listen else R.string.try_recog), fontSize = 14.sp, color = Ink.soft, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                }
+                loading -> Text(tr(R.string.try_learning), fontSize = 15.sp, color = Ink.soft, textAlign = center)
+                rec -> Text(tr(R.string.try_listen), fontSize = 15.sp, color = Ink.soft, textAlign = center)
+                proc -> Text(tr(R.string.try_recog), fontSize = 15.sp, color = Ink.soft, textAlign = center)
                 last != null -> {
-                    Text(last.text, fontSize = 25.sp, lineHeight = 1.25.em, fontWeight = FontWeight.Medium, color = Ink.ink)
+                    Text(last.text, fontSize = 25.sp, lineHeight = 1.25.em, fontWeight = FontWeight.Medium, color = Ink.ink, textAlign = center)
                     Text(tr(R.string.try_fast, "%.1f".format(last.ms / 1000f).replace('.', ',')), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
                         modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 11.dp, vertical = 4.dp))
                 }
-                why != null -> Text(why, fontSize = 17.sp, lineHeight = 1.35.em, color = Ink.soft)
-                else -> Text(tr(R.string.try_empty), fontSize = 22.sp, lineHeight = 1.3.em, color = Color(0xFFB4BAC4))
+                why != null -> Text(why, fontSize = 16.sp, lineHeight = 1.35.em, color = Ink.soft, textAlign = center)
+                else -> Text(tr(R.string.try_say), fontSize = 22.sp, color = Color(0xFFB4BAC4), textAlign = center)
             }
-        }
-    }
-    Text(tr(if (side) R.string.try_p_side2 else R.string.try_p_noside2), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(start = 2.dp, top = 8.dp))
-    if (!rec && !proc) Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-        listOf(R.string.try_tip_up, R.string.try_tip_left).forEach { id ->
-            Text(tr(id), fontSize = 12.sp, color = Ink.soft, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.chipBg).padding(horizontal = 10.dp, vertical = 3.dp))
         }
     }
     Box(Modifier.padding(top = 6.dp)) {
         ru.poneslas.vahter.ui.VoiceRow(
             voice = app.voice,
-            // Поля нет: только подпись у круга микрофона.
-            field = { Text(tr(R.string.try_hint), fontSize = 14.sp, color = Ink.soft, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                modifier = Modifier.fillMaxWidth().padding(end = 12.dp)) },
+            // Поля нет: одна тихая строка жестов у кнопки.
+            field = { Text(tr(R.string.try_tips), fontSize = 13.sp, color = Ink.faint, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth().padding(end = 14.dp)) },
             trailing = null,
             onText = { t -> shots += Shot(t, (android.os.SystemClock.uptimeMillis() - t0).coerceAtLeast(1)); msg = null },
             onMessage = { msg = it },
             onNeedMic = activity::askMic,
         )
+        // докачалось — кнопка микрофона один раз пульсирует: «можно»
+        if (freed.value < 1f) Box(Modifier.align(Alignment.CenterEnd).padding(end = 10.dp).size(52.dp).drawBehind {
+            val k = freed.value
+            drawCircle(Ink.local.copy(alpha = .65f * (1 - k)), radius = size.minDimension / 2 + 22.dp.toPx() * k, style = androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()))
+        })
+    }
+}
+
+/**
+ * Эквалайзер-герой пробы голоса (intro.css, .teq): 13 столбиков. В загрузке — прогресс: готовые шевелятся, остальные — точки,
+ * поперёк шов с крестиками. [freed] 0→1 сразу после докачки: крестики разлетаются, столбики подпрыгивают. Дальше — дышит,
+ * при записи — прыгает ([active]), при распознавании — спокойная волна ([calm]).
+ */
+@Composable
+private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, freed: Float) {
+    val n = 13
+    val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "teq")
+    val t by tr.animateFloat(0f, 100f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(100_000, easing = androidx.compose.animation.core.LinearEasing)), label = "t")
+    androidx.compose.foundation.Canvas(Modifier.size(230.dp, 84.dp)) {
+        val bw = 9.dp.toPx(); val gap = 7.dp.toPx()
+        val total = n * bw + (n - 1) * gap
+        val x0 = (size.width - total) / 2; val cy = size.height / 2
+        val on = Math.round(pct / 100f * n)
+        val pop = if (freed < 1f) { val f = (freed / .4f).coerceIn(0f, 1f); .2f + .8f * f + .25f * kotlin.math.sin(f * Math.PI.toFloat()) } else 1f
+        for (i in 0 until n) {
+            val x = x0 + i * (bw + gap)
+            val h = when {
+                loading && i >= on -> bw
+                loading -> (12f + 22f * (.5f + .5f * kotlin.math.sin((t / 1.1f - i * .07f / 1.1f) * 2 * Math.PI.toFloat()))).dp.toPx()
+                active -> (10f + 50f * (.5f + .5f * kotlin.math.sin((t * 3.1f + i * .37f) * 2 * Math.PI.toFloat())) * (.6f + .4f * kotlin.math.sin((t * 1.7f + i) * 2 * Math.PI.toFloat()).let { it * it })).dp.toPx()
+                calm -> (10f + 18f * (.5f + .5f * kotlin.math.sin((t / 1.6f - i * .09f) * 2 * Math.PI.toFloat()))).dp.toPx()
+                else -> (10f + 10f * (.5f + .5f * kotlin.math.sin((t / 3.2f - i * .08f) * 2 * Math.PI.toFloat()))).dp.toPx() * pop
+            }
+            val r = androidx.compose.ui.geometry.CornerRadius(bw / 2)
+            // градиент — на каждый столбик свой (янтарь сверху → синий снизу), как в прототипе
+            if (loading && i >= on) drawRoundRect(Color(0xFFD5D9D0), Offset(x, cy - h / 2), Size(bw, h), r)
+            else drawRoundRect(Brush.verticalGradient(listOf(Ink.local, Ink.server), startY = cy - h / 2, endY = cy + h / 2), Offset(x, cy - h / 2), Size(bw, h), r)
+        }
+        // шов «рот зашит»: пунктир и крестики; после докачки — разлетаются
+        val k = if (loading) 0f else if (freed < 1f) freed else return@Canvas
+        val seam = Color(0xFF8A93A6).copy(alpha = 1f - k)
+        var x = -6.dp.toPx()
+        while (x < size.width + 6.dp.toPx() && k < 1f) { drawLine(seam, Offset(x, cy), Offset(x + 7.dp.toPx(), cy), 2.dp.toPx()); x += 12.dp.toPx() }
+        for (j in 0 until 7) {
+            val cx = size.width * (j + .5f) / 7
+            val dy = (if (j % 2 == 0) -40f else 40f).dp.toPx() * k; val dx = (if (j % 2 == 0) -10f else 10f).dp.toPx() * k
+            val rot = (if (j % 2 == 0) -120f else 140f) * k
+            rotate(rot, Offset(cx + dx, cy + dy)) {
+                val a = 6.dp.toPx()
+                drawLine(seam, Offset(cx + dx - a / 1.4f, cy + dy - a / 1.4f), Offset(cx + dx + a / 1.4f, cy + dy + a / 1.4f), 2.dp.toPx(), cap = StrokeCap.Round)
+                drawLine(seam, Offset(cx + dx - a / 1.4f, cy + dy + a / 1.4f), Offset(cx + dx + a / 1.4f, cy + dy - a / 1.4f), 2.dp.toPx(), cap = StrokeCap.Round)
+            }
+        }
     }
 }

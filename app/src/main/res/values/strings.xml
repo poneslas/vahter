@@ -85,7 +85,7 @@
     <string name="mode_perevodchik">Переводчик</string>
     <string name="mode_skazhite_ili_napishite_perevedu_mozhno">Скажите или напишите — переведу. Можно сфотографировать надпись или меню.</string>
     <string name="mode_chto_perevesti">Что перевести?</string>
-    <string name="mode_vse_ne_na_russkom_perevedi">Всё не на русском — переведи на русский. Всё на русском — переведи на китайский, добавь пиньинь. Коротко, без вступлений. Не сохраняй это в память.</string>
+    <string name="mode_vse_ne_na_russkom_perevedi">Переводи с русского на китайский с пиньинем, с других языков — на русский. Коротко, без вступлений. Не сохраняй это в память.</string>
     <string name="mode_chto_eto">Что это?</string>
     <string name="mode_sfotografiruyte_tovar_vyvesku_ili_menyu">Сфотографируйте товар, вывеску или меню — коротко объясню, что это.</string>
     <string name="mode_vopros_k_foto">Вопрос к фото</string>
@@ -631,7 +631,7 @@
     <string name="intro_stamp">всё запомнил</string>
     <string name="intro_later">через неделю, в ресторане…</string>
     <string name="intro_one_press">" · одно нажатие"</string>
-    <string name="intro_s2_answer">Судак на гриле и морс — 1200 ₽.</string>
+    <string name="intro_s2_answer">Возьмите судака на гриле и морс — 1200 ₽. Не остро и без орехов — как вы любите.</string>
     <string name="intro_say">говорите…</string>
     <string name="intro_cap_voice">🎙 сразу голос</string>
     <string name="intro_cap_cam">📷 сразу камера</string>
@@ -725,8 +725,8 @@
     <string name="key_where">Где взять ключ? platform.deepseek.com → API keys. Хранится в защищённом хранилище телефона.</string>
     <string name="key_connect">Подключить</string>
     <string name="key_connecting">Подключаю…</string>
-    <string name="key_ok">%1$s подключён · %2$s</string>
-    <string name="key_vision">понимает фото — фото-режимы доступны</string>
+    <string name="key_ok">%1$s подключён</string>
+    <string name="key_vision">понимает фото</string>
     <string name="key_other">Другие модели — в настройках</string>
     <string name="sheet_hello">Вам чего?</string>
     <string name="sheet_chip_alarm">⏰ Будильник на 7</string>
@@ -772,4 +772,11 @@
     <string name="sheet_recog_sub">Голос не уходит с телефона</string>
     <string name="sheet_prev">Прошлый разговор · %1$d сообщ.</string>
     <string name="wiz_menu_sent">📷 отправил фото меню</string>
+    <string name="try_p_loading">Вахтёр пока учит русский — подождите или попробуйте потом в листе.</string>
+    <string name="try_p_ready">Зажмите микрофон и скажите что-нибудь — проверим, как слышно.</string>
+    <string name="try_learning">Вахтёр учит русский…</string>
+    <string name="try_say">Скажите что-нибудь</string>
+    <string name="try_tips">вверх — без рук · влево — отмена</string>
+    <string name="try_skip">Пропустить</string>
+    <string name="try_p_none">Голос ещё не скачан — попробуете потом в листе.</string>
 </resources>

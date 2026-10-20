@@ -155,7 +155,7 @@ fun Divider() = Box(Modifier.padding(horizontal = 22.dp, vertical = 4.dp).fillMa
 fun PrimaryButton(label: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(modifier.clip(RoundedCornerShape(50)).background(if (enabled) Ink.ink else Ink.swOff)
         .clickable(enabled = enabled, onClick = onClick).padding(horizontal = 22.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-        Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+        Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, softWrap = false)   // кнопка не ломает слово
     }
 }
 
@@ -282,7 +282,7 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, ctl: KeyCtl = remem
         else Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End) {
             PrimaryButton(if (ctl.checking) tr(R.string.kit_proveryayu) else tr(R.string.kit_proverit), enabled = ctl.canCheck) { ctl.connect(scope, onDone) }
         }
-        KeyResult(ctl)
+        KeyResult(ctl, reserve = onboarding)
         if (onboarding) Row(Modifier.padding(start = 2.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.info), null, Modifier.size(16.dp), tint = Ink.soft)
             Spacer(Modifier.width(8.dp))
@@ -291,23 +291,34 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, ctl: KeyCtl = remem
     }
 }
 
-/** Итог проверки ключа — одной строкой (ui.js, .kres): идёт, подключено, не вышло. */
+/**
+ * Итог проверки ключа (ui.js, .kres): идёт, подключено, не вышло. Подключено — две строки по смыслу: «DeepSeek подключён»,
+ * под ним мелко «отвечает за 0,4 с · понимает фото» — на узком экране переносить нечего. В мастере место занято заранее ([reserve]):
+ * «Подключаю…» / итог / ошибка сменяют друг друга без сдвига экрана.
+ */
 @Composable
-private fun KeyResult(ctl: KeyCtl) {
+private fun KeyResult(ctl: KeyCtl, reserve: Boolean) {
     val st = ctl.status
-    if (!ctl.checking && st == null) return
-    val (bg, fg) = when { ctl.checking -> Ink.chipBg to Ink.soft; st?.first == true -> Color(0xFFE3F1E6) to Color(0xFF1F5A2E); else -> Color(0xFFFBE7E4) to Color(0xFF8A2A1F) }
-    Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 10.dp).clip(RoundedCornerShape(14.dp)).background(bg).padding(horizontal = 14.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        if (ctl.checking) androidx.compose.material3.CircularProgressIndicator(Modifier.size(16.dp), color = Ink.ink, trackColor = Ink.swOff, strokeWidth = 2.dp)
-        else Box(Modifier.size(22.dp).clip(CircleShape).background(if (st?.first == true) Ink.ok else Color(0xFFC9483B)), contentAlignment = Alignment.Center) {
-            Text(if (st?.first == true) "✓" else "!", fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width(10.dp))
-        Column {
-            Text(when { ctl.checking -> tr(R.string.key_connecting); st?.first == true -> tr(R.string.key_ok, ctl.brain.title, st.second); else -> st?.second.orEmpty() },
-                fontSize = 14.sp, color = fg)
-            if (st?.first == true && ctl.brain.vision) Text(tr(R.string.key_vision), fontSize = 12.sp, color = Ink.soft)
+    Box(Modifier.fillMaxWidth().then(if (reserve) Modifier.heightIn(min = 66.dp) else Modifier)) {
+        if (!ctl.checking && st == null) return@Box
+        val (bg, fg) = when { ctl.checking -> Ink.chipBg to Ink.soft; st?.first == true -> Color(0xFFE3F1E6) to Color(0xFF1F5A2E); else -> Color(0xFFFBE7E4) to Color(0xFF8A2A1F) }
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp).clip(RoundedCornerShape(14.dp)).background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            if (ctl.checking) androidx.compose.material3.CircularProgressIndicator(Modifier.size(16.dp), color = Ink.ink, trackColor = Ink.swOff, strokeWidth = 2.dp)
+            else Box(Modifier.size(22.dp).clip(CircleShape).background(if (st?.first == true) Ink.ok else Color(0xFFC9483B)), contentAlignment = Alignment.Center) {
+                Text(if (st?.first == true) "✓" else "!", fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(10.dp))
+            Column {
+                when {
+                    ctl.checking -> Text(tr(R.string.key_connecting), fontSize = 14.sp, color = fg)
+                    st?.first == true -> {
+                        Text(tr(R.string.key_ok, ctl.brain.title), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(st.second + if (ctl.brain.vision) " · " + tr(R.string.key_vision) else "", fontSize = 12.5.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    else -> Text(st?.second.orEmpty(), fontSize = 14.sp, color = fg)
+                }
+            }
         }
     }
 }
