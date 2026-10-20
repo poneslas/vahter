@@ -1,11 +1,5 @@
-/* Приветствие: девиз и 4 карточки с живыми сценами. Только CSS-анимации — ничего не весит, 60 к/с.
-   Каждая сцена — петля 6 с; фазы заданы процентами одной длительности, как в Compose (ui/Intro.kt). */
-.intro{display:flex;flex-direction:column;height:100%;padding:52px 24px 22px;white-space:normal}
-.intro .stage{flex:1;display:grid;place-items:center;min-height:300px}
-.intro h2{font-family:var(--display);font-size:24px;line-height:1.15;font-weight:500;margin:0 0 8px}
-.intro p{color:var(--soft);margin:0 0 6px;font-size:15px;min-height:44px}
-.intro .sub{font-size:13.5px;color:var(--soft)}
-.intro .islide{animation:fade .35s ease both;flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+/* Первый запуск: живые сцены мастера. Только CSS-анимации — ничего не весит, 60 к/с.
+   Каждая сцена — петля; фазы заданы процентами одной длительности, как в Compose (ui/Intro.kt). */
 
 .sc{position:relative;width:min(320px,100%);height:300px;--T:6s}
 .sc *{box-sizing:border-box}
@@ -109,8 +103,6 @@
 @keyframes eqv{0%,9%{opacity:0}11%,29%{opacity:1}31%,100%{opacity:0}}
 .sc1 .dk .tx{opacity:0;animation:dtx var(--T) infinite}
 @keyframes dtx{0%,29%{opacity:0}31%,97%{opacity:1}100%{opacity:0}}
-.sc1 .loc{font-size:11.5px;color:var(--local-d);margin-top:7px;opacity:0;animation:lc var(--T) infinite}
-@keyframes lc{0%,11%{opacity:0}14%,97%{opacity:1}100%{opacity:0}}
 
 /* ── 2. настроил один раз: карточка режима с правилами → штамп → через неделю одно нажатие, ответ по тем же правилам ── */
 .sc2{--T:6s}
@@ -174,34 +166,11 @@
 .sc3 .cap{white-space:nowrap;margin-top:10px;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--local-t);border-radius:999px;padding:5px 12px;opacity:0;animation:cap var(--T) infinite}
 @keyframes cap{0%,24%{opacity:0;transform:translateY(6px)}30%,94%{opacity:1;transform:none}100%{opacity:0}}
 
-/* ── 4. сказал — сделано: волна → реплика → две строки с галочками → «без интернета» ── */
-.sc4 .ms{top:20px;border-radius:22px}
-.sc4 .live{font-size:12.5px;font-weight:500;color:var(--ink);height:20px;overflow:hidden;white-space:nowrap;margin:4px 0 2px;width:0;animation:type var(--T) steps(30,end) infinite}
-@keyframes type{0%,4%{width:0;opacity:1}26%,32%{width:100%;opacity:1}34%,100%{width:100%;opacity:0}}
-.sc4 .wave{animation:showhide4 var(--T) infinite}
-@keyframes showhide4{0%,32%{opacity:1}34%,100%{opacity:0}}
-.sc4 .me{position:absolute;right:12px;top:58px;animation:in4a var(--T) infinite both}
-@keyframes in4a{0%,33%{opacity:0;transform:translateY(8px)}38%,100%{opacity:1;transform:none}}
-.sc4 .acts{position:absolute;left:12px;right:12px;top:98px}
-.sc4 .act2{opacity:0;animation:in4b var(--T) infinite both}
-.sc4 .act2:nth-child(2){animation-name:in4c}
-@keyframes in4b{0%,44%{opacity:0;transform:translateX(-14px)}50%,100%{opacity:1;transform:none}}
-@keyframes in4c{0%,56%{opacity:0;transform:translateX(-14px)}62%,100%{opacity:1;transform:none}}
-.sc4 .act2 .ok{transform:scale(0);animation:okp var(--T) infinite}
-.sc4 .act2:nth-child(2) .ok{animation-name:okp2}
-@keyframes okp{0%,50%{transform:scale(0)}55%{transform:scale(1.35)}60%,100%{transform:scale(1)}}
-@keyframes okp2{0%,62%{transform:scale(0)}67%{transform:scale(1.35)}72%,100%{transform:scale(1)}}
-.sc4 .off{position:absolute;left:12px;bottom:14px;display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--soft);background:#ECEEE8;border-radius:999px;padding:4px 10px;opacity:0;animation:in4d var(--T) infinite both}
-@keyframes in4d{0%,72%{opacity:0;transform:scale(.9)}78%,100%{opacity:1;transform:none}}
-.sc4 .ms .h{margin-bottom:4px}
-.sc4{--T:4s}
-
 @media (prefers-reduced-motion:reduce){.sc *,.sc *::before,.sc *::after{animation-duration:0s!important;animation-delay:0s!important}}
 .sc1 .chain .dk>span{background:none;border:0;padding:0;border-radius:0}
 .sc1 .chain span{font-size:12px;padding:4px 8px}
 .sc1 .usual .chain{gap:5px 4px}
 .sc1 .dk{height:27px;min-height:0}
-.sc1 .loc{font-size:11px;white-space:nowrap;margin-top:6px}
 .sc1 .vah .chain{margin-top:8px}
 
 /* ── Вахтёр: табличка поста, очередь талончиков, звонок наверх ── */
@@ -211,8 +180,6 @@
 .sc1 .ql{font-size:11px;font-weight:500;color:var(--local-d);background:#fff;border:1px solid #EBCB86;border-radius:999px;padding:2px 8px}
 .sc1 .tk{display:inline-flex;gap:5px;align-items:baseline;border-style:dashed!important}
 .sc1 .tk em{font-style:normal;font-size:10px;font-weight:700;color:#8A93A5}
-.sc4 .up{position:absolute;left:12px;bottom:42px;display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--server);background:var(--server-t);border-radius:999px;padding:4px 10px;opacity:0;animation:in4e var(--T) infinite both}
-@keyframes in4e{0%,80%{opacity:0;transform:scale(.9)}86%,100%{opacity:1;transform:none}}
 
 /* ── первый запуск, «Голос на телефоне»: речь → GigaAM на телефоне → текст; облако зачёркнуто ── */
 .scv{--T:5s;height:280px;display:flex;flex-direction:column;align-items:center}
@@ -239,3 +206,52 @@
 @keyframes svt{0%,42%{width:0;opacity:1}62%,96%{width:100%;opacity:1}100%{width:100%;opacity:0}}
 .scv .lock{margin-top:10px;font-size:12px;font-weight:500;color:var(--local-d);background:var(--local-t);border-radius:999px;padding:5px 12px;white-space:nowrap;opacity:0;animation:svl var(--T) infinite}
 @keyframes svl{0%,52%{opacity:0;transform:translateY(6px)}58%,96%{opacity:1;transform:none}100%{opacity:0}}
+
+/* ── мастер, «Режимы»: две сцены сменяют друг друга (правила режима ↔ два телефона), переключатель под ними ── */
+.mtog{display:flex;gap:6px;justify-content:center;margin-top:12px}
+.mtog button{font:inherit;font-size:12.5px;font-weight:500;color:var(--soft);background:#ECEEE8;border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+.mtog button.on{color:var(--ink);background:var(--local-t);box-shadow:inset 0 0 0 1.5px var(--local)}
+
+/* ── мастер, «Мозг»: простое — сам на телефоне (даже без сети); сложное — пакет вверх, к DeepSeek в облаке или своему Hermes, ответ обратно ── */
+.sc5{--T:7s;height:290px}
+.sc5 .ups{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:6px}
+.sc5 .up{flex:1;min-width:0;display:flex;gap:8px;align-items:center;border-radius:16px;padding:9px 10px;background:var(--surf);border:1.5px solid var(--line);height:66px}
+.sc5 .up b{display:block;font-size:13.5px}
+.sc5 .up small{display:block;font-size:10.5px;line-height:1.25;color:var(--soft)}
+.sc5 .ui{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:18px}
+.sc5 .ds{border-color:var(--server);background:var(--server-t);animation:dsg var(--T) infinite}
+.sc5 .ds .ui{background:#fff;color:var(--server)}
+.sc5 .ds small{color:var(--server)}
+@keyframes dsg{0%,58%{box-shadow:0 0 0 0 rgba(47,75,232,0)}61%,66%{box-shadow:0 0 0 6px rgba(47,75,232,.22)}72%,100%{box-shadow:0 0 0 0 rgba(47,75,232,0)}}
+.sc5 .hm{border-style:dashed}
+.sc5 .srv{background:#ECEEE8;display:flex;flex-direction:column;gap:3px;padding:6px 6px}
+.sc5 .srv i{display:block;height:4px;width:18px;border-radius:2px;background:#8A93A5}
+.sc5 .srv i:first-child{background:var(--ok)}
+.sc5 .or{flex:none;font-size:11px;color:var(--soft)}
+.sc5 .wire{position:absolute;top:70px;height:44px;left:calc(25% - 4px);width:2px;background:repeating-linear-gradient(var(--server) 0 4px,transparent 4px 8px);opacity:.55}
+.sc5 .pk{position:absolute;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--server);top:40px;opacity:0;animation:pk var(--T) infinite}
+@keyframes pk{0%,50%{top:40px;opacity:0}51%{opacity:1}59%{top:-6px;opacity:1;background:var(--server)}61%,64%{top:-6px;opacity:0}65%{top:-6px;opacity:1;background:var(--local)}72%{top:40px;opacity:1;background:var(--local)}73%,100%{top:40px;opacity:0}}
+.sc5 .ms{top:112px;border-radius:22px}
+.sc5 .ms .h{margin-bottom:4px}
+.sc5 .pa,.sc5 .pb{position:absolute;left:12px;right:12px;top:34px}
+.sc5 .pa{animation:pa var(--T) infinite}
+@keyframes pa{0%,40%{opacity:1}44%,100%{opacity:0}}
+.sc5 .pa .act2{margin-top:0;margin-bottom:5px;opacity:0;animation:in5a var(--T) infinite both}
+.sc5 .pa .act2:nth-child(2){animation-name:in5b}
+@keyframes in5a{0%,3%{opacity:0;transform:translateX(-14px)}8%,100%{opacity:1;transform:none}}
+@keyframes in5b{0%,13%{opacity:0;transform:translateX(-14px)}18%,100%{opacity:1;transform:none}}
+.sc5 .act2 .ok{transform:scale(0);animation:ok5a var(--T) infinite}
+.sc5 .act2:nth-child(2) .ok{animation-name:ok5b}
+@keyframes ok5a{0%,8%{transform:scale(0)}11%{transform:scale(1.35)}14%,100%{transform:scale(1)}}
+@keyframes ok5b{0%,18%{transform:scale(0)}21%{transform:scale(1.35)}24%,100%{transform:scale(1)}}
+.sc5 .off{display:inline-flex;font-size:11px;color:var(--soft);background:#ECEEE8;border-radius:999px;padding:4px 10px;opacity:0;animation:in5c var(--T) infinite both}
+@keyframes in5c{0%,25%{opacity:0;transform:scale(.9)}30%,100%{opacity:1;transform:none}}
+.sc5 .pb{opacity:0;animation:pb var(--T) infinite}
+@keyframes pb{0%,43%{opacity:0}46%,96%{opacity:1}100%{opacity:0}}
+.sc5 .pb .me{display:table;margin-left:auto;animation:in5d var(--T) infinite both}
+@keyframes in5d{0%,44%{opacity:0;transform:translateY(8px)}48%,100%{opacity:1;transform:none}}
+.sc5 .ca{display:grid;margin-top:8px}.sc5 .ca>*{grid-area:1/1}
+.sc5 .call{font-size:11px;font-weight:500;color:var(--server);opacity:0;animation:call5 var(--T) infinite}
+@keyframes call5{0%,49%{opacity:0}51%,54%{opacity:1}57%{opacity:.4}60%{opacity:1}63%{opacity:.4}66%,70%{opacity:1}73%,100%{opacity:0}}
+.sc5 .pb .ai{position:relative;margin-top:0;opacity:0;animation:in5e var(--T) infinite both}
+@keyframes in5e{0%,71%{opacity:0;transform:translateY(6px)}75%,100%{opacity:1;transform:none}}

@@ -1,11 +1,4 @@
-/* Приветствие: девиз + 4 карточки. Сцены 1–3 (v3: гонка, правила режима, два телефона) — пока только здесь; приложение (ui/Intro.kt) — прошлая версия. Сцены — только разметка, движение в intro.css. */
-const INTRO = [
-  { k: 0, h: 'Вахтёр. Всегда на месте', p: 'Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.' },
-  { k: 1, h: 'Своих — без очереди', p: 'Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.' },
-  { k: 2, h: 'Запомнил с первого раза', p: 'Язык перевода, вкусы, аллергия — режим помнит ваши правила. Дальше хватает одной кнопки.' },
-  { k: 3, h: 'Знает, кто зачем пришёл', p: 'Меню и вывески — сразу камерой, вопросы — сразу голосом. На одно нажатие меньше.' },
-  { k: 4, h: 'Сначала сам, сложное — наверх', p: 'Будильник, таймер, календарь, звонок — делает сам, прямо на телефоне. Что сложнее — звонит наверх, вашему мозгу.' },
-];
+/* Первый запуск — один мастер: каждый экран сначала объясняет, потом сразу настраивает (ui.js, ONB). Здесь — только сцены; движение в intro.css. */
 const WAVE = '<div class="wave">' + '<i></i>'.repeat(7) + '</div>';
 
 function introScene(k) {
@@ -17,7 +10,6 @@ function introScene(k) {
         <div class="chain">${st.map((s,j)=>`<span class="tk"><em>№${j+1}</em>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
       <div class="card vah"><div class="hd"><span class="pw">⏻</span><b>Вахтёр</b><small class="ql free">без очереди</small><span class="clk"></span><span class="ok">✓</span></div>
         <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${'<b></b>'.repeat(9)}</span><span class="tx">Сколько варить гречку?</span></span></div>
-        <div class="loc">🔒 Чужих не пустит: голос остаётся на телефоне</div>
         <div class="ai">15–20 минут, воды вдвое больше.</div></div></div>`;
   }
   if (k === 2) return `<div class="sc sc2">
@@ -40,20 +32,21 @@ function introScene(k) {
       ${ph('Что это?', `<div class="sht cam"><div class="g"></div><div class="vf"><div class="shelf"></div><span class="jar a"></span><span class="jar b"></span></div><div class="shut"></div></div>`, '📷 сразу камера')}
       </div>`;
   }
-  return `<div class="sc sc4"><div class="ms"><div class="g"></div><div class="h"><i></i><b>Ассистент</b> · на связи</div>${WAVE}
-    <div class="live">будильник на 7 и таймер на минуту</div>
-    <div class="me">Будильник на 7 и таймер на минуту</div>
-    <div class="acts"><div class="act2"><span class="ic">⏰<span class="ok">✓</span></span><span><b>Будильник поставлен · 7:00</b><small>прозвенит через 9 ч</small></span></div>
-      <div class="act2"><span class="ic">⏱<span class="ok">✓</span></span><span><b>Таймер запущен · 1:00</b><small>осталось 0:59</small></span></div></div>
-    <span class="off">✈ нет связи — вахтёр всё равно на месте</span><span class="up">☎ сложное — звонок наверх: DeepSeek или Hermes</span></div></div>`;
+  if (k === 'brain') return `<div class="sc sc5">
+    <div class="ups"><div class="up ds"><span class="ui">☁</span><span><b>DeepSeek</b><small>облако · по ключу</small></span></div><span class="or">или</span>
+      <div class="up hm"><span class="ui srv"><i></i><i></i><i></i></span><span><b>Hermes</b><small>свой сервер: память, поиск, Telegram</small></span></div></div>
+    <div class="wire"><i class="pk"></i></div>
+    <div class="ms"><div class="g"></div><div class="h"><i></i><b>Ассистент</b> · на связи</div>
+      <div class="pa"><div class="act2"><span class="ic">⏰<span class="ok">✓</span></span><span><b>Будильник поставлен · 7:00</b><small>сам, на телефоне</small></span></div>
+        <div class="act2"><span class="ic">⏱<span class="ok">✓</span></span><span><b>Таймер запущен · 1:00</b><small>осталось 0:59</small></span></div>
+        <span class="off">✈ нет сети — всё равно сам</span></div>
+      <div class="pb"><div class="me">Спланируй выходные в Казани</div><div class="ca"><div class="call">☎ Звоню наверх · DeepSeek…</div>
+        <div class="ai">Суббота — Кремль и Баумана, воскресенье — Свияжск на теплоходе.</div></div></div></div></div>`;
 }
 
-function introHtml() {
-  const i = S.introStep || 0, c = INTRO[i], last = i === INTRO.length - 1;
-  return `<div class="layer appv">${statusBar(true)}<div class="intro"><div class="islide">
-    <div class="stage">${introScene(c.k)}</div><h2>${c.h}</h2><p>${c.p}</p></div>
-    <div class="nav" style="display:flex;justify-content:space-between;align-items:center;padding-top:14px">
-      <button class="tbtn" data-act="introskip">${last ? '' : 'Пропустить'}</button>
-      <div class="dots">${INTRO.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</div>
-      <button class="fbtn" data-act="${last ? 'introdone' : 'intronext'}">${last ? 'Настроить' : 'Далее'}</button></div></div></div>`;
-}
+/* «Режимы»: сцены сменяют друг друга, каждая — один свой цикл (правила — 6 с, два телефона — 2 × 3,6 с). */
+setInterval(() => {
+  if (S.screen !== 'app' || S.onboarded || ONB[S.onbStep] !== 'modes' || S.dialog) return;
+  if (Date.now() - (S.modesAt || 0) < (S.modesK ? 7200 : 6000)) return;
+  S.modesK = S.modesK ? 0 : 1; S.modesAt = Date.now(); render();
+}, 300);

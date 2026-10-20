@@ -197,11 +197,11 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
   </div></div></div>` }
 function keyBody(onb){ const K=S.keyCheck, b=brainById('deepseek');
   const ck=K?K.checks.map(c=>`<div class="ck ${c.s}"><span class="s">${c.s==='ok'?'✓':c.s==='bad'?'!':''}</span><span>${c.t}${c.d?`<small>${c.d}</small>`:''}</span></div>`).join(''):'';
-  return `<div class="h2">${onb?'Мозг':'Ключ DeepSeek'}</div><p style="color:var(--soft);margin:0 0 12px">${onb?'Отвечать будет DeepSeek — нужен ключ API с platform.deepseek.com. Ключ хранится в защищённом хранилище телефона.':'Хранится в защищённом хранилище телефона (Keystore).'}</p>
+  return `${onb?'<div class="klbl">Ключ DeepSeek API — с platform.deepseek.com. Хранится в защищённом хранилище телефона.</div>':'<div class="h2">Ключ DeepSeek</div><p style="color:var(--soft);margin:0 0 12px">Хранится в защищённом хранилище телефона (Keystore).</p>'}
     <input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="sk-…" autocomplete="off" spellcheck="false">
     <div style="display:flex;justify-content:flex-end;gap:6px;margin:8px 0 12px"><button class="tbtn" data-act="keypaste">Вставить</button><button class="fbtn" data-act="keycheck">Проверить</button></div>
     ${K?`<div class="checks">${ck}</div>`:''}${K&&K.stage==='bad'?`<div class="note bad">${K.err}</div>`:''}${S.w.key==='ok'&&K&&K.stage==='done'?'<div class="note ok">Готово. Режимы отвечают через DeepSeek.</div>':''}
-    ${onb?'<p style="font-size:12.5px;color:var(--soft)">Свой сервер Hermes — с памятью, поиском и Telegram — можно подключить потом: Настройки → «Мозги».</p>':''}` }
+    ${onb?'<p class="khm">Hermes — подключить потом: Настройки → «Мозги».</p>':''}` }
 function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title);
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
   <div class="scroll"><div class="mform">
@@ -239,36 +239,44 @@ function about(){
   </div></div></div>`;
 }
 
-/* первый запуск: 5 шагов, Material-навигация внизу */
-const ONB=['welcome','voice','button','try','brain'];   // голос первым: модель качается, пока настраивают кнопку; потом проба, мозг — последним
+/* Первый запуск — один мастер: каждый экран сначала объясняет (живая сцена), потом сразу настраивает то, о чём рассказал.
+   Голос первым: модель качается, пока настраивают кнопку; потом проба, режимы, мозг — последним. */
+const ONB=['welcome','voice','button','try','modes','brain'];
 function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
 function onb(){
   const st=ONB[S.onbStep];
-  if (st==='welcome') return introHtml();
-  if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${keyBody(true)}</div>${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Открыть','onbnext']:null)}</div></div>`;
+  if (st==='try') return tryStep();
+  if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="wscroll" id="wscroll"><div class="art">${introScene('brain')}</div>
+    <h2>Сначала сам, сложное — наверх</h2><p>Будильник, таймер, звонок — телефон делает сам, даже без сети. Сложное — наверх: DeepSeek в облаке по ключу или свой сервер Hermes.</p>${keyBody(true)}</div>
+    ${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Открыть','onbnext']:null)}</div></div>`;
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
-  if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
-  // Пропустить, не поняв, нельзя: пока не настроено, главная кнопка — «Настроить» (открывает по очереди), «Позже» — через предупреждение.
-  // На незнакомом телефоне боковой кнопки может не быть — требуем только помощника, вызов — «Домой» или жест.
-  if (st==='button'){ const role=S.w.role==='ours', known=S.w.profile!=='unknown', ok=btnDone();
-    art=ok?'<div class="bdone">✓</div>':'<div style="font-size:64px">⏻</div>'; h='Боковая кнопка';
-    p=ok?(known?'Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.':'Готово: Вахтёр — помощник телефона.'):known?'Два переключателя в настройках телефона — Android не даёт сделать это из приложения. «Настроить» откроет их по очереди.':'Помощника выбирают в настройках телефона — Android не даёт сделать это из приложения. «Настроить» откроет нужный экран.';
-    const sideSum=S.sideOk?'Зажатие — цифровой помощник':S.w.side==='bixby'?'Сейчас Bixby':S.w.side==='double'?'Помощник — на двойном нажатии':'Сейчас меню выключения';
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${known?li(I.btn,'Боковая кнопка',S.sideOk?sideSum:'Не настроено · '+sideSum.toLowerCase(),'sysside',!S.sideOk,S.sideOk?I.ok:''):li(I.btn,'Вызов','Долгое нажатие «Домой» или жест')}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
-    if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
+  if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
-    if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
-    if (st==='voice' && S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
-  if (st==='try') return tryStep();
+    if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null;
+    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>` }
+  // Сцена — гонка «приложение против кнопки», под ней сразу оба переключателя. Пропустить, не поняв, нельзя: пока не настроено,
+  // главная кнопка — «Настроить» (открывает по очереди), «Позже» — через предупреждение. На незнакомом телефоне боковой кнопки
+  // может не быть — требуем только помощника, вызов — «Домой» или жест.
+  if (st==='button'){ const role=S.w.role==='ours', known=S.w.profile!=='unknown', ok=btnDone();
+    art=introScene(1); h='Своих — без очереди';
+    p=ok?(known?'Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.':'Готово: Вахтёр — помощник телефона.')
+      :known?'Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Включается в настройках телефона, «Настроить» откроет их по очереди.'
+      :'Вызвали помощника — и сразу вопрос, без приложений и новых чатов. Помощника выбирают в настройках телефона, «Настроить» откроет нужный экран.';
+    const sideSum=S.sideOk?'Зажатие — цифровой помощник':S.w.side==='bixby'?'Сейчас Bixby':S.w.side==='double'?'Помощник — на двойном нажатии':'Сейчас меню выключения';
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${known?li(I.btn,'Боковая кнопка',S.sideOk?sideSum:'Не настроено · '+sideSum.toLowerCase(),'sysside',!S.sideOk,S.sideOk?I.ok:''):li(I.btn,'Вызов','Долгое нажатие «Домой» или жест')}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
+    if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
+  // Режимы: две сцены сменяют друг друга сами (таймер в intro.js) или по переключателю. Настраивать нечего.
+  if (st==='modes'){ const k=S.modesK||0; art=`<div>${introScene(k?3:2)}<div class="mtog"><button class="${k?'':'on'}" data-act="modes0">Помнит правила</button><button class="${k?'on':''}" data-act="modes1">Сразу нужное</button></div></div>`;
+    h='Запомнил, кто зачем пришёл'; p='Режим помнит ваши правила — язык перевода, вкусы, аллергию — и открывается сразу как надо: вопросы — голосом, меню и вывески — камерой.'; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
 function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>
   <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
     <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
-  <div class="lock">🔒 голос остаётся здесь · ✈ без интернета</div></div>` }
+  <div class="lock">🔒 чужих не пустит: голос остаётся здесь</div></div>` }
 /** Первый запуск, последний шаг: проба диктовки, как «Попробуйте здесь…» в Писаре, — но настоящей кнопкой листа. */
 /** Первый запуск: проба голоса — показать, что пишется быстро. Одна настоящая строка ввода листа; надиктованное — пузырями
  *  над ней с отметкой «готово за 0,4 с · на телефоне». Чего не хватает — одной строкой посередине; микрофон спрашивает сама кнопка. */
@@ -363,7 +371,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.islide',()=>'intro'+(S.introStep||0)],['.scv',()=>'voice']];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep+'|'+(S.modesK||0)],['.scv',()=>'voice']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();
@@ -394,6 +402,7 @@ function render(){
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
   S.keepScroll=false;
+  if (S.keyCheck){ const w=$('#wscroll'); if(w) w.scrollTop=w.scrollHeight }   // мастер, «Мозг»: проверки ключа — под сценой, показать их
   if (S.scrollToMsg){ const id=S.scrollToMsg; S.scrollToMsg=null; requestAnimationFrame(()=>{ const el=$('#scroll'); const tgt=el&&el.querySelector(`.ai[data-msg="${id}"]`); if(tgt){ const k=el.getBoundingClientRect().height/el.offsetHeight||1; el.scrollTop += (tgt.getBoundingClientRect().top - el.getBoundingClientRect().top)/k - 8 } }) }
   renderWorld();
 }

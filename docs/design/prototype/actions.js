@@ -60,8 +60,7 @@ document.addEventListener('click', async e=>{
     case 'cm:restart': S.chatMenu=false; S.keepScroll=true;   // дальше — как раньше: карточка «Стереть разговор?»
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();
-    case 'intronext': S.introStep=(S.introStep||0)+1; return render();
-    case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('voice'); return render();
+    case 'modes0': case 'modes1': S.modesK=+a.slice(-1); S.modesAt=Date.now(); return render();
     case 'onbnext': return onbNext();
     case 'onbdone': return onbDone();
     case 'btnsetup': return btnSetup();
@@ -187,6 +186,7 @@ function onbNext(){
   if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null;
   if (S.onbStep>=ONB.length-1) return onbDone();
   S.onbStep++; if (ONB[S.onbStep]==='try' && (S.w.model==='none'||S.w.model==='broken')) S.onbStep++;   // голос не качали — пробовать нечем
+  if (ONB[S.onbStep]==='modes'){ S.modesK=0; S.modesAt=Date.now() }
   return render() }
 function onbDone(){ S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render() }
 /** Шаг «Боковая кнопка»: «Настроить» открывает по очереди то, что ещё не настроено; «Позже» — один раз наше предупреждение. */
