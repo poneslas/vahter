@@ -54,77 +54,108 @@
 .halo.b{animation-delay:1.2s;border-color:var(--server)}
 @keyframes halo{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.6);opacity:0}}
 
-/* ── 1. не чат, а кнопка: сверху ИИ-приложение — цепочка шагов; снизу Тася — одно нажатие ── */
-.sc1{--T:7s;display:flex;flex-direction:column;gap:10px}
-.sc1 .usual{background:#E9EBE5;border-radius:18px;padding:12px;animation:dim var(--T) infinite}
-@keyframes dim{0%,50%{opacity:1}56%,100%{opacity:.55}}
-.sc1 .lbl{display:flex;align-items:center;font-size:11.5px;font-weight:600;color:var(--soft)}
-.sc1 .lbl em{margin-left:auto;font-style:normal;font-weight:400;font-size:11px;opacity:0;animation:t1 var(--T) infinite}
-@keyframes t1{0%,44%{opacity:0}50%,100%{opacity:1}}
-.sc1 .chain{display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center;margin-top:8px}
-.sc1 .chain span{font-size:11.5px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 8px;opacity:.25;animation:stp var(--T) infinite both}
-.sc1 .chain i{font-style:normal;font-size:12px;color:var(--soft);opacity:0;animation:stp var(--T) infinite both}
-.sc1 .chain>*:nth-child(1){animation-delay:.21s}.sc1 .chain>*:nth-child(2),.sc1 .chain>*:nth-child(3){animation-delay:.81s}
-.sc1 .chain>*:nth-child(4),.sc1 .chain>*:nth-child(5){animation-delay:1.4s}.sc1 .chain>*:nth-child(6),.sc1 .chain>*:nth-child(7){animation-delay:2s}
-.sc1 .chain>*:nth-child(8),.sc1 .chain>*:nth-child(9){animation-delay:2.6s}
-@keyframes stp{0%{opacity:.25;transform:scale(.9)}6%,100%{opacity:1;transform:none}}
-.sc1 .tasy{flex:1;position:relative;background:var(--paper);border-radius:18px;padding:12px;box-shadow:0 6px 22px -10px rgba(14,26,54,.45);border:2px solid transparent;animation:glowb var(--T) infinite}
-@keyframes glowb{0%,55%{border-color:transparent}58%,62%{border-color:var(--local)}66%,100%{border-color:transparent}}
-.sc1 .tasy .lbl b{background:var(--ink);color:#fff;border-radius:999px;padding:2px 8px;font-size:11.5px}
-.sc1 .tasy .key{margin-left:8px;font-size:11px;background:#ECEEE8;border-radius:999px;padding:2px 8px;color:var(--soft);animation:keyc var(--T) infinite}
-@keyframes keyc{0%,55%{background:#ECEEE8;color:var(--soft)}58%,62%{background:var(--local);color:var(--ink)}66%,100%{background:#ECEEE8;color:var(--soft)}}
-.sc1 .tasy .lbl em{color:var(--local-d);font-weight:600;animation:t2 var(--T) infinite}
-@keyframes t2{0%,80%{opacity:0}86%,100%{opacity:1}}
-.sc1 .wave{animation:w1 var(--T) infinite}
-@keyframes w1{0%,59%{opacity:0;height:0}61%,68%{opacity:1;height:22px}70%,100%{opacity:0;height:0}}
-.sc1 .me{animation:in1 var(--T) infinite both;margin-top:4px}
-@keyframes in1{0%,68%{opacity:0;transform:translateY(6px)}71%,97%{opacity:1;transform:none}100%{opacity:0}}
-.sc1 .ai{animation:in2 var(--T) infinite both}
-@keyframes in2{0%,74%{opacity:0;transform:translateY(6px)}78%,97%{opacity:1;transform:none}100%{opacity:0}}
-.sc1 .me,.sc1 .ai{font-size:12px}
-.sc1 .ai{position:relative;padding-left:12px;margin-top:6px}
+/* ── 1. не чат, а кнопка: гонка. Оба стартуют одновременно; вопрос одинаковый — разница только в пути до него ── */
+@property --n{syntax:'<integer>';inherits:false;initial-value:0}
+.sc1{--T:8s;display:flex;flex-direction:column;gap:10px}
+.sc1 .card{border-radius:18px;padding:12px 14px}
+.sc1 .usual{background:#E2E5EB}
+.sc1 .tasy{flex:1;background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
+.sc1 .hd{display:flex;align-items:center;gap:9px}
+.sc1 .hd b{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.sc1 .usual .hd b{color:#5B6478}
+.sc1 .apps{display:grid;grid-template-columns:repeat(2,9px);gap:3px}
+.sc1 .apps i{width:9px;height:9px;border-radius:3px;background:#A9B0BE}
+.sc1 .pw{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--local);display:grid;place-items:center;font-size:15px;animation:pw1 var(--T) infinite}
+@keyframes pw1{0%,2%{box-shadow:0 0 0 0 rgba(232,163,23,.7);transform:scale(1)}5%{transform:scale(.88)}9%{box-shadow:0 0 0 10px rgba(232,163,23,0);transform:scale(1)}100%{box-shadow:none}}
+.sc1 .clk{margin-left:auto;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;counter-reset:s var(--n)}
+.sc1 .clk::before{content:"⏱ 0:" counter(s,decimal-leading-zero)}
+.sc1 .usual .clk{color:#6B7487;animation:cnt1 var(--T) linear infinite}
+@keyframes cnt1{0%{--n:0}70%,100%{--n:14}}
+.sc1 .tasy .clk{color:var(--local-d);animation:cnt2 var(--T) linear infinite}
+@keyframes cnt2{0%{--n:0}22%,100%{--n:2}}
+.sc1 .ok{width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:13px;display:grid;place-items:center;transform:scale(0);animation:ok1 var(--T) infinite}
+@keyframes ok1{0%,22%{transform:scale(0)}25%{transform:scale(1.3)}28%,97%{transform:scale(1)}100%{transform:scale(0)}}
+.sc1 .chain{display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center;margin-top:9px}
+.sc1 .chain span{font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:5px 9px;opacity:.3}
+.sc1 .chain i{font-style:normal;font-size:13px;color:var(--soft);opacity:.2}
+.sc1 .chain .q{font-weight:600;color:var(--ink)}
+.sc1 .usual .chain>*{animation:var(--k) var(--T) infinite}
+.sc1 .usual .chain>:nth-child(1){--k:u1}.sc1 .usual .chain>:nth-child(2),.sc1 .usual .chain>:nth-child(3){--k:u2}
+.sc1 .usual .chain>:nth-child(4),.sc1 .usual .chain>:nth-child(5){--k:u3}.sc1 .usual .chain>:nth-child(6),.sc1 .usual .chain>:nth-child(7){--k:u4}
+.sc1 .usual .chain>:nth-child(8),.sc1 .usual .chain>:nth-child(9){--k:u5}
+@keyframes u1{0%,6%{opacity:.3}9%,97%{opacity:1}100%{opacity:.3}}
+@keyframes u2{0%,20%{opacity:.3}23%,97%{opacity:1}100%{opacity:.3}}
+@keyframes u3{0%,34%{opacity:.3}37%,97%{opacity:1}100%{opacity:.3}}
+@keyframes u4{0%,48%{opacity:.3}51%,97%{opacity:1}100%{opacity:.3}}
+@keyframes u5{0%,64%{opacity:.3}67%,97%{opacity:1}100%{opacity:.3}}
+.sc1 .tasy .chain span{background:#fff;border-color:#EBCB86}
+.sc1 .tasy .chain .k{font-weight:600;animation:u1 var(--T) infinite}
+.sc1 .tasy .chain>:nth-child(n+2){animation:t3 var(--T) infinite}
+@keyframes t3{0%,11%{opacity:.3}14%,97%{opacity:1}100%{opacity:.3}}
+.sc1 .ai{position:relative;font-size:13.5px;line-height:1.35;padding-left:13px;margin-top:10px;opacity:0;animation:t4 var(--T) infinite}
+@keyframes t4{0%,18%{opacity:0;transform:translateY(6px)}22%,97%{opacity:1;transform:none}100%{opacity:0}}
 
-/* ── 2. объяснили один раз: вкладки сами переключаются, в каждой — свой короткий ответ ── */
-.sc2 .ms{top:20px;border-radius:22px;display:flex;flex-direction:column}
-.sc2 .task{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--local-d);background:var(--local-t);border-radius:999px;padding:3px 9px;align-self:flex-start}
-.sc2 .pane{position:absolute;left:12px;right:12px;top:70px;opacity:0;animation:pane calc(var(--T)*1.5) ease infinite both}
-.sc2 .pane:nth-child(2){animation-delay:calc(var(--T)*.5)}.sc2 .pane:nth-child(3){animation-delay:calc(var(--T)*1)}
-@keyframes pane{0%{opacity:0;transform:translateX(18px)}5%,30%{opacity:1;transform:none}35%,100%{opacity:0;transform:translateX(-18px)}}
-.sc2 .pane .task{margin-bottom:8px}
-.sc2 .thumb{width:76px;height:56px;border-radius:12px;margin-left:auto;background:linear-gradient(135deg,#C9B07E,#8E6E3E);position:relative;overflow:hidden}
-.sc2 .thumb.menu{background:linear-gradient(160deg,#F7F1E3,#E6D8B8)}
-.sc2 .thumb.menu::after{content:"";position:absolute;inset:9px 10px;background:repeating-linear-gradient(#8E6E3E 0 2px,transparent 2px 9px);opacity:.55}
-.sc2 .thumb.tea{background:radial-gradient(circle at 50% 60%,#6B3E20 0 34%,#A8743F 35% 46%,#E8DCC4 47%)}
-.sc2 .mtabs2{position:absolute;left:0;right:0;bottom:12px}
-.sc2 .mtabs2 span{transition:none;animation:tabc calc(var(--T)*1.5) infinite}
-.sc2 .mtabs2 span:nth-of-type(2){animation-delay:calc(var(--T)*.5)}.sc2 .mtabs2 span:nth-of-type(3){animation-delay:calc(var(--T)*1)}
-@keyframes tabc{0%,31%{color:#fff;background:var(--ink)}34%,100%{color:var(--soft);background:transparent}}
+/* ── 2. настроил один раз: карточка режима с правилами → штамп → через неделю одно нажатие, ответ по тем же правилам ── */
+.sc2{--T:10s}
+.sc2 .mcard{position:absolute;inset:6px 0;background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 10px 26px -16px rgba(14,26,54,.5);animation:mc var(--T) infinite}
+@keyframes mc{0%,50%{opacity:1;transform:none}56%,100%{opacity:0;transform:translateY(-24px) scale(.92)}}
+.sc2 .mh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sc2 .mi{width:36px;height:36px;border-radius:12px;background:var(--local-t);display:grid;place-items:center;font-size:19px}
+.sc2 .mh b{font-size:19px;font-weight:700}
+.sc2 .mh small{margin-left:auto;font-size:12px;color:var(--soft)}
+.sc2 .rule{display:flex;gap:9px;align-items:center;font-size:14.5px;padding:7px 0;border-top:1px solid #ECEEE8;opacity:0;animation:var(--k) var(--T) infinite both}
+.sc2 .rule i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;background:var(--local-t);color:var(--local-d);font-size:11px;font-weight:700;display:grid;place-items:center}
+.sc2 .rule:nth-of-type(2){--k:r1}.sc2 .rule:nth-of-type(3){--k:r2}.sc2 .rule:nth-of-type(4){--k:r3}
+.sc2 .start{--k:r4;margin-top:8px;display:inline-block;font-size:13.5px;color:var(--soft);background:#ECEEE8;border-radius:999px;padding:5px 12px;opacity:0;animation:r4 var(--T) infinite both}
+.sc2 .start b{color:var(--ink)}
+@keyframes r1{0%,3%{opacity:0;transform:translateX(-10px)}7%,100%{opacity:1;transform:none}}
+@keyframes r2{0%,11%{opacity:0;transform:translateX(-10px)}15%,100%{opacity:1;transform:none}}
+@keyframes r3{0%,19%{opacity:0;transform:translateX(-10px)}23%,100%{opacity:1;transform:none}}
+@keyframes r4{0%,27%{opacity:0;transform:translateX(-10px)}31%,100%{opacity:1;transform:none}}
+.sc2 .stamp{position:absolute;right:14px;bottom:16px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ok);border:2.5px solid var(--ok);border-radius:10px;padding:5px 10px;opacity:0;transform:rotate(-8deg);animation:stmp var(--T) infinite}
+@keyframes stmp{0%,35%{opacity:0;transform:rotate(-8deg) scale(1.8)}38%{opacity:1;transform:rotate(-8deg) scale(.94)}40%,100%{opacity:1;transform:rotate(-8deg) scale(1)}}
+.sc2 .use{position:absolute;inset:0;opacity:0;animation:us var(--T) infinite}
+@keyframes us{0%,54%{opacity:0}58%,97%{opacity:1}100%{opacity:0}}
+.sc2 .later{text-align:center;font-size:13px;font-style:italic;color:var(--soft)}
+.sc2 .ms{top:26px;border-radius:22px}
+.sc2 .ms .h{margin-bottom:10px}
+.sc2 .thumb{width:84px;height:62px;border-radius:12px;margin-left:auto;position:relative;overflow:hidden;background:linear-gradient(160deg,#F7F1E3,#E6D8B8);opacity:0;animation:s1 var(--T) infinite both}
+.sc2 .thumb::after{content:"";position:absolute;inset:9px 10px;background:repeating-linear-gradient(#8E6E3E 0 2px,transparent 2px 9px);opacity:.55}
+.sc2 .ms .ai{font-size:14px;margin-top:10px;opacity:0;animation:s2 var(--T) infinite both}
+@keyframes s1{0%,61%{opacity:0;transform:scale(.8)}65%,100%{opacity:1;transform:none}}
+@keyframes s2{0%,67%{opacity:0;transform:translateY(6px)}71%,100%{opacity:1;transform:none}}
+.sc2 .chk{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-left:12px}
+.sc2 .chk span{font-size:12px;font-weight:600;color:var(--local-d);background:var(--local-t);border-radius:999px;padding:3px 9px;opacity:0;animation:var(--k) var(--T) infinite both}
+.sc2 .chk span:nth-child(1){--k:c1}.sc2 .chk span:nth-child(2){--k:c2}.sc2 .chk span:nth-child(3){--k:c3}.sc2 .chk span:nth-child(4){--k:c4}
+@keyframes c1{0%,73%{opacity:0;transform:scale(.6)}76%,100%{opacity:1;transform:none}}
+@keyframes c2{0%,76%{opacity:0;transform:scale(.6)}79%,100%{opacity:1;transform:none}}
+@keyframes c3{0%,79%{opacity:0;transform:scale(.6)}82%,100%{opacity:1;transform:none}}
+@keyframes c4{0%,82%{opacity:0;transform:scale(.6)}85%,100%{opacity:1;transform:none}}
 
-/* ── 3. навёл камеру — узнал: лист растёт в видоискатель, обводка, снимок, ответ ── */
-.sc3 .ms{top:auto;height:96px;animation:grow var(--T) cubic-bezier(.3,.8,.3,1) infinite}
-@keyframes grow{0%,8%{height:96px;border-radius:22px 22px 0 0}20%,62%{height:300px;border-radius:22px}74%,100%{height:150px;border-radius:22px 22px 0 0}}
-.sc3 .vf{position:absolute;left:12px;right:12px;top:52px;bottom:58px;border-radius:16px;overflow:hidden;
-  background:linear-gradient(180deg,#3B3F48,#22252C);opacity:0;animation:vf var(--T) infinite}
-@keyframes vf{0%,14%{opacity:0}20%,60%{opacity:1}66%,100%{opacity:0}}
-.sc3 .shelf{position:absolute;left:0;right:0;bottom:30px;height:6px;background:#6B5A44}
-.sc3 .jar{position:absolute;bottom:36px;width:34px;height:58px;border-radius:7px 7px 5px 5px;background:linear-gradient(90deg,#C25B2A,#E8823E 60%,#B54F22)}
-.sc3 .jar::before{content:"";position:absolute;left:5px;right:5px;top:-9px;height:11px;border-radius:3px;background:#2E2E2E}
-.sc3 .jar::after{content:"";position:absolute;left:4px;right:4px;top:18px;height:20px;background:#F3E6C8;border-radius:2px}
-.sc3 .jar.a{left:22px;filter:hue-rotate(80deg) saturate(.7)}.sc3 .jar.b{left:84px}.sc3 .jar.c{left:146px;filter:hue-rotate(200deg) saturate(.6)}
-.sc3 svg.ring{position:absolute;left:66px;bottom:22px;width:70px;height:96px;overflow:visible}
-.sc3 svg.ring path{fill:none;stroke:#FF3B30;stroke-width:4;stroke-linecap:round;stroke-dasharray:260;stroke-dashoffset:260;animation:draw var(--T) ease infinite}
-@keyframes draw{0%,26%{stroke-dashoffset:260;opacity:1}42%,62%{stroke-dashoffset:0;opacity:1}66%,100%{stroke-dashoffset:0;opacity:0}}
-.sc3 .flash{position:absolute;inset:0;background:#fff;opacity:0;animation:flash var(--T) infinite}
-@keyframes flash{0%,48%{opacity:0}50%{opacity:.85}56%,100%{opacity:0}}
-.sc3 .shut{position:absolute;left:50%;bottom:10px;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:var(--ink);display:grid;place-items:center;color:#fff;font-size:15px;opacity:0;animation:vf var(--T) infinite}
-.sc3 .shut{animation:vf var(--T) infinite,press var(--T) infinite}
-@keyframes press{0%,46%{transform:scale(1)}49%{transform:scale(.86)}53%,100%{transform:scale(1)}}
-.sc3 .res{position:absolute;left:12px;right:12px;top:30px;opacity:0;animation:res var(--T) infinite}
-@keyframes res{0%,68%{opacity:0;transform:translateY(8px)}74%,96%{opacity:1;transform:none}100%{opacity:0}}
-.sc3 .res .thumb2{width:44px;height:52px;border-radius:9px;margin-left:auto;background:linear-gradient(180deg,#3B3F48,#22252C);position:relative;overflow:hidden}
-.sc3 .res .thumb2::after{content:"";position:absolute;left:12px;bottom:6px;width:20px;height:32px;border-radius:4px;background:linear-gradient(90deg,#C25B2A,#E8823E);box-shadow:0 0 0 2px #FF3B30}
-.sc3 .res .ai{animation:in2b var(--T) infinite both}
-@keyframes in2b{0%,78%{opacity:0}84%,100%{opacity:1}}
+/* ── 3. сразу камера или голос: два телефона, одна и та же боковая кнопка — открывается разное ── */
+.sc3{--T:6s;display:flex;gap:18px;justify-content:center;align-items:flex-start}
+.sc3 .tel{width:136px;display:flex;flex-direction:column;align-items:center}
+.sc3 .ml{font-size:15px;font-weight:700;margin-bottom:8px}
+.sc3 .dev{position:relative;width:126px;height:200px;border-radius:24px;background:#1A2236;padding:5px}
+.sc3 .key{position:absolute;right:-5px;top:62px;width:5px;height:34px;border-radius:0 3px 3px 0;background:#3A4258;animation:key var(--T) infinite}
+@keyframes key{0%,9%{right:-5px;background:#3A4258;box-shadow:none}12%,17%{right:-2px;background:var(--local);box-shadow:0 0 0 4px rgba(232,163,23,.35),0 0 18px 4px rgba(232,163,23,.6)}22%,100%{right:-5px;background:#3A4258;box-shadow:none}}
+.sc3 .scr2{position:relative;height:100%;border-radius:19px;overflow:hidden;background:linear-gradient(170deg,#5C7391,#2B3B55)}
+.sc3 .home{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 14px;padding:18px 14px}
+.sc3 .home i{aspect-ratio:1;border-radius:8px;background:rgba(255,255,255,.28)}
+.sc3 .sht{position:absolute;left:0;right:0;bottom:0;height:92px;background:var(--paper);border-radius:16px 16px 0 0;padding:6px 8px;text-align:center;transform:translateY(100%);animation:sht var(--T) cubic-bezier(.3,.8,.3,1) infinite}
+@keyframes sht{0%,16%{transform:translateY(100%)}24%,94%{transform:none}100%{transform:translateY(100%)}}
+.sc3 .sht .g{width:22px;height:3px;border-radius:2px;background:#CBD0C6;margin:0 auto 10px}
+.sc3 .sht small{display:block;margin-top:6px;font-size:11.5px;color:var(--soft)}
+.sc3 .sht.cam{height:100%;border-radius:16px}
+.sc3 .vf{position:relative;height:130px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#3B3F48,#22252C)}
+.sc3 .shelf{position:absolute;left:0;right:0;bottom:22px;height:5px;background:#6B5A44}
+.sc3 .jar{position:absolute;bottom:27px;width:30px;height:50px;border-radius:6px 6px 4px 4px;background:linear-gradient(90deg,#C25B2A,#E8823E 60%,#B54F22)}
+.sc3 .jar::before{content:"";position:absolute;left:4px;right:4px;top:-8px;height:10px;border-radius:3px;background:#2E2E2E}
+.sc3 .jar::after{content:"";position:absolute;left:4px;right:4px;top:16px;height:17px;background:#F3E6C8;border-radius:2px}
+.sc3 .jar.a{left:20px;filter:hue-rotate(80deg) saturate(.7)}.sc3 .jar.b{left:62px}
+.sc3 .shut{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);margin:8px auto 0;background:#fff}
+.sc3 .cap{white-space:nowrap;margin-top:10px;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--local-t);border-radius:999px;padding:5px 12px;opacity:0;animation:cap var(--T) infinite}
+@keyframes cap{0%,24%{opacity:0;transform:translateY(6px)}30%,94%{opacity:1;transform:none}100%{opacity:0}}
 
 /* ── 4. сказал — сделано: волна → реплика → две строки с галочками → «без интернета» ── */
 .sc4 .ms{top:20px;border-radius:22px}
@@ -148,4 +179,3 @@
 .sc4 .ms .h{margin-bottom:4px}
 
 @media (prefers-reduced-motion:reduce){.sc *,.sc *::before,.sc *::after{animation-duration:0s!important;animation-delay:0s!important}}
-.sc1 .tasy .me{margin-left:auto;width:fit-content;max-width:86%}

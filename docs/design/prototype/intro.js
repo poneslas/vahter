@@ -1,4 +1,4 @@
-/* Приветствие: девиз + 4 карточки. Эталон сцен 1–3 — приложение (ui/Intro.kt): здесь тексты актуальны, сцены — первая версия. Сцены — только разметка, движение в intro.css (те же фазы — в приложении, ui/Intro.kt). */
+/* Приветствие: девиз + 4 карточки. Сцены 1–3 (v3: гонка, правила режима, два телефона) — пока только здесь; приложение (ui/Intro.kt) — прошлая версия. Сцены — только разметка, движение в intro.css. */
 const INTRO = [
   { k: 0, h: 'Зажал кнопку — сказал — сделано', p: 'Как Алиса или Gemini — только быстрее, без рекламы и с моделью, которую выбираете вы.' },
   { k: 1, h: 'Не чат, а кнопка', p: 'Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.' },
@@ -11,26 +11,34 @@ const WAVE = '<div class="wave">' + '<i></i>'.repeat(7) + '</div>';
 function introScene(k) {
   if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span></div>`;
   if (k === 1) {
-    const st = ['Разблокировать','Найти приложение','Новый чат','Объяснить задачу','Напечатать вопрос'];
-    return `<div class="sc sc1"><div class="usual"><div class="lbl">ИИ-приложение<em>5 шагов · ~20 с</em></div>
-      <div class="chain">${st.map((s,i)=>(i?'<i>→</i>':'')+`<span>${s}</span>`).join('')}</div></div>
-      <div class="tasy"><div class="lbl"><b>Тася · по кнопке</b><span class="key">⏻ кнопка</span><em>1 нажатие · ~2 с</em></div>${WAVE}
-        <div class="me">Сколько варить гречку?</div><div class="ai">15–20 минут на слабом огне, 1 : 2 с водой.</div></div></div>`;
+    const st = ['Разблокировать','Найти приложение','Открыть','Новый чат'];
+    return `<div class="sc sc1">
+      <div class="card usual"><div class="hd"><span class="apps"><i></i><i></i><i></i><i></i></span><b>ИИ-приложение</b><span class="clk"></span></div>
+        <div class="chain">${st.map(s=>`<span>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
+      <div class="card tasy"><div class="hd"><span class="pw">⏻</span><b>Тася</b><span class="clk"></span><span class="ok">✓</span></div>
+        <div class="chain"><span class="k">⏻ Зажать кнопку</span><i>→</i><span class="q">🎙 вопрос</span></div>
+        <div class="ai">Гречка — 15–20 минут.</div></div></div>`;
   }
-  if (k === 2) return `<div class="sc sc2"><div class="ms"><div class="g"></div><div class="h"><i></i><b>Режимы</b> · задача уже внутри</div>
-    <div>
-      <div class="pane"><span class="task">★ переводи на китайский</span><div class="me">Где здесь туалет?</div><div class="ai">洗手间在哪里？<br><small style="color:var(--soft)">Xǐshǒujiān zài nǎlǐ?</small></div></div>
-      <div class="pane"><span class="task">★ не остро, без свинины</span><div class="thumb menu"></div><div class="ai">Судак на гриле и морс — под ваши вкусы.</div></div>
-      <div class="pane"><span class="task">★ что это и нормальная ли цена</span><div class="thumb tea"></div><div class="ai">Пуэр, 15 лет выдержки. Цена обычная.</div></div>
-    </div>
-    <div class="mtabs2"><span>Переводчик</span><span>Гастрогид</span><span>Что это?</span></div>
-    </div></div>`;
-  if (k === 3) return `<div class="sc sc3"><div class="ms"><div class="g"></div><div class="h"><i></i><b>Что это?</b> · на связи</div>
-    <div class="vf"><div class="shelf"></div><span class="jar a"></span><span class="jar b"></span><span class="jar c"></span>
-      <svg class="ring" viewBox="0 0 70 96"><path d="M35 4 C60 4 66 30 64 52 C62 80 50 92 34 92 C14 92 5 76 6 50 C7 24 14 6 38 6"/></svg><div class="flash"></div></div>
-    <div class="shut">↑</div>
-    <div class="res"><div class="thumb2"></div><div class="ai">Пуэр, 15 лет выдержки — хороший. Цена обычная, брать можно.</div></div>
-    </div></div>`;
+  if (k === 2) return `<div class="sc sc2">
+    <div class="mcard"><div class="mh"><span class="mi">🍽</span><b>Гастрогид</b><small>мой режим</small></div>
+      <div class="rule"><i>1</i>Не ем острое и свинину</div>
+      <div class="rule"><i>2</i>Аллергия на орехи</div>
+      <div class="rule"><i>3</i>Бюджет до 1500 ₽, советуй 2–3 блюда</div>
+      <div class="start">Начинать с: <b>📷 камеры</b></div>
+      <div class="stamp">записано один раз</div></div>
+    <div class="use"><div class="later">через неделю, в ресторане…</div>
+      <div class="ms"><div class="g"></div><div class="h"><i></i><b>Гастрогид</b> · одно нажатие</div>
+        <div class="thumb menu"></div>
+        <div class="ai">Судак на гриле и морс — 1200 ₽.</div>
+        <div class="chk"><span>✓ не остро</span><span>✓ без свинины</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div></div></div></div>`;
+  if (k === 3) {
+    const home = '<div class="home">' + '<i></i>'.repeat(12) + '</div>';
+    const ph = (m, sheet, cap) => `<div class="tel"><div class="ml">${m}</div><div class="dev"><span class="key"></span><div class="scr2">${home}${sheet}</div></div><div class="cap">${cap}</div></div>`;
+    return `<div class="sc sc3">
+      ${ph('Переводчик', `<div class="sht"><div class="g"></div>${WAVE}<small>говорите…</small></div>`, '🎙 сразу голос')}
+      ${ph('Что это?', `<div class="sht cam"><div class="g"></div><div class="vf"><div class="shelf"></div><span class="jar a"></span><span class="jar b"></span></div><div class="shut"></div></div>`, '📷 сразу камера')}
+      </div>`;
+  }
   return `<div class="sc sc4"><div class="ms"><div class="g"></div><div class="h"><i></i><b>Ассистент</b> · на связи</div>${WAVE}
     <div class="live">будильник на 7 и таймер на минуту</div>
     <div class="me">Будильник на 7 и таймер на минуту</div>
