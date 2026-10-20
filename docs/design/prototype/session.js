@@ -3,6 +3,7 @@
 function openOverlay(src){
   if (S.w.locked && S.settings.lockScope==='off' && !S.unlocking){ return lockGate(src) }
   token++; S.busy=false;
+  if (S.screen==='cam2'&&S.cam){ S.screen=S.camRet.screen; S.cam=null }   // лист вызвали поверх камеры — камера закрывается, иначе она осталась бы поверх листа
   const isSide = src==='side'||src.startsWith('боков');
   const R=S.settings.returnToAssistant; if (isSide && S.mode!=='main' && R!=='never' && (R==='always' || S.idle>=30 || !curMode().enabled)){ const t=curMode().title; S.mode='main'; trace(R==='always'?`Боковая кнопка всегда открывает Ассистента (настройка). «${t}» — через вкладки или ярлык.`:`Без дела ${S.idle} мин — боковая кнопка снова открывает Ассистента. «${t}» остался во вкладках, лента сохранена.`,'p') }
   S.idle=0;

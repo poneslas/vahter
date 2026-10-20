@@ -134,7 +134,12 @@ const brainOf = (m=curMode()) => brainById(m.brain) || S.brains[0];
 const brainReady = (b=brainOf()) => b.kind==='api' ? S.w.key==='ok' : S.w.server==='paired';
 const activeModes = () => S.modes.filter(m=>m.enabled);
 const curMode = () => modeById(S.mode) || S.modes[0];
-function setMode(id, why){ const was=S.mode; if (S.rec && was!==id){ recTok++; S.rec=null; pd=null; if(S.ov){ S.ov.live=''; S.ov.liveQ=false } trace('Запись отменена переключением режима — ничего не ушло. Новая запись сама не начинается: вы уже трогаете экран, микрофон рядом.','p') } S.mode=id; S.attachMenu=false; if(was!==id){ const m=curMode(); trace(`${why||'Переключено'}: «${m.title}». Своя лента и своя сессия в Hermes (thread_id=${m.id==='main'?'—':m.id}); память Hermes общая.`,'p') } }
+function setMode(id, why){ const was=S.mode; if (S.rec && was!==id){ recTok++; S.rec=null; pd=null; if(S.ov){ S.ov.live=''; S.ov.liveQ=false } trace('Запись отменена переключением режима — ничего не ушло. Новая запись сама не начинается: вы уже трогаете экран, микрофон рядом.','p') } S.mode=id; S.attachMenu=false; camOnModeSwitch(was); if(was!==id){ const m=curMode(); trace(`${why||'Переключено'}: «${m.title}». Своя лента и своя сессия в Hermes (thread_id=${m.id==='main'?'—':m.id}); память Hermes общая.`,'p') } }
+/* Камера в листе при смене режима (как в приложении): режим «сразу камера» — камера остаётся, иначе закрывается и виден лист. */
+function camOnModeSwitch(was){ if (S.screen!=='cam2'||!S.cam||was===S.mode) return; const m=curMode();
+  if (m.primary==='photo'&&m.accepts.photo) return;
+  S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; if(S.rec){ recTok++; S.rec=null }
+  trace(`«${m.title}» начинается с голоса — камера закрыта, виден лист.`,'p') }
 let S = fresh(); let token = 0;
 function trace(text,kind=''){ const t=$('#trace'); const p=document.createElement('p'); p.className=kind; p.innerHTML=text; t.prepend(p); while(t.children.length>40) t.lastChild.remove(); const L=$('#lastlog'); if(L) L.innerHTML=text; if(typeof ptab!=='undefined' && ptab!=='log'){ const n=$('#lognew'); n.textContent=String((+n.textContent||0)+1) } }
 
