@@ -20,17 +20,18 @@ let eqs=[]; let last=performance.now();
 
 /* запись: зажать — говорить — отпустить; вверх — замочек; влево — отмена */
 let recTok=0;
+const TRY_PHR=['dict','toilet','move','table'];   // проба голоса: каждая следующая фраза — другая
 async function startRec(mode, into, silent){
   if (S.rec) return; if (!voiceOk()) return micUnavailable();
   // silent: запись включила боковая кнопка — в прототипе «речь» появится, когда выберете фразу в «Сказать»
-  S.rec={mode, key:into==='prompt'?'pr':into==='try'?'dict':silent?null:(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now(), side:silent==='side'}; const my=++recTok; render();
+  S.rec={mode, key:into==='prompt'?'pr':into==='try'?TRY_PHR[(S.tryShots||[]).length%TRY_PHR.length]:silent?null:(S.nextKey||'ask'), n:0, into: into||(S.draft?'append':'send'), t0:Date.now(), side:silent==='side'}; const my=++recTok; render();
   while (S.rec && my===recTok){ await wait(320); if(!S.rec||my!==recTok) return; if(!S.rec.key) continue; const ph=PHR[S.rec.key]; if (S.rec.n<ph.w.length) S.rec.n++; S.keepScroll=true; render() }
 }
 function recText(){ const r=S.rec; if(!r||!r.key||!r.n) return ''; const ph=PHR[r.key]; return r.n>=ph.w.length ? ph.fin : (ph.w.slice(0,r.n).join(' ').replace(/^./,c=>c.toUpperCase())) }
 async function finishRec(how){
   const r=S.rec; if(!r) return; const text=recText(); recTok++; S.rec=null;
   if (r.into==='prompt'){ const m=modeById(S.editMode); if(how!=='cancel' && text){ m.prompt=(m.prompt.trim()+' '+text).trim(); trace('Надиктовано локально (GigaAM) и дописано в конец промпта — тот же компонент, что в листе.','p') } S.keepScroll=true; return render() }
-  if (r.into==='try'){ if(how!=='cancel' && text){ S.tryText=((S.tryText||'')+' '+text).trim(); trace('Проба в первом запуске: надиктовано локально и дописано в поле, никуда не отправлено.','p') } return render() }
+  if (r.into==='try'){ if(how!=='cancel' && text){ (S.tryShots=S.tryShots||[]).push({text, ms:300+Math.round(Math.random()*350)}); trace('Проба в первом запуске: распознано на телефоне за доли секунды, никуда не отправлено.','p') } return render() }
   if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
   if (S.screen==='cam2' && S.cam){ trace('Отпустил микрофон на камере — снимок и вопрос уходят вместе одним сообщением.','p'); return shotGo(text) }
   if (S.ov){ S.ov.live=`<span class="st p">Распознаю</span>${esc(text)}`; S.ov.liveQ=false } render(); await wait(380);

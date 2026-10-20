@@ -101,7 +101,7 @@ function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; retu
 function liveHtml(){
   if (S.rec){ const ph=PHR[S.rec.key]||{w:[]}; const n=S.rec.n; const fx=Math.max(0,n-2);
     const lbl = S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · кнопка справа — отправить';
-    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">Вахтёр слушает…</span>'}</div>` }
+    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):''}</div>` }
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
@@ -264,14 +264,18 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
     <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
   <div class="lock">🔒 голос остаётся здесь · ✈ без интернета</div></div>` }
 /** Первый запуск, последний шаг: проба диктовки, как «Попробуйте здесь…» в Писаре, — но настоящей кнопкой листа. */
+/** Первый запуск: проба голоса — показать, что пишется быстро. Одна настоящая строка ввода листа; надиктованное — пузырями
+ *  над ней с отметкой «готово за 0,4 с · на телефоне». Чего не хватает — одной строкой посередине; микрофон спрашивает сама кнопка. */
 function tryStep(){
-  const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', live=rec?recText():'';
-  // макет один и тот же; чего не хватает — пишем в поле. Микрофон спросит сама кнопка при первом нажатии, как в листе
-  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %. Попробовать можно будет здесь же.`:S.w.model!=='ready'?'Голос не скачан — его можно скачать потом в настройках.':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках телефона.':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ.':'';
-  const box = rec ? `<div class="trybox on">${S.tryText?`<span>${esc(S.tryText)}</span> `:''}<span class="dr">${live?esc(live):'Вахтёр слушает…'}</span></div>`
-    : `<textarea class="trybox" placeholder="${why||'Здесь появится текст. Можно поправить руками.'}" oninput="S.tryText=this.value">${esc(S.tryText||'')}</textarea>`;
-  const tips = `<ul class="trytips"><li><b>Зажать</b> — говорить, <b>отпустить</b> — текст готов</li><li><b>Длинная диктовка</b> — потяните кнопку вверх, к замку: запись пойдёт без пальца</li><li><b>Передумали</b> — потяните влево, запись отменится</li></ul>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2><p>${side?'Так же работает в листе — зажмите боковую кнопку в любом приложении.':'Так же работает в листе. Боковую кнопку настроите потом — шестерёнка, «Вызов».'}</p>${box}${tips}
+  const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', live=rec?recText():'', shots=S.tryShots||[];
+  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %`:S.w.model!=='ready'?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
+  const feed = shots.map(x=>`<div class="tshot"><div class="me">${esc(x.text)}</div><span class="tfast">⚡ ${(x.ms/1000).toFixed(1).replace('.',',')} с · на телефоне</span></div>`).join('')
+    + (rec?`<div class="tshot"><div class="me tlive">${live?esc(live):'<div class="eq sm" data-mode="speak"></div>'}</div></div>`:'');
+  const empty = !shots.length&&!rec ? `<div class="tempty">${why?`<span class="twhy">${why}</span>`:'<span class="tarrow">Скажите что-нибудь — текст появится здесь</span>'}</div>` : '';
+  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2>
+    <p>Зажмите микрофон, скажите фразу и отпустите. ${side?'Так же — в листе по боковой кнопке.':'Так же работает в листе.'}</p>
+    <div class="tfeed">${empty}${feed}</div>
+    ${rec?'':'<div class="ttips"><span>⌃ вверх — без рук</span><span>‹ влево — отмена</span></div>'}
     ${composerHtml({into:'try'})}${navBar(null,['Далее','onbnext'])}</div></div>` }
 function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
@@ -324,7 +328,7 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
   return `<div class="layer cam2 ${ins?'insheet':''}">${ins?`${statusBar(true)}<div class="csheet">${hdr}<div class="vfwrap">${vf}`:`${vf}${statusBar(false)}`}
   <div class="ctop"><button class="cbtn" data-act="${c.frozen?'camretake':'camcancel'}" aria-label="${c.frozen?'Переснять':'Закрыть камеру'}">${I.x}</button><span class="modeName2">${I[m.icon]} ${esc(m.title)}</span>${c.frozen&&(c.marks.length||c.crop)?`<button class="cbtn" data-act="camundo" aria-label="Отменить последнее">${I.undo}</button>`:'<span style="width:40px"></span>'}</div>
   ${hint?`<div class="chint">${hint}</div>`:''}
-  ${qrec?`<div class="q">${recText()||'Вахтёр слушает…'}</div>`:''}
+  ${qrec?`<div class="q">${recText()||'…'}</div>`:''}
   ${ins?'</div>':''}<div class="cbottom">
     ${c.frames.length?`<div class="cstrip">${c.frames.map((f,i)=>`<div class="cfr ${c.editIdx===i?'on':''}"><button class="cfrb" data-frame="${i}" aria-label="Кадр ${i+1}: править"><span class="thw" style="${thumbStyle(f,64,60,24)}">${thumbHtml(f)}</span></button><button class="cfrx" data-framedel="${i}" aria-label="Удалить кадр ${i+1}">${I.x}</button></div>`).join('')}</div>`:''}
     <div class="ctools">${tools.map(([k,t,ic])=>`<button class="ctool" data-ctool="${k}" aria-pressed="${c.tool===k}">${ic}<span>${t}</span></button>`).join('')}</div>
