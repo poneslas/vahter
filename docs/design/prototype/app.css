@@ -519,7 +519,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .cam2.insheet .mic2.on{background:var(--local)}
 .cam2.insheet .cfrb{border-color:var(--line)}
 
-/* промпт режима над лентой: тёплая полоска, две строки, карандаш справа */
-.mprompt{flex:none;display:flex;align-items:flex-start;gap:8px;margin:2px 16px 4px;padding:8px 10px 8px 12px;border:0;border-radius:14px;background:var(--local-t);color:var(--local-d);text-align:left;font:inherit;font-size:13px;line-height:1.35;cursor:pointer}
+/* промпт режима над лентой: серая полоска, две строки, карандаш справа */
+.mprompt{flex:none;display:flex;align-items:flex-start;gap:8px;margin:2px 16px 4px;padding:8px 10px 8px 12px;border:0;border-radius:14px;background:#ECEEE8;color:var(--soft);text-align:left;font:inherit;font-size:13px;line-height:1.35;cursor:pointer}
 .mprompt span{flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mprompt .ic{flex:none;width:16px;height:16px;margin-top:1px;opacity:.8}

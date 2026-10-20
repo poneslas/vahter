@@ -74,15 +74,15 @@ import ru.poneslas.tasya.core.FeedItem
 import kotlin.math.abs
 import kotlin.math.hypot
 
-/** Промпт режима над лентой (ui.js, promptHtml): тёплая полоска, две строки, карандаш → страница режима. У Ассистента промпта нет — полоски нет. */
+/** Промпт режима над лентой (ui.js, promptHtml): серая полоска, две строки, карандаш → страница режима. У Ассистента промпта нет — полоски нет. */
 @Composable
 fun PromptStrip(mode: ru.poneslas.tasya.core.Mode, onEdit: (String) -> Unit, modifier: Modifier = Modifier) {
     if (mode.prompt.isBlank()) return
-    Row(modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.localT)
+    Row(modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.chipBg)
         .clickable { onEdit(mode.id) }.padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.Top) {
-        Text(mode.prompt, Modifier.weight(1f), color = Ink.localD, fontSize = 13.sp, lineHeight = 1.35.em, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(mode.prompt, Modifier.weight(1f), color = Ink.soft, fontSize = 13.sp, lineHeight = 1.35.em, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(8.dp))
-        Icon(painterResource(Ic.edit), tr(R.string.mode_izmenit), Modifier.padding(top = 1.dp).size(16.dp), tint = Ink.localD.copy(alpha = .8f))
+        Icon(painterResource(Ic.edit), tr(R.string.mode_izmenit), Modifier.padding(top = 1.dp).size(16.dp), tint = Ink.faint)
     }
 }
 
