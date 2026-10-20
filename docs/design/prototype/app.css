@@ -577,3 +577,8 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .recpill .eq i,.tshot .eq i{background:linear-gradient(var(--local),var(--server))}
 .micbtn.proc{position:relative}
 .micbtn.proc::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--server);border-right-color:var(--server);animation:spin .9s linear infinite}
+/* камера в листе: вкладки режимов не наезжают на большую кнопку «Отправить» */
+.cam2.insheet .mtabs{margin-top:6px}
+.cam2.insheet .csend{width:64px;height:64px}
+.cam2.insheet .cplus,.cam2.insheet .mic2{width:52px;height:52px}
+.cam2.insheet .cbottom{padding-bottom:0}
