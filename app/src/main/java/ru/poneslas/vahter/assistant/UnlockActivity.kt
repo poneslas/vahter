@@ -42,6 +42,8 @@ class UnlockActivity : Activity() {
         finished = true
         if (ok) Sheet.show(Bundle().apply { putString("src", "unlock"); intent.getStringExtra("then")?.let { putString("then", it) } })
         finish()
-        overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        // Без анимации закрытия; на Android 13 — старый вызов (новый появился в 14).
+        if (android.os.Build.VERSION.SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        else @Suppress("DEPRECATION") overridePendingTransition(0, 0)
     }
 }
