@@ -45,7 +45,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
-  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.page='mode'; return render() }
+  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; if(S.ov){ S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается.') } S.page='mode'; return render() }
   switch(a){
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();

@@ -51,6 +51,7 @@ import ru.poneslas.tasya.core.ReturnToAssistant
 import ru.poneslas.tasya.core.Policy
 import ru.poneslas.tasya.ui.Composer
 import ru.poneslas.tasya.ui.Feed
+import ru.poneslas.tasya.ui.PromptStrip
 import ru.poneslas.tasya.ui.Ink
 import ru.poneslas.tasya.ui.Ic
 import ru.poneslas.tasya.core.Modes
@@ -166,6 +167,7 @@ class MainActivity : ComponentActivity() {
         }
         if (!connected) Banner(tr(R.string.set_mozg_ne_podklyuchen_rabotayut_tolko),
             actions = listOf(tr(R.string.set_podklyuchit) to { go("brain:${brain.id}") }))
+        PromptStrip(state.current, onEdit = { go("mode:$it") })
         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
             modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_klaviatura)) })
         LiveLine(live)

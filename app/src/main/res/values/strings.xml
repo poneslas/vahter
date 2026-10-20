@@ -77,6 +77,7 @@
     <string name="ntf_otvety">Ответы</string>
     <string name="ntf_otvet_prishel_poka_list_byl">Ответ пришёл, пока лист был закрыт</string>
     <string name="ntf_otvet_gotov">Ответ готов</string>
+    <string name="mode_izmenit">Изменить режим</string>
     <string name="mode_vopros_ili_zadacha">Вопрос или задача</string>
     <string name="mode_assistent">Ассистент</string>
     <string name="mode_sprosite_chto_ugodno_ili_poprosite">Спросите что угодно или попросите телефон: таймер, будильник.</string>

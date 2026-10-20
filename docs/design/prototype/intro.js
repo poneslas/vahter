@@ -16,8 +16,9 @@ function introScene(k) {
       <div class="card usual"><div class="hd"><span class="apps"><i></i><i></i><i></i><i></i></span><b>ИИ-приложение</b><span class="clk"></span></div>
         <div class="chain">${st.map(s=>`<span>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
       <div class="card tasy"><div class="hd"><span class="pw">⏻</span><b>Тася</b><span class="clk"></span><span class="ok">✓</span></div>
-        <div class="chain"><span class="k">⏻ Зажать кнопку</span><i>→</i><span class="q">🎙 вопрос</span></div>
-        <div class="ai">Гречка — 15–20 минут.</div></div></div>`;
+        <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${'<b></b>'.repeat(9)}</span><span class="tx">Сколько варить гречку?</span></span></div>
+        <div class="loc">🔒 Диктовка на телефоне, голос никуда не уходит</div>
+        <div class="ai">15–20 минут, воды вдвое больше.</div></div></div>`;
   }
   if (k === 2) return `<div class="sc sc2">
     <div class="mcard"><div class="mh"><span class="mi">🍽</span><b>Гастрогид</b><small>мой режим</small></div>

@@ -27,7 +27,7 @@
 .sidekey{position:absolute;right:18px;top:92px;width:5px;height:46px;border-radius:0 3px 3px 0;background:#2A3046}
 
 .wave{display:flex;gap:3px;align-items:center;height:22px;justify-content:center}
-.wave i{display:block;width:3px;border-radius:2px;background:var(--local);height:6px;animation:wv .9s ease-in-out infinite}
+.wave i{display:block;width:3px;border-radius:2px;background:var(--local);height:6px;animation:wv .5s ease-in-out infinite}
 .wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.25s}.wave i:nth-child(4){animation-delay:.05s}
 .wave i:nth-child(5){animation-delay:.3s}.wave i:nth-child(6){animation-delay:.15s}.wave i:nth-child(7){animation-delay:.2s}
 @keyframes wv{0%,100%{height:5px}50%{height:20px}}
@@ -45,18 +45,18 @@
   box-shadow:0 20px 50px -20px rgba(47,75,232,.6)}
 .logo::after{content:"";position:absolute;inset:24px;border-radius:26px;background:#10182B}
 .logo i{position:relative;z-index:1;display:flex;gap:6px;align-items:center;height:56px}
-.logo b{display:block;width:7px;border-radius:4px;background:#F5C35A;animation:lb 1.2s ease-in-out infinite}
+.logo b{display:block;width:7px;border-radius:4px;background:#F5C35A;animation:lb .8s ease-in-out infinite}
 .logo b:nth-child(n+3){background:#7C93FF}
 .logo b:nth-child(1){animation-delay:.0s}.logo b:nth-child(2){animation-delay:.18s}.logo b:nth-child(3){animation-delay:.36s}.logo b:nth-child(4){animation-delay:.12s}
 @keyframes lb{0%,100%{height:14px}50%{height:48px}}
 @keyframes lgspin{to{filter:hue-rotate(0deg)}}
-.halo{position:absolute;width:132px;height:132px;border-radius:40px;border:2px solid var(--local);opacity:0;animation:halo 2.4s ease-out infinite}
-.halo.b{animation-delay:1.2s;border-color:var(--server)}
+.halo{position:absolute;width:132px;height:132px;border-radius:40px;border:2px solid var(--local);opacity:0;animation:halo 1.6s ease-out infinite}
+.halo.b{animation-delay:.8s;border-color:var(--server)}
 @keyframes halo{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.6);opacity:0}}
 
 /* ── 1. не чат, а кнопка: гонка. Оба стартуют одновременно; вопрос одинаковый — разница только в пути до него ── */
 @property --n{syntax:'<integer>';inherits:false;initial-value:0}
-.sc1{--T:8s;display:flex;flex-direction:column;gap:10px}
+.sc1{--T:5s;display:flex;flex-direction:column;gap:10px}
 .sc1 .card{border-radius:18px;padding:12px 14px}
 .sc1 .usual{background:#E2E5EB}
 .sc1 .tasy{flex:1;background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
@@ -72,9 +72,9 @@
 .sc1 .usual .clk{color:#6B7487;animation:cnt1 var(--T) linear infinite}
 @keyframes cnt1{0%{--n:0}70%,100%{--n:14}}
 .sc1 .tasy .clk{color:var(--local-d);animation:cnt2 var(--T) linear infinite}
-@keyframes cnt2{0%{--n:0}22%,100%{--n:2}}
+@keyframes cnt2{0%{--n:0}38%,100%{--n:2}}
 .sc1 .ok{width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:13px;display:grid;place-items:center;transform:scale(0);animation:ok1 var(--T) infinite}
-@keyframes ok1{0%,22%{transform:scale(0)}25%{transform:scale(1.3)}28%,97%{transform:scale(1)}100%{transform:scale(0)}}
+@keyframes ok1{0%,38%{transform:scale(0)}41%{transform:scale(1.3)}44%,97%{transform:scale(1)}100%{transform:scale(0)}}
 .sc1 .chain{display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center;margin-top:9px}
 .sc1 .chain span{font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:5px 9px;opacity:.3}
 .sc1 .chain i{font-style:normal;font-size:13px;color:var(--soft);opacity:.2}
@@ -91,12 +91,29 @@
 .sc1 .tasy .chain span{background:#fff;border-color:#EBCB86}
 .sc1 .tasy .chain .k{font-weight:600;animation:u1 var(--T) infinite}
 .sc1 .tasy .chain>:nth-child(n+2){animation:t3 var(--T) infinite}
-@keyframes t3{0%,11%{opacity:.3}14%,97%{opacity:1}100%{opacity:.3}}
+@keyframes t3{0%,8%{opacity:.3}10%,97%{opacity:1}100%{opacity:.3}}
 .sc1 .ai{position:relative;font-size:13.5px;line-height:1.35;padding-left:13px;margin-top:10px;opacity:0;animation:t4 var(--T) infinite}
-@keyframes t4{0%,18%{opacity:0;transform:translateY(6px)}22%,97%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes t4{0%,33%{opacity:0;transform:translateY(6px)}37%,97%{opacity:1;transform:none}100%{opacity:0}}
+
+/* диктовка: живой эквалайзер в цветах Таси (янтарь → синий), через миг — готовый текст */
+.sc1 .dk{display:inline-grid;align-items:center;justify-items:center}
+.sc1 .dk>*{grid-area:1/1}
+.sc1 .deq{display:flex;gap:2.5px;align-items:center;height:16px;animation:eqv var(--T) infinite}
+.sc1 .deq b{display:block;width:3px;height:4px;border-radius:2px;animation:eqb .38s ease-in-out infinite alternate}
+.sc1 .deq b:nth-child(1){background:#E8A317;animation-delay:-.1s}.sc1 .deq b:nth-child(2){background:#D9A22A;animation-delay:-.25s}
+.sc1 .deq b:nth-child(3){background:#C99E3E;animation-delay:-.05s}.sc1 .deq b:nth-child(4){background:#B09A5C;animation-delay:-.3s}
+.sc1 .deq b:nth-child(5){background:#93927A;animation-delay:-.15s}.sc1 .deq b:nth-child(6){background:#78849A;animation-delay:-.35s}
+.sc1 .deq b:nth-child(7){background:#5B74B8;animation-delay:-.2s}.sc1 .deq b:nth-child(8){background:#4361D2;animation-delay:-.08s}
+.sc1 .deq b:nth-child(9){background:#2F4BE8;animation-delay:-.28s}
+@keyframes eqb{to{height:16px}}
+@keyframes eqv{0%,9%{opacity:0}11%,29%{opacity:1}31%,100%{opacity:0}}
+.sc1 .dk .tx{opacity:0;animation:dtx var(--T) infinite}
+@keyframes dtx{0%,29%{opacity:0}31%,97%{opacity:1}100%{opacity:0}}
+.sc1 .loc{font-size:11.5px;color:var(--local-d);margin-top:7px;opacity:0;animation:lc var(--T) infinite}
+@keyframes lc{0%,11%{opacity:0}14%,97%{opacity:1}100%{opacity:0}}
 
 /* ── 2. настроил один раз: карточка режима с правилами → штамп → через неделю одно нажатие, ответ по тем же правилам ── */
-.sc2{--T:10s}
+.sc2{--T:6s}
 .sc2 .mcard{position:absolute;inset:6px 0;background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 10px 26px -16px rgba(14,26,54,.5);animation:mc var(--T) infinite}
 @keyframes mc{0%,50%{opacity:1;transform:none}56%,100%{opacity:0;transform:translateY(-24px) scale(.92)}}
 .sc2 .mh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -133,7 +150,7 @@
 @keyframes c4{0%,82%{opacity:0;transform:scale(.6)}85%,100%{opacity:1;transform:none}}
 
 /* ── 3. сразу камера или голос: два телефона, одна и та же боковая кнопка — открывается разное ── */
-.sc3{--T:6s;display:flex;gap:18px;justify-content:center;align-items:flex-start}
+.sc3{--T:3.6s;display:flex;gap:18px;justify-content:center;align-items:flex-start}
 .sc3 .tel{width:136px;display:flex;flex-direction:column;align-items:center}
 .sc3 .ml{font-size:15px;font-weight:700;margin-bottom:8px}
 .sc3 .dev{position:relative;width:126px;height:200px;border-radius:24px;background:#1A2236;padding:5px}
@@ -177,5 +194,12 @@
 .sc4 .off{position:absolute;left:12px;bottom:14px;display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--soft);background:#ECEEE8;border-radius:999px;padding:4px 10px;opacity:0;animation:in4d var(--T) infinite both}
 @keyframes in4d{0%,72%{opacity:0;transform:scale(.9)}78%,100%{opacity:1;transform:none}}
 .sc4 .ms .h{margin-bottom:4px}
+.sc4{--T:4s}
 
 @media (prefers-reduced-motion:reduce){.sc *,.sc *::before,.sc *::after{animation-duration:0s!important;animation-delay:0s!important}}
+.sc1 .chain .dk>span{background:none;border:0;padding:0;border-radius:0}
+.sc1 .chain span{font-size:12px;padding:4px 8px}
+.sc1 .usual .chain{gap:5px 4px}
+.sc1 .dk{height:27px;min-height:0}
+.sc1 .loc{font-size:11px;white-space:nowrap;margin-top:6px}
+.sc1 .tasy .chain{margin-top:8px}

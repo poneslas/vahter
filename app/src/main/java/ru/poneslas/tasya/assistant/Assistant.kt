@@ -134,6 +134,7 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
                 onExpand = { expand() },
                 onSettings = { openApp(settings = true) },
                 onAddMode = { openApp(settings = true, newMode = true) },
+                onEditMode = { id -> openApp(settings = true, page = "mode:$id") },
                 onNeedPerm = { perm -> openApp(settings = false, askPerm = perm) },
                 session = this@AssistSession,
             )
@@ -219,12 +220,13 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     /** Развернуть лист в приложение: сначала запуск активности, потом hide (на скрытой сессии запуск не работает). */
     private fun expand() = openApp(settings = false)
 
-    fun openApp(settings: Boolean, askPerm: String? = null, newMode: Boolean = false) {
+    fun openApp(settings: Boolean, askPerm: String? = null, newMode: Boolean = false, page: String? = null) {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_FROM_SHEET, true)
             .putExtra(MainActivity.EXTRA_SETTINGS, settings)
             .putExtra(MainActivity.EXTRA_NEW_MODE, newMode)
             .putExtra(MainActivity.EXTRA_ASK_PERM, askPerm)
+            .putExtra(MainActivity.EXTRA_PAGE, page)
         runCatching { startAssistantActivity(intent) }
         hide()
     }

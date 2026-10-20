@@ -62,7 +62,7 @@ import ru.poneslas.tasya.ui.TasyaTheme
 
 /** Лист поверх любого приложения: шапка (режим · связь, развернуть, настройки, закрыть), лента, живая строка, строка ввода. */
 @Composable
-fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, session: AssistSession, onAddMode: () -> Unit = onSettings) {
+fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, session: AssistSession, onAddMode: () -> Unit = onSettings, onEditMode: (String) -> Unit = { onSettings() }) {
     val app = App.instance
     val state by app.conversation.state.collectAsState()
     var live by remember { mutableStateOf<String?>(null) }
@@ -163,6 +163,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     cameraPanel(Modifier.weight(1f).padding(top = 6.dp), false)
                     ru.poneslas.tasya.ui.ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
+                ru.poneslas.tasya.ui.PromptStrip(state.current, onEditMode)
                 // Волна записи — поверх низа ленты, а не отдельной строкой: высота листа при записи не меняется.
                 Box(Modifier.fillMaxWidth()) {
                     Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,

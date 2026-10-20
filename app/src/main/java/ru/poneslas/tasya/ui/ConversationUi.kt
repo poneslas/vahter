@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -72,6 +73,18 @@ import ru.poneslas.tasya.core.Conversation
 import ru.poneslas.tasya.core.FeedItem
 import kotlin.math.abs
 import kotlin.math.hypot
+
+/** Промпт режима над лентой (ui.js, promptHtml): тёплая полоска, две строки, карандаш → страница режима. У Ассистента промпта нет — полоски нет. */
+@Composable
+fun PromptStrip(mode: ru.poneslas.tasya.core.Mode, onEdit: (String) -> Unit, modifier: Modifier = Modifier) {
+    if (mode.prompt.isBlank()) return
+    Row(modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.localT)
+        .clickable { onEdit(mode.id) }.padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.Top) {
+        Text(mode.prompt, Modifier.weight(1f), color = Ink.localD, fontSize = 13.sp, lineHeight = 1.35.em, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.width(8.dp))
+        Icon(painterResource(Ic.edit), tr(R.string.mode_izmenit), Modifier.padding(top = 1.dp).size(16.dp), tint = Ink.localD.copy(alpha = .8f))
+    }
+}
 
 /** Лента разговора (ui.js, feedHtml/itemHtml): промежутки 10, поля 6/14/12, текст 14.5. Прижата к низу. */
 @Composable

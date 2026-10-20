@@ -33,6 +33,11 @@ function issue(){
 function bannerHtml(){ const b=issue(); if(!b||S.dismissed===b.t) return ''; return `<div class="banner ${b.k==='e'?'e':''}"><span class="bi">${b.k==='e'?I.warn:I.info}</span><p>${b.t}</p>${b.prog!=null?`<div class="prog"><i style="width:${b.prog}%"></i></div>`:''}${b.a?`<div class="ba">${b.a.map(x=>`<button class="tbtn" data-act="${x[1]}">${x[0]}</button>`).join('')}</div>`:''}</div>` }
 
 /* ───────── лента ───────── */
+/* Промпт режима — полоска над лентой: что режим помнит; карандаш → страница режима. У Ассистента промпта нет — полоски нет. */
+function promptHtml(){
+  const m=curMode(); if(!m.prompt.trim()) return '';
+  return `<button class="mprompt" data-act="editmode:${m.id}"><span>${esc(m.prompt)}</span>${I.edit}</button>`;
+}
 function feedHtml(inSheet){
   if (!S.feed.length && curMode().hint && (inSheet || S.mode!=='main')) return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
   if (!S.feed.length) return inSheet ? '<div class="feed"></div>' : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
@@ -127,7 +132,7 @@ function chat(){
   return `<div class="layer appv">${statusBar(true)}
   <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div>
     <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button><button class="iconbtn" data-act="restartask" aria-label="Начать заново">${I.more}</button></div>
-  ${bannerHtml()}
+  ${bannerHtml()}${promptHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
   ${S.ov?'':liveHtml()}${S.ov?'':composerHtml()}</div>`;
 }
@@ -312,7 +317,7 @@ function overlay(){
       <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
       <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button>
       <button class="iconbtn" data-act="close" aria-label="Закрыть">${I.x}</button></div>
-    <div class="scroll" id="oscroll">${feedHtml(true)}</div>
+    ${promptHtml()}<div class="scroll" id="oscroll">${feedHtml(true)}</div>
     ${liveHtml()}${composerHtml()}
   </div></div>`;
 }
