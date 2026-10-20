@@ -111,8 +111,8 @@
 .sc6{--T:8s;display:flex;gap:10px;align-items:stretch}
 .sc6 .colw{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
 .sc6 .col{flex:1;min-height:0;border-radius:18px;padding:11px 11px 10px;display:flex;flex-direction:column;position:relative}
-.sc6 .chat{background:#E2E5EB}
-.sc6 .vah{background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
+.sc6 .col.chat{background:#E2E5EB}
+.sc6 .col.vah{background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
 .sc6 .hd{display:flex;align-items:center;gap:7px;margin-bottom:9px;min-width:0}
 /* название и пояснение — в две строки: колонка узкая, в одну строку «Гастрогид мой режим» не помещается */
 .sc6 .tt{display:flex;flex-direction:column;min-width:0;line-height:1.1}
@@ -132,13 +132,13 @@
 /* секундомеры под колонками: крупные цифры, иконка часов приглушённая */
 .sc6 .timer{display:flex;align-items:center;justify-content:center;gap:6px;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
 .sc6 .timer .swatch{width:20px;height:20px;color:#A9B0BE;flex:none}
-.sc6 .timer.chat{color:#6B7487}.sc6 .timer.vah{color:var(--local-d)}.sc6 .timer.vah .swatch{color:#D9B977}
+.sc6 .timer.tchat{color:#6B7487}.sc6 .timer.tvah{color:var(--local-d)}.sc6 .timer.tvah .swatch{color:#D9B977}
 .sc6 .timer .t{counter-reset:s var(--s)}
 .sc6 .timer .t::before{content:"0:" counter(s,decimal-leading-zero)}
-.sc6 .timer.chat .t{animation:cs var(--T) linear infinite}
+.sc6 .timer.tchat .t{animation:cs var(--T) linear infinite}
 @keyframes cs{0%,3%{--s:0}78%,100%{--s:40}}
 .sc6 .vah .cnt{color:var(--local-d)}
-.sc6 .timer.vah .t{animation:cs2 var(--T) linear infinite}
+.sc6 .timer.tvah .t{animation:cs2 var(--T) linear infinite}
 @keyframes cs2{0%,3%{--s:0}14%,100%{--s:3}}
 .sc6 .snap{position:relative;height:58px;display:flex;justify-content:flex-end}
 /* снимок меню: карточка меню на тёмном столе, чуть повёрнута — фото, а не документ */

@@ -19,13 +19,13 @@ function introScene(k) {
     <div class="colw"><div class="col chat"><div class="hd"><span class="ci">💬</span><span class="tt"><b>Чат</b><small>новый</small></span></div>
       <div class="ask"><div class="tw">Здравствуйте! Я в ресторане. Не ем острое и свинину, аллергия на орехи, бюджет до 1500 ₽. Посоветуйте 2–3 блюда. Вот меню 📎</div><span class="car"></span></div>
       <div class="cnt"><span class="w"></span></div></div>
-      <div class="timer chat">${sw}<span class="t"></span></div></div>
+      <div class="timer tchat">${sw}<span class="t"></span></div></div>
     <div class="colw"><div class="col vah"><div class="hd"><span class="ci">🍽</span><span class="tt"><b>Гастрогид</b><small>мой режим</small></span></div>
       <div class="snap"><span class="thumb"><i class="mcrd"><b>МЕНЮ</b></i></span><span class="flash"></span></div><div class="scap">📷 отправил фото меню</div>
       <div class="ans">Судак на гриле и морс — 1200 ₽.</div>
       <div class="chk"><span>✓ не остро</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div>
       <div class="cnt"><span>⏻ 1 нажатие</span></div></div>
-      <div class="timer vah">${sw}<span class="t"></span></div></div></div>`; }
+      <div class="timer tvah">${sw}<span class="t"></span></div></div></div>`; }
   // «Знает, кто зачем пришёл»: режимы — кнопки пульта; у каждой на обороте уже написанная просьба. Нажал — она сказана.
   if (k === 3) {
     const K = [['💬','Ассистент','как чат, по кнопке','Просто спросите — как в чате. Будильник, звонок, вопрос.'],
