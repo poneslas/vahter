@@ -23,13 +23,13 @@ if (!sherpaAar.exists()) {
 }
 
 android {
-    namespace = "ru.poneslas.tasya.probe"
+    namespace = "ru.poneslas.vahter.probe"
     compileSdk {
         version = release(37) { minorApiLevel = 0 }
     }
 
     defaultConfig {
-        applicationId = "ru.poneslas.tasya.probe"
+        applicationId = "ru.poneslas.vahter.probe"
         minSdk = 34
         targetSdk = 37
         versionCode = 1 + bump

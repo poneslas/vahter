@@ -9,7 +9,7 @@ set -euo pipefail
 N="${1:-20}"
 PAUSE="${2:-2}"
 
-frames() { adb logcat -d -s TasyaProbe:I | grep "FRAME" || true; }
+frames() { adb logcat -d -s VahterProbe:I | grep "FRAME" || true; }
 
 adb logcat -c
 for i in $(seq 1 "$N"); do

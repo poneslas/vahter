@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Контрольный опыт П1: без recognitionService роль должна слететь при обновлении. -->
 <voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sessionService="ru.poneslas.tasya.probe.assist.ProbeSessionService"
+    android:sessionService="ru.poneslas.vahter.probe.assist.ProbeSessionService"
     android:supportsAssist="true"
     android:supportsLaunchVoiceAssistFromKeyguard="true" />

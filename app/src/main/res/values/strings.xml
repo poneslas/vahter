@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Тася</string>
+    <string name="app_name">Вахтёр</string>
     <!-- Гига Писарь для Android: запись и модель -->
     <string name="button_idle">Голосовой ввод</string>
     <string name="button_recording">Идёт запись</string>
@@ -141,7 +141,7 @@
     <string name="set_podklyuchit">Подключить</string>
     <string name="set_vyzov">Вызов</string>
     <string name="set_tsifrovoy_pomoshchnik">Цифровой помощник</string>
-    <string name="set_tasya">Тася</string>
+    <string name="set_vahter">Вахтёр</string>
     <string name="set_ne_vybran_bokovaya_knopka_otkroet">Не выбран — боковая кнопка откроет другого помощника</string>
     <string name="set_bokovaya_knopka">Боковая кнопка</string>
     <string name="set_slushat_srazu_pri_vyzove">Слушать сразу при вызове</string>
@@ -224,7 +224,7 @@
     <string name="set_budilnik_kalendar_zvonki_kak_u">Будильник, календарь, звонки — как у DeepSeek</string>
     <string name="set_kak_budet_podklyuchatsya">Как будет подключаться</string>
     <string name="set_ssylka_iz_telegram">Ссылка из Telegram</string>
-    <string name="set_botu_hermes_komanda_tasya_pair">Боту Hermes — команда /tasya_pair</string>
+    <string name="set_botu_hermes_komanda_vahter_pair">Боту Hermes — команда /vahter_pair</string>
     <string name="set_skoro">скоро</string>
     <string name="set_qr_s_ekrana_kompyutera">QR с экрана компьютера</string>
     <string name="set_ta_zhe_komanda_na_servere">Та же команда на сервере</string>
@@ -290,7 +290,7 @@
     <string name="pg_zazhmite_bokovuyu_knopku_v_lyubom">Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».</string>
     <string name="pg_list_mozhno_otkryt_otsyuda_bokovuyu">Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».</string>
     <string name="pg_nachat">Начать</string>
-    <string name="pg_vyberite_tasya">Выберите «Тася»</string>
+    <string name="pg_vyberite_vahter">Выберите «Вахтёр»</string>
     <string name="pg_bokovaya_knopka_tsifrovoy_pomoshchnik">Боковая кнопка → цифровой помощник</string>
     <string name="pg_gotovo_zazhmite_mikrofon_i_skazhite">Готово — зажмите микрофон и скажите что-нибудь</string>
     <string name="pg_zagruzka_modeli_1_s_mozhno">Загрузка модели: %1$s %% — можно идти дальше, докачается само.</string>
@@ -318,7 +318,7 @@
     <string name="ph_yazyk">Язык</string>
     <string name="ph_data_i_vremya">Дата и время</string>
     <string name="ph_spetsialnye_vozmozhnosti">Специальные возможности</string>
-    <string name="ph_tasya_svedeniya_o_prilozhenii">Тася — сведения о приложении</string>
+    <string name="ph_vahter_svedeniya_o_prilozhenii">Вахтёр — сведения о приложении</string>
     <string name="ph_cherez_1_s_ch">через %1$s ч</string>
     <string name="ph_1_s_min">\u0020%1$s мин</string>
     <string name="ph_cherez_1_s_min">через %1$s мин</string>
@@ -435,9 +435,9 @@
     <string name="act_bylo_1_s">было %1$s %%</string>
     <string name="act_gromkost_ne_izmenilas_vozmozhno_vklyuche">Громкость не изменилась — возможно, включено «Не беспокоить»</string>
     <string name="act_net_dostupa_k_ne_bespokoit">Нет доступа к «Не беспокоить»</string>
-    <string name="act_vklyuchite_tasya_v_spiske_odin">включите «Тася» в списке — один раз</string>
+    <string name="act_vklyuchite_vahter_v_spiske_odin">включите «Вахтёр» в списке — один раз</string>
     <string name="act_otkryt_dostup">Открыть доступ</string>
-    <string name="act_nuzhen_dostup_k_ne_bespokoit">Нужен доступ к «Не беспокоить»: в разговоре появилась кнопка «Открыть доступ» — попроси включить «Тася» в списке.</string>
+    <string name="act_nuzhen_dostup_k_ne_bespokoit">Нужен доступ к «Не беспокоить»: в разговоре появилась кнопка «Открыть доступ» — попроси включить «Вахтёр» в списке.</string>
     <string name="act_ne_bespokoit_vklyucheno">Не беспокоить · включено</string>
     <string name="act_ne_bespokoit_vyklyucheno">Не беспокоить · выключено</string>
     <string name="act_otmenit">Отменить</string>
@@ -598,7 +598,7 @@
     <string name="intro_s4_off">✈ без интернета — тоже работает</string>
     <string name="intro_usual">ИИ-приложение</string>
     <string name="intro_usual_time">5 шагов · ~20 с</string>
-    <string name="intro_ours">Тася · по кнопке</string>
+    <string name="intro_ours">Вахтёр · по кнопке</string>
     <string name="intro_key">⏻ кнопка</string>
     <string name="intro_ours_time">1 нажатие · ~2 с</string>
     <string name="intro_setup_title">Мой Гастрогид</string>

@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "ru.poneslas.tasya"
+    namespace = "ru.poneslas.vahter"
     compileSdk {
         version = release(37) { minorApiLevel = 0 }
     }
 
     defaultConfig {
-        applicationId = "ru.poneslas.tasya"
+        applicationId = "ru.poneslas.vahter"
         minSdk = 34
         // S24 — Android 16 (SDK 36). На 37 поднимем вместе с разрешением на локальную сеть (Архитектура, 18.0).
         targetSdk = 36

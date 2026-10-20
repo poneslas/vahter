@@ -5,7 +5,7 @@
 # Перед этим на телефоне: Auto Blocker выключен, «Отладка по USB» включена.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PKG=ru.poneslas.tasya.probe
+PKG=ru.poneslas.vahter.probe
 
 ./gradlew :app:assembleDebug -q
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk

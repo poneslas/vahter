@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sessionService="ru.poneslas.tasya.assistant.SessionService"
-    android:recognitionService="ru.poneslas.tasya.assistant.StubRecognitionService"
+    android:sessionService="ru.poneslas.vahter.assistant.SessionService"
+    android:recognitionService="ru.poneslas.vahter.assistant.StubRecognitionService"
     android:supportsAssist="true"
     android:supportsLaunchVoiceAssistFromKeyguard="true" />

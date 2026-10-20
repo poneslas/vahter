@@ -139,9 +139,9 @@ for dp, _, fs in os.walk(JAVA):
         total += ch
         pkg = re.search(r'^package ([\w.]+)', res, re.M).group(1)
         imports = []
-        if pkg != 'ru.poneslas.tasya':
-            if 'import ru.poneslas.tasya.R\n' not in res: imports.append('import ru.poneslas.tasya.R')
-            if 'import ru.poneslas.tasya.tr\n' not in res: imports.append('import ru.poneslas.tasya.tr')
+        if pkg != 'ru.poneslas.vahter':
+            if 'import ru.poneslas.vahter.R\n' not in res: imports.append('import ru.poneslas.vahter.R')
+            if 'import ru.poneslas.vahter.tr\n' not in res: imports.append('import ru.poneslas.vahter.tr')
         if imports:
             m = re.search(r'^import .*$', res, re.M)
             pos = m.start() if m else re.search(r'^package .*$', res, re.M).end() + 1

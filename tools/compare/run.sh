@@ -5,7 +5,7 @@ set -e
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=$ROOT/out/compare; mkdir -p "$OUT/img"
 export PATH=$PATH:/Users/em/Dev/.toolchains/android-sdk/platform-tools
-PKG=ru.poneslas.tasya.dev
+PKG=ru.poneslas.vahter.dev
 # Ширина как у телефона и прототипа: 1344 px / 3.5 = 384 dp (по умолчанию у эмулятора 448 dp — всё мельче)
 adb shell wm density 560; trap 'adb shell wm density reset' EXIT; sleep 2
 # копия прототипа с крючками: ?page=…&edit=…&brain=…, ?sheet=1, ?onb=N
@@ -30,7 +30,7 @@ while IFS="|" read -r name q app title <&3; do
   # приложение
   adb shell input keyevent KEYCODE_HOME; sleep 0.5
   if [[ "$app" == sheet ]]; then adb shell input keyevent KEYCODE_ASSIST; sleep 2.5
-  else adb shell am start -S -n $PKG/ru.poneslas.tasya.app.MainActivity --es page "$app" >/dev/null; sleep 2; fi
+  else adb shell am start -S -n $PKG/ru.poneslas.vahter.app.MainActivity --es page "$app" >/dev/null; sleep 2; fi
   adb exec-out screencap -p > "$OUT/img/$name.app.png"
   [[ "$app" == sheet ]] && adb shell input keyevent KEYCODE_BACK
 done 3< "$(dirname "$0")/screens.txt"

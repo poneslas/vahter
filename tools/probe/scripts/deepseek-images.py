@@ -3,7 +3,7 @@
 
   python3 probe/scripts/deepseek-images.py [--model deepseek-chat] [--quick]
 
-Ключ: переменная DEEPSEEK_API_KEY или файл ~/.config/tasya/deepseek_key (одна строка).
+Ключ: переменная DEEPSEEK_API_KEY или файл ~/.config/vahter/deepseek_key (одна строка).
 Тратит токены: ~10–20 запросов. --quick — только 1 и 5 картинок, без проверки размера.
 
 Что меряет:
@@ -33,11 +33,11 @@ ROOT = Path(__file__).resolve().parent.parent
 def api_key():
     k = os.environ.get("DEEPSEEK_API_KEY", "").strip()
     if not k:
-        f = Path.home() / ".config/tasya/deepseek_key"
+        f = Path.home() / ".config/vahter/deepseek_key"
         if f.exists():
             k = f.read_text().strip()
     if not k:
-        sys.exit("Нет ключа: DEEPSEEK_API_KEY или ~/.config/tasya/deepseek_key")
+        sys.exit("Нет ключа: DEEPSEEK_API_KEY или ~/.config/vahter/deepseek_key")
     return k
 
 

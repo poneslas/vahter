@@ -18,8 +18,8 @@ async function runPair(via){
   for (const c of S.pair.checks){
     c.s='run'; render(); await wait(400); if(my!==token) return;
     if ((S.w.net==='none'||S.w.server==='down')&&c.id==='net') return pairFail(c,S.w.net==='none'?'Нет интернета на телефоне.':'Сервер не отвечает. Проверьте адрес и что Hermes запущен.','Повторить');
-    if (fail&&map[fail]===c.id){ S.failNext=null; const m={dns:'Сервер hermes.example.ru не найден. Проверьте адрес.',tls:'Сертификат сервера недействителен. Подключаться нельзя — это защита от подмены.',plugin:'Hermes отвечает, но плагина tasya на нём нет: hermes plugins enable tasya.',expired:'Ссылка устарела или уже использована. Попросите новую: /tasya_pair.'}[fail]; return pairFail(c,m,fail==='expired'?'Открыть Telegram':'Повторить',fail==='expired'?'viatg':null) }
-    c.s='ok'; c.d={addr:'hermes.example.ru',net:'отвечает',tls:'действителен до 12.01.2027',plugin:'tasya 0.4 · Hermes 0.22.2',proto:'1',key:'в защищённом хранилище',admit:''}[c.id];
+    if (fail&&map[fail]===c.id){ S.failNext=null; const m={dns:'Сервер hermes.example.ru не найден. Проверьте адрес.',tls:'Сертификат сервера недействителен. Подключаться нельзя — это защита от подмены.',plugin:'Hermes отвечает, но плагина vahter на нём нет: hermes plugins enable vahter.',expired:'Ссылка устарела или уже использована. Попросите новую: /vahter_pair.'}[fail]; return pairFail(c,m,fail==='expired'?'Открыть Telegram':'Повторить',fail==='expired'?'viatg':null) }
+    c.s='ok'; c.d={addr:'hermes.example.ru',net:'отвечает',tls:'действителен до 12.01.2027',plugin:'vahter 0.4 · Hermes 0.22.2',proto:'1',key:'в защищённом хранилище',admit:''}[c.id];
     if (c.id==='admit'){
       if (via==='addr'){ c.s='run'; c.d='Hermes выдал код'; S.pair.stage='code'; S.pair.code='K7Q2-M9XD'; trace('Неизвестный телефон получил код — штатный механизм Hermes (8 символов, 1 час). Нужно явно unauthorized_dm_behavior: pair — иначе при GATEWAY_ALLOWED_USERS Hermes промолчит.','h'); return render() }
       c.d='по одноразовой ссылке';

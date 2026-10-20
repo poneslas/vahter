@@ -4,8 +4,8 @@
         android:icon="@android:drawable/ic_btn_speak_now"
         android:shortcutShortLabel="@string/sc_svc">
         <intent android:action="android.intent.action.VIEW"
-            android:targetPackage="ru.poneslas.tasya.probe"
-            android:targetClass="ru.poneslas.tasya.probe.entry.ShortcutTrampolineActivity">
+            android:targetPackage="ru.poneslas.vahter.probe"
+            android:targetClass="ru.poneslas.vahter.probe.entry.ShortcutTrampolineActivity">
             <extra android:name="via" android:value="service" />
             <extra android:name="mode" android:value="translate" />
         </intent>
@@ -14,8 +14,8 @@
         android:icon="@android:drawable/ic_menu_help"
         android:shortcutShortLabel="@string/sc_assist">
         <intent android:action="android.intent.action.VIEW"
-            android:targetPackage="ru.poneslas.tasya.probe"
-            android:targetClass="ru.poneslas.tasya.probe.entry.ShortcutTrampolineActivity">
+            android:targetPackage="ru.poneslas.vahter.probe"
+            android:targetClass="ru.poneslas.vahter.probe.entry.ShortcutTrampolineActivity">
             <extra android:name="via" android:value="showAssist" />
             <extra android:name="mode" android:value="whatis" />
         </intent>
@@ -24,8 +24,8 @@
         android:icon="@android:drawable/ic_menu_camera"
         android:shortcutShortLabel="@string/sc_camera">
         <intent android:action="android.intent.action.VIEW"
-            android:targetPackage="ru.poneslas.tasya.probe"
-            android:targetClass="ru.poneslas.tasya.probe.entry.ShortcutTrampolineActivity">
+            android:targetPackage="ru.poneslas.vahter.probe"
+            android:targetClass="ru.poneslas.vahter.probe.entry.ShortcutTrampolineActivity">
             <extra android:name="via" android:value="service" />
             <extra android:name="mode" android:value="gastro" />
             <extra android:name="camera" android:value="insheet" />

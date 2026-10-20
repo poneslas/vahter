@@ -66,7 +66,7 @@ synth() {
   local name=$1 text=$2 wav=$M/wavs/$1.wav
   [[ -f $wav ]] && { echo "есть: $wav"; return; }
   local tmp
-  tmp=$(mktemp -t tasya-say).aiff
+  tmp=$(mktemp -t vahter-say).aiff
   say -v Milena -o "$tmp" "$text"
   afconvert -f WAVE -d LEI16@16000 -c 1 "$tmp" "$wav"
   rm -f "$tmp"

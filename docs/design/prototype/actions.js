@@ -76,14 +76,14 @@ document.addEventListener('click', async e=>{
     case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
-    case 'tgsend': S.tg.push({me:true,html:'/tasya_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/tasya/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
+    case 'tgsend': S.tg.push({me:true,html:'/vahter_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/vahter/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
     case 'tglink': return runPair('link');
     case 'viaqr': S.pair=null; S.screen='cam'; render(); await wait(1500); if(S.screen==='cam') return runPair('qr'); return;
     case 'viaaddr': S.pair={via:'addr',stage:'input',checks:[]}; return render();
     case 'addrgo': { const v=($('#addr')?.value||'').trim().replace(/^https?:\/\//,'').replace(/\/.*$/,''); if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v)){ S.pair.err='Нужен адрес вида hermes.example.ru'; S.pair.addr=v; return render() } return runPair('addr') }
     case 're-addr': case 're-link': case 're-qr': return runPair(a.slice(3));
     case 'pairreset': token++; S.pair=null; return render();
-    case 'copycmd': try{ await navigator.clipboard.writeText('hermes pairing approve tasya K7Q2M9XD') }catch{} trace('Команда скопирована.'); return;
+    case 'copycmd': try{ await navigator.clipboard.writeText('hermes pairing approve vahter K7Q2M9XD') }catch{} trace('Команда скопирована.'); return;
     case 'tochat': S.page='chat'; return render();
     case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'home': S.fromSheet=null; S.screen='home'; return render();

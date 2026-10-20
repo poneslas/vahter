@@ -9,9 +9,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PKG=ru.poneslas.tasya.probe
+PKG=ru.poneslas.vahter.probe
 M=serve/models
-TMP=/data/local/tmp/tasya-models
+TMP=/data/local/tmp/vahter-models
 
 [[ -f $M/manifest.json ]] || { echo "Нет $M/manifest.json — сначала scripts/asr-fetch.sh --models" >&2; exit 1; }
 

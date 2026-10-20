@@ -51,7 +51,7 @@
 
     <application
         android:name=".App"
-        android:label="Пробник Таси"
+        android:label="Пробник Вахтёра"
         android:icon="@android:drawable/sym_def_app_icon"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:networkSecurityConfig="@xml/network_security"
@@ -138,7 +138,7 @@
             android:name=".pick.ShareActivity"
             android:exported="true"
             android:excludeFromRecents="true"
-            android:label="В пробник Таси"
+            android:label="В пробник Вахтёра"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -187,7 +187,7 @@
             android:name=".entry.ProbeTileService"
             android:exported="true"
             android:icon="@android:drawable/ic_btn_speak_now"
-            android:label="Тася-пробник"
+            android:label="Вахтёр-пробник"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -249,7 +249,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="ru.poneslas.tasya.probe.files"
+            android:authorities="ru.poneslas.vahter.probe.files"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />

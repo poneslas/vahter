@@ -4,7 +4,7 @@
 # Как install.sh, но без -g; уже выданные разрешения забираем (pm revoke перезапускает процесс).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PKG=ru.poneslas.tasya.probe
+PKG=ru.poneslas.vahter.probe
 
 ./gradlew :app:assembleDebug -q
 adb install -r app/build/outputs/apk/debug/app-debug.apk

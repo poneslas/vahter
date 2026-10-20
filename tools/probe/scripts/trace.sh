@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 SEC="${1:-60}"
 OUT="reports/trace-$(date +%Y%m%d-%H%M%S).perfetto-trace"
-DEV=/data/misc/perfetto-traces/tasya.perfetto-trace
+DEV=/data/misc/perfetto-traces/vahter.perfetto-trace
 mkdir -p reports
 
 CFG="buffers { size_kb: 65536 fill_policy: RING_BUFFER }
@@ -18,7 +18,7 @@ data_sources { config { name: \"linux.ftrace\" ftrace_config {
   ftrace_events: \"sched/sched_switch\"
   atrace_categories: \"view\" atrace_categories: \"wm\" atrace_categories: \"am\"
   atrace_categories: \"input\" atrace_categories: \"gfx\"
-  atrace_apps: \"ru.poneslas.tasya.probe\" } } }
+  atrace_apps: \"ru.poneslas.vahter.probe\" } } }
 duration_ms: $((SEC * 1000))"
 
 echo "Запись ${SEC} с — жмите кнопку…"

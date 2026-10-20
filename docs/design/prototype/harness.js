@@ -36,7 +36,7 @@ function longPress(){
   openOverlay('side');
 }
 async function event(k){
-  if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец: hermes pairing approve tasya K7Q2M9XD','h'); return pairDone() } return }
+  if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец: hermes pairing approve vahter K7Q2M9XD','h'); return pairDone() } return }
   if (k==='ctx'){ S.feed.push({t:'card',who:'h',head:brainOf().title+' · ошибка',title:'Разговор слишком длинный',text:'Модель больше не помещает всю историю режима. Сжимать не будем — начните заново: промпт и настройки останутся.',btns:[['Начать заново','restart','pri']]}); trace('Провайдер вернул ошибку длины контекста. Сжатия нет по решению — честно предлагаем начать разговор режима заново.','e'); S.keepScroll=true; return render() }
   if (k==='push'){ if(!brainReady()) return; S.feed.push({t:'ai',x:'<p>Готово: три рецепта сырников без муки, лучший — на рисовой.</p>',done:true}); if(S.ov||(S.screen==='app'&&S.page==='chat')) return render(); if(S.w.notif!=='ok'){ trace('Ответ пришёл, уведомления выключены — увидите при открытии.','e'); return } trace(brainOf().kind==='api'?'Лист закрыли, а запрос к DeepSeek дожала фоновая работа приложения; ответ сохранён в разговор режима, уведомление показал сам телефон — без своего сервера и пуш-службы.':'Пуш без содержимого через свой ntfy → телефон забирает текст и сам показывает уведомление.','h'); return showToast(curMode().title, S.w.locked&&S.settings.lockScope!=='on' ? 'Ответ готов' : 'Готово: три рецепта сырников…','push') }
   if (k==='cron'){ S.feed.push({t:'sys',x:'<b>По расписанию</b> · утренняя сводка'}); S.feed.push({t:'ai',id:'m'+(++msgSeq),x:'<p>Сегодня: банк в 10:00, созвон с Олей в 15:30. Погода +12, к вечеру дождь.</p>',done:true}); trace('Cron приходит вне хода (adapter.send с job_id). Обёртку «Cronjob Response: …» выключаем (cron.wrap_response: false) и рисуем свою плашку по job_id.','h'); if(!S.ov&&!(S.screen==='app'&&S.page==='chat')&&S.w.notif==='ok') return showToast('Hermes · по расписанию','Сегодня: банк в 10:00…','push'); return render() }
@@ -93,8 +93,8 @@ function renderTour(){ const done=tourStep>=TOUR.length;
   <div class="tact">${done?'<button data-ptab="sc">К сценариям</button>':'<button data-tour="skip">Пропустить шаг</button>'}<button data-tour="restart">Сначала</button></div>` }
 function tourCheck(){ if(curPreset!==null) return; let moved=false; while(tourStep<TOUR.length && TOUR[tourStep][2]()){ tourStep++; moved=true } if(moved) renderTour() }
 /* запоминание */
-function save(v){ try{ localStorage.setItem('tasya-proto',JSON.stringify(v)) }catch{} }
-function restore(){ const h=decodeURIComponent(location.hash.slice(1)); const bySlug=PRESETS.findIndex(p=>p[4]===h); if(bySlug>=0) return {k:'p',slug:h}; try{ return JSON.parse(localStorage.getItem('tasya-proto')) }catch{ return null } }
+function save(v){ try{ localStorage.setItem('vahter-proto',JSON.stringify(v)) }catch{} }
+function restore(){ const h=decodeURIComponent(location.hash.slice(1)); const bySlug=PRESETS.findIndex(p=>p[4]===h); if(bySlug>=0) return {k:'p',slug:h}; try{ return JSON.parse(localStorage.getItem('vahter-proto')) }catch{ return null } }
 $('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
 $('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Ответ пришёл, пока лист закрыт'],['ctx','Разговор упёрся в предел модели'],['cron','Hermes: утренняя сводка'],['bg','Hermes: фоновая задача'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');

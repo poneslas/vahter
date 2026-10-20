@@ -4,7 +4,7 @@
 #   probe/scripts/top-activity.sh side_key     # и записать в пробник: files/components.properties
 # Ключи, которые читает П19: side_key (боковая кнопка), battery (батарея пробника), auto_blocker.
 set -euo pipefail
-PKG=ru.poneslas.tasya.probe
+PKG=ru.poneslas.vahter.probe
 
 line="$(adb shell dumpsys activity activities | grep -E 'topResumedActivity|ResumedActivity' | head -1 | tr -d '\r')"
 comp="$(printf '%s\n' "$line" | grep -oE '[A-Za-z0-9_.]+/[A-Za-z0-9_.$]+' | head -1 || true)"
