@@ -99,9 +99,7 @@ function lock(){ return `<div class="layer lock">${statusBar(false)}<div class="
 const voiceOk = () => S.w.model==='ready' && S.w.mic==='ok';
 function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; return `0:${String(s).padStart(2,'0')}` }
 function liveHtml(){
-  if (S.rec){ const ph=PHR[S.rec.key]||{w:[]}; const n=S.rec.n; const fx=Math.max(0,n-2);
-    const lbl = S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · кнопка справа — отправить';
-    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):''}</div>` }
+  if (S.rec) return `<div class="live recl"><div class="recpill"><div class="eq sm" data-mode="speak"></div></div></div>`;   // как RecPill в приложении: волна, без слов
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
@@ -117,12 +115,13 @@ function composerHtml(o={}){
   const tabs=o.into?'':modeTabs(), into=o.into?` data-into="${o.into}"`:'';
   // «Вы к кому?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
   const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вы к кому?';
-  const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
+  const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'recmic':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
+  // Запись — как в приложении (кнопка, полоса и замок Писаря, pisar/overlay): белая полоса «● 0:07 ‹ ‹ Отмена», к кнопке — без скругления;
+  // кнопка красная с ореолами; над ней белый замок. Без рук — на кнопке «Отправить», замок закрыт (зелёный кружок).
+  const bar=(hint,op)=>`<div class="fld recbar"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${op}">${hint}</span></div>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
-    return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
-  // запись без рук, как в Писаре: круг микрофона стал «Отправить»; дёрнуть его влево — отмена
-  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><button class="slide lnkc" data-act="reccancel" style="opacity:${Math.max(.25,1-gx/70)}">‹ влево — отмена</button></div><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn sendmode" data-recsend aria-label="${o.into?'Готово; потяните влево — отменить':'Отправить; потяните влево — отменить'}">${o.into?I.ok:I.send}</button></div></div>${tabs}</div>` }
-  if (o.into) return `<div class="cwrap"><div class="composer"><div class="fld"><span class="tryhint">Зажмите микрофон и говорите</span></div>${mic}</div></div>`;
+    return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
+  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="lockcue shut">${I.lock}</div><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
   const canAttach = A.file || A.photo;
@@ -276,7 +275,7 @@ function tryStep(){
   const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', live=rec?recText():'', shots=S.tryShots||[];
   const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %`:S.w.model!=='ready'?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
   const feed = shots.map(x=>`<div class="tshot"><div class="me">${esc(x.text)}</div><span class="tfast">⚡ ${(x.ms/1000).toFixed(1).replace('.',',')} с · на телефоне</span></div>`).join('')
-    + (rec?`<div class="tshot"><div class="me tlive">${live?esc(live):'<div class="eq sm" data-mode="speak"></div>'}</div></div>`:'');
+    + (rec?`<div class="tshot"><div class="me tlive"><div class="eq sm" data-mode="speak"></div></div></div>`:'');
   const empty = !shots.length&&!rec ? `<div class="tempty">${why?`<span class="twhy">${why}</span>`:'<span class="tarrow">Скажите что-нибудь — текст появится здесь</span>'}</div>` : '';
   return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2>
     <p>Зажмите микрофон, скажите фразу и отпустите. ${side?'Так же — в листе по боковой кнопке.':'Так же работает в листе.'}</p>
