@@ -145,7 +145,7 @@ function settings(){
     <div class="lh">Вызов</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
-    <div class="lirow">${li(I.mic,'Слушать сразу при вызове','Только с боковой кнопки')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
+    <div class="lirow">${li(I.mic,'Слушать сразу при вызове',S.settings.listenOnCall===false?'Запись по нажатию':'Запись начинается сама')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
     ${li(I.hist,'Возвращаться к Ассистенту', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[1],'returnpick')}
     <div class="lh">Режимы</div>
     ${S.modes.map(m=>`<div class="lirow">${li(I[m.icon],esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
