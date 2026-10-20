@@ -245,7 +245,7 @@ fun Composer(
 
     fun flash(text: String) { scope.launch { onLive(text); delay(2800); onLive(null) } }
 
-    Column(Modifier.background(Ink.paper)) {
+    Column {   // прозрачная: в листе под строкой ввода видно свечение (ui.js, .s2 .composer)
         // .mpicker: меню скрепки над полем
         if (menu) Column(Modifier.padding(start = 16.dp, bottom = 4.dp).widthIn(min = 230.dp)
             .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))

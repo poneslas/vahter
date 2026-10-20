@@ -80,6 +80,10 @@ object Sheet {
     val firstSheet = MutableStateFlow(false)
     /** Один раз — подсказка «Так открывается по боковой кнопке». */
     val sideCue = MutableStateFlow(false)
+    /** Чистый лист после 30 минут без дела (Продукт 5.1): режим → с какого места ленты показывать. Ничего не стирается — в приложении вся лента. */
+    val from = MutableStateFlow<Map<String, Int>>(emptyMap())
+    /** Свернули из приложения: лист появляется во весь экран и садится на свою высоту. */
+    @Volatile var shrinkOnShow = false
     /** При первом закрытии листа после мастера — «Вахтёр на месте». */
     @Volatile var firstClose = false
 
@@ -181,6 +185,9 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
                 ru.poneslas.vahter.core.ReturnToAssistant.MIN30 -> idle > 30 * 60_000
             }
             if (back) conv.selectMode(ru.poneslas.vahter.core.Modes.MAIN)
+            // После 30 минут без дела — чистый лист: показываем только новое; старое — в приложении, выше черты «Новый разговор».
+            val st = conv.state.value
+            if (idle > 30 * 60_000 && st.feed.size > (Sheet.from.value[st.mode] ?: 0)) Sheet.from.value = Sheet.from.value + (st.mode to st.feed.size)
         }
         registry.currentState = Lifecycle.State.RESUMED
         Sheet.visible.value = true
@@ -246,8 +253,9 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             .putExtra(MainActivity.EXTRA_NEW_MODE, newMode)
             .putExtra(MainActivity.EXTRA_ASK_PERM, askPerm)
             .putExtra(MainActivity.EXTRA_EDIT_MODE, editMode)
-        runCatching { startAssistantActivity(intent) }
-        hide()
+        // Лист закроет само приложение на своём первом кадре; запасной таймер — если активность не поднялась.
+        if (runCatching { startAssistantActivity(intent) }.isFailure) hide()
+        else window.window?.decorView?.postDelayed({ if (Sheet.visible.value) hide() }, 1500)
     }
 }
 

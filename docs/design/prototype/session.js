@@ -6,6 +6,7 @@ function openOverlay(src){
   if (S.screen==='cam2'&&S.cam){ S.screen=S.camRet.screen; S.cam=null }   // лист вызвали поверх камеры — камера закрывается, иначе она осталась бы поверх листа
   const isSide = src==='side'||src.startsWith('боков');
   const R=S.settings.returnToAssistant; if (isSide && S.mode!=='main' && R!=='never' && (R==='always' || S.idle>=30 || !curMode().enabled)){ const t=curMode().title; S.mode='main'; trace(R==='always'?`Боковая кнопка всегда открывает Ассистента (настройка). «${t}» — через вкладки или ярлык.`:`Без дела ${S.idle} мин — боковая кнопка снова открывает Ассистента. «${t}» остался во вкладках, лента сохранена.`,'p') }
+  if (isSide && S.idle>=30 && S.feed.length>sheetFrom()){ S.sheetFrom={...(S.sheetFrom||{}),[S.mode]:S.feed.length}; trace(`Без дела ${S.idle} мин — лист открывается чистым. Прошлый разговор не стёрт: он в приложении, выше черты «Новый разговор»; из листа — «Прошлый разговор».`,'p') }
   S.idle=0;
   S.rec=null; const O={pop:true}; S.ov=O;
   if (curMode().primary==='photo' && curMode().accepts.photo){ render(); return openCamera(true) }
@@ -89,8 +90,8 @@ function closeOverlay(){ token++; S.busy=false; S.ov=null; S.sideCue=false;
 /** Разрешение на уведомления спрашиваем, пока лист ещё виден: при первом вопросе мозгу, пока он думает. После закрытия окна спросить уже нечем. */
 function maybeAskNotif(){ if (S.w.notif==='ok'||S.notifAsked||!S.ov) return; S.notifAsked=true; S.feed.push({t:'notifask'}); trace('Уведомления спрашиваем, пока лист виден: при закрытии листа окна уже нет, системный запрос показать нечем.','p') }
 async function expand(msgId){
-  if (!S.ov) return; S.ov.full=true; S.keepScroll=true; render();
-  trace('Лист доезжает до полного экрана, затем startAssistantActivity открывает тот же разговор в экране приложения — без анимации перехода; лист закрывается, когда приложение нарисовало первый кадр. Так разворачивается Gemini.','p');
+  if (!S.ov) return; const sh=$('#scr .sheet'); S.ov.fromH=sh?sh.offsetHeight:400; S.ov.full=true; S.keepScroll=false; render();
+  trace('Лист доезжает до полного экрана, затем startAssistantActivity открывает тот же разговор в экране приложения. Пока лист растёт, сверху проявляется шапка приложения, свечение гаснет — к моменту подмены лист уже выглядит как экран приложения, подмены не видно.','p');
   await wait(380); S.fromSheet={screen:S.screen==='app'?'home':S.screen}; S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat'; S.scrollToMsg=msgId||null; render();
 }
 

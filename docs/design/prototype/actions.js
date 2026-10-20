@@ -133,7 +133,7 @@ document.addEventListener('click', async e=>{
     case 'updcancel': S.upd.state='available'; return render();
     case 'gear': if(S.w.locked){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы открыть настройки',opts:[['Разблокировать','unlock_set'],['Отмена','x','sec2']]}; return render() } S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; trace('Шестерёнка → настройки приложения (startAssistantActivity), лист закрывается.'); return render();
     case 'expand': return expand(t.dataset.msg);
-    case 'collapse': { const back=S.fromSheet; S.fromSheet=null; S.screen=back?.screen||'home'; openOverlay('снова — свёрнуто из приложения'); S.ov.full=true; render(); await wait(30); S.ov.full=false; S.keepScroll=false; render();
+    case 'collapse': { const back=S.fromSheet; S.fromSheet=null; S.screen=back?.screen||'home'; openOverlay('снова — свёрнуто из приложения'); S.ov.pop=false; render(); const sh=$('#scr .sheet'); S.ov.shrinkTo=sh?sh.offsetHeight:400; S.ov.shrink=true; S.ov.pop=false; render(); await wait(400); if(S.ov){ S.ov.shrink=false; S.keepScroll=true; render() }
       trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;

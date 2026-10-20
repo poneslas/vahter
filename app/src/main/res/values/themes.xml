@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Фон окна — «бумага» (Ink.paper): при развороте листа в приложение до первого кадра Compose не мелькает белым. -->
+    <style name="Theme.Vahter" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+    <color name="paper">#FFF7F8F4</color>
+</resources>

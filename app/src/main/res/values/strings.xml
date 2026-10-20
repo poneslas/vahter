@@ -765,4 +765,10 @@
     </plurals>
     <string name="intro_start">Начать</string>
     <string name="sheet_via_tap">нажатие</string>
+    <string name="feed_new_conv">Новый разговор · из листа</string>
+    <string name="sheet_listen">Слушаю</string>
+    <string name="sheet_listen_sub">Отпустите — и отправлю</string>
+    <string name="sheet_recog">Распознаю на телефоне</string>
+    <string name="sheet_recog_sub">Голос не уходит с телефона</string>
+    <string name="sheet_prev">Прошлый разговор · %1$d сообщ.</string>
 </resources>

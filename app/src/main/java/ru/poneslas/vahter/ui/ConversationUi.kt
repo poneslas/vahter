@@ -55,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -91,6 +92,8 @@ fun PromptStrip(mode: ru.poneslas.vahter.core.Mode, onEdit: (String) -> Unit, mo
 fun Feed(
     state: Conversation.State, onAct: (FeedItem.Act, Boolean) -> Unit, onCard: (FeedItem.Card, String) -> Unit, onCancelAttach: (Long) -> Unit = {},
     modifier: Modifier = Modifier, inSheet: Boolean = true, onChip: ((String) -> Unit)? = null,
+    /** Чистый лист после 30 минут без дела (ui.js, sheetFrom): в листе — лента с этого места; в приложении — черта «Новый разговор · из листа». */
+    from: Int = 0,
 ) {
     // Баг №20: у каждого режима своё положение ленты; при переключении — сразу в конец, без анимации.
     val list = remember(state.mode) { androidx.compose.foundation.lazy.LazyListState((state.feed.size - 1).coerceAtLeast(0)) }
@@ -118,7 +121,15 @@ fun Feed(
     }
     CompositionLocalProvider(LocalTextStyle provides BaseText.copy(fontSize = 14.5.sp)) {
         LazyColumn(modifier, state = list, contentPadding = pad, verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
-            items(state.feed, key = { it.id }) { item ->
+            val shown = if (inSheet) state.feed.drop(from) else state.feed
+            val sep = if (!inSheet && from in 1 until state.feed.size) state.feed[from].id else null
+            items(shown, key = { it.id }) { item ->
+              Column(Modifier.fillMaxWidth()) {
+                if (item.id == sep) Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f).height(1.dp).background(Ink.line))
+                    Text(tr(R.string.feed_new_conv), fontSize = 12.sp, color = Ink.faint, modifier = Modifier.padding(horizontal = 10.dp))
+                    Box(Modifier.weight(1f).height(1.dp).background(Ink.line))
+                }
                 when (item) {
                     is FeedItem.Me -> MeItem(item, onCancelAttach)
                     is FeedItem.Ai -> AiItem(item)
@@ -130,6 +141,7 @@ fun Feed(
                             .drawBehind { drawRect(Ink.danger, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }
                             .padding(start = 15.dp, end = 12.dp, top = 8.dp, bottom = 8.dp))
                 }
+              }
             }
         }
     }

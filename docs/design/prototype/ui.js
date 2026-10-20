@@ -38,11 +38,16 @@ function promptHtml(){
   const m=curMode(); if(!m.prompt.trim()) return '';
   return `<button class="mprompt" data-act="editmode:${m.id}"><span>${esc(m.prompt)}</span>${I.edit}</button>`;
 }
+/* Новый лист: после 30 мин без дела боковая кнопка открывает чистый лист. Старое не стирается — оно в приложении, выше черты «Новый разговор». */
+const sheetFrom = () => (S.sheetFrom&&S.sheetFrom[S.mode])||0;
+const sheetItems = () => S.feed.slice(sheetFrom());
 function feedHtml(inSheet){
-  if (!S.feed.length && inSheet && S.firstSheet && S.mode==='main') return sheetEmpty();
-  if (!S.feed.length && curMode().hint && (inSheet || S.mode!=='main')) return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
-  if (!S.feed.length) return inSheet ? sheetEmpty() : `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
-  return `<div class="feed">${S.feed.map(it=>itemHtml(it,inSheet)).join('')}</div>`;
+  const items = inSheet ? sheetItems() : S.feed;
+  if (!items.length && inSheet) return sheetEmpty();
+  if (!S.feed.length && curMode().hint && S.mode!=='main') return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
+  if (!S.feed.length) return `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
+  const f=sheetFrom(), sep=!inSheet&&f>0&&f<S.feed.length;
+  return `<div class="feed">${items.map((it,i)=>(sep&&i===f?`<div class="newconv"><span>Новый разговор · из листа</span></div>`:'')+itemHtml(it,inSheet)).join('')}</div>`;
 }
 function itemHtml(it,inSheet){
   if (it.t==='notifask') return `<div class="nask">${I.bell}<span>Сообщить, если закроете лист до ответа?</span><button class="tbtn" data-act="asknotif">Разрешить</button><button class="iconbtn" data-act="notifno" aria-label="Не нужно">${I.x}</button></div>`;
@@ -116,7 +121,8 @@ function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accep
 function composerHtml(o={}){
   const tabs=o.into?'':modeTabs(), into=o.into?` data-into="${o.into}"`:'';
   // «Вам чего?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
-  const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')||(S.ov&&S.firstSheet)?curMode().placeholder:'Вам чего?';   // в первом листе «Вам чего?» уже заголовком
+  // В листе «Вам чего?» — заголовком сцены, в поле — подсказка режима; в пустом разговоре приложения — в поле.
+  const ph=!brainReady()?'Команда агенту':(S.ov&&!S.ov.full)||S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вам чего?';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'recmic':''} ${S.recog?'proc':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   // Запись — как в приложении (кнопка, полоса и замок Писаря, pisar/overlay): белая полоса «● 0:07 ‹ ‹ Отмена», к кнопке — без скругления;
   // кнопка красная с ореолами; над ней белый замок. Без рук — на кнопке «Отправить», замок закрыт (зелёный кружок).
@@ -366,27 +372,39 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
     <div class="crow"><button class="cplus" data-act="camadd" aria-label="Оставить кадр и снять ещё" ${c.editIdx==null&&c.frames.length>=camMax()-1?'disabled':''}>${I.plus}</button><button class="csend" data-act="camsend" aria-label="Отправить${c.frames.length?' все кадры':''}">${I.send}${(c.frames.length+(c.editIdx==null?1:0))>1?`<b class="ccount">${c.frames.length+(c.editIdx==null?1:0)}</b>`:''}</button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button></div>
   </div>${ins?modeTabs()+'</div>':''}</div>` }
 function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Вахтёр</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
-/** Пустой лист в первый раз (финал мастера) и пока ничего не спрашивали: «Вам чего?» и чипы, которые работают без мозга. */
+/** Знак Вахтёра — «лампа на вахте»: ядро и два кольца. Состояние листа задаёт цвет и движение (CSS, data-st). */
+function vMark(cls=''){ return `<span class="vmark ${cls}" aria-hidden="true"><i class="r2"></i><i class="r1"></i><i class="core"></i></span>` }
+/** Что сейчас делает лист: ждёт, слушает, распознаёт, делает сам (янтарь — телефон), звонит наверх (синий — мозг). */
+function sheetSt(){ if(S.rec) return 'rec'; if(S.recog) return 'recog'; if(S.ov&&S.ov.live&&/st h/.test(S.ov.live)) return 'up'; if(S.busy) return 'think'; return 'idle' }
+/** Пустой лист — сцена, как у ассистентов: знак по центру и одна фраза. Чипы — только в первый раз (финал мастера). */
 function sheetEmpty(){
-  if (S.mode!=='main' || !S.firstSheet) return '<div class="feed"></div>';
+  const st=sheetSt(), m=curMode(), main=m.id==='main';
+  const cap = st==='rec'?'Слушаю':st==='recog'?'Распознаю на телефоне':main?'Вам чего?':esc(m.title);
+  const sub = st==='rec'?'Отпустите — и отправлю':st==='recog'?'Голос не уходит с телефона':main?'':esc(m.hint||'');
   const c=['⏰ Будильник на 7','⏱ Таймер на 5 минут'].concat(brainReady()?['Что посмотреть в Казани?']:[]);
-  return `<div class="feed"><div class="sempty"><b>Вам чего?</b><div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div></div></div>` }
+  const chips = main&&S.firstSheet&&st==='idle' ? `<div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div>` : '';
+  const prev = sheetFrom()>0&&st==='idle' ? (()=>{ const n=S.feed.slice(0,sheetFrom()).filter(x=>x.t==='me'||x.t==='ai').length; return `<button class="prevconv" data-act="expand">${I.hist}<span>Прошлый разговор · ${n} сообщ.</span>${I.chev}</button>` })() : '';
+  return `<div class="feed scenef"><div class="scene">${vMark('big')}<b>${cap}</b>${sub?`<small>${sub}</small>`:''}${chips}${prev}</div></div>` }
 /** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
 function sheetStrip(){
   if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
   if (curMode().id==='main' && !brainReady() && brainOf().kind==='api') return `<div class="ostrip"><span>🧠</span><p>Мозг не подключён — пока только команды телефона</p><button class="tbtn" data-act="brainfromsheet">Подключить</button></div>`;
   return '' }
 function sideCue(){ if (!S.sideCue || !S.ov) return ''; return `<div class="sidecue">${S.w.profile==='unknown'?'Так же — долгое нажатие «Домой»':'Так открывается по боковой кнопке'}<i></i></div>` }
+/* Лист без шапки: слева — маленький знак (и строка связи, только если что-то не так), по центру ручка, справа — круглые кнопки.
+   В полном экране сверху проявляется шапка приложения — та же, что в chat(), чтобы подмена на экран приложения была незаметной. */
 function overlay(){
-  const O=S.ov; if(!O) return ''; const [d,t]=linkState();
-  return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
-    <button class="grab" data-act="expand" aria-label="Развернуть"></button>
-    <div class="hdr"><span class="ldot ${d}"></span><span><b style="color:var(--ink);font-weight:600">${curMode().title}</b> · ${t}</span><span class="sp"></span>
-      <button class="iconbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button>
-      <button class="iconbtn" data-act="gear" aria-label="Настройки">${I.gear}</button>
-      <button class="iconbtn" data-act="close" aria-label="Закрыть">${I.x}</button></div>
-    ${promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(true)}</div>
-    ${liveHtml()}${composerHtml()}
+  const O=S.ov; if(!O) return ''; const [d,t]=linkState(); const st=sheetSt(), empty=!sheetItems().length;
+  const anim = O.full ? `full grow` : O.shrink ? 'shrink' : '';
+  const style = O.full ? `--from:${O.fromH||400}px` : O.shrink ? `--to:${O.shrinkTo||400}px` : '';
+  return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet s2 ${anim} ${O.pop?'pop':''} ${empty?'isempty':''}" data-st="${st}" style="${style}">
+    <div class="glow"></div>
+    <div class="ftop topbar"><button class="iconbtn" aria-label="Свернуть в лист">${I.down}</button><div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div><button class="iconbtn">${I.gear}</button><button class="iconbtn">${I.more}</button></div>
+    <div class="shead">${empty?'<span></span>':`<span class="sst">${vMark('mini')}${d?`<span>${t}</span>`:''}</span>`}
+      <button class="grab" data-act="expand" aria-label="Развернуть"></button>
+      <span class="sbtns"><button class="cbtn" data-act="gear" aria-label="Настройки">${I.gear}</button><button class="cbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button><button class="cbtn" data-act="close" aria-label="Закрыть">${I.x}</button></span></div>
+    ${promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(!O.full)}</div>
+    ${empty&&(S.rec||S.recog)?'':liveHtml()}${composerHtml()}
   </div>${sideCue()}</div>`;
 }
 function dialog(){ const D=S.dialog; if(!D) return '';
@@ -398,7 +416,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice']];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();

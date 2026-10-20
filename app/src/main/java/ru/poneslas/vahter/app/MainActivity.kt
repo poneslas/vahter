@@ -121,8 +121,18 @@ class MainActivity : ComponentActivity() {
     override fun onResume() { super.onResume(); App.instance.appVisible.value = true; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
+    /** Пришли из листа: лист закрываем, когда приложение нарисовало первый кадр, — подмена незаметна (Архитектура 3.1). */
+    private fun hideSheetAfterFirstFrame() {
+        val v = window.decorView
+        val l = object : android.view.ViewTreeObserver.OnDrawListener {
+            override fun onDraw() { v.post { v.viewTreeObserver.removeOnDrawListener(this); Sheet.session?.hide() } }
+        }
+        v.viewTreeObserver.addOnDrawListener(l)
+    }
+
     private fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
+        if (fromSheet) hideSheetAfterFirstFrame()
         sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
@@ -146,7 +156,7 @@ class MainActivity : ComponentActivity() {
     fun choose(d: ChoiceDialog) { dialog = d }
 
     /** Свернуть обратно в лист: finish + showSession (Архитектура 3.1). */
-    private fun collapse() { finish(); Sheet.show(Bundle().apply { putString("src", "app") }) }
+    private fun collapse() { Sheet.shrinkOnShow = true; finish(); Sheet.show(Bundle().apply { putString("src", "app") }) }
 
     /**
      * Финал мастера — лист, а не приложение (Продукт 5.13): он интереснее полноэкранного разговора, и так Вахтёр выглядит каждый день.
@@ -224,7 +234,8 @@ class MainActivity : ComponentActivity() {
             actions = listOf(tr(R.string.set_podklyuchit) to { go("brain:${brain.id}") }))
         PromptStrip(state.current, onEdit = { go("mode:$it") })
         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
-            modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_klaviatura)) })
+            modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_klaviatura)) },
+            from = Sheet.from.collectAsState().value[state.mode] ?: 0)
         ru.poneslas.vahter.ui.UpLine(state)
         LiveLine(live)
         Composer(
