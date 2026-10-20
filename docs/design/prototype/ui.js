@@ -110,7 +110,7 @@ function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accep
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
   return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
 function composerHtml(){
-  const ph=brainReady()?curMode().placeholder:'Команда телефону';
+  const ph=brainReady()?curMode().placeholder:'Команда агенту';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${modeTabs()}</div>` }
