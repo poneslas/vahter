@@ -552,3 +552,4 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .osheet h3{font-family:var(--display);font-size:21px;font-weight:500;margin:8px 0 8px}
 .osheet p{color:var(--soft);font-size:14.5px;margin:0 0 18px}
 .osheet .oacts{display:flex;flex-direction:row-reverse;justify-content:flex-start;gap:10px;align-items:center}
+.onb .bgdl{font-size:13px;color:var(--soft);margin:10px 0 0}

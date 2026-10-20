@@ -61,7 +61,7 @@ document.addEventListener('click', async e=>{
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'intronext': S.introStep=(S.introStep||0)+1; return render();
-    case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('button'); return render();
+    case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('voice'); return render();
     case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null;
       if (S.onbStep<ONB.length-1){ S.onbStep++; if (ONB[S.onbStep]==='try' && (S.w.model==='none'||S.w.model==='broken')) S.onbStep++;   // голос не качали — пробовать нечем
         return render() }
