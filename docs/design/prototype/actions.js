@@ -1,5 +1,7 @@
 /* Действия пользователя: клики, ввод, диалоги (в Android — интенты ViewModel). */
 /* ───────── клики ───────── */
+// Меню ⋮ закрывается нажатием мимо него.
+document.addEventListener('click', e=>{ if(S.chatMenu && !e.target.closest('.cmenu,[data-act=chatmenu]')){ S.chatMenu=false; S.keepScroll=true; render() } }, true);
 document.addEventListener('click', async e=>{
   const t=e.target.closest('[data-perm],[data-permfix],[data-sysperm],[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-tour],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab){ if(t.dataset.ptab==='tour' && curPreset!==null) return startTour(); return setPtab(t.dataset.ptab) }
@@ -52,6 +54,10 @@ document.addEventListener('click', async e=>{
     case 'modeback': { const b=S.modeBack; S.modeBack=null; if(b==='sheet'){ const r=S.fromSheet; S.fromSheet=null; S.screen=r?.screen||'home'; S.page='chat'; openOverlay('снова — назад со страницы режима'); return render() } S.page=b==='chat'?'chat':'settings'; return render() }
     case 'promptreset': { const m=modeById(S.editMode), d=BUILTIN_MODES.find(b=>b.id===m.id); m.prompt=d.prompt; trace('Промпт встроенного режима — снова из текстов приложения: обновится с новой версией и языком.','i'); return render() }
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
+    case 'chatmenu': S.chatMenu=!S.chatMenu; S.keepScroll=true; return render();
+    case 'cm:edit': S.chatMenu=false; S.editMode=S.mode; S.modeBack='chat'; S.page='mode'; return render();
+    case 'cm:journal': S.chatMenu=false; S.page='journal'; return render();
+    case 'cm:restart': S.chatMenu=false; S.keepScroll=true;   // дальше — как раньше: карточка «Стереть разговор?»
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'intronext': S.introStep=(S.introStep||0)+1; return render();

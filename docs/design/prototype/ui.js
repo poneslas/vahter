@@ -106,6 +106,9 @@ function liveHtml(){
   return '';
 }
 function modeTabs(){ const am=activeModes(); return `<div class="mtabs" data-swipe role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}<button class="madd" data-act="addmode" aria-label="Новый режим">+</button></div>` }
+/* ⋮ в шапке разговора — меню, как привычно в Android: пункты-действия без пояснений. */
+function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
+  return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:journal">Журнал действий</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }
 function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accepts, photoMain=m.primary==='photo';
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
   return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
@@ -132,7 +135,7 @@ function chat(){
   const [d,t]=linkState();
   return `<div class="layer appv">${statusBar(true)}
   <div class="topbar">${S.fromSheet?`<button class="iconbtn" data-act="collapse" aria-label="Свернуть в лист">${I.down}</button>`:''}<div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div>
-    <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button><button class="iconbtn" data-act="restartask" aria-label="Начать заново">${I.more}</button></div>
+    <button class="iconbtn" data-act="settings" aria-label="Настройки">${I.gear}</button><button class="iconbtn" data-act="chatmenu" aria-label="Ещё" aria-expanded="${!!S.chatMenu}">${I.more}</button></div>${chatMenu()}
   ${bannerHtml()}${promptHtml()}
   <div class="scroll" id="scroll">${feedHtml(false)}</div>
   ${S.ov?'':liveHtml()}${S.ov?'':composerHtml()}</div>`;
@@ -330,7 +333,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.sc-pop',()=>S.shortcuts],['.islide',()=>'intro'+(S.introStep||0)]];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.islide',()=>'intro'+(S.introStep||0)]];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();
