@@ -121,7 +121,15 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             // Баги №16, №18: клавиатуру, полоску навигации, строку состояния и вырез считает только Compose (imePadding, safeDrawing).
             // Рамка сессии (fitsSystemWindows в разметке помощника) сдвигала лист сама и не на всю высоту клавиатуры — отключаем её ниже.
             androidx.core.view.WindowCompat.setDecorFitsSystemWindows(w, false)
-            w.attributes = w.attributes.apply { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS }
+            // Лист прибит к низу экрана: рамка окна помощника не должна сама отступать от полосы жестов и строки состояния
+            // (у окон помощника по умолчанию fitInsetsTypes = системные полосы — на One UI лист висел над полосой жестов).
+            w.attributes = w.attributes.apply {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                fitInsetsTypes = 0
+                fitInsetsSides = 0
+            }
+            @Suppress("DEPRECATION") run { w.navigationBarColor = android.graphics.Color.TRANSPARENT }
+            w.isNavigationBarContrastEnforced = false
             w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) // без сдвига окна: система его сдвигала (pan) на 688 px поверх imePadding
         }
         Sheet.session = this

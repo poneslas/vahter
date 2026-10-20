@@ -257,8 +257,9 @@ function onb(){
   const st=ONB[S.onbStep];
   if (st==='try') return tryStep();
   if (st==='brain'){ const K=S.keyCheck, done=S.w.key==='ok'&&K&&K.stage==='done', run=K&&K.stage==='run';
-    return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="wscroll" id="wscroll"><div class="art">${introScene('brain')}</div>
-    <h2>Подключите мозг</h2><p>Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</p>${keyBody(true)}</div>
+    // Как остальные шаги: сцена — в растягиваемой области, заголовок, текст и поле ключа — внизу.
+    return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="art">${introScene('brain')}</div>
+    <h2>Подключите мозг</h2><p>Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</p>${keyBody(true)}
     ${navBar(done?null:['Позже','onbnext'], done?['Открыть','onbnext']:run?['Подключаю…','noop']:['Подключить','keycheck'])}</div></div>` }
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
@@ -447,7 +448,6 @@ function render(){
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
   S.keepScroll=false;
-  if (S.keyCheck){ const w=$('#wscroll'); if(w) w.scrollTop=w.scrollHeight }   // мастер, «Мозг»: проверки ключа — под сценой, показать их
   if (S.scrollToMsg){ const id=S.scrollToMsg; S.scrollToMsg=null; requestAnimationFrame(()=>{ const el=$('#scroll'); const tgt=el&&el.querySelector(`.ai[data-msg="${id}"]`); if(tgt){ const k=el.getBoundingClientRect().height/el.offsetHeight||1; el.scrollTop += (tgt.getBoundingClientRect().top - el.getBoundingClientRect().top)/k - 8 } }) }
   renderWorld();
 }

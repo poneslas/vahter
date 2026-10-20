@@ -58,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -382,14 +383,16 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
             else -> {
                 // Мозг — последним. «Подключить» — главная кнопка внизу; подключили — «Открыть» ведёт в лист.
                 // Уведомления — здесь же, пока экран приложения открыт: из листа системное окно показать нечем.
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.WizArt(ru.poneslas.vahter.ui.WizScene.BRAIN) }
-                    Head(tr(R.string.wiz_brain_h), tr(R.string.wiz_brain_p))
-                    KeyEditor(Brains.deepseek, onboarding = true, ctl = key)
-                    val notif = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                    if (hasKey && !notif) SetCard(Modifier.padding(top = 12.dp)) {
-                        Item(tr(R.string.set_uvedomleniya), tr(R.string.pg_soobshchit_ob_otvete_esli_list), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
-                    }
+                // Как остальные шаги: сцена — в растягиваемой области (сжимается, если внизу стало больше), заголовок и ключ — внизу.
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val k = (maxHeight / 300.dp).coerceIn(.4f, 1f)
+                    Box(Modifier.scale(k)) { ru.poneslas.vahter.ui.WizArt(ru.poneslas.vahter.ui.WizScene.BRAIN) }
+                }
+                Head(tr(R.string.wiz_brain_h), tr(R.string.wiz_brain_p))
+                KeyEditor(Brains.deepseek, onboarding = true, ctl = key)
+                val notif = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                if (hasKey && !notif) SetCard(Modifier.padding(top = 8.dp)) {
+                    Item(tr(R.string.set_uvedomleniya), tr(R.string.pg_soobshchit_ob_otvete_esli_list), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
                 }
                 if (hasKey) { skip = null; primary = tr(R.string.pg_otkryt) to onDone }
                 else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.key_connect)) to { key.connect(scope) }

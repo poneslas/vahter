@@ -316,12 +316,15 @@ private fun SceneChat() {
         Column(Modifier.weight(1f).fillMaxHeight().graphicsLayer { shadowElevation = 14f; shape = RoundedCornerShape(18.dp); clip = true }
             .background(Ink.localT).border(2.dp, Ink.local, RoundedCornerShape(18.dp)).padding(11.dp)) {
             ColHead("🍽", stringResource(R.string.intro_tab_gastro), stringResource(R.string.intro_my_mode), Ink.ink)
+            val th = ramp(t, .04f, .08f)
             Box(Modifier.fillMaxWidth().height(58.dp)) {
-                val th = ramp(t, .04f, .08f)
-                Box(Modifier.fillMaxSize().graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }) { Thumb(menu = true) }
+                Box(Modifier.fillMaxSize().graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }, contentAlignment = Alignment.CenterEnd) { MenuPhoto() }
                 val fl = window(t, .03f, .04f, .04f, .08f)
                 if (fl > 0f) Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .9f * fl)))
             }
+            // подпись — что ушло: фото меню, а не документ
+            Text(stringResource(R.string.wiz_menu_sent), fontSize = 10.5.sp, color = Ink.localD, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.fillMaxWidth().padding(top = 3.dp).graphicsLayer { alpha = th })
             Ai(stringResource(R.string.intro_s2_answer), ramp(t, .10f, .14f), Modifier.padding(top = 3.dp))
             androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 stringArrayResource(R.array.wiz_chat_checks).forEachIndexed { i, c ->
@@ -395,6 +398,20 @@ private fun SceneKeys() {
             }
         }
         Text(stringResource(R.string.wiz_plus), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+    }
+}
+
+/** Снимок меню: карточка меню на тёмном столе, чуть повёрнута — видно, что это фото (intro.css, .sc6 .thumb). */
+@Composable
+private fun MenuPhoto() = Box(Modifier.size(76.dp, 56.dp).graphicsLayer { shadowElevation = 8f; shape = RoundedCornerShape(10.dp); clip = true }
+    .background(Brush.radialGradient(listOf(Color(0xFF7A5236), Color(0xFF3E2718)), center = Offset(70f, 40f), radius = 220f))) {
+    Box(Modifier.offset(14.dp, 6.dp).size(44.dp, 52.dp).graphicsLayer { rotationZ = -8f; shadowElevation = 6f; shape = RoundedCornerShape(3.dp) }
+        .background(Color(0xFFF4EBD6)).padding(horizontal = 7.dp, vertical = 4.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Text("МЕНЮ", fontSize = 6.5.sp, lineHeight = 7.sp, letterSpacing = .12.em, fontWeight = FontWeight.Bold, color = Color(0xFF5B4630))
+            Spacer(Modifier.height(4.dp))
+            repeat(5) { i -> Box(Modifier.padding(top = 3.dp).fillMaxWidth(if (i % 2 == 0) 1f else .75f).height(1.dp).background(Color(0xFFB08A57))) }
+        }
     }
 }
 

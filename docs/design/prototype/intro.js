@@ -18,7 +18,7 @@ function introScene(k) {
       <div class="bub"><div class="tw">Здравствуйте! Я в ресторане. Не ем острое и свинину, аллергия на орехи, бюджет до 1500 ₽. Посоветуйте 2–3 блюда. Вот меню 📎</div><span class="car"></span></div>
       <div class="cnt"><span class="w"></span><span class="t"></span></div></div>
     <div class="col vah"><div class="hd"><span class="ci">🍽</span><b>Гастрогид</b><small>мой режим</small></div>
-      <div class="snap"><span class="thumb"></span><span class="fl"></span></div>
+      <div class="snap"><span class="thumb"><i class="card"><b>МЕНЮ</b></i></span><span class="fl"></span></div><div class="scap">📷 отправил фото меню</div>
       <div class="ans">Судак на гриле и морс — 1200 ₽.</div>
       <div class="chk"><span>✓ не остро</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div>
       <div class="cnt"><span>⏻ 1 нажатие</span><span class="t"></span></div></div></div>`;

@@ -133,8 +133,13 @@
 .sc6 .vah .cnt .t{animation:cs2 var(--T) linear infinite}
 @keyframes cs2{0%,3%{--s:0}14%,100%{--s:3}}
 .sc6 .snap{position:relative;height:58px;display:flex;justify-content:flex-end}
-.sc6 .thumb{width:76px;height:56px;border-radius:10px;position:relative;overflow:hidden;background:linear-gradient(160deg,#F7F1E3,#E6D8B8);opacity:0;animation:sn1 var(--T) infinite both}
-.sc6 .thumb::after{content:"";position:absolute;inset:8px 9px;background:repeating-linear-gradient(#8E6E3E 0 2px,transparent 2px 8px);opacity:.55}
+/* снимок меню: карточка меню на тёмном столе, чуть повёрнута — фото, а не документ */
+.sc6 .thumb{width:76px;height:56px;border-radius:10px;position:relative;overflow:hidden;background:radial-gradient(120% 90% at 30% 20%,#7A5236,#3E2718 70%);box-shadow:0 4px 10px -4px rgba(0,0,0,.45);opacity:0;animation:sn1 var(--T) infinite both}
+.sc6 .thumb .card{position:absolute;left:14px;top:6px;width:44px;height:52px;border-radius:3px;background:#F4EBD6;transform:rotate(-8deg);box-shadow:0 3px 6px rgba(0,0,0,.35);
+  background-image:radial-gradient(circle,#B08A57 .7px,transparent .8px),linear-gradient(#5B4630,#5B4630);background-size:3px 3px,26px 1.5px;background-position:7px 22px,9px 17px;background-repeat:repeat-x,no-repeat}
+.sc6 .thumb .card b{position:absolute;left:0;right:0;top:4px;text-align:center;font-size:6.5px;letter-spacing:.12em;color:#5B4630;font-weight:700}
+.sc6 .thumb .card::after{content:"";position:absolute;left:7px;right:7px;top:30px;height:14px;background:repeating-linear-gradient(#B08A57 0 1px,transparent 1px 5px);opacity:.8}
+.sc6 .scap{font-size:10.5px;color:var(--local-d);text-align:right;margin-top:3px;opacity:0;animation:sn1 var(--T) infinite both}
 @keyframes sn1{0%,4%{opacity:0;transform:scale(.8)}8%,96%{opacity:1;transform:none}100%{opacity:0}}
 .sc6 .fl{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
 @keyframes fl{0%,3%{opacity:0}4%{opacity:.9}8%,100%{opacity:0}}
