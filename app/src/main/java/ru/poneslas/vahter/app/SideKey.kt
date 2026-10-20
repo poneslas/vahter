@@ -14,6 +14,9 @@ import android.provider.Settings
  * ищем активность «Настроек» по имени (проверено на S24). Незнакомый телефон — «Неизвестно».
  */
 object SideKey {
+    /** Второй способ вызвать помощника, кроме кнопки: при навигации жестами — свайп из нижнего угла, при трёх кнопках — долгое «Домой». */
+    fun gestureNav(ctx: Context): Boolean = android.provider.Settings.Secure.getInt(ctx.contentResolver, "navigation_mode", 2) == 2
+
     enum class State { ASSISTANT, OTHER, DOUBLE, UNKNOWN }
 
     fun read(ctx: Context): State {

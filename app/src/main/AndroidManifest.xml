@@ -101,11 +101,23 @@
             </intent-filter>
             <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE" android:value="false" />
         </service>
+        <!-- Плитка и действие «Помощь» (ACTION_ASSIST) открывают лист. По ACTION_ASSIST ColorOS (OPPO, OnePlus, realme)
+             собирает список «Цифровой помощник»: без этого фильтра Вахтёра в нём нет, хотя роль ему выдать можно (Find X9 Pro, 20.10). -->
         <activity
             android:name=".assistant.TileOpen"
-            android:exported="false"
+            android:exported="true"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!-- Шестерёнка рядом с Вахтёром в «Цифровом помощнике» (settingsActivity) — сразу на настройки приложения -->
+        <activity-alias
+            android:name=".app.SettingsEntry"
+            android:targetActivity=".app.MainActivity"
+            android:exported="true" />
     </application>
 </manifest>

@@ -38,11 +38,12 @@ class VahterTile : TileService() {
     }
 }
 
-/** Прозрачная активность плитки: открыть лист и сразу закрыться. */
+/** Прозрачная активность плитки и действия «Помощь» (ACTION_ASSIST, так зовут помощника некоторые прошивки): открыть лист и сразу закрыться. */
 class TileOpen : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Sheet.service != null) Sheet.show(Bundle().apply { putString("src", "tile") })
+        val src = if (intent?.action == Intent.ACTION_ASSIST) "assist" else "tile"
+        if (Sheet.service != null) Sheet.show(Bundle().apply { putString("src", src) })
         else startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         finish()
     }

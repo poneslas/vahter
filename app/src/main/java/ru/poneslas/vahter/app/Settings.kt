@@ -72,7 +72,7 @@ fun TopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?, dot: 
             }
             if (subtitle != null) Row(verticalAlignment = Alignment.CenterVertically) {
                 if (dot != null) { Box(Modifier.size(8.dp).clip(CircleShape).background(dot)); Spacer(Modifier.width(6.dp)) }
-                Text(subtitle, fontSize = 12.sp, lineHeight = 1.3.em, color = Ink.soft)
+                Text(subtitle, fontSize = 12.sp, lineHeight = 1.3.em, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         actions()

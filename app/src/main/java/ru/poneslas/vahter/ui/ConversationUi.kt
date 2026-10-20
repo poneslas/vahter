@@ -107,7 +107,9 @@ fun Feed(
             if (inSheet || state.mode != ru.poneslas.vahter.core.Modes.MAIN) {
                 Text(state.current.hint, color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em, modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp))
             } else {
-                Text(tr(R.string.feed_zazhmite_bokovuyu_knopku_v_lyubom), color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val way = tr(if (ru.poneslas.vahter.app.SideKey.gestureNav(ctx)) R.string.feed_way_gesture else R.string.feed_way_home)
+                Text(tr(R.string.feed_zazhmite_bokovuyu_knopku_v_lyubom, way), color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 24.dp))
                 if (onChip != null) FlowRow(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(tr(R.string.feed_taymer_na_pyat_minut), tr(R.string.feed_razbudi_v_7_30), tr(R.string.feed_kak_nastroit_bekap_servera)).forEach { c ->

@@ -11,7 +11,7 @@ function openOverlay(src){
   S.rec=null; const O={pop:true}; S.ov=O;
   if (curMode().primary==='photo' && curMode().accepts.photo){ render(); return openCamera(true) }
   const sub=s=>`<span style="font-size:14.5px;font-weight:400;color:var(--soft)">${s}</span>`;
-  if (S.w.model!=='ready'){ O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — пишите. Команды и вопросы работают.')}`; return render() }
+  if (S.w.model!=='ready') return render();   // голоса нет — не слушаем; строка над лентой уже говорит «Голос не скачан · Скачать»
   if (S.w.mic==='ask'){ O.live=`<span class="st">Нужен доступ к микрофону</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">Спросит приложение — лист на секунду развернётся.</span><br><button class="recbtn" data-act="permmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`; S.pendingSide = src==='side'; trace('Системное окно разрешения из листа на Samsung открывается ПОД листом (пробник, S24). Поэтому разрешение спрашивает приложение: лист разворачивается, окно поверх приложения, потом снова лист.','p'); return render() }
   if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пока можно писать. Чтобы говорить, разрешите микрофон в настройках.')}<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>`; return render() }
   if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }

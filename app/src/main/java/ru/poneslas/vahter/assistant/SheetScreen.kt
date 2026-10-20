@@ -379,18 +379,32 @@ private fun Scene(st: SheetSt, state: ru.poneslas.vahter.core.Conversation.State
     }
 }
 
-/** Строка над лентой: качается распознавание или мозг не подключён (без шутки; «Подключить» — экран мозга, «Назад» — снова лист). */
+/**
+ * Строка над лентой: голоса ещё нет (качается, не скачан, не скачалось) или мозг не подключён (без шутки; «Подключить» — экран мозга,
+ * «Назад» — снова лист). Пока голоса нет, строка не пропадает: лист могли открыть раньше, чем докачалось, или загрузка оборвалась.
+ * «Скачать» / «Повторить» запускают загрузку прямо отсюда — дальше та же строка показывает проценты.
+ */
 @Composable
 private fun SheetStrip(noBrain: Boolean, onConnect: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val dl by ru.poneslas.vahter.pisar.model.ModelDownload.state.collectAsState()
+    val installed by ru.poneslas.vahter.App.instance.voice.installed.collectAsState()
     val pct = (dl as? ru.poneslas.vahter.pisar.model.ModelDownload.State.Running)?.percent
-    if (pct == null && !noBrain) return
+    val failed = dl is ru.poneslas.vahter.pisar.model.ModelDownload.State.Failed
+    val noVoice = !installed
+    if (!noVoice && !noBrain) return
+    val (icon, text, act) = when {
+        pct != null -> Triple("⬇", tr(R.string.sheet_strip_dl, pct), null)
+        noVoice && failed -> Triple("⬇", tr(R.string.sheet_strip_dl_failed), tr(R.string.sheet_strip_retry) to { ru.poneslas.vahter.pisar.model.ModelDownload.start(ctx) })
+        noVoice -> Triple("⬇", tr(R.string.sheet_strip_novoice), tr(R.string.pg_skachat) to { ru.poneslas.vahter.pisar.model.ModelDownload.start(ctx) })
+        else -> Triple("🧠", tr(R.string.sheet_strip_nobrain), tr(R.string.sheet_strip_connect) to onConnect)
+    }
     Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 2.dp).clip(RoundedCornerShape(12.dp)).background(Ink.chipBg)
         .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(if (pct != null) "⬇" else "🧠", fontSize = 13.sp)
+        Text(icon, fontSize = 13.sp)
         Spacer(Modifier.width(8.dp))
-        Text(if (pct != null) tr(R.string.sheet_strip_dl, pct) else tr(R.string.sheet_strip_nobrain), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.weight(1f).padding(vertical = 6.dp))
-        if (pct == null) ru.poneslas.vahter.app.TextButton(tr(R.string.sheet_strip_connect), onClick = onConnect)
+        Text(text, fontSize = 13.sp, color = Ink.soft, modifier = Modifier.weight(1f).padding(vertical = 6.dp))
+        if (act != null) ru.poneslas.vahter.app.TextButton(act.first, onClick = act.second)
     }
 }
 

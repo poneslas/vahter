@@ -50,7 +50,9 @@
     <string name="sheet_razvernut_v_prilozhenie">Развернуть в приложение</string>
     <string name="sheet_nastroyki">Настройки</string>
     <string name="sheet_zakryt">Закрыть</string>
-    <string name="feed_zazhmite_bokovuyu_knopku_v_lyubom">Зажмите боковую кнопку в любом приложении — или напишите здесь.</string>
+    <string name="feed_zazhmite_bokovuyu_knopku_v_lyubom">В любом приложении зажмите боковую кнопку или %1$s — или напишите здесь.</string>
+    <string name="feed_way_gesture">проведите от нижнего угла к центру</string>
+    <string name="feed_way_home">зажмите «Домой»</string>
     <string name="feed_taymer_na_pyat_minut">Таймер на пять минут</string>
     <string name="feed_razbudi_v_7_30">Разбуди в 7:30</string>
     <string name="feed_kak_nastroit_bekap_servera">Как настроить бэкап сервера?</string>
@@ -539,7 +541,7 @@
     <string name="cam_menyu_testovyy_kadr">МЕНЮ · тестовый кадр</string>
     <string name="set_link_status">%1$s · %2$s</string>
     <string name="set_link_on">на связи</string>
-    <string name="set_link_off">нет ключа · только команды телефона</string>
+    <string name="set_link_off">нет ключа</string>
     <plurals name="feed_steps">
         <item quantity="one">%d шаг</item>
         <item quantity="few">%d шага</item>
@@ -735,6 +737,9 @@
     <string name="sheet_strip_nobrain">Мозг не подключён — пока только команды телефона</string>
     <string name="sheet_strip_connect">Подключить</string>
     <string name="sheet_strip_dl">Распознавание качается — %1$d %%, пока клавиатура</string>
+    <string name="sheet_strip_novoice">Голос не скачан — пока клавиатура</string>
+    <string name="sheet_strip_dl_failed">Голос не скачался — пока клавиатура</string>
+    <string name="sheet_strip_retry">Повторить</string>
     <string name="sheet_cue_side">Так открывается по боковой кнопке</string>
     <string name="sheet_cue_home">Так же — долгое нажатие «Домой»</string>
     <string name="sheet_first_close">Вахтёр на месте: зажмите боковую кнопку, когда понадобится.</string>

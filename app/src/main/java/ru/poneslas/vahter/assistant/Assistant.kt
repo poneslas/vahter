@@ -192,7 +192,7 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             return
         }
         // Вызов помощника: боковая кнопка, жест, экран блокировки, плитка в шторке. Уведомление, приложение, камера, выбор фото — не вызов.
-        val call = src == null || src == "unlock" || src == "keyguard" || src == "tile"
+        val call = src == null || src == "unlock" || src == "keyguard" || src == "tile" || src == "assist"
         // Режим запоминается; после 30 минут без дела кнопка снова открывает Ассистента (Продукт 5.17).
         if (call && src != "unlock") {
             val idle = System.currentTimeMillis() - conv.state.value.saved.lastUse
@@ -216,7 +216,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             // Главное действие режима при вызове: фото — сразу камера; голос — сразу слушает, если включено «Слушать сразу при вызове».
             if (cur.primary == ru.poneslas.vahter.core.Primary.PHOTO && cur.accepts.photo &&
                 context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
-            else if (cur.primary == ru.poneslas.vahter.core.Primary.VOICE && settings.listenOnCall) Sheet.autoListen.value++
+            // Голос не скачан — не слушаем и не пишем об этом: строка над лентой уже говорит «Голос не скачан · Скачать».
+            else if (cur.primary == ru.poneslas.vahter.core.Primary.VOICE && settings.listenOnCall && app.voice.installed.value) Sheet.autoListen.value++
         }
     }
 

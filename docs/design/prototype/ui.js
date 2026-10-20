@@ -11,7 +11,7 @@ function oursIcon(st=''){ return `<span class="ico ours" style="${st}"><i><b sty
 const brainOk = () => brainReady() && S.w.net!=='none' && !(brainOf().kind==='hermes'&&S.w.server==='down');
 function linkState(){
   const B=brainOf();
-  if (!brainReady(B)) return ['loc', B.kind==='api'?'нет ключа · только команды телефона':'сервер не подключён'];
+  if (!brainReady(B)) return ['loc', B.kind==='api'?'нет ключа':'сервер не подключён'];
   if (S.w.net==='none') return ['off','нет связи · команды телефона работают'];
   if (B.kind==='hermes'&&S.w.server==='down') return ['off','сервер не отвечает'];
   return ['','на связи'];
@@ -45,7 +45,7 @@ function feedHtml(inSheet){
   const items = inSheet ? sheetItems() : S.feed;
   if (!items.length && inSheet) return sheetEmpty();
   if (!S.feed.length && curMode().hint && S.mode!=='main') return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
-  if (!S.feed.length) return `<div class="feed"><div class="empty">Зажмите боковую кнопку в любом приложении — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
+  if (!S.feed.length) return `<div class="feed"><div class="empty">В любом приложении зажмите боковую кнопку или проведите от нижнего угла к центру — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
   const f=sheetFrom(), sep=!inSheet&&f>0&&f<S.feed.length;
   return `<div class="feed">${items.map((it,i)=>(sep&&i===f?`<div class="newconv"><span>Новый разговор · из листа</span></div>`:'')+itemHtml(it,inSheet)).join('')}</div>`;
 }
@@ -398,6 +398,8 @@ function sheetEmpty(){
 /** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
 function sheetStrip(){
   if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
+  // Пока голоса нет, строка не пропадает: лист открыли раньше, чем докачалось, или загрузку не начинали. «Скачать» — прямо отсюда.
+  if (S.w.model!=='ready') return `<div class="ostrip"><span>${I.dl}</span><p>Голос не скачан — пока клавиатура</p><button class="tbtn" data-act="sheetdl">Скачать</button></div>`;
   if (curMode().id==='main' && !brainReady() && brainOf().kind==='api') return `<div class="ostrip"><span>🧠</span><p>Мозг не подключён — пока только команды телефона</p><button class="tbtn" data-act="brainfromsheet">Подключить</button></div>`;
   return '' }
 function sideCue(){ if (!S.sideCue || !S.ov) return ''; return `<div class="sidecue">${S.w.profile==='unknown'?'Так же — долгое нажатие «Домой»':'Так открывается по боковой кнопке'}<i></i></div>` }

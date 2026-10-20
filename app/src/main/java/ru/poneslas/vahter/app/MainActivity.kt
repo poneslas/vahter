@@ -137,6 +137,8 @@ class MainActivity : ComponentActivity() {
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
         i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == android.Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
+        // Шестерёнка в системном «Цифровом помощнике» открывает приложение через псевдоним SettingsEntry — сразу настройки.
+        if (i.component?.className?.endsWith(".SettingsEntry") == true) { stack.clear(); stack.add("chat"); stack.add("settings") }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
         i.getStringExtra(EXTRA_PAGE)?.let { p -> stack.clear(); stack.add("chat"); if (p != "chat") { if (p != "settings" && !p.startsWith("onb:")) stack.add("settings"); stack.add(p) } }
         // Полоска промпта в листе → страница режима; «Назад» с неё возвращает лист, а не настройки.
