@@ -247,7 +247,7 @@ function onb(){
   if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
     extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка',S.w.side==='assistant'?'Готово':S.w.side==='bixby'?'Сейчас Bixby':'Сейчас меню выключения','sysside',false,S.w.side==='assistant'?I.ok:'')}</div>`; if(ok) skip=null }
-  if (st==='voice'){ art='<div style="font-size:64px;letter-spacing:-4px">▂▅▇▅▂</div>'; h='Голос на телефоне'; p=`Один раз скачать ${mb(MODEL_TOTAL)} МБ. Голос не уходит с телефона и работает без интернета.`;
+  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
@@ -255,6 +255,11 @@ function onb(){
   if (st==='done'){ art='<div style="font-size:64px">✓</div>'; h='Готово'; p = S.w.role==='ours'&&S.sideOk ? 'Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».' : 'Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».'; primary=['Открыть','onbdone']; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
+/** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
+function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>
+  <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
+    <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
+  <div class="lock">🔒 голос остаётся здесь · ✈ без интернета</div></div>` }
 function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
 function connectBody(onb){
@@ -333,7 +338,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.islide',()=>'intro'+(S.introStep||0)]];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.islide',()=>'intro'+(S.introStep||0)],['.scv',()=>'voice']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();

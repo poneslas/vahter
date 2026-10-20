@@ -213,3 +213,29 @@
 .sc1 .tk em{font-style:normal;font-size:10px;font-weight:700;color:#8A93A5}
 .sc4 .up{position:absolute;left:12px;bottom:42px;display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--server);background:var(--server-t);border-radius:999px;padding:4px 10px;opacity:0;animation:in4e var(--T) infinite both}
 @keyframes in4e{0%,80%{opacity:0;transform:scale(.9)}86%,100%{opacity:1;transform:none}}
+
+/* ── первый запуск, «Голос на телефоне»: речь → GigaAM на телефоне → текст; облако зачёркнуто ── */
+.scv{--T:5s;height:280px;display:flex;flex-direction:column;align-items:center}
+.scv .cloud{position:relative;font-size:40px;line-height:1;color:#B9C0CC;height:44px}
+.scv .cloud i{position:absolute;left:-4px;right:-4px;top:50%;height:3px;border-radius:2px;background:#C9483B;transform:rotate(-20deg) scaleX(0);transform-origin:left;animation:cx var(--T) infinite}
+@keyframes cx{0%,46%{transform:rotate(-20deg) scaleX(0)}54%,96%{transform:rotate(-20deg) scaleX(1)}100%{transform:rotate(-20deg) scaleX(0)}}
+.scv .lnk{width:2px;height:30px;background:repeating-linear-gradient(#B9C0CC 0 4px,transparent 4px 8px);opacity:.7}
+.scv .tel{width:240px;flex:1;border-radius:24px;border:3px solid var(--ink);background:var(--surf);padding:14px 14px 12px;display:flex;flex-direction:column;gap:14px;box-shadow:0 18px 40px -22px rgba(14,26,54,.55)}
+.scv .mdl{display:flex;align-items:center;gap:10px;background:var(--local-t);border-radius:14px;padding:9px 10px}
+.scv .chipi{flex:none;width:30px;height:30px;border-radius:8px;background:var(--ink);position:relative;animation:chp var(--T) infinite}
+.scv .chipi::before{content:"";position:absolute;inset:8px;border-radius:3px;background:var(--local)}
+.scv .chipi::after{content:"";position:absolute;inset:-4px 6px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 6px);z-index:-1}
+@keyframes chp{0%,14%{box-shadow:0 0 0 0 rgba(232,163,23,0)}24%,40%{box-shadow:0 0 0 6px rgba(232,163,23,.35)}50%,100%{box-shadow:0 0 0 0 rgba(232,163,23,0)}}
+.scv .mdl b{display:block;font-size:14.5px}
+.scv .mdl small{display:block;font-size:11px;color:var(--local-d)}
+.scv .say{flex:1;display:grid;place-items:center}
+.scv .say>*{grid-area:1/1}
+.scv .deq{display:flex;gap:4px;align-items:center;height:40px;animation:sv1 var(--T) infinite}
+.scv .deq b{display:block;width:5px;height:6px;border-radius:3px;background:var(--local);animation:eqb2 .36s ease-in-out infinite alternate}
+.scv .deq b:nth-child(odd){animation-delay:-.18s}.scv .deq b:nth-child(3n){animation-delay:-.27s;background:#C99E3E}.scv .deq b:nth-child(4n){animation-delay:-.09s;background:#7C93FF}
+@keyframes eqb2{to{height:38px}}
+@keyframes sv1{0%,6%{opacity:0;transform:scale(.7)}10%,38%{opacity:1;transform:none}44%,100%{opacity:0;transform:scale(.6)}}
+.scv .tx{font-size:15px;font-weight:600;color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden;width:0;animation:svt var(--T) steps(22,end) infinite}
+@keyframes svt{0%,42%{width:0;opacity:1}62%,96%{width:100%;opacity:1}100%{width:100%;opacity:0}}
+.scv .lock{margin-top:10px;font-size:12px;font-weight:500;color:var(--local-d);background:var(--local-t);border-radius:999px;padding:5px 12px;white-space:nowrap;opacity:0;animation:svl var(--T) infinite}
+@keyframes svl{0%,52%{opacity:0;transform:translateY(6px)}58%,96%{opacity:1;transform:none}100%{opacity:0}}
