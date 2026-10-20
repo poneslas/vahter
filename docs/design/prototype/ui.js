@@ -112,14 +112,17 @@ function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
 function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accepts, photoMain=m.primary==='photo';
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
   return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
-function composerHtml(){
+/** o.into='try' — проба диктовки в первом запуске: та же кнопка и те же жесты, без вкладок режимов и вложений. */
+function composerHtml(o={}){
+  const tabs=o.into?'':modeTabs(), into=o.into?` data-into="${o.into}"`:'';
   // «Вы к кому?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
   const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вы к кому?';
-  const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
+  const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
-    return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${modeTabs()}</div>` }
+    return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
   // запись без рук, как в Писаре: круг микрофона стал «Отправить»; дёрнуть его влево — отмена
-  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><button class="slide lnkc" data-act="reccancel" style="opacity:${Math.max(.25,1-gx/70)}">‹ влево — отмена</button></div><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn sendmode" data-recsend aria-label="Отправить; потяните влево — отменить">${I.send}</button></div></div>${modeTabs()}</div>` }
+  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><button class="slide lnkc" data-act="reccancel" style="opacity:${Math.max(.25,1-gx/70)}">‹ влево — отмена</button></div><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn sendmode" data-recsend aria-label="${o.into?'Готово; потяните влево — отменить':'Отправить; потяните влево — отменить'}">${o.into?I.ok:I.send}</button></div></div>${tabs}</div>` }
+  if (o.into) return `<div class="cwrap"><div class="composer"><div class="fld"><span class="tryhint">Зажмите микрофон и говорите</span></div>${mic}</div></div>`;
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
   const canAttach = A.file || A.photo;
@@ -252,7 +255,7 @@ function onb(){
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
     if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
-  if (st==='done'){ art='<div style="font-size:64px">✓</div>'; h='Готово'; p = S.w.role==='ours'&&S.sideOk ? 'Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».' : 'Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».'; primary=['Открыть','onbdone']; skip=null }
+  if (st==='done') return tryStep();
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
@@ -260,6 +263,16 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
   <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
     <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
   <div class="lock">🔒 голос остаётся здесь · ✈ без интернета</div></div>` }
+/** Первый запуск, последний шаг: проба диктовки, как «Попробуйте здесь…» в Писаре, — но настоящей кнопкой листа. */
+function tryStep(){
+  const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', live=rec?recText():'';
+  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %. Попробовать можно будет здесь же.`:S.w.model!=='ready'?'Голос не скачан — его можно скачать потом в настройках.':S.w.mic!=='ok'?'Нужен доступ к микрофону.':'';
+  const box = why ? `<div class="trybox wait">${why}${S.w.model==='ready'&&S.w.mic!=='ok'?`<br><button class="recbtn" data-act="askmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`:''}</div>`
+    : rec ? `<div class="trybox on">${S.tryText?`<span>${esc(S.tryText)}</span> `:''}<span class="dr">${live?esc(live):'Вахтёр слушает…'}</span></div>`
+    : `<textarea class="trybox" placeholder="Здесь появится текст. Можно поправить руками." oninput="S.tryText=this.value">${esc(S.tryText||'')}</textarea>`;
+  const tips = why ? '' : `<ul class="trytips"><li><b>Зажать</b> — говорить, <b>отпустить</b> — текст готов</li><li><b>Длинная диктовка</b> — потяните кнопку вверх, к замку: запись пойдёт без пальца</li><li><b>Передумали</b> — потяните влево, запись отменится</li></ul>`;
+  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2><p>${side?'Так же работает в листе — зажмите боковую кнопку в любом приложении.':'Так же работает в листе. Боковую кнопку настроите потом — шестерёнка, «Вызов».'}</p>${box}${tips}
+    ${why?'<div style="flex:1"></div>':composerHtml({into:'try'})}${navBar(null,['Открыть','onbdone'])}</div></div>` }
 function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
 function connectBody(onb){
