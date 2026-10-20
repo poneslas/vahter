@@ -582,3 +582,5 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .cam2.insheet .csend{width:64px;height:64px}
 .cam2.insheet .cplus,.cam2.insheet .mic2{width:52px;height:52px}
 .cam2.insheet .cbottom{padding-bottom:0}
+/* строка ввода: все круглые кнопки справа одного размера (микрофон, камера, «Отправить») — высота поля не скачет между режимами */
+.composer .micbtn{width:52px;height:52px}
