@@ -542,3 +542,10 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .tryonb .trytips{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:6px;font-size:13.5px;color:var(--soft)}
 .tryonb .trytips b{color:var(--ink);font-weight:600}
 .tryonb .composer{padding:8px 0 6px;background:transparent}
+/* наше окно-лист (не системный диалог): объяснение перед повторным запросом, переход в настройки */
+.osheet{background:var(--paper);border-radius:28px 28px 0 0;margin:0 -14px -14px;padding:10px 22px 22px;width:calc(100% + 28px);animation:up .25s cubic-bezier(.2,.9,.3,1.1)}
+.osheet .g{width:32px;height:4px;border-radius:2px;background:var(--grab,#CBD0C6);margin:0 auto 14px}
+.osheet .di{font-size:28px}
+.osheet h3{font-family:var(--display);font-size:21px;font-weight:500;margin:8px 0 8px}
+.osheet p{color:var(--soft);font-size:14.5px;margin:0 0 18px}
+.osheet .oacts{display:flex;flex-direction:row-reverse;justify-content:flex-start;gap:10px;align-items:center}

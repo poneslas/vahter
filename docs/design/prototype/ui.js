@@ -240,12 +240,12 @@ function about(){
 }
 
 /* первый запуск: 5 шагов, Material-навигация внизу */
-const ONB=['welcome','button','voice','brain','done'];
+const ONB=['welcome','button','voice','try','brain'];   // проба голоса — сразу после модели и микрофона, мозг — последним
 function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
 function onb(){
   const st=ONB[S.onbStep];
   if (st==='welcome') return introHtml();
-  if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${keyBody(true)}</div>${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Далее','onbnext']:null)}</div></div>`;
+  if (st==='brain') return `<div class="layer appv">${statusBar(true)}<div class="onb" style="padding-top:48px"><div style="flex:1;overflow:auto">${keyBody(true)}</div>${navBar(S.w.key==='ok'?null:['Позже','onbnext'], S.w.key==='ok'?['Открыть','onbnext']:null)}</div></div>`;
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
@@ -255,7 +255,7 @@ function onb(){
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
     if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>`;
-  if (st==='done') return tryStep();
+  if (st==='try') return tryStep();
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
@@ -266,13 +266,13 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
 /** Первый запуск, последний шаг: проба диктовки, как «Попробуйте здесь…» в Писаре, — но настоящей кнопкой листа. */
 function tryStep(){
   const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', live=rec?recText():'';
-  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %. Попробовать можно будет здесь же.`:S.w.model!=='ready'?'Голос не скачан — его можно скачать потом в настройках.':S.w.mic!=='ok'?'Нужен доступ к микрофону.':'';
-  const box = why ? `<div class="trybox wait">${why}${S.w.model==='ready'&&S.w.mic!=='ok'?`<br><button class="recbtn" data-act="askmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`:''}</div>`
-    : rec ? `<div class="trybox on">${S.tryText?`<span>${esc(S.tryText)}</span> `:''}<span class="dr">${live?esc(live):'Вахтёр слушает…'}</span></div>`
-    : `<textarea class="trybox" placeholder="Здесь появится текст. Можно поправить руками." oninput="S.tryText=this.value">${esc(S.tryText||'')}</textarea>`;
-  const tips = why ? '' : `<ul class="trytips"><li><b>Зажать</b> — говорить, <b>отпустить</b> — текст готов</li><li><b>Длинная диктовка</b> — потяните кнопку вверх, к замку: запись пойдёт без пальца</li><li><b>Передумали</b> — потяните влево, запись отменится</li></ul>`;
+  // макет один и тот же; чего не хватает — пишем в поле. Микрофон спросит сама кнопка при первом нажатии, как в листе
+  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %. Попробовать можно будет здесь же.`:S.w.model!=='ready'?'Голос не скачан — его можно скачать потом в настройках.':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках телефона.':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ.':'';
+  const box = rec ? `<div class="trybox on">${S.tryText?`<span>${esc(S.tryText)}</span> `:''}<span class="dr">${live?esc(live):'Вахтёр слушает…'}</span></div>`
+    : `<textarea class="trybox" placeholder="${why||'Здесь появится текст. Можно поправить руками.'}" oninput="S.tryText=this.value">${esc(S.tryText||'')}</textarea>`;
+  const tips = `<ul class="trytips"><li><b>Зажать</b> — говорить, <b>отпустить</b> — текст готов</li><li><b>Длинная диктовка</b> — потяните кнопку вверх, к замку: запись пойдёт без пальца</li><li><b>Передумали</b> — потяните влево, запись отменится</li></ul>`;
   return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2><p>${side?'Так же работает в листе — зажмите боковую кнопку в любом приложении.':'Так же работает в листе. Боковую кнопку настроите потом — шестерёнка, «Вызов».'}</p>${box}${tips}
-    ${why?'<div style="flex:1"></div>':composerHtml({into:'try'})}${navBar(null,['Открыть','onbdone'])}</div></div>` }
+    ${composerHtml({into:'try'})}${navBar(null,['Далее','onbnext'])}</div></div>` }
 function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
 function connectBody(onb){
@@ -345,6 +345,7 @@ function overlay(){
 }
 function dialog(){ const D=S.dialog; if(!D) return '';
   if (D.radio) return `<div class="scrim"><div class="dlg rdlg"><h3>${D.title}</h3>${D.radio.map(([v,t])=>`<button class="ropt" data-radio="${v}"><span class="rad ${D.cur===v?'on':''}"></span>${t}</button>`).join('')}<div class="dfoot"><button class="tbtn" data-dlgclose>Отмена</button></div></div></div>`;
+  if (D.ours) return `<div class="scrim"><div class="osheet"><div class="g"></div>${D.ic?`<div class="di">${D.ic}</div>`:''}<h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}<div class="oacts">${D.opts.map((o,i)=>`<button class="${o[2]?'tbtn':'fbtn'}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div></div>`;   // наше окно, не системное
   return `<div class="scrim"><div class="dlg">${D.ic?`<div class="di">${D.ic}</div>`:''}<h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
 function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toast" data-act="toast">${oursIcon()}<span><b>${T.title}</b><span>${T.text}</span></span></button>` }
 

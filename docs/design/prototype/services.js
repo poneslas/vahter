@@ -4,6 +4,7 @@ let dlT=null;
 function startDl(skipAsk){
   if (S.w.net==='cell'&&!skipAsk){ S.dialog={ic:'📶',title:`Скачать ${mb(MODEL_TOTAL)} МБ по мобильной сети?`,text:'Можно дождаться Wi-Fi — загрузка начнётся сама.',opts:[['Скачать сейчас','dlnow'],['Дождаться Wi-Fi','x','sec2']]}; return render() }
   S.w.model='loading'; if(!S.modelPct||S.modelPct>=100) S.modelPct=1;
+  if (!S.onboarded && S.w.mic==='ask' && !S.micNo) setTimeout(askMic,400);   // первый запуск: микрофон спрашиваем на шаге «Голос», пока качается модель
   trace(`Загрузка ${mb(MODEL_TOTAL)} МБ: файлы без архива, докачка по Range, проверка sha256. Сначала наш сервер, запасные — Hugging Face и GitHub.`,'p');
   clearInterval(dlT); dlT=setInterval(()=>{ if(S.w.model!=='loading'){clearInterval(dlT);return} if(S.w.net==='none'){ S.keepScroll=true; render(); return } S.modelPct=Math.min(100,S.modelPct+(RM?25:4)); if(S.modelPct>=100){ clearInterval(dlT); S.w.model='ready'; trace('Модель готова: голос работает без сети.','i'); showToast('Распознавание готово','Зажмите боковую кнопку и говорите') } S.keepScroll=true; render() },300);
   render();

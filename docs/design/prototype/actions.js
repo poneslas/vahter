@@ -62,7 +62,10 @@ document.addEventListener('click', async e=>{
     case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'intronext': S.introStep=(S.introStep||0)+1; return render();
     case 'introskip': case 'introdone': S.introStep=0; S.onbStep=ONB.indexOf('button'); return render();
-    case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null; S.onbStep=Math.min(S.onbStep+1,ONB.length-1); return render();
+    case 'onbnext': if (ONB[S.onbStep]==='brain'&&S.w.key!=='ok') S.keyCheck=null;
+      if (S.onbStep<ONB.length-1){ S.onbStep++; if (ONB[S.onbStep]==='try' && (S.w.model==='none'||S.w.model==='broken')) S.onbStep++;   // голос не качали — пробовать нечем
+        return render() }
+      // с последнего шага — дальше как «onbdone»
     case 'onbdone': S.onboarded=true; S.page='chat'; trace('Главный экран приложения — разговор, тот же, что в листе. Настройки — за шестерёнкой; что не готово — одним баннером сверху.','i'); return render();
     case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
     case 'sysside': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysside'; return render();
@@ -70,7 +73,7 @@ document.addEventListener('click', async e=>{
     case 'sysback': { const R=S.ret; S.screen=R?.screen||'app'; S.page=R?.page||S.page; if(R?.ov){ S.ov=R.ov; S.ov.live = S.w.mic==='ok' ? '<span class="st">Микрофон разрешён — зажмите и говорите</span>' : S.ov.live } return render() }
     case 'dismiss': S.dismissed=issue()?.t; return render();
     case 'dl': S.ov=null; if(S.w.model==='loading'||S.w.model==='ready'){ S.screen='app'; if(S.onboarded) S.page='about'; return render() } return startDl();
-    case 'askmic': if (S.w.mic==='denied'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() } S.dialog={ic:'🎙',title:'Разрешить приложению «Вахтёр» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
+    case 'askmic': return askMic();
     case 'notifno': S.feed=S.feed.filter(f=>f.t!=='notifask'); S.keepScroll=true; return render();
     case 'permmic': return permInApp('mic');
     case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
@@ -174,12 +177,21 @@ function permFix(k){ const st=S.w.perms[k], fromSheet=!!S.ov;
 /** Разблокировка из листа (проверено на S24): лист прячется, своя активность поверх блокировки просит отпечаток, после — лист возвращается и выполняет действие. */
 async function unlockFromSheet(then){ const keep=S.ov; S.ov=null; S.unlocking=true; render(); trace('Лист спрятан → своя активность (setShowWhenLocked) → запрос разблокировки, когда окно получило фокус. Из onCreate система отменяет его через ~180 мс.','p');
   await wait(1100); S.unlocking=false; S.w.locked=false; S.screen='home'; S.ov=keep||{pop:false}; render(); trace('Отпечаток принят — лист вернулся и выполняет отложенное действие.','i'); return then() }
+/** Микрофон, как в Android 11+: первый раз — системное окно; после одного отказа — наше объяснение и снова системное;
+ *  после второго отказа система больше не спрашивает — наше окно ведёт в настройки разрешений. */
+function askMic(){
+  if (S.w.mic==='denied'){ S.dialog={ours:true,ic:'🎙',title:'Доступ к микрофону закрыт',text:'Android больше не спрашивает сам. Откройте настройки: Разрешения → Микрофон → «При использовании приложения».',opts:[['Открыть настройки','sysmicgo'],['Не сейчас','x','sec2']]}; return render() }
+  if (S.micNo){ S.dialog={ours:true,ic:'🎙',title:'Голосу нужен микрофон',text:'Запись идёт, только пока вы держите кнопку, и не уходит с телефона. Без микрофона остаётся клавиатура.',opts:[['Продолжить','micsys'],['Не сейчас','x','sec2']]}; return render() }
+  return micSys() }
+function micSys(){ S.dialog={ic:'🎙',title:'Разрешить приложению «Вахтёр» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render() }
 async function dlgAct(k){
+  if (k==='micsys') return micSys();
+  if (k==='sysmicgo'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() }
   if (k&&k.startsWith('permfix:')) return permFix(k.slice(8));
   if (k==='tooledit'){ const x=toolById(S.editTool); S.dialog={title:x.title,radio:POLICY_OPTS.filter(o=>!(x.always&&o[0]==='auto')),cur:S.policy[x.id],key:'__tool'}; return render() }
   if (k==='sysperm_ok'||k==='sysperm_no'){ S.w.perms[S.permKind]=k==='sysperm_ok'?'ok':'denied'; if(S.permKind==='camera'&&k==='sysperm_ok') trace('Камера разрешена в приложении — лист вернулся, видоискатель открылся.','i'); if(S.permSheet){ S.permSheet=false; S.screen='home'; openOverlay('снова') } return render() }
   if (k==='mic_ok'){ S.w.mic='ok'; if(permBack()){ S.pendingSide=false; return } if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
-  if (k==='mic_no'){ S.w.mic='denied'; if(permBack()) return; if(S.ov) openOverlay('снова'); return render() }
+  if (k==='mic_no'){ S.micNo=(S.micNo||0)+1; S.w.mic=S.micNo>=2?'denied':'ask'; trace(S.micNo>=2?'Второй отказ: Android больше не покажет окно — дальше только наше объяснение и переход в настройки.':'Первый отказ: спросить можно ещё раз, но сначала объясняем зачем (shouldShowRequestPermissionRationale).','p'); if(permBack()) return; if(S.ov) openOverlay('снова'); return render() }
   if (k==='notif_no'){ if(permBack()) return; return render() }
   if (k==='restart_ok'){ S.feeds[S.restartId]=[]; trace('Разговор режима стёрт с телефона — следующая реплика уйдёт мозгу без истории.','p'); return render() }
   if (k==='brainsetup') { S.dialog=null; return }
