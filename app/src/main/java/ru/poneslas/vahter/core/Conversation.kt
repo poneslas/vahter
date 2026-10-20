@@ -215,6 +215,8 @@ class Conversation(
                         is BrainEvent.History -> appendHistory(modeId, e.msg)
                         BrainEvent.MessageEnd -> Unit
                         is BrainEvent.Error -> push(modeId, when (e.kind) {
+                            ErrorKind.NO_BRAIN -> FeedItem.Card(nextId(), tr(R.string.conv_need_brain), tr(R.string.conv_up_no_brain), tr(R.string.conv_up_no_brain_p),
+                                listOf(tr(R.string.sheet_strip_connect) to "brain"), phone = false)
                             ErrorKind.CONTEXT -> FeedItem.Card(nextId(), tr(R.string.conv_1_s_oshibka, Brains.byId(mode.brain).title), tr(R.string.conv_razgovor_slishkom_dlinnyy),
                                 tr(R.string.conv_model_bolshe_ne_pomeshchaet_vsyu), listOf(tr(R.string.conv_nachat_zanovo) to "restart"), phone = false)
                             else -> FeedItem.Err(nextId(), e.text)
@@ -300,6 +302,7 @@ class Conversation(
             "yes" -> pending[card.id]?.complete(true)
             "no" -> pending[card.id]?.complete(false) ?: remove(_state.value.mode, card.id)
             "restart" -> restart()
+            "brain" -> ru.poneslas.vahter.assistant.Sheet.openBrain(context)
             else -> remove(_state.value.mode, card.id)
         }
     }

@@ -42,7 +42,7 @@ class ApiBrain(
 
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         val key = apiKey() ?: run {
-            emit(BrainEvent.Error(tr(R.string.brain_mozg_ne_podklyuchen_net_klyucha), ErrorKind.AUTH)); return@flow
+            emit(BrainEvent.Error(tr(R.string.brain_mozg_ne_podklyuchen_net_klyucha), ErrorKind.NO_BRAIN)); return@flow
         }
         val history = turn.history.toMutableList()
         val specs = tools.specs(turn.mode)
@@ -214,7 +214,7 @@ class ApiBrain(
         val ms = System.currentTimeMillis() - t0
         c.disconnect()
         when (code) {
-            200 -> Result2(true, tr(R.string.brain_otvechaet_1_s_s, "%.1f".format(ms / 1000.0)))
+            200 -> Result2(true, tr(R.string.brain_otvechaet_1_s_s, "%.1f".format(ms / 1000.0).replace('.', ',')))
             401 -> Result2(false, tr(R.string.brain_klyuch_ne_prinyat_proverte_chto))
             402 -> Result2(false, tr(R.string.brain_klyuch_vernyy_no_na_schete))
             else -> Result2(false, tr(R.string.brain_otvet_1_s_poprobuyte_pozzhe, code))

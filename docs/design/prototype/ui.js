@@ -116,7 +116,7 @@ function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accep
 function composerHtml(o={}){
   const tabs=o.into?'':modeTabs(), into=o.into?` data-into="${o.into}"`:'';
   // «Вам чего?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
-  const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вам чего?';
+  const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')||(S.ov&&S.firstSheet)?curMode().placeholder:'Вам чего?';   // в первом листе «Вам чего?» уже заголовком
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'recmic':''} ${S.recog?'proc':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   // Запись — как в приложении (кнопка, полоса и замок Писаря, pisar/overlay): белая полоса «● 0:07 ‹ ‹ Отмена», к кнопке — без скругления;
   // кнопка красная с ореолами; над ней белый замок. Без рук — на кнопке «Отправить», замок закрыт (зелёный кружок).
@@ -369,7 +369,7 @@ function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"
 /** Пустой лист в первый раз (финал мастера) и пока ничего не спрашивали: «Вам чего?» и чипы, которые работают без мозга. */
 function sheetEmpty(){
   if (S.mode!=='main' || !S.firstSheet) return '<div class="feed"></div>';
-  const c=['⏰ Поставь будильник','⏱ Таймер на 5 минут'].concat(brainReady()?['Что посмотреть в Казани?']:[]);
+  const c=['⏰ Будильник на 7','⏱ Таймер на 5 минут'].concat(brainReady()?['Что посмотреть в Казани?']:[]);
   return `<div class="feed"><div class="sempty"><b>Вам чего?</b><div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div></div></div>` }
 /** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
 function sheetStrip(){

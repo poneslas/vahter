@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,14 +28,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,48 +58,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import ru.poneslas.vahter.R
-import ru.poneslas.vahter.app.PrimaryButton
-import ru.poneslas.vahter.app.TextButton
 import kotlin.math.sin
 
 /**
- * Приветствие: девиз и 4 карточки с живыми сценами (сценарий — docs/design/prototype/intro.css, те же фазы).
- * Только встроенная анимация Compose: ни библиотек, ни файлов анимации — 0 КБ, 60 к/с, тексты из ресурсов.
- * Каждая сцена — петля 6 с: [t] от 0 до 1, фазы — доли петли.
+ * Сцены мастера первого запуска (сценарий — docs/design/prototype/intro.css, те же фазы). Каждый экран мастера сначала
+ * объясняет сценой, а под ней сразу настраивает (app/Pages.kt, Onboarding). Только встроенная анимация Compose: ни библиотек,
+ * ни файлов анимации — 0 КБ, 60 к/с, тексты из ресурсов. Каждая сцена — петля: [t] от 0 до 1, фазы — доли петли.
  */
+enum class WizScene { WELCOME, QUEUE, CHAT, KEYS, BRAIN }
+
 @Composable
-fun Intro(onDone: () -> Unit) {
-    val pages = 5
-    val pager = rememberPagerState { pages }
-    val scope = rememberCoroutineScope()
-    val titles = listOf(R.string.intro_0_h, R.string.intro_1_h, R.string.intro_2_h, R.string.intro_3_h, R.string.intro_4_h)
-    val texts = listOf(R.string.intro_0_p, R.string.intro_1_p, R.string.intro_2_p, R.string.intro_3_p, R.string.intro_4_p)
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 22.dp)) {
-        HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth()) { i ->
-            Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 300.dp), contentAlignment = Alignment.Center) {
-                    // Сцена играет только на видимой странице.
-                    if (pager.currentPage == i) Scene(i)
-                }
-                Text(stringResource(titles[i]), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 8.dp))
-                Text(stringResource(texts[i]), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.heightIn(min = 66.dp))
-            }
-        }
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            val last = pager.currentPage == pages - 1
-            Box(Modifier.weight(1f)) { if (!last) TextButton(stringResource(R.string.intro_skip), onClick = onDone) }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                repeat(pages) { j -> Box(Modifier.size(if (j == pager.currentPage) 20.dp else 7.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(if (j == pager.currentPage) Ink.ink else Ink.swOff)) }
-            }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                PrimaryButton(stringResource(if (last) R.string.intro_setup else R.string.intro_next)) {
-                    if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
-                }
-            }
-        }
-    }
+fun WizArt(k: WizScene) = Box(Modifier.widthIn(max = 340.dp).fillMaxWidth().height(if (k == WizScene.BRAIN) 290.dp else 300.dp)) {
+    when (k) { WizScene.WELCOME -> Logo(); WizScene.QUEUE -> SceneQueue(); WizScene.CHAT -> SceneChat(); WizScene.KEYS -> SceneKeys(); WizScene.BRAIN -> SceneBrain() }
 }
 
 // ── время ──────────────────────────────────────────────────────────────
@@ -116,11 +85,6 @@ private fun loop(ms: Int = 6000): Float {
     val tr = rememberInfiniteTransition(label = "intro")
     val t by tr.animateFloat(0f, 1f, infiniteRepeatable(tween(ms, easing = LinearEasing), RepeatMode.Restart), label = "t")
     return t
-}
-
-@Composable
-private fun Scene(i: Int) = Box(Modifier.widthIn(max = 340.dp).fillMaxWidth().height(300.dp)) {
-    when (i) { 0 -> Logo(); 1 -> SceneQueue(); 2 -> SceneFace(); 3 -> SceneWho(); else -> SceneDone() }
 }
 
 // ── общие кусочки: мини-лист, реплики, волна ───────────────────────────
@@ -236,15 +200,15 @@ private fun Clock(t: Float, n: Int, until: Float, color: Color) {
     Text("⏱ 0:%02d".format(s), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = color)
 }
 
-/** Эквалайзер диктовки в цветах Вахтёра: янтарь → синий. */
+/** Эквалайзер диктовки в цветах Вахтёра: янтарь → синий. [calm] — спокойная бегущая волна (идёт распознавание). */
 @Composable
-private fun DictEq(alpha: Float, bars: Int = 9, maxH: Float = 16f, w: Dp = 3.dp) {
+fun DictEq(alpha: Float, bars: Int = 9, maxH: Float = 16f, w: Dp = 3.dp, calm: Boolean = false) {
     if (alpha <= 0f) return
-    val ph = loop(380 * 2)
+    val ph = loop(if (calm) 1600 else 380 * 2)
     Row(Modifier.height(maxH.dp).graphicsLayer { this.alpha = alpha }, horizontalArrangement = Arrangement.spacedBy(2.5.dp), verticalAlignment = Alignment.CenterVertically) {
         for (i in 0 until bars) {
             val k = i / (bars - 1f)
-            val h = 4f + (maxH - 4f) * (0.5f + 0.5f * sin((ph + i * .37f) * 2 * Math.PI.toFloat()))
+            val h = 4f + (maxH - 4f) * (if (calm) .18f + .32f * (0.5f + 0.5f * sin((ph - i * .09f) * 2 * Math.PI.toFloat())) else 0.5f + 0.5f * sin((ph + i * .37f) * 2 * Math.PI.toFloat()))
             Box(Modifier.size(w, h.dp).clip(RoundedCornerShape(2.dp)).background(lerp(Ink.local, Ink.server, k)))
         }
     }
@@ -323,137 +287,114 @@ private fun BoxScope.SceneQueue() {
                     if (tx > 0f) Text(stringResource(R.string.intro_s1_q), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.graphicsLayer { alpha = tx })
                 }
             }
-            Text(stringResource(R.string.intro_loc), fontSize = 11.sp, color = Ink.localD, maxLines = 1, modifier = Modifier.padding(top = 6.dp).graphicsLayer { alpha = ramp(t, .11f, .14f) })
-            Ai(stringResource(R.string.intro_s1_a), ramp(t, .33f, .37f), Modifier.padding(top = 4.dp))
+            Ai(stringResource(R.string.intro_s1_a), ramp(t, .33f, .37f), Modifier.padding(top = 8.dp))
         }
     }
 }
 
-// ── 2. своих знает в лицо: карточка правил Гастрогида → штамп «всё запомнил» → через неделю одно нажатие, ответ по правилам ──
+// ── 2. своих знает в лицо: одна ситуация (ресторан, фото меню). Слева чат — просьба печатается строка за строкой, счётчик
+//    слов и секунд растёт; справа свой режим — щёлк камерой, ответ по правилам за 3 с. Обе колонки стартуют вместе ──
 
 @Composable
-private fun BoxScope.SceneFace() {
-    val t = loop(6000)
-    val rules = stringArrayResource(R.array.intro_rules)
-    // A. карточка режима
-    val a = 1f - ramp(t, .50f, .56f)
-    if (a > 0f) Box(Modifier.fillMaxSize().padding(vertical = 6.dp).graphicsLayer { alpha = a; translationY = -60f * (1 - a); scaleX = 1 - .08f * (1 - a); scaleY = 1 - .08f * (1 - a) }
-        .graphicsLayer { shadowElevation = 12f; shape = RoundedCornerShape(20.dp); clip = true }.background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(20.dp)).padding(16.dp)) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-                Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(Ink.localT), contentAlignment = Alignment.Center) { Text("🍽", fontSize = 19.sp) }
-                Spacer(Modifier.width(10.dp))
-                Text(stringResource(R.string.intro_tab_gastro), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
-                Spacer(Modifier.weight(1f))
-                Text(stringResource(R.string.intro_my_mode), fontSize = 12.sp, color = Ink.soft)
+private fun SceneChat() {
+    val t = loop(8000)
+    val out = 1f - ramp(t, .97f, 1f)
+    Row(Modifier.fillMaxSize().graphicsLayer { alpha = out }, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // чат: просьба заново
+        Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(18.dp)).background(Color(0xFFE2E5EB)).padding(11.dp)) {
+            ColHead("💬", stringResource(R.string.wiz_chat), stringResource(R.string.wiz_chat_new), Color(0xFF5B6478))
+            val ask = stringResource(R.string.wiz_chat_ask)
+            val p = ramp(t, .03f, .78f)
+            // по строкам, как печатают: 9 ступенек
+            val shown = (ask.length * (kotlin.math.floor(p * 9f) / 9f)).toInt()
+            Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp)).background(Color.White).padding(horizontal = 9.dp, vertical = 8.dp)) {
+                Text(ask.take(shown), fontSize = 11.5.sp, lineHeight = 1.38.em, color = Ink.ink)
             }
-            rules.forEachIndexed { i, r ->
-                val on = ramp(t, .03f + i * .08f, .07f + i * .08f)
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFECEEE8)))
-                Row(Modifier.padding(vertical = 7.dp).graphicsLayer { alpha = on; translationX = -30f * (1 - on) }, verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(20.dp).clip(CircleShape).background(Ink.localT), contentAlignment = Alignment.Center) { Text("${i + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.localD) }
-                    Spacer(Modifier.width(9.dp))
-                    Text(r, fontSize = 14.sp, color = Ink.ink)
-                }
-            }
-            val st = ramp(t, .27f, .31f)
-            Text(buildAnnotatedString { append(stringResource(R.string.intro_start_with)); withStyle(SpanStyle(color = Ink.ink)) { append(stringResource(R.string.intro_start_cam)) } },
-                fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 8.dp).graphicsLayer { alpha = st; translationX = -30f * (1 - st) }
-                    .clip(RoundedCornerShape(50)).background(Color(0xFFECEEE8)).padding(horizontal = 12.dp, vertical = 5.dp))
+            (20 * p).toInt().let { w -> Counter(androidx.compose.ui.res.pluralStringResource(R.plurals.wiz_chat_words, w, w), (40 * p).toInt(), Color(0xFF6B7487)) }
         }
-        // штамп: падает сверху крупным и встаёт на место
-        val sp = ramp(t, .35f, .38f)
-        if (sp > 0f) {
-            val sc = 1.8f - .8f * sp
-            Text(stringResource(R.string.intro_stamp).uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = .04.em, color = Ink.ok,
-                modifier = Modifier.align(Alignment.BottomEnd).graphicsLayer { alpha = sp; rotationZ = -8f; scaleX = sc; scaleY = sc }
-                    .border(2.5.dp, Ink.ok, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
-        }
-    }
-    // B. через неделю: одно нажатие, снимок меню, ответ и метки правил
-    val b = ramp(t, .54f, .58f) * (1 - ramp(t, .97f, 1f))
-    if (b > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = b }) {
-        Text(stringResource(R.string.intro_later), fontSize = 13.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Ink.soft,
-            modifier = Modifier.align(Alignment.TopCenter))
-        MiniSheet(Modifier.fillMaxSize().padding(top = 26.dp), round = true) {
-            Column {
-                Box(Modifier.fillMaxWidth().padding(bottom = 6.dp), contentAlignment = Alignment.Center) { Box(Modifier.size(26.dp, 3.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab)) }
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
-                    Box(Modifier.size(7.dp).clip(CircleShape).background(Ink.server)); Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.intro_tab_gastro), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
-                    Text(stringResource(R.string.intro_one_press), fontSize = 11.5.sp, color = Ink.soft)
-                }
-                val th = ramp(t, .61f, .65f)
-                Box(Modifier.graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }) { Thumb(menu = true) }
-                Ai(stringResource(R.string.intro_s2_answer), ramp(t, .67f, .71f), Modifier.padding(top = 4.dp))
-                androidx.compose.foundation.layout.FlowRow(Modifier.padding(start = 12.dp, top = 10.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    listOf("✓ не остро", "✓ без свинины", "✓ без орехов", "✓ до 1500 ₽").forEachIndexed { i, c ->
-                        val on = ramp(t, .73f + i * .03f, .76f + i * .03f)
-                        Text(c, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD, modifier = Modifier.graphicsLayer { alpha = on; scaleX = .6f + .4f * on; scaleY = .6f + .4f * on }
-                            .clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 9.dp, vertical = 3.dp))
-                    }
+        // свой режим: «как обычно»
+        Column(Modifier.weight(1f).fillMaxHeight().graphicsLayer { shadowElevation = 14f; shape = RoundedCornerShape(18.dp); clip = true }
+            .background(Ink.localT).border(2.dp, Ink.local, RoundedCornerShape(18.dp)).padding(11.dp)) {
+            ColHead("🍽", stringResource(R.string.intro_tab_gastro), stringResource(R.string.intro_my_mode), Ink.ink)
+            Box(Modifier.fillMaxWidth().height(58.dp)) {
+                val th = ramp(t, .04f, .08f)
+                Box(Modifier.fillMaxSize().graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }) { Thumb(menu = true) }
+                val fl = window(t, .03f, .04f, .04f, .08f)
+                if (fl > 0f) Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .9f * fl)))
+            }
+            Ai(stringResource(R.string.intro_s2_answer), ramp(t, .10f, .14f), Modifier.padding(top = 3.dp))
+            androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                stringArrayResource(R.array.wiz_chat_checks).forEachIndexed { i, c ->
+                    val on = ramp(t, .15f + i * .03f, .18f + i * .03f)
+                    Text(c, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD, modifier = Modifier.graphicsLayer { alpha = on; scaleX = .6f + .4f * on; scaleY = .6f + .4f * on }
+                        .clip(RoundedCornerShape(50)).background(Color.White).padding(horizontal = 7.dp, vertical = 2.dp))
                 }
             }
+            Spacer(Modifier.weight(1f))
+            Counter(stringResource(R.string.wiz_one_press), (3 * ramp(t, .03f, .14f)).toInt(), Ink.localD, power = true)
         }
     }
 }
 
-// ── 3. знает, кто зачем пришёл: два телефона, одна и та же боковая кнопка — открывается разное ──
-
+/** Шапка колонки: значок, название, под ним — пояснение (колонка узкая, в одну строку не помещается). */
 @Composable
-private fun SceneWho() {
-    val t = loop(3600)
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.Top) {
-        TinyPhone(t, stringResource(R.string.intro_tab_tr), stringResource(R.string.intro_cap_voice), camera = false)
-        TinyPhone(t, stringResource(R.string.intro_tab_what), stringResource(R.string.intro_cap_cam), camera = true)
+private fun ColHead(icon: String, title: String, sub: String, color: Color) = Row(Modifier.fillMaxWidth().padding(bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+    Text(icon, fontSize = 17.sp)
+    Spacer(Modifier.width(7.dp))
+    Column {
+        Text(title, fontSize = 14.sp, lineHeight = 1.1.em, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+        Text(sub, fontSize = 10.5.sp, lineHeight = 1.1.em, color = Ink.soft, maxLines = 1)
     }
 }
 
+/** Нижняя строка колонки: «✎ 20 слов» / «⏻ 1 нажатие» слева, «0:40» справа. ⏻ — значком: в системном шрифте его нет. */
 @Composable
-private fun TinyPhone(t: Float, label: String, cap: String, camera: Boolean) {
-    Column(Modifier.width(136.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink.ink, modifier = Modifier.padding(bottom = 8.dp))
-        Box(Modifier.size(131.dp, 200.dp)) {
-            // боковая кнопка вспыхивает янтарём
-            val k = window(t, .09f, .12f, .17f, .22f)
-            Box(Modifier.align(Alignment.TopEnd).offset(y = 62.dp).size(5.dp, 34.dp).graphicsLayer { translationX = 3f * k }
-                .clip(RoundedCornerShape(topEnd = 3.dp, bottomEnd = 3.dp)).background(lerp(Color(0xFF3A4258), Ink.local, k)))
-            Box(Modifier.size(126.dp, 200.dp).clip(RoundedCornerShape(24.dp)).background(Color(0xFF1A2236)).padding(5.dp)) {
-                Box(Modifier.fillMaxSize().clip(RoundedCornerShape(19.dp)).background(Brush.linearGradient(listOf(Color(0xFF5C7391), Color(0xFF2B3B55))))) {
-                    Column(Modifier.padding(horizontal = 14.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        repeat(4) { Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) { repeat(3) { Box(Modifier.size(22.dp).clip(RoundedCornerShape(8.dp)).background(Color(0x47FFFFFF))) } } }
-                    }
-                    val up = ramp(t, .16f, .24f) * (1 - ramp(t, .94f, 1f))
-                    val sheetH = if (camera) 190.dp else 92.dp
-                    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(sheetH).graphicsLayer { translationY = (1 - up) * size.height }
-                        .clip(RoundedCornerShape(16.dp, 16.dp, if (camera) 16.dp else 0.dp, if (camera) 16.dp else 0.dp)).background(Ink.paper).padding(horizontal = 8.dp, vertical = 6.dp)) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(Modifier.padding(bottom = 10.dp).size(22.dp, 3.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
-                            if (!camera) {
-                                Wave(1f)
-                                Text(stringResource(R.string.intro_say), fontSize = 11.5.sp, color = Ink.soft, modifier = Modifier.padding(top = 6.dp))
-                            } else {
-                                Canvas(Modifier.fillMaxWidth().height(130.dp).clip(RoundedCornerShape(12.dp))) {
-                                    drawRect(Brush.verticalGradient(listOf(Color(0xFF3B3F48), Color(0xFF22252C))))
-                                    val shelfY = size.height - 22.dp.toPx()
-                                    drawRect(Color(0xFF6B5A44), Offset(0f, shelfY), Size(size.width, 5.dp.toPx()))
-                                    listOf(20.dp to Color(0xFF6A9E3E), 62.dp to Color(0xFFE8823E)).forEach { (x, c) ->
-                                        val jw = 30.dp.toPx(); val jh = 50.dp.toPx()
-                                        drawRoundRect(c, Offset(x.toPx(), shelfY - jh), Size(jw, jh), androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()))
-                                        drawRect(Color(0xFF2E2E2E), Offset(x.toPx() + 4.dp.toPx(), shelfY - jh - 8.dp.toPx()), Size(jw - 8.dp.toPx(), 10.dp.toPx()))
-                                        drawRect(Color(0xFFF3E6C8), Offset(x.toPx() + 4.dp.toPx(), shelfY - jh + 16.dp.toPx()), Size(jw - 8.dp.toPx(), 17.dp.toPx()))
-                                    }
-                                }
-                                Box(Modifier.padding(top = 8.dp).size(34.dp).clip(CircleShape).background(Color.White).border(3.dp, Ink.ink, CircleShape))
+private fun Counter(left: String, sec: Int, color: Color, power: Boolean = false) = Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    if (power) { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.power), null, Modifier.size(12.dp), tint = color); Spacer(Modifier.width(4.dp)) }
+    Text(left, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+    Spacer(Modifier.weight(1f))
+    Text("0:%02d".format(sec), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color)
+}
+
+// ── 3. знает, кто зачем пришёл: режимы — кнопки; по очереди переворачиваются, на обороте — уже написанная просьба ──
+
+@Composable
+private fun SceneKeys() {
+    val t = loop(10000)
+    val k = stringArrayResource(R.array.wiz_keys)          // «иконка|название|подпись|оборот»
+    // [начало переворота, конец] для каждой кнопки — доли петли (intro.css, fp0…fp3)
+    val win = listOf(.04f to .20f, .26f to .42f, .48f to .64f, .70f to .92f)
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        for (row in 0..1) Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            for (col in 0..1) {
+                val i = row * 2 + col
+                val (icon, title, tag, back) = k[i].split('|')
+                val (a, b) = win[i]
+                val turn = window(t, a, a + .04f, b, b + .04f)        // 0 — лицо, 1 — оборот
+                val deg = 180f * turn
+                Box(Modifier.weight(1f).fillMaxHeight().graphicsLayer { rotationY = deg; cameraDistance = 12f * density }) {
+                    if (deg <= 90f) {
+                        val own = i == 3
+                        Column(Modifier.fillMaxSize().graphicsLayer { shadowElevation = 8f; shape = RoundedCornerShape(18.dp); clip = true }
+                            .background(if (own) Ink.localT else Ink.surf).border(if (own) 2.dp else 1.5.dp, if (own) Ink.local else Ink.line, RoundedCornerShape(18.dp)).padding(12.dp),
+                            verticalArrangement = Arrangement.SpaceBetween) {
+                            Text(icon, fontSize = 22.sp)
+                            Column {
+                                Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink.ink, maxLines = 1)
+                                Text(tag, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (i == 0) Ink.soft else Ink.localD, maxLines = 1)
                             }
+                        }
+                    } else {
+                        Column(Modifier.fillMaxSize().graphicsLayer { rotationY = 180f }.clip(RoundedCornerShape(18.dp)).background(Color(0xFFFFFBEF))
+                            .dashed(Color(0xFFE3C77E), 18.dp).padding(12.dp)) {
+                            Text(stringResource(R.string.wiz_back).uppercase(), fontSize = 9.5.sp, letterSpacing = .06.em, color = Ink.localD, modifier = Modifier.padding(bottom = 4.dp))
+                            Text(back, fontSize = 12.sp, lineHeight = 1.35.em, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Ink.ink)
                         }
                     }
                 }
             }
         }
-        val c = ramp(t, .24f, .30f) * (1 - ramp(t, .94f, 1f))
-        Text(cap, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink, maxLines = 1,
-            modifier = Modifier.padding(top = 10.dp).graphicsLayer { alpha = c; translationY = 14f * (1 - c) }.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 12.dp, vertical = 5.dp))
+        Text(stringResource(R.string.wiz_plus), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -471,36 +412,63 @@ private fun Thumb(menu: Boolean) = Box(Modifier.fillMaxWidth(), contentAlignment
     }
 }
 
-// ── 4. сказал — сделано: волна → реплика → две строки с галочками → «без интернета»
+// ── мастер, «Подключите мозг»: простое — сам на телефоне (даже без сети); сложное — пакет вверх, к «Мозгу Вахтёра»
+//    в облаке, ответ обратно. Мозг абстрактный: под именем тихо сменяется DeepSeek · OpenAI · Hermes ──
 
 @Composable
-private fun BoxScope.SceneDone() {
-    val t = loop(4000)
-    val q = stringResource(R.string.intro_s4_q)
-    MiniSheet(Modifier.fillMaxSize().padding(top = 20.dp), round = true) {
+private fun BoxScope.SceneBrain() {
+    val t = loop(7000)
+    val who = loop(6000)
+    // наверху — «Мозг Вахтёра»
+    val glow = window(t, .58f, .61f, .66f, .72f)
+    Row(Modifier.align(Alignment.TopCenter).width(232.dp).height(66.dp)
+        .drawBehind { drawRoundRect(Ink.server.copy(alpha = .22f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(22.dp.toPx())) }
+        .clip(RoundedCornerShape(16.dp)).background(Ink.serverT).border(1.5.dp, Ink.server, RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(Color.White), contentAlignment = Alignment.Center) { Text("🧠", fontSize = 17.sp) }
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.wiz_brain_name), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
+            val names = stringArrayResource(R.array.wiz_brain_who)
+            val i = (who * names.size).toInt().coerceIn(0, names.size - 1)
+            val f = who * names.size - i                                // 0…1 внутри своей трети
+            val a = window(f, 0f, .18f, .82f, 1f)
+            Text(names[i], fontSize = 10.5.sp, color = Ink.server, modifier = Modifier.graphicsLayer { alpha = a; translationY = 16f * (1 - a) * (if (f < .5f) 1 else -1) })
+        }
+        Text("☁", fontSize = 22.sp, color = Color(0xFFB7C2F4))
+    }
+    // провод и пакет: вверх синий (вопрос), вниз янтарный (ответ)
+    Canvas(Modifier.align(Alignment.TopCenter).padding(top = 70.dp).size(10.dp, 44.dp)) {
+        var y = 0f
+        while (y < size.height) { drawRect(Ink.server.copy(alpha = .55f), Offset(size.width / 2 - 1.dp.toPx(), y), Size(2.dp.toPx(), 4.dp.toPx())); y += 8.dp.toPx() }
+        val up = ramp(t, .51f, .59f); val down = ramp(t, .65f, .72f)
+        val y0 = size.height - 5.dp.toPx(); val y1 = 0f
+        when {
+            t in .51f..<.61f -> drawCircle(Ink.server, 5.dp.toPx(), Offset(size.width / 2, y0 + (y1 - y0) * up))
+            t in .65f..<.73f -> drawCircle(Ink.local, 5.dp.toPx(), Offset(size.width / 2, y1 + (y0 - y1) * down))
+        }
+    }
+    // лист: сначала сам (будильник, таймер, «нет сети — всё равно сам»), потом сложный вопрос — наверх и ответ
+    MiniSheet(Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(top = 112.dp).height(178.dp), round = true) {
         Box(Modifier.fillMaxSize()) {
-            Column {
-                MiniHeader(stringResource(R.string.intro_assistant), stringResource(R.string.intro_online))
-                val typing = window(t, 0f, .01f, .32f, .34f)
-                Wave(typing)
-                if (typing > 0f) {
-                    val n = (q.length * ramp(t, .04f, .26f)).toInt()
-                    Text(q.take(n).lowercase(), fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = Ink.ink, maxLines = 1, overflow = TextOverflow.Clip,
-                        modifier = Modifier.graphicsLayer { alpha = typing }.padding(top = 4.dp))
+            MiniHeader(stringResource(R.string.intro_assistant), stringResource(R.string.intro_online))
+            val pa = 1f - ramp(t, .40f, .44f)
+            if (pa > 0f) Column(Modifier.padding(top = 26.dp).graphicsLayer { alpha = pa }) {
+                ActRow("⏰", stringResource(R.string.intro_s4_r1), stringResource(R.string.wiz_brain_r1s), ramp(t, .03f, .08f), ramp(t, .08f, .14f))
+                ActRow("⏱", stringResource(R.string.intro_s4_r2), stringResource(R.string.intro_s4_r2s), ramp(t, .13f, .18f), ramp(t, .18f, .24f))
+                val off = ramp(t, .25f, .30f)
+                Text(stringResource(R.string.wiz_brain_off), fontSize = 11.sp, color = Ink.soft, modifier = Modifier.padding(top = 6.dp)
+                    .graphicsLayer { alpha = off; scaleX = .9f + .1f * off; scaleY = .9f + .1f * off }.clip(RoundedCornerShape(50)).background(Ink.chipBg).padding(horizontal = 10.dp, vertical = 4.dp))
+            }
+            val pb = window(t, .43f, .46f, .96f, 1f)
+            if (pb > 0f) Column(Modifier.padding(top = 26.dp).graphicsLayer { alpha = pb }) {
+                Me(stringResource(R.string.wiz_brain_q), ramp(t, .44f, .48f))
+                Box(Modifier.padding(top = 8.dp)) {
+                    val call = window(t, .49f, .51f, .70f, .73f) * (if (t in .54f..<.66f) .7f + .3f * sin(t * 160f) else 1f)
+                    Text(stringResource(R.string.wiz_brain_call), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Ink.server, modifier = Modifier.graphicsLayer { alpha = call })
+                    Ai(stringResource(R.string.wiz_brain_a), ramp(t, .71f, .75f), Modifier.padding(top = 0.dp))
                 }
             }
-            Column(Modifier.padding(top = 46.dp)) {
-                Me(q, ramp(t, .33f, .38f))
-                Spacer(Modifier.height(4.dp))
-                ActRow("⏰", stringResource(R.string.intro_s4_r1), stringResource(R.string.intro_s4_r1s), ramp(t, .44f, .50f), ramp(t, .50f, .60f))
-                ActRow("⏱", stringResource(R.string.intro_s4_r2), stringResource(R.string.intro_s4_r2s), ramp(t, .56f, .62f), ramp(t, .62f, .72f))
-            }
-            val up = ramp(t, .80f, .86f)
-            Text(stringResource(R.string.intro_s4_up), fontSize = 11.sp, color = Ink.server, maxLines = 1, modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 28.dp)
-                .graphicsLayer { alpha = up; scaleX = .9f + .1f * up; scaleY = .9f + .1f * up }.clip(RoundedCornerShape(50)).background(Ink.serverT).padding(horizontal = 10.dp, vertical = 4.dp))
-            val off = ramp(t, .72f, .78f)
-            Text(stringResource(R.string.intro_s4_off), fontSize = 11.sp, color = Ink.soft, modifier = Modifier.align(Alignment.BottomStart)
-                .graphicsLayer { alpha = off; scaleX = .9f + .1f * off; scaleY = .9f + .1f * off }.clip(RoundedCornerShape(50)).background(Ink.chipBg).padding(horizontal = 10.dp, vertical = 4.dp))
         }
     }
 }

@@ -33,6 +33,7 @@ object Ic {
     val list = R.drawable.ic_list
     val lock = R.drawable.ic_lock
     val mic = R.drawable.ic_mic
+    val paste = R.drawable.ic_paste
     val pen = R.drawable.ic_pen
     val plus = R.drawable.ic_plus
     val more = R.drawable.ic_more

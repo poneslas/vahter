@@ -292,7 +292,8 @@ fun Composer(
 /** .micbtn 48: тёмный круг — «Отправить» или «Камера». */
 @Composable
 private fun RoundAction(icon: Int, label: String, onClick: () -> Unit) {
-    Box(Modifier.size(48.dp).clip(CircleShape).background(Ink.ink).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+    // 52 — как круг микрофона рядом: все круглые кнопки строки ввода одного размера.
+    Box(Modifier.size(52.dp).clip(CircleShape).background(Ink.ink).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(painterResource(icon), label, Modifier.size(20.dp), tint = Color.White)
     }
 }

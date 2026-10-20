@@ -37,10 +37,10 @@
     <string name="cam_fullscreen">Камера на весь экран</string>
     <string name="cam_collapse">Вернуть камеру в лист</string>
     <!-- Перенесено из кода (tools/i18n/extract.py) -->
-    <string name="app_zagruzka_modeli_1_s">Загрузка модели: %1$s %%</string>
+    <string name="app_zagruzka_modeli_1_s">Загрузка модели: %1$s %%</string>
     <string name="app_ne_skachalas_poprobuyte_eshche_raz">Не скачалась — попробуйте ещё раз</string>
     <string name="app_gigaam_na_telefone_rabotaet_bez">GigaAM на телефоне · работает без интернета</string>
-    <string name="app_ne_skachano_225_mb">Не скачано · 225 МБ</string>
+    <string name="app_ne_skachano_225_mb">Не скачано · 225 МБ</string>
     <string name="sheet_albom_1_s">альбом · %1$s</string>
     <string name="sheet_foto">фото</string>
     <string name="sheet_golos">голос</string>
@@ -151,8 +151,8 @@
     <string name="set_nazvanie_prompt_chto_prinimaet">Название, промпт, что принимает</string>
     <string name="set_golos">Голос</string>
     <string name="set_raspoznavanie_rechi">Распознавание речи</string>
-    <string name="set_na_telefone_225_mb">На телефоне · 225 МБ</string>
-    <string name="set_kachaetsya_1_s">Качается: %1$s %%</string>
+    <string name="set_na_telefone_225_mb">На телефоне · 225 МБ</string>
+    <string name="set_kachaetsya_1_s">Качается: %1$s %%</string>
     <string name="set_mikrofon">Микрофон</string>
     <string name="set_tolko_poka_idet_zapis">Только пока идёт запись</string>
     <string name="set_sprosim_kogda_ponadobitsya">Спросит при первой записи</string>
@@ -242,7 +242,7 @@
     <string name="pg_gigaam_v3_na_telefone_golos">GigaAM v3 на телефоне — голос не уходит наружу</string>
     <string name="pg_vse_gotovo">Всё готово</string>
     <string name="pg_zazhmite_mikrofon_skazhite_chto_nibud">Зажмите микрофон, скажите что-нибудь и отпустите.</string>
-    <string name="pg_gigaam_225_mb_skachivaetsya_odin">GigaAM, 225 МБ. Скачивается один раз, потом голос распознаётся без интернета. Лучше по Wi-Fi.</string>
+    <string name="pg_gigaam_225_mb_skachivaetsya_odin">GigaAM, 225 МБ. Скачивается один раз, потом голос распознаётся без интернета. Лучше по Wi-Fi.</string>
     <string name="pg_skachat">Скачать</string>
     <string name="pg_poprobovat_eshche_raz">Попробовать ещё раз</string>
     <string name="pg_oshibka_zagruzki_1_s">Ошибка загрузки: %1$s</string>
@@ -286,14 +286,14 @@
     <string name="pg_gotovo">Готово</string>
     <string name="pg_taymery_i_budilniki_telefon_stavit">Таймеры и будильники телефон ставит сам, даже без интернета. Остальное отвечает модель, которую выберете вы.</string>
     <string name="pg_android_razreshaet_vybrat_pomoshchnika_t">Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.</string>
-    <string name="pg_odin_raz_skachat_225_mb">Один раз скачать 225 МБ. Голос не уходит с телефона и работает без интернета.</string>
+    <string name="pg_odin_raz_skachat_225_mb">Один раз скачать 225 МБ. Голос не уходит с телефона и работает без интернета.</string>
     <string name="pg_zazhmite_bokovuyu_knopku_v_lyubom">Зажмите боковую кнопку в любом приложении и скажите «Таймер на минуту».</string>
     <string name="pg_list_mozhno_otkryt_otsyuda_bokovuyu">Лист можно открыть отсюда. Боковую кнопку настроите потом — шестерёнка, «Вызов».</string>
     <string name="pg_nachat">Начать</string>
     <string name="pg_vyberite_vahter">Выберите «Вахтёр»</string>
     <string name="pg_bokovaya_knopka_tsifrovoy_pomoshchnik">Боковая кнопка</string>
     <string name="pg_gotovo_zazhmite_mikrofon_i_skazhite">Готово — зажмите микрофон и скажите что-нибудь</string>
-    <string name="pg_zagruzka_modeli_1_s_mozhno">Загрузка модели: %1$s %% — можно идти дальше, докачается само.</string>
+    <string name="pg_zagruzka_modeli_1_s_mozhno">Загрузка модели: %1$s %% — можно идти дальше, докачается само.</string>
     <string name="pg_eshche_raz">Ещё раз</string>
     <string name="pg_nuzhen_dlya_golosovogo_vvoda">Нужен для голосового ввода</string>
     <string name="pg_otkryt">Открыть</string>
@@ -319,10 +319,10 @@
     <string name="ph_data_i_vremya">Дата и время</string>
     <string name="ph_spetsialnye_vozmozhnosti">Специальные возможности</string>
     <string name="ph_vahter_svedeniya_o_prilozhenii">Вахтёр — сведения о приложении</string>
-    <string name="ph_cherez_1_s_ch">через %1$s ч</string>
-    <string name="ph_1_s_min">\u0020%1$s мин</string>
-    <string name="ph_cherez_1_s_min">через %1$s мин</string>
-    <string name="ph_cherez_1_s_s">через %1$s с</string>
+    <string name="ph_cherez_1_s_ch">через %1$s ч</string>
+    <string name="ph_1_s_min">\u0020%1$s мин</string>
+    <string name="ph_cherez_1_s_min">через %1$s мин</string>
+    <string name="ph_cherez_1_s_s">через %1$s с</string>
     <string name="reg_chasy">Часы</string>
     <string name="reg_kalendar">Календарь</string>
     <string name="reg_telefon">Телефон</string>
@@ -430,9 +430,9 @@
     <string name="act_pokhozhikh_sobytiy_bylo_1_s">Похожих событий было %1$s; удалено ближайшее</string>
     <string name="act_kalendar_ne_udalil_sobytie">Календарь не удалил событие</string>
     <string name="act_fonarik_nedostupen_kamera_zanyata_ili">Фонарик недоступен — камера занята или вспышки нет</string>
-    <string name="act_gromkost_1_s_2_s">Громкость %1$s · %2$s %%</string>
+    <string name="act_gromkost_1_s_2_s">Громкость %1$s · %2$s %%</string>
     <string name="act_uzhe_bylo_tak">уже было так</string>
-    <string name="act_bylo_1_s">было %1$s %%</string>
+    <string name="act_bylo_1_s">было %1$s %%</string>
     <string name="act_gromkost_ne_izmenilas_vozmozhno_vklyuche">Громкость не изменилась — возможно, включено «Не беспокоить»</string>
     <string name="act_net_dostupa_k_ne_bespokoit">Нет доступа к «Не беспокоить»</string>
     <string name="act_vklyuchite_vahter_v_spiske_odin">включите «Вахтёр» в списке — один раз</string>
@@ -493,7 +493,7 @@
     <string name="brain_mozg_ne_podklyuchen_dobavte_klyuch">Мозг не подключён. Добавьте ключ DeepSeek: Настройки → Мозги → DeepSeek.</string>
     <string name="brain_mozg_ne_podklyuchen_net_klyucha">Мозг не подключён — нет ключа DeepSeek.</string>
     <string name="brain_oshibka_mozga">Ошибка мозга</string>
-    <string name="brain_net_svyazi_s_1_s">Нет связи с %1$s.</string>
+    <string name="brain_net_svyazi_s_1_s">Нет связи с %1$s — проверьте интернет.</string>
     <string name="brain_1_s_dolgo_ne_otvechaet">Наверху не берут трубку: %1$s долго не отвечает.</string>
     <string name="brain_oshibka_seti">ошибка сети</string>
     <string name="brain_svyaz_oborvalas_1_s">Связь оборвалась: %1$s.</string>
@@ -532,8 +532,8 @@
     <string name="brain_u_1_s_sboy_2">У %1$s сбой (%2$s). Попробуйте позже.</string>
     <string name="brain_oshibka_1_s_2_s">Ошибка %1$s (%2$s): %3$s</string>
     <string name="brain_otvet_odnoy_bukvoy_da">Ответь одной буквой: да</string>
-    <string name="brain_otvechaet_1_s_s">отвечает · %1$s с</string>
-    <string name="brain_klyuch_ne_prinyat_proverte_chto">Ключ не принят. Проверьте, что он скопирован целиком и не отозван.</string>
+    <string name="brain_otvechaet_1_s_s">отвечает за %1$s с</string>
+    <string name="brain_klyuch_ne_prinyat_proverte_chto">Ключ не принят — скопирован не целиком или отозван.</string>
     <string name="brain_klyuch_vernyy_no_na_schete">Ключ верный, но на счёте нет денег.</string>
     <string name="brain_otvet_1_s_poprobuyte_pozzhe">Ответ %1$s — попробуйте позже.</string>
     <string name="cam_menyu_testovyy_kadr">МЕНЮ · тестовый кадр</string>
@@ -592,19 +592,19 @@
     <string name="intro_s3_a">Пуэр, 15 лет выдержки — хороший. Цена обычная, брать можно.</string>
     <string name="intro_s4_q">Будильник на 7 и таймер на минуту</string>
     <string name="intro_s4_r1">Будильник поставлен · 7:00</string>
-    <string name="intro_s4_r1s">прозвенит через 9 ч</string>
+    <string name="intro_s4_r1s">прозвенит через 9 ч</string>
     <string name="intro_s4_r2">Таймер запущен · 1:00</string>
     <string name="intro_s4_r2s">осталось 0:59</string>
     <string name="intro_s4_off">✈ нет связи — вахтёр всё равно на месте</string>
     <string name="intro_usual">ИИ-приложение</string>
-    <string name="intro_usual_time">5 шагов · ~20 с</string>
+    <string name="intro_usual_time">5 шагов · ~20 с</string>
     <string name="intro_ours">Вахтёр</string>
     <string name="intro_key">⏻ кнопка</string>
-    <string name="intro_ours_time">1 нажатие · ~2 с</string>
+    <string name="intro_ours_time">1 нажатие · ~2 с</string>
     <string name="intro_setup_title">Мой Гастрогид</string>
     <string name="intro_setup_once">настроили один раз</string>
     <string-array name="intro_rules">
-        <item>Не ем острое и свинину</item><item>Аллергия на орехи</item><item>Бюджет до 1500 ₽, советуй 2–3 блюда</item>
+        <item>Не ем острое и свинину</item><item>Аллергия на орехи</item><item>Бюджет до 1500 ₽, советуй 2–3 блюда</item>
     </string-array>
     <string name="intro_rules_answer">Судак на гриле с овощами — белок, без орехов и острого.</string>
     <string name="intro_mode_voice">голос</string>
@@ -617,7 +617,7 @@
     <string name="live_up">Звоню наверх · %1$s…</string>
     <string name="rec_listening">Вахтёр слушает</string>
     <string name="cmp_komanda_agentu">Команда агенту</string>
-    <string name="cmp_vy_k_komu">Вы к кому?</string>
+    <string name="cmp_vy_k_komu">Вам чего?</string>
     <string name="chat_menu_edit_mode">Изменить режим</string>
     <string name="intro_post">Вахтёр · на месте</string>
     <string name="intro_free">без очереди</string>
@@ -631,21 +631,21 @@
     <string name="intro_stamp">всё запомнил</string>
     <string name="intro_later">через неделю, в ресторане…</string>
     <string name="intro_one_press">" · одно нажатие"</string>
-    <string name="intro_s2_answer">Судак на гриле и морс — 1200 ₽.</string>
+    <string name="intro_s2_answer">Судак на гриле и морс — 1200 ₽.</string>
     <string name="intro_say">говорите…</string>
     <string name="intro_cap_voice">🎙 сразу голос</string>
     <string name="intro_cap_cam">📷 сразу камера</string>
     <string name="intro_s4_up">☎ сложное — звонок наверх: DeepSeek или Hermes</string>
-    <string name="onb_voice_p">Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз %1$s МБ, дальше голос не уходит с телефона и работает без интернета.</string>
+    <string name="onb_voice_p">Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз %1$s МБ, дальше голос не уходит с телефона и работает без интернета.</string>
     <string name="onb_voice_model">GigaAM</string>
     <string name="onb_voice_model_sub">модель Сбера, на телефоне</string>
-    <string name="onb_voice_lock">🔒 голос остаётся здесь · ✈ без интернета</string>
+    <string name="onb_voice_lock">🔒 чужих не пустит: голос остаётся здесь</string>
     <string name="try_h">Попробуйте голосом</string>
     <string name="try_p_side">Так же работает в листе — зажмите боковую кнопку в любом приложении.</string>
     <string name="try_p_noside">Так же работает в листе. Боковую кнопку настроите потом — шестерёнка, «Вызов».</string>
     <string name="try_ph">Здесь появится текст. Можно поправить руками.</string>
-    <string name="try_hint">Зажмите микрофон и говорите</string>
-    <string name="try_loading">Распознавание докачивается — %1$d %%</string>
+    <string name="try_hint">Зажмите и говорите</string>
+    <string name="try_loading">Распознавание докачивается — %1$d %%</string>
     <string name="try_none">Голос не скачан — можно потом в настройках</string>
     <string name="try_denied">Микрофон запрещён — разрешите его в настройках</string>
     <string name="try_ask">Нажмите на микрофон — Android спросит доступ</string>
@@ -664,7 +664,7 @@
     <string name="mic_off_p">Android больше не спрашивает сам. Откройте настройки: Разрешения → Микрофон → «При использовании приложения».</string>
     <string name="mic_off_go">Открыть настройки</string>
     <string name="not_now">Не сейчас</string>
-    <string name="btn_p_todo">Два переключателя в настройках телефона — Android не даёт сделать это из приложения. «Настроить» откроет их по очереди.</string>
+    <string name="btn_p_todo">Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Включается в настройках телефона, «Настроить» откроет их по очереди.</string>
     <string name="btn_p_done">Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.</string>
     <string name="btn_p_done_nokey">Готово: Вахтёр — помощник телефона.</string>
     <string name="btn_not_set">Не настроено · %1$s</string>
@@ -675,14 +675,94 @@
     <string name="btn_warn_h">Кнопка пока откроет не Вахтёра</string>
     <string name="btn_warn_p">Без этого Вахтёра можно будет открыть только из приложения. Настроить можно и потом: шестерёнка → «Вызов».</string>
     <string name="btn_warn_later">Всё равно позже</string>
-    <string name="bg_dl">Распознавание качается — %1$d %%.</string>
+    <string name="bg_dl">Распознавание качается — %1$d %%.</string>
     <string name="bg_dl_hint">" Пока настройте кнопку."</string>
     <string name="try_p">"Зажмите микрофон, скажите фразу и отпустите. "</string>
     <string name="try_p_side2">Так же — в листе по боковой кнопке.</string>
-    <string name="try_p_noside2">Так же работает в листе.</string>
+    <string name="try_p_noside2">Так же — в листе Вахтёра.</string>
     <string name="try_empty">Скажите что-нибудь — текст появится здесь</string>
-    <string name="try_fast">⚡ %1$s с · на телефоне</string>
+    <string name="try_fast">⚡ Распознано на телефоне за %1$s с</string>
     <string name="try_tip_up">⌃ вверх — без рук</string>
     <string name="try_tip_left">‹ влево — отмена</string>
-    <string name="btn_p_todo_one">Помощника выбирают в настройках телефона — Android не даёт сделать это из приложения. «Настроить» откроет нужный экран.</string>
+    <string name="btn_p_todo_one">Вызвали помощника — и сразу вопрос, без приложений и новых чатов. Помощника выбирают в настройках телефона, «Настроить» откроет нужный экран.</string>
+    <string name="btn_p_ready_side">Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Кнопка уже открывает помощника — осталось выбрать помощником Вахтёра.</string>
+    <string name="btn_p_done_probe">Готово: Вахтёр открывается кнопкой.</string>
+    <string name="btn_side_ready">Зажатие — цифровой помощник · настраивать не нужно</string>
+    <string name="btn_side_bixby">сейчас Bixby</string>
+    <string name="btn_side_power">сейчас меню выключения</string>
+    <string name="btn_side_double">помощник — на двойном нажатии</string>
+    <string name="btn_call_any">Кнопка или жест — зависит от телефона</string>
+    <string name="btn_probe">Зажмите кнопку, на которой у вас помощник. Открылся лист?</string>
+    <string name="btn_probe_yes">Да</string>
+    <string name="btn_probe_no">Нет</string>
+    <string name="btn_probe_ok">Работает — открылся лист</string>
+    <string name="btn_call_home">Долгое нажатие «Домой» или жест из угла</string>
+    <string name="btn_tile">Плитка в шторке</string>
+    <string name="btn_tile_sub">Вахтёр — из быстрых настроек</string>
+    <string name="btn_tile_done">Добавлена</string>
+    <string name="tile_label">Вахтёр</string>
+    <string name="try_p2">Зажмите микрофон, скажите фразу и отпустите. Распознаётся на телефоне, никуда не уходит.</string>
+    <string name="try_listen">Слушаю…</string>
+    <string name="try_recog">Распознаю на телефоне…</string>
+    <string name="wiz_rules_h">Своих знает в лицо</string>
+    <string name="wiz_rules_p">Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.</string>
+    <string name="wiz_quick_p">Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.</string>
+    <string name="wiz_chat">Чат</string>
+    <string name="wiz_chat_new">новый</string>
+    <string name="wiz_chat_ask">Здравствуйте! Я в ресторане. Не ем острое и свинину, аллергия на орехи, бюджет до 1500 ₽. Посоветуйте 2–3 блюда. Вот меню 📎</string>
+    <string name="wiz_one_press">1 нажатие</string>
+    <string name="wiz_back">на обороте</string>
+    <string name="wiz_plus">+ свой режим — сколько угодно</string>
+    <string name="wiz_brain_h">Подключите мозг</string>
+    <string name="wiz_brain_p">Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</string>
+    <string name="wiz_brain_name">Мозг Вахтёра</string>
+    <string name="wiz_brain_r1s">сам, на телефоне</string>
+    <string name="wiz_brain_off">✈ нет сети — всё равно сам</string>
+    <string name="wiz_brain_q">Спланируй выходные в Казани</string>
+    <string name="wiz_brain_call">☎ Звоню наверх…</string>
+    <string name="wiz_brain_a">Суббота — Кремль и Баумана, воскресенье — Свияжск на теплоходе.</string>
+    <string name="key_ph">Ключ API · sk-…</string>
+    <string name="key_where">Где взять ключ? platform.deepseek.com → API keys. Хранится в защищённом хранилище телефона.</string>
+    <string name="key_connect">Подключить</string>
+    <string name="key_connecting">Подключаю…</string>
+    <string name="key_ok">%1$s подключён · %2$s</string>
+    <string name="key_vision">понимает фото — фото-режимы доступны</string>
+    <string name="key_other">Другие модели — в настройках</string>
+    <string name="sheet_hello">Вам чего?</string>
+    <string name="sheet_chip_alarm">⏰ Будильник на 7</string>
+    <string name="sheet_chip_timer">⏱ Таймер на 5 минут</string>
+    <string name="sheet_chip_brain">Что посмотреть в Казани?</string>
+    <string name="sheet_strip_nobrain">Мозг не подключён — пока только команды телефона</string>
+    <string name="sheet_strip_connect">Подключить</string>
+    <string name="sheet_strip_dl">Распознавание качается — %1$d %%, пока клавиатура</string>
+    <string name="sheet_cue_side">Так открывается по боковой кнопке</string>
+    <string name="sheet_cue_home">Так же — долгое нажатие «Домой»</string>
+    <string name="sheet_first_close">Вахтёр на месте: зажмите боковую кнопку, когда понадобится.</string>
+    <string name="conv_need_brain">Нужен мозг</string>
+    <string name="conv_up_no_brain">Наверх не дозвониться</string>
+    <string name="conv_up_no_brain_p">Мозг не подключён — без него режим не ответит. Команды телефона работают и так.</string>
+    <string-array name="wiz_chat_checks">
+        <item>✓ не остро</item>
+        <item>✓ без орехов</item>
+        <item>✓ до 1500 ₽</item>
+    </string-array>
+    <string-array name="wiz_keys">
+        <item>💬|Ассистент|как чат, по кнопке|Просто спросите — как в чате. Будильник, звонок, вопрос.</item>
+        <item>🌐|Переводчик|🎙 сразу голос|Переводи на английский, ответ — вслух. Начинай с голоса.</item>
+        <item>🔍|Что это?|📷 сразу камера|Скажи, что в кадре и зачем это. Начинай с камеры.</item>
+        <item>🍽|Гастрогид|свой режим|Не ем острое, орехи нельзя, до 1500 ₽. Начинай с камеры.</item>
+    </string-array>
+    <string-array name="wiz_brain_who">
+        <item>DeepSeek</item>
+        <item>OpenAI</item>
+        <item>Hermes</item>
+    </string-array>
+    <plurals name="wiz_chat_words">
+        <item quantity="one">✎ %d слово</item>
+        <item quantity="few">✎ %d слова</item>
+        <item quantity="many">✎ %d слов</item>
+        <item quantity="other">✎ %d слов</item>
+    </plurals>
+    <string name="intro_start">Начать</string>
+    <string name="sheet_via_tap">нажатие</string>
 </resources>

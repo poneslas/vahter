@@ -319,12 +319,13 @@ fun CameraPanel(
                     Box {
                         val ratio = f.bitmap.width.toFloat() / f.bitmap.height
                         Image(f.bitmap.asImageBitmap(), stringResource(R.string.cam_frame_edit, i + 1),
-                            Modifier.height(56.dp).width((56 * ratio).coerceIn(24f, 56f).dp).clip(RoundedCornerShape(10.dp))
+                            // В пропорциях видоискателя (в листе он шире, чем на весь экран) и целиком, а не кусок.
+                            Modifier.height(56.dp).width((56 * ratio).coerceIn(24f, 112f).dp).clip(RoundedCornerShape(10.dp))
                                 .border(2.dp, if (editIdx == i) Ink.local else Ink.line, RoundedCornerShape(10.dp))
                                 .clickable {
                                     if (frozen != null && editIdx == null) commit()
                                     frozen = f.bitmap; editIdx = i; tool = null; marks.clear(); marks += f.marks; crop = f.crop
-                                }, contentScale = ContentScale.Crop)
+                                }, contentScale = ContentScale.Fit)
                         Box(Modifier.align(Alignment.TopEnd).offset(6.dp, (-6).dp).size(22.dp).clip(CircleShape).background(Ink.ink).clickable {
                             frames.removeAt(i); if (editIdx == i) live() else editIdx?.let { if (it > i) editIdx = it - 1 }
                         }, contentAlignment = Alignment.Center) { Icon(painterResource(Ic.x), stringResource(R.string.cam_frame_delete, i + 1), Modifier.size(14.dp), tint = white) }
@@ -341,10 +342,12 @@ fun CameraPanel(
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 val canAdd = editIdx != null || frames.size < maxImages - 1
-                Round(Ic.plus, stringResource(R.string.cam_add), enabled = canAdd, onDark = onDark) { if (commit()) live() }
+                // В листе кнопки ряда меньше («Отправить» 64, «＋» и микрофон 52) — вкладки режимов под рядом не наезжают; на весь экран — 72 и 56.
+                val big = if (full) 72.dp else 64.dp; val small = if (full) 56.dp else 52.dp
+                Round(Ic.plus, stringResource(R.string.cam_add), enabled = canAdd, onDark = onDark, size = small) { if (commit()) live() }
                 val count = frames.size + if (editIdx == null) 1 else 0
                 Box {
-                    Box(Modifier.size(72.dp).clip(CircleShape).background(if (onDark) white else Ink.ink)
+                    Box(Modifier.size(big).clip(CircleShape).background(if (onDark) white else Ink.ink)
                         .clickable(enabled = !busy, onClickLabel = stringResource(if (frames.isEmpty()) R.string.cam_send else R.string.cam_send_all)) { send(question) },
                         contentAlignment = Alignment.Center) {
                         if (busy) Text("…", fontSize = 26.sp, color = if (onDark) Ink.ink else white)
@@ -354,7 +357,7 @@ fun CameraPanel(
                         .background(Ink.local).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) { Text("$count", fontSize = 13.sp, color = Ink.ink, fontWeight = FontWeight.SemiBold) }
                 }
                 // Микрофон: зажать и спросить голосом — вопрос уйдёт вместе со снимком.
-                Box(Modifier.size(56.dp).clip(CircleShape).background(if (listening) Ink.local else if (onDark) Color(0x2EFFFFFF) else Ink.chipBg)
+                Box(Modifier.size(small).clip(CircleShape).background(if (listening) Ink.local else if (onDark) Color(0x2EFFFFFF) else Ink.chipBg)
                     .pointerInput(Unit) {
                         awaitEachGesture {
                             awaitFirstDown()
@@ -413,8 +416,8 @@ private fun ToolChip(label: String, icon: Int?, on: Boolean, onDark: Boolean, on
 }
 
 @Composable
-private fun Round(icon: Int, label: String, enabled: Boolean, onDark: Boolean, onClick: () -> Unit) {
-    Box(Modifier.size(56.dp).clip(CircleShape).background(if (onDark) Color(0x2EFFFFFF) else Ink.chipBg)
+private fun Round(icon: Int, label: String, enabled: Boolean, onDark: Boolean, size: androidx.compose.ui.unit.Dp = 56.dp, onClick: () -> Unit) {
+    Box(Modifier.size(size).clip(CircleShape).background(if (onDark) Color(0x2EFFFFFF) else Ink.chipBg)
         .clickable(enabled = enabled, onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(painterResource(icon), label, Modifier.size(24.dp), tint = (if (onDark) Color.White else Ink.ink).copy(alpha = if (enabled) 1f else .35f))
     }

@@ -28,7 +28,9 @@ async function deliver(text, via){
   if (S.busy){ S.feed.push({t:'me',x:text,via:via+' · учтено'}); trace('Мозг ещё работает — реплика учтена в идущей работе (как в Telegram).','h'); return render() }
   const my=++token; S.busy=true;
   S.feed.push({t:'me',x:text,via}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();
-  await route(key,my);
+  const at=key==='alarm'&&/на (\d{1,2})(?::(\d{2}))?\b/i.exec(text);   // «будильник на 7» — время уже названо, спрашивать нечего
+  if (at){ await wait(300); const t=at[1].padStart(2,'0')+':'+(at[2]||'00'); addAct({t:'act',i:'⏰',x:'Будильник поставлен · '+t.replace(/^0/,''),s:'на телефоне · прозвенит через 10\u00a0ч',btn:'Открыть будильники',kind:'D',id:Date.now()},{tool:'alarm.set',who:'по правилам',phrase:text,params:'time='+t,confirm:'сразу',lock:S.w.locked}) }
+  else await route(key,my);
   S.busy=false; if (my===token&&S.ov){ S.ov.live='' } render();
 }
 async function deliverMode(text, via, img, bubble){

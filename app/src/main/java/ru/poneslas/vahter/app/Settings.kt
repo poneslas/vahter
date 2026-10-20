@@ -227,43 +227,87 @@ fun FormPage(content: @Composable ColumnScope.() -> Unit) =
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
 
+/** Состояние ключа: поле, проверка, итог. В мастере «Подключить» — главная кнопка внизу, поэтому состояние снаружи. */
+class KeyCtl(val brain: BrainDesc) {
+    var key by mutableStateOf("")
+    var checking by mutableStateOf(false)
+    /** Итог одной строкой: true — подключено (text = «отвечает за 0,4 с»), false — что не так. */
+    var status by mutableStateOf<Pair<Boolean, String>?>(null)
+    val canCheck get() = !checking && key.length > 10
+    fun connect(scope: kotlinx.coroutines.CoroutineScope, onDone: (() -> Unit)? = null) {
+        if (!canCheck) return
+        val app = App.instance
+        val k = key
+        checking = true; status = null
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { app.apiBrain(brain).check(k) }
+            checking = false
+            status = r.ok to r.text
+            if (r.ok) { app.setKey(brain.id, k); key = ""; onDone?.invoke() }
+        }
+    }
+}
+
+@Composable
+fun rememberKeyCtl(brain: BrainDesc) = remember(brain.id) { KeyCtl(brain) }
+
 /**
- * Ключ мозга (ui.js, keyBody): заголовок, пояснение, поле с тёмной рамкой, «Вставить» · «Проверить», итог.
- * Используется на странице мозга и в первом запуске ([onboarding]).
+ * Ключ мозга (ui.js, keyBody): поле со значком «Вставить», итог проверки — одной строкой («Подключаю…» → «✓ DeepSeek подключён ·
+ * отвечает за 0,4 с» или что не так). Проверки (формат, связь, ключ, модель) идут внутри. На странице мозга — своя кнопка «Проверить»;
+ * в мастере ([onboarding]) — пояснение «Где взять ключ?», «Другие модели — в настройках», кнопка — внизу мастера.
  */
 @Composable
-fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, onDone: (() -> Unit)? = null) {
+fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, ctl: KeyCtl = rememberKeyCtl(brain), onDone: (() -> Unit)? = null) {
     val app = App.instance
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
-    var key by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf<Pair<Boolean?, String>?>(null) }
-    var checking by remember { mutableStateOf(false) }
     val keyV by app.keyVersion.collectAsState()
     val has = remember(keyV) { app.hasKey(brain.id) }
+    val bad = ctl.status?.first == false
 
     Column(Modifier.fillMaxWidth()) {
-        H2(if (onboarding) tr(R.string.kit_mozg) else tr(R.string.kit_klyuch_1_s, brain.title))
-        Text(if (onboarding) tr(R.string.kit_otvechat_budet_1_s_nuzhen, brain.title)
-            else tr(R.string.kit_khranitsya_v_zashchishchennom_khranilish), color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).border(1.5.dp, if (status?.first == false) Ink.danger else Ink.ink, RoundedCornerShape(12.dp)).padding(12.dp)) {
-            if (key.isEmpty()) Text(if (has) "sk-••••••••••••••••" else "sk-…", color = if (has) Ink.ink else Ink.faint)
-            BasicTextField(key, { key = it.trim() }, singleLine = true, textStyle = BaseText, cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
+        if (!onboarding) {
+            H2(tr(R.string.kit_klyuch_1_s, brain.title))
+            Text(tr(R.string.kit_khranitsya_v_zashchishchennom_khranilish), color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
         }
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-            TextButton(tr(R.string.kit_vstavit)) { clipboard.getText()?.text?.trim()?.let { key = it } }
-            PrimaryButton(if (checking) tr(R.string.kit_proveryayu) else tr(R.string.kit_proverit), enabled = !checking && key.length > 10) {
-                checking = true; status = null
-                scope.launch {
-                    val r = withContext(Dispatchers.IO) { app.apiBrain(brain).check(key) }
-                    checking = false
-                    status = r.ok to r.text
-                    if (r.ok) { app.setKey(brain.id, key); key = ""; onDone?.invoke() }
-                }
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).border(1.5.dp, if (bad) Ink.danger else Ink.ink, RoundedCornerShape(12.dp))
+            .padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
+                if (ctl.key.isEmpty()) Text(if (has) "sk-••••••••••••••••" else tr(R.string.key_ph), color = if (has) Ink.ink else Ink.faint)
+                BasicTextField(ctl.key, { ctl.key = it.trim() }, singleLine = true, textStyle = BaseText, cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
             }
+            IconBtn(Ic.paste, tr(R.string.kit_vstavit), tint = Ink.soft) { clipboard.getText()?.text?.trim()?.let { ctl.key = it } }
         }
-        status?.let { (ok, text) -> Note(if (ok == true) tr(R.string.kit_gotovo_1_s_2_s, brain.model, text, brain.title) else text, ok) }
-        if (onboarding) Text(tr(R.string.kit_svoy_server_hermes_s_pamyatyu),
-            fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(top = 12.dp))
+        if (onboarding) Text(tr(R.string.key_where), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 8.dp, bottom = 10.dp))
+        else Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End) {
+            PrimaryButton(if (ctl.checking) tr(R.string.kit_proveryayu) else tr(R.string.kit_proverit), enabled = ctl.canCheck) { ctl.connect(scope, onDone) }
+        }
+        KeyResult(ctl)
+        if (onboarding) Row(Modifier.padding(start = 2.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.info), null, Modifier.size(16.dp), tint = Ink.soft)
+            Spacer(Modifier.width(8.dp))
+            Text(tr(R.string.key_other), fontSize = 13.sp, color = Ink.soft)
+        }
+    }
+}
+
+/** Итог проверки ключа — одной строкой (ui.js, .kres): идёт, подключено, не вышло. */
+@Composable
+private fun KeyResult(ctl: KeyCtl) {
+    val st = ctl.status
+    if (!ctl.checking && st == null) return
+    val (bg, fg) = when { ctl.checking -> Ink.chipBg to Ink.soft; st?.first == true -> Color(0xFFE3F1E6) to Color(0xFF1F5A2E); else -> Color(0xFFFBE7E4) to Color(0xFF8A2A1F) }
+    Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 10.dp).clip(RoundedCornerShape(14.dp)).background(bg).padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        if (ctl.checking) androidx.compose.material3.CircularProgressIndicator(Modifier.size(16.dp), color = Ink.ink, trackColor = Ink.swOff, strokeWidth = 2.dp)
+        else Box(Modifier.size(22.dp).clip(CircleShape).background(if (st?.first == true) Ink.ok else Color(0xFFC9483B)), contentAlignment = Alignment.Center) {
+            Text(if (st?.first == true) "✓" else "!", fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text(when { ctl.checking -> tr(R.string.key_connecting); st?.first == true -> tr(R.string.key_ok, ctl.brain.title, st.second); else -> st?.second.orEmpty() },
+                fontSize = 14.sp, color = fg)
+            if (st?.first == true && ctl.brain.vision) Text(tr(R.string.key_vision), fontSize = 12.sp, color = Ink.soft)
+        }
     }
 }

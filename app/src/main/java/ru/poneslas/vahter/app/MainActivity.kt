@@ -131,12 +131,14 @@ class MainActivity : ComponentActivity() {
         i.getStringExtra(EXTRA_PAGE)?.let { p -> stack.clear(); stack.add("chat"); if (p != "chat") { if (p != "settings" && !p.startsWith("onb:")) stack.add("settings"); stack.add(p) } }
         // Полоска промпта в листе → страница режима; «Назад» с неё возвращает лист, а не настройки.
         i.getStringExtra(EXTRA_EDIT_MODE)?.let { id -> stack.clear(); stack.add("chat"); stack.add("mode:$id"); sheetReturn = "mode:$id" }
+        // Строка «Мозг не подключён · Подключить» или карточка «Наверх не дозвониться» в листе → экран мозга; «Назад» — снова лист.
+        if (i.getBooleanExtra(EXTRA_BRAIN, false)) { stack.clear(); stack.add("chat"); stack.add("brain:deepseek"); sheetReturn = "brain:deepseek" }
         if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { if (stack.last() != "settings") stack.add("settings"); stack.add("mode:" + App.instance.conversation.addMode()) }
     }
 
     fun go(page: String) { stack.add(page) }
     /** Страница, с которой «Назад» сворачивает обратно в лист (пришли на неё из листа). */
-    private var sheetReturn: String? = null
+    private var sheetReturn: String? by mutableStateOf(null)
     fun back() {
         if (sheetReturn != null && stack.last() == sheetReturn) { sheetReturn = null; collapse(); return }
         if (stack.size > 1) stack.removeAt(stack.lastIndex) else finish()
@@ -146,6 +148,19 @@ class MainActivity : ComponentActivity() {
     /** Свернуть обратно в лист: finish + showSession (Архитектура 3.1). */
     private fun collapse() { finish(); Sheet.show(Bundle().apply { putString("src", "app") }) }
 
+    /**
+     * Финал мастера — лист, а не приложение (Продукт 5.13): он интереснее полноэкранного разговора, и так Вахтёр выглядит каждый день.
+     * Пустой лист с «Вам чего?» и чипами, один раз — подсказка у боковой кнопки, при первом закрытии — «Вахтёр на месте».
+     * Без роли помощника листа нет (showSession может только активный помощник) — остаётся разговор в приложении и баннер.
+     */
+    private fun finishOnboarding() {
+        App.instance.conversation.updateSettings { it.copy(onboarded = true) }
+        if (Sheet.service == null) return
+        App.instance.conversation.selectMode(ru.poneslas.vahter.core.Modes.MAIN)
+        Sheet.firstSheet.value = true; Sheet.sideCue.value = true; Sheet.firstClose = true
+        finish(); Sheet.show(Bundle().apply { putString("src", "app") })
+    }
+
     @Composable
     private fun Screen() {
         val app = App.instance
@@ -154,9 +169,10 @@ class MainActivity : ComponentActivity() {
         Box(Modifier.fillMaxSize().background(Ink.paper)) {
             Column(Modifier.fillMaxSize().imePadding()) {
                 val page = stack.last()
-                if (!state.settings.onboarded || page.startsWith("onb:")) {
+                // Пришли из листа на экран (мозг, режим) до конца мастера — показываем экран, «Назад» вернёт лист.
+                if ((!state.settings.onboarded && sheetReturn == null) || page.startsWith("onb:")) {
                     Onboarding(this@MainActivity, page.removePrefix("onb:").toIntOrNull() ?: 0) {
-                        app.conversation.updateSettings { it.copy(onboarded = true) }; if (page.startsWith("onb:")) back()
+                        if (page.startsWith("onb:")) { app.conversation.updateSettings { it.copy(onboarded = true) }; back() } else finishOnboarding()
                     }
                 } else {
                     when {
@@ -487,6 +503,7 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_PAGE = "page"
         const val EXTRA_EDIT_MODE = "editMode"
         const val EXTRA_NEW_MODE = "new_mode"
+        const val EXTRA_BRAIN = "brain"
         const val EXTRA_ASK_PERM = "ask_perm"
         const val REQ_MIC = 11
     }

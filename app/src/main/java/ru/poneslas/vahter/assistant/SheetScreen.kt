@@ -4,6 +4,8 @@ import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -109,11 +111,13 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             interactionSource = remember { MutableInteractionSource() }, indication = null) { },
             contentAlignment = Alignment.BottomCenter,
         ) {
+            val cue by Sheet.sideCue.collectAsState()
+            if (cue) SideCue(Modifier.align(Alignment.TopEnd))
             // .sheet: на всю ширину, скруглены только верхние углы (как нижние панели Android и One UI), бумага до низа экрана;
             // отступ под полоску жестов и клавиатуру — внутри листа.
             Column(
                 Modifier.fillMaxWidth()
-                    .then(if (camera) Modifier.windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top)).padding(top = 40.dp).fillMaxHeight() else Modifier)
+                    .then(if (camera) Modifier.windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top)).padding(top = 80.dp).fillMaxHeight() else Modifier)
                     .shadow(24.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)).background(Ink.paper)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
@@ -164,9 +168,12 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     ru.poneslas.vahter.ui.ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
                 ru.poneslas.vahter.ui.PromptStrip(state.current, onEditMode)
+                SheetStrip(state.mode == ru.poneslas.vahter.core.Modes.MAIN && !connected && brain.kind == ru.poneslas.vahter.core.BrainDesc.Kind.API) { session.openApp(settings = false, brain = true) }
                 // Волна записи — поверх низа ленты, а не отдельной строкой: высота листа при записи не меняется.
+                val first by Sheet.firstSheet.collectAsState()
                 Box(Modifier.fillMaxWidth()) {
-                    Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
+                    if (first && state.mode == ru.poneslas.vahter.core.Modes.MAIN && state.feed.isEmpty()) SheetHello(connected) { app.conversation.send(it, tr(R.string.sheet_via_tap)) }
+                    else Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp))
                     ru.poneslas.vahter.ui.RecPill(Modifier.align(Alignment.BottomCenter))
                 }
@@ -175,7 +182,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 Composer(
                     state = state,
                     voice = app.voice,
-                    placeholder = ru.poneslas.vahter.ui.composerPlaceholder(state, connected),
+                    placeholder = if (first && state.mode == ru.poneslas.vahter.core.Modes.MAIN && state.feed.isEmpty()) null else ru.poneslas.vahter.ui.composerPlaceholder(state, connected),   // «Вам чего?» уже заголовком
                     onDraft = app.conversation::setDraft,
                     onSend = { text, via -> app.conversation.send(text, via) },
                     onSelectMode = app.conversation::selectMode,
@@ -192,6 +199,51 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
     }
 }
 
+
+/**
+ * Пустой лист после мастера (Продукт 5.13): «Вам чего?» и чипы, которые работают без мозга; с мозгом — ещё вопрос.
+ * Чипы — уже сказанная фраза: нажали — ушла как реплика.
+ */
+@Composable
+private fun SheetHello(brain: Boolean, onSay: (String) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(tr(R.string.sheet_hello), fontSize = 22.sp, fontWeight = FontWeight.Medium, color = Ink.ink, modifier = Modifier.padding(bottom = 12.dp))
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            (listOf(tr(R.string.sheet_chip_alarm), tr(R.string.sheet_chip_timer)) + if (brain) listOf(tr(R.string.sheet_chip_brain)) else emptyList()).forEach { c ->
+                Text(c, fontSize = 13.5.sp, color = Ink.ink, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
+                    .clickable { onSay(c.replace(Regex("^\\S+ (?=\\p{Lu})"), "")) }.padding(horizontal = 12.dp, vertical = 7.dp))
+            }
+        }
+    }
+}
+
+/** Строка над лентой: качается распознавание или мозг не подключён (без шутки; «Подключить» — экран мозга, «Назад» — снова лист). */
+@Composable
+private fun SheetStrip(noBrain: Boolean, onConnect: () -> Unit) {
+    val dl by ru.poneslas.vahter.pisar.model.ModelDownload.state.collectAsState()
+    val pct = (dl as? ru.poneslas.vahter.pisar.model.ModelDownload.State.Running)?.percent
+    if (pct == null && !noBrain) return
+    Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 2.dp).clip(RoundedCornerShape(12.dp)).background(Ink.chipBg)
+        .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(if (pct != null) "⬇" else "🧠", fontSize = 13.sp)
+        Spacer(Modifier.width(8.dp))
+        Text(if (pct != null) tr(R.string.sheet_strip_dl, pct) else tr(R.string.sheet_strip_nobrain), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.weight(1f).padding(vertical = 6.dp))
+        if (pct == null) ru.poneslas.vahter.app.TextButton(tr(R.string.sheet_strip_connect), onClick = onConnect)
+    }
+}
+
+/** Один раз после мастера — у боковой кнопки корпуса: откуда берётся лист (на незнакомом телефоне — «Домой»). */
+@Composable
+private fun SideCue(modifier: Modifier) {
+    val known = ru.poneslas.vahter.app.SideKey.read(androidx.compose.ui.platform.LocalContext.current) != ru.poneslas.vahter.app.SideKey.State.UNKNOWN
+    androidx.compose.runtime.LaunchedEffect(Unit) { kotlinx.coroutines.delay(6000); Sheet.sideCue.value = false }
+    Row(modifier.windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top)).padding(top = 150.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(tr(if (known) R.string.sheet_cue_side else R.string.sheet_cue_home), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White,
+            modifier = Modifier.shadow(10.dp, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp)).background(Ink.ink).padding(horizontal = 12.dp, vertical = 8.dp))
+        Text("▶", fontSize = 12.sp, color = Ink.ink, modifier = Modifier.padding(start = 0.dp))
+    }
+}
 
 @Composable private fun imeBottom(d: androidx.compose.ui.unit.Density) = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(d)
 @Composable private fun navBottom(d: androidx.compose.ui.unit.Density) = androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(d)

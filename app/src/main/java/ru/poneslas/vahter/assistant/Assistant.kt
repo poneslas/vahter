@@ -75,6 +75,20 @@ object Sheet {
 
     /** Свернуть приложение обратно в лист (Архитектура 3.1: finish + showSession). */
     fun show(args: Bundle = Bundle()) = service?.showSession(args, 0)
+
+    /** Финал мастера — лист (Продукт 5.13): пустой лист с «Вам чего?» и чипами, пока ничего не спросили. */
+    val firstSheet = MutableStateFlow(false)
+    /** Один раз — подсказка «Так открывается по боковой кнопке». */
+    val sideCue = MutableStateFlow(false)
+    /** При первом закрытии листа после мастера — «Вахтёр на месте». */
+    @Volatile var firstClose = false
+
+    /** Экран мозга в приложении: из листа — с возвратом в лист, иначе — обычной страницей. */
+    fun openBrain(ctx: Context) {
+        val s = session
+        if (visible.value && s != null) s.openApp(settings = false, brain = true)
+        else ctx.startActivity(Intent(ctx, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, "brain:deepseek").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 }
 
 /**
@@ -156,8 +170,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             hide()
             return
         }
-        // Вызов помощника: боковая кнопка, жест, экран блокировки. Уведомление, приложение, камера, выбор фото — не вызов.
-        val call = src == null || src == "unlock" || src == "keyguard"
+        // Вызов помощника: боковая кнопка, жест, экран блокировки, плитка в шторке. Уведомление, приложение, камера, выбор фото — не вызов.
+        val call = src == null || src == "unlock" || src == "keyguard" || src == "tile"
         // Режим запоминается; после 30 минут без дела кнопка снова открывает Ассистента (Продукт 5.17).
         if (call && src != "unlock") {
             val idle = System.currentTimeMillis() - conv.state.value.saved.lastUse
@@ -187,6 +201,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
         SheetEvents.onHide?.invoke()
         ru.poneslas.vahter.App.instance.conversation.touch() // «30 минут без дела» считаем от последнего закрытия листа
         Sheet.camera.value = false
+        Sheet.sideCue.value = false
+        if (Sheet.firstClose) { Sheet.firstClose = false; android.widget.Toast.makeText(context, ru.poneslas.vahter.tr(ru.poneslas.vahter.R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
         if (registry.currentState.isAtLeast(Lifecycle.State.CREATED)) registry.currentState = Lifecycle.State.CREATED
         Sheet.visible.value = false
         super.onHide()
@@ -222,9 +238,10 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
     /** Развернуть лист в приложение: сначала запуск активности, потом hide (на скрытой сессии запуск не работает). */
     private fun expand() = openApp(settings = false)
 
-    fun openApp(settings: Boolean, askPerm: String? = null, newMode: Boolean = false, editMode: String? = null) {
+    fun openApp(settings: Boolean, askPerm: String? = null, newMode: Boolean = false, editMode: String? = null, brain: Boolean = false) {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_FROM_SHEET, true)
+            .putExtra(MainActivity.EXTRA_BRAIN, brain)
             .putExtra(MainActivity.EXTRA_SETTINGS, settings)
             .putExtra(MainActivity.EXTRA_NEW_MODE, newMode)
             .putExtra(MainActivity.EXTRA_ASK_PERM, askPerm)

@@ -54,15 +54,12 @@ sealed interface BrainEvent {
     data class Error(val text: String, val kind: ErrorKind = ErrorKind.OTHER) : BrainEvent
 }
 
-enum class ErrorKind { AUTH, BALANCE, RATE, CONTEXT, NETWORK, OTHER }
+enum class ErrorKind { AUTH, BALANCE, RATE, CONTEXT, NETWORK, NO_BRAIN, OTHER }
 
-/** Мозг без сети — для проверки листа и демонстрации без ключа. */
+/** Мозг не подключён: в ленте — карточка «Наверх не дозвониться» с «Подключить» (Продукт 5.13). Команды телефона работают и без него. */
 class FakeBrain : Brain {
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
-        delay(400)
-        val answer = tr(R.string.brain_mozg_ne_podklyuchen_dobavte_klyuch)
-        emit(BrainEvent.Delta(answer))
-        emit(BrainEvent.History(ChatMsg("assistant", answer)))
-        emit(BrainEvent.MessageEnd)
+        delay(300)
+        emit(BrainEvent.Error(tr(R.string.brain_mozg_ne_podklyuchen_dobavte_klyuch), ErrorKind.NO_BRAIN))
     }
 }

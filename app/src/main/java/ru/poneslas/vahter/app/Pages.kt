@@ -251,85 +251,52 @@ private fun Dictate(onText: (String) -> Unit) {
 }
 
 /**
- * Первый запуск (ui.js, onb): приветствие → голос → боковая кнопка (пока качается модель) → проба голоса → мозг (последним).
+ * Первый запуск — один мастер (ui.js, onb; Продукт 5.13): каждый экран сначала объясняет живой сценой (ui/Intro.kt),
+ * а под ней сразу настраивает то, о чём рассказал. Семь шагов: приветствие → голос → кнопка (пока качается модель) →
+ * проба голоса → «Своих знает в лицо» → «Знает, кто зачем пришёл» → мозг. Финал — лист (MainActivity.finishOnboarding).
  * Ничего не блокирует, но кнопку не пропустить, не заметив: пока не настроено — «Настроить», «Позже» — через предупреждение.
  */
 @Composable
 fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
-    var step by remember(start) { mutableIntStateOf(start) }
+    var step by androidx.compose.runtime.saveable.rememberSaveable(start) { mutableIntStateOf(start) }
     val app = App.instance
     val ctx = activity
     val keyV by app.keyVersion.collectAsState()
     val installed by app.voice.installed.collectAsState()
     val dl by ModelDownload.state.collectAsState()
     @Suppress("UNUSED_VARIABLE") val r = activity.resumed.intValue // баг №1: перечитать после возврата из системных окон
-    val steps = 5
+    val steps = 7
     val running = dl as? ModelDownload.State.Running
-    // Голос не качали — пробовать нечем: с кнопки сразу к мозгу.
+    // Голос не качали — пробовать нечем: с кнопки сразу к режимам.
     val next: () -> Unit = { if (step >= steps - 1) onDone() else step += if (step == 2 && !installed && running == null) 2 else 1 }
     val mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     val role = activity.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
     val hasKey = remember(keyV) { app.hasKey(Brains.deepseek.id) }
     var btnWarned by remember { mutableStateOf(false) }
+    // Незнакомый телефон: проба «зажмите кнопку» — null (не пробовали), true (лист открылся), false (нет).
+    var probe by remember { mutableStateOf<Boolean?>(null) }
+    var tileAdded by remember { mutableStateOf(false) }
+    val sheetUp by ru.poneslas.vahter.assistant.Sheet.visible.collectAsState()
+    LaunchedEffect(sheetUp) { if (sheetUp && step == 2) probe = true }   // лист открылся, пока идёт проба, — значит, кнопка работает
+    val key = rememberKeyCtl(Brains.deepseek)
+    val scope = rememberCoroutineScope()
 
     var skip: Pair<String, () -> Unit>? = tr(R.string.pg_pozzhe) to next
     var primary: Pair<String, () -> Unit>? = tr(R.string.pg_dalee) to next
 
-    // Шаг 0 — приветствие: девиз и 4 карточки с живыми сценами (ui/Intro.kt).
-    if (step == 0) { ru.poneslas.vahter.ui.Intro { step = 1 }; return }
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 22.dp, bottom = 22.dp)) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 22.dp)) {
+        @Composable fun Art(k: ru.poneslas.vahter.ui.WizScene, minH: androidx.compose.ui.unit.Dp = 300.dp) =
+            Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = minH), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.WizArt(k) }
+        @Composable fun Head(h: String, p: String) {
+            Text(h, fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
+            Text(p, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+        }
         when (step) {
-            4 -> {
-                // Мозг — последним: «Открыть» ведёт в разговор. Уведомления — здесь же, пока экран приложения открыт.
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(top = 14.dp)) {
-                    KeyEditor(Brains.deepseek, onboarding = true)
-                    val notif = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                    if (hasKey && !notif) SetCard(Modifier.padding(top = 12.dp)) {
-                        Item(tr(R.string.set_uvedomleniya), tr(R.string.pg_soobshchit_ob_otvete_esli_list), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
-                    }
-                }
-                if (hasKey) { skip = null; primary = tr(R.string.pg_otkryt) to onDone } else primary = null
-            }
-            3 -> { TryStep(activity, role, running?.percent, installed, mic); skip = null }
-            2 -> {
-                // Боковая кнопка: на незнакомом телефоне её может не быть — тогда требуем только помощника.
-                val side = SideKey.read(activity)
-                val known = side != SideKey.State.UNKNOWN
-                val ok = role && (!known || side == SideKey.State.ASSISTANT)
-                Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) {
-                    if (ok) Box(Modifier.size(84.dp).clip(CircleShape).background(Ink.ok), contentAlignment = Alignment.Center) { Text("✓", fontSize = 44.sp, color = Color.White) }
-                    else Icon(painterResource(Ic.power), null, Modifier.size(64.dp), tint = Ink.ink)
-                }
-                Text(tr(R.string.set_bokovaya_knopka), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 10.dp))
-                Text(tr(if (!ok) (if (known) R.string.btn_p_todo else R.string.btn_p_todo_one) else if (known) R.string.btn_p_done else R.string.btn_p_done_nokey), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
-                SetCard {
-                    Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (role) tr(R.string.set_vahter) else tr(R.string.btn_not_set, tr(R.string.btn_other_assistant)), warn = !role, icon = Ic.spark,
-                        end = if (role) ({ Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }) else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
-                    if (known) {
-                        val sideOk = side == SideKey.State.ASSISTANT
-                        val d = SideKey.describe(activity)
-                        Item(tr(R.string.set_bokovaya_knopka), if (sideOk) d else tr(R.string.btn_not_set, d.replaceFirstChar { it.lowercase() }), warn = !sideOk, icon = Ic.btn,
-                            end = if (sideOk) ({ Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }) else null) { SideKey.open(activity) }
-                    } else Item(tr(R.string.btn_call), tr(R.string.btn_call_sub), icon = Ic.btn)
-                }
-                running?.let { Text(tr(R.string.bg_dl, it.percent) + if (ok) "" else tr(R.string.bg_dl_hint), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 10.dp)) }
-                if (!ok) {
-                    // «Настроить» открывает по очереди то, что ещё не настроено.
-                    primary = tr(R.string.btn_setup) to { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) }
-                    skip = tr(R.string.pg_pozzhe) to {
-                        if (btnWarned) next() else {
-                            btnWarned = true
-                            activity.showSheet(MainActivity.PermSheet(tr(R.string.btn_warn_h), tr(R.string.btn_warn_p), tr(R.string.btn_setup), icon = Ic.power,
-                                later = tr(R.string.btn_warn_later), onLater = next) { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) })
-                        }
-                    }
-                } else skip = null
-            }
-            else -> {
+            0 -> { Art(ru.poneslas.vahter.ui.WizScene.WELCOME); Head(tr(R.string.intro_0_h), tr(R.string.intro_0_p)); skip = null; primary = tr(R.string.intro_start) to next }
+            1 -> {
                 // Голос — первым: модель качается, пока настраивают кнопку.
                 Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.VoiceArt() }
-                Text(tr(R.string.pg_golos_na_telefone), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(bottom = 10.dp))
-                Text(tr(R.string.onb_voice_p, "225"), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+                Head(tr(R.string.pg_golos_na_telefone), tr(R.string.onb_voice_p, "225"))
                 val error = (dl as? ModelDownload.State.Failed)?.reason
                 when {
                     installed -> Note(tr(R.string.pg_gotovo), ok = true)
@@ -345,9 +312,87 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                         }
                     }
                 }
+                if (installed || running != null) skip = null
                 if (!mic && (installed || running != null)) SetCard(Modifier.padding(top = 12.dp)) {
                     Item(tr(R.string.set_mikrofon), tr(R.string.pg_nuzhen_dlya_golosovogo_vvoda), icon = Ic.mic) { activity.askMic() }
                 }
+            }
+            2 -> {
+                // Кнопка — один экран на все телефоны. Обязательна только роль «Цифровой помощник» (есть везде с Android 10).
+                // Пункт Samsung «Цифровой помощник» открывает того, кто выбран помощником: если удержание уже на нём (по умолчанию
+                // в One UI 7+), выбрали Вахтёра — кнопка заработала сама, вторая строка сразу с ✓. Иначе — «Настроить».
+                // Незнакомый телефон (действие кнопки не прочитать): проба «зажмите кнопку», не вышло — «Домой» / жест и плитка в шторке.
+                val side = SideKey.read(activity)
+                val known = side != SideKey.State.UNKNOWN
+                val sideOk = side == SideKey.State.ASSISTANT
+                val ok = role && (!known || sideOk)
+                val check: @Composable () -> Unit = { Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }
+                Art(ru.poneslas.vahter.ui.WizScene.QUEUE, 220.dp)
+                Head(tr(R.string.intro_1_h), tr(when {
+                    ok && known -> R.string.btn_p_done
+                    ok && probe == true -> R.string.btn_p_done_probe
+                    ok -> R.string.btn_p_done_nokey
+                    sideOk -> R.string.btn_p_ready_side
+                    known -> R.string.btn_p_todo
+                    else -> R.string.btn_p_todo_one
+                }))
+                SetCard {
+                    Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (role) tr(R.string.set_vahter) else tr(R.string.btn_not_set, tr(R.string.btn_other_assistant)), warn = !role, icon = Ic.spark,
+                        end = if (role) check else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
+                    when {
+                        known && sideOk -> Item(tr(R.string.set_bokovaya_knopka), tr(R.string.btn_side_ready), icon = Ic.btn, end = check) { SideKey.open(activity) }
+                        known -> Item(tr(R.string.set_bokovaya_knopka), tr(R.string.btn_not_set, SideKey.now(activity)), warn = true, icon = Ic.btn) { SideKey.open(activity) }
+                        !role -> Item(tr(R.string.btn_call), tr(R.string.btn_call_any), icon = Ic.btn)
+                        probe == true -> Item(tr(R.string.btn_call), tr(R.string.btn_probe_ok), icon = Ic.btn, end = check)
+                        probe == false -> {
+                            Item(tr(R.string.btn_call), tr(R.string.btn_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                            if (tileAdded) Item(tr(R.string.btn_tile), tr(R.string.btn_tile_done), icon = Ic.list, end = check)
+                            else Item(tr(R.string.btn_tile), tr(R.string.btn_tile_sub), icon = Ic.list) { ru.poneslas.vahter.assistant.VahterTile.request(activity) { tileAdded = it } }
+                        }
+                        else -> Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(painterResource(Ic.btn), null, Modifier.size(24.dp).padding(2.dp), tint = Ink.soft)
+                                Spacer(Modifier.width(16.dp))
+                                Text(tr(R.string.btn_probe), fontSize = 15.sp, lineHeight = 1.35.em, color = Ink.ink)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+                                TextButton(tr(R.string.btn_probe_no)) { probe = false }
+                                TextButton(tr(R.string.btn_probe_yes)) { probe = true }
+                            }
+                        }
+                    }
+                }
+                running?.let { Text(tr(R.string.bg_dl, it.percent) + if (ok) "" else tr(R.string.bg_dl_hint), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 10.dp)) }
+                if (!ok) {
+                    // «Настроить» открывает по очереди то, что ещё не настроено.
+                    val setup = { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) }
+                    primary = tr(R.string.btn_setup) to setup
+                    skip = tr(R.string.pg_pozzhe) to {
+                        if (btnWarned) next() else {
+                            btnWarned = true
+                            activity.showSheet(MainActivity.PermSheet(tr(R.string.btn_warn_h), tr(R.string.btn_warn_p), tr(R.string.btn_setup), icon = Ic.power,
+                                later = tr(R.string.btn_warn_later), onLater = next, onGo = setup))
+                        }
+                    }
+                } else skip = null
+            }
+            3 -> { TryStep(activity, role && SideKey.read(activity) == SideKey.State.ASSISTANT, running?.percent, installed, mic); skip = null }
+            4 -> { Art(ru.poneslas.vahter.ui.WizScene.CHAT); Head(tr(R.string.wiz_rules_h), tr(R.string.wiz_rules_p)); skip = null }
+            5 -> { Art(ru.poneslas.vahter.ui.WizScene.KEYS); Head(tr(R.string.intro_3_h), tr(R.string.wiz_quick_p)); skip = null }
+            else -> {
+                // Мозг — последним. «Подключить» — главная кнопка внизу; подключили — «Открыть» ведёт в лист.
+                // Уведомления — здесь же, пока экран приложения открыт: из листа системное окно показать нечем.
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                    Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.WizArt(ru.poneslas.vahter.ui.WizScene.BRAIN) }
+                    Head(tr(R.string.wiz_brain_h), tr(R.string.wiz_brain_p))
+                    KeyEditor(Brains.deepseek, onboarding = true, ctl = key)
+                    val notif = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                    if (hasKey && !notif) SetCard(Modifier.padding(top = 12.dp)) {
+                        Item(tr(R.string.set_uvedomleniya), tr(R.string.pg_soobshchit_ob_otvete_esli_list), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
+                    }
+                }
+                if (hasKey) { skip = null; primary = tr(R.string.pg_otkryt) to onDone }
+                else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.key_connect)) to { key.connect(scope) }
             }
         }
         // .nav: «Позже» или пусто · точки · кнопка
@@ -356,7 +401,9 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 repeat(steps) { i -> Box(Modifier.size(if (i == step) 20.dp else 7.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(if (i == step) Ink.ink else Ink.swOff)) }
             }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) { primary?.let { (t, a) -> PrimaryButton(t, onClick = a) } }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                primary?.let { (t, a) -> PrimaryButton(t, enabled = !(step == steps - 1 && !hasKey && !key.canCheck), onClick = a) }
+            }
         }
     }
 }
@@ -365,9 +412,9 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
 private data class Shot(val text: String, val ms: Long)
 
 /**
- * Проба голоса (ui.js, tryStep) — показать, что пишется быстро: одна настоящая строка ввода листа (кнопка Писаря: зажать,
- * замок вверх, отмена влево), надиктованное — пузырями над ней с отметкой «⚡ 0,4 с · на телефоне». Мозгу ничего не уходит.
- * Чего не хватает — одной строкой посередине; микрофон спрашивает сама кнопка.
+ * Проба голоса (ui.js, tryStep) — листок, как «Попробуйте здесь…» в Писаре: последняя фраза крупно, под ней «⚡ Распознано на
+ * телефоне за 0,7 с», прошлые мельче выше. Поля ввода, скрепки и вкладок нет — мозгу ничего не уходит. Кнопка и жесты — те же,
+ * что в листе (кнопка Писаря: зажать, замок вверх, отмена влево). Чего не хватает — в листке; микрофон спрашивает сама кнопка.
  */
 @Composable
 private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: MainActivity, side: Boolean, pct: Int?, installed: Boolean, mic: Boolean) {
@@ -379,35 +426,46 @@ private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: Mai
     var t0 by remember { mutableStateOf(0L) }
     LaunchedEffect(phase) { if (phase == ru.poneslas.vahter.ui.RecUi.Phase.PROCESSING) t0 = android.os.SystemClock.uptimeMillis() }
     val micAsked = app.conversation.state.collectAsState().value.settings.micAsked
-    val why = when {
+    val why = msg ?: when {
         !installed && pct != null -> tr(R.string.try_loading, pct)
         !installed -> tr(R.string.try_none)
         !mic && micAsked && !activity.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> tr(R.string.try_denied)
         !mic -> tr(R.string.try_ask)
         else -> null
     }
-    val rec = phase != ru.poneslas.vahter.ui.RecUi.Phase.IDLE
+    val rec = phase == ru.poneslas.vahter.ui.RecUi.Phase.LISTENING
+    val proc = phase == ru.poneslas.vahter.ui.RecUi.Phase.PROCESSING
     Text(tr(R.string.try_h), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 26.dp, bottom = 8.dp))
-    Text(tr(R.string.try_p) + tr(if (side) R.string.try_p_side2 else R.string.try_p_noside2), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 8.dp))
-    val list = androidx.compose.foundation.lazy.rememberLazyListState()
-    LaunchedEffect(shots.size, rec) { if (shots.isNotEmpty() || rec) list.animateScrollToItem(shots.size + (if (rec) 1 else 0)) }
-    Box(Modifier.weight(1f).fillMaxWidth()) {
-        if (shots.isEmpty() && !rec) Text(why ?: tr(R.string.try_empty), fontSize = 14.5.sp, color = Ink.soft, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.align(Alignment.Center).padding(horizontal = 24.dp))
-        else androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize(), state = list, verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp)) {
-            items(shots.size) { i ->
-                val s = shots[i]
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(s.text, fontSize = 15.sp, color = Ink.ink, modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)).background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp))
-                    Text(tr(R.string.try_fast, "%.1f".format(s.ms / 1000f).replace('.', ',')), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
-                        modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 9.dp, vertical = 2.dp))
-                }
+    Text(tr(R.string.try_p2), fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+    // листок
+    Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(22.dp))
+        .padding(horizontal = 20.dp, vertical = 18.dp)) {
+        val old = if (rec || proc) emptyList() else shots.dropLast(1).takeLast(3)
+        if (old.isNotEmpty()) {
+            Column(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                old.forEachIndexed { i, s -> Text(s.text, fontSize = 14.sp, lineHeight = 1.35.em, color = if (i == old.lastIndex) Ink.soft else Ink.faint) }
             }
-            if (rec) item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.RecPill() } }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFECEEE8)))
+        }
+        Column(Modifier.weight(1f).fillMaxWidth().padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)) {
+            val last = shots.lastOrNull()
+            when {
+                rec || proc -> {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.DictEq(1f, bars = 13, maxH = 56f, w = 7.dp, calm = proc) }
+                    Text(tr(if (rec) R.string.try_listen else R.string.try_recog), fontSize = 14.sp, color = Ink.soft, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+                last != null -> {
+                    Text(last.text, fontSize = 25.sp, lineHeight = 1.25.em, fontWeight = FontWeight.Medium, color = Ink.ink)
+                    Text(tr(R.string.try_fast, "%.1f".format(last.ms / 1000f).replace('.', ',')), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 11.dp, vertical = 4.dp))
+                }
+                why != null -> Text(why, fontSize = 17.sp, lineHeight = 1.35.em, color = Ink.soft)
+                else -> Text(tr(R.string.try_empty), fontSize = 22.sp, lineHeight = 1.3.em, color = Color(0xFFB4BAC4))
+            }
         }
     }
-    if (!rec) Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+    Text(tr(if (side) R.string.try_p_side2 else R.string.try_p_noside2), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(start = 2.dp, top = 8.dp))
+    if (!rec && !proc) Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
         listOf(R.string.try_tip_up, R.string.try_tip_left).forEach { id ->
             Text(tr(id), fontSize = 12.sp, color = Ink.soft, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.chipBg).padding(horizontal = 10.dp, vertical = 3.dp))
         }
@@ -415,12 +473,9 @@ private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: Mai
     Box(Modifier.padding(top = 6.dp)) {
         ru.poneslas.vahter.ui.VoiceRow(
             voice = app.voice,
-            field = {
-                Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
-                    .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(msg ?: tr(R.string.try_hint), fontSize = 14.5.sp, color = Ink.soft, maxLines = 1)
-                }
-            },
+            // Поля нет: только подпись у круга микрофона.
+            field = { Text(tr(R.string.try_hint), fontSize = 14.sp, color = Ink.soft, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.fillMaxWidth().padding(end = 12.dp)) },
             trailing = null,
             onText = { t -> shots += Shot(t, (android.os.SystemClock.uptimeMillis() - t0).coerceAtLeast(1)); msg = null },
             onMessage = { msg = it },
