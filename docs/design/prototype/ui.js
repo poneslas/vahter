@@ -326,6 +326,18 @@ function dialog(){ const D=S.dialog; if(!D) return '';
   return `<div class="scrim"><div class="dlg">${D.ic?`<div class="di">${D.ic}</div>`:''}<h3>${D.title}</h3>${D.text?`<p>${D.text}</p>`:''}${D.opts.map((o,i)=>`<button class="opt ${o[2]||''}" data-dlg="${i}">${o[0]}</button>`).join('')}</div></div>` }
 function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toast" data-act="toast">${oursIcon()}<span><b>${T.title}</b><span>${T.text}</span></span></button>` }
 
+/* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
+   проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
+   Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.sc-pop',()=>S.shortcuts],['.islide',()=>'intro'+(S.introStep||0)]];
+const animBorn=new Map();
+function keepAnims(){
+  const now=performance.now(), live=new Set();
+  for (const [sel,keyf] of ANIM_KEYS){ const el=$('#scr '+sel); if(!el) continue; const k=sel+'|'+keyf(); live.add(k);
+    if(!animBorn.has(k)){ animBorn.set(k,now); continue }
+    const t=now-animBorn.get(k); el.getAnimations({subtree:true}).forEach(a=>{ try{ a.currentTime=t }catch{} }) }
+  for (const k of [...animBorn.keys()]) if(!live.has(k)) animBorn.delete(k);
+}
 function grow(t){ t.style.height='auto'; t.style.height=t.scrollHeight+'px' }
 function render(){
   let base='';
@@ -343,6 +355,7 @@ function render(){
   document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2 });
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
+  keepAnims();
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
   S.keepScroll=false;
