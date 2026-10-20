@@ -5,12 +5,12 @@ function openOverlay(src){
   token++; S.busy=false;
   if (S.screen==='cam2'&&S.cam){ S.screen=S.camRet.screen; S.cam=null }   // лист вызвали поверх камеры — камера закрывается, иначе она осталась бы поверх листа
   const isSide = src==='side'||src.startsWith('боков');
-  const R=S.settings.returnToAssistant; if (isSide && S.mode!=='main' && R!=='never' && (R==='always' || S.idle>=30 || !curMode().enabled)){ const t=curMode().title; S.mode='main'; trace(R==='always'?`Боковая кнопка всегда открывает Ассистента (настройка). «${t}» — через вкладки или ярлык.`:`Без дела ${S.idle} мин — боковая кнопка снова открывает Ассистента. «${t}» остался во вкладках, лента сохранена.`,'p') }
+  const R=S.settings.returnToAssistant; if (isSide && S.mode!=='main' && R!=='never' && (R==='always' || S.idle>=30 || !curMode().enabled)){ const t=curMode().title; S.mode='main'; trace(R==='always'?`Боковая кнопка всегда открывает Ассистента (настройка). «${t}» — через вкладки или ярлык.`:`Без дела ${S.idle} мин — боковая кнопка снова открывает Ассистента. «${t}» остался во вкладках, лента сохранена.`,'p') }
   S.idle=0;
   S.rec=null; const O={pop:true}; S.ov=O;
   if (curMode().primary==='photo' && curMode().accepts.photo){ render(); return openCamera(true) }
   const sub=s=>`<span style="font-size:14.5px;font-weight:400;color:var(--soft)">${s}</span>`;
-  if (S.w.model!=='ready'){ O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — пишите. Команды и вопросы работают.')}`; return render() }
+  if (S.w.model!=='ready'){ O.live=`<span class="st p">${S.w.model==='loading'?`Распознавание качается: ${S.modelPct} %`:'Голос ещё не готов'}</span>${sub('Пока — пишите. Команды и вопросы работают.')}`; return render() }
   if (S.w.mic==='ask'){ O.live=`<span class="st">Нужен доступ к микрофону</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">Спросит приложение — лист на секунду развернётся.</span><br><button class="recbtn" data-act="permmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`; S.pendingSide = src==='side'; trace('Системное окно разрешения из листа на Samsung открывается ПОД листом (пробник, S24). Поэтому разрешение спрашивает приложение: лист разворачивается, окно поверх приложения, потом снова лист.','p'); return render() }
   if (S.w.mic==='denied'){ O.live=`<span class="st e">Нет доступа к микрофону</span>${sub('Пока можно писать. Чтобы говорить, разрешите микрофон в настройках.')}<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>`; return render() }
   if (S.w.mic==='call'){ O.live=`<span class="st e">Микрофон занят звонком</span>${sub('Пока — пишите.')}`; return render() }
@@ -29,7 +29,7 @@ function uploadPhoto(img, q, via){
 /** Подпись состояния вложения: у прямого API загрузка — это сам запрос, у Hermes — файлы на сервер. */
 function upLabel(b){ const u=b.up, api=brainOf(modeById(b.mode)).kind==='api', n=b.img.kind==='album'?b.img.items.length:1;
   if (u.pct<8) return 'Готовлю'+(n>1?` ${n} кадра`:'')+'…';
-  return (api?'Отправляю':'Загружаю')+` · ${u.pct} %` }
+  return (api?'Отправляю':'Загружаю')+` · ${u.pct} %` }
 async function runUpload(b){
   const speed=S.upSpeed||'fast', dur=speed==='slow'?7000:1400, MIN=2000; b.up.st=S.w.net==='none'?'wait':'up'; b.up.pct=0; b.up.t0=Date.now(); render();
   while(true){ await wait(200); if(b.up.st==='cancel') return;

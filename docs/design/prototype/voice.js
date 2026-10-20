@@ -41,12 +41,12 @@ async function finishRec(how){
   trace(r.mode==='hold'?'Отпустил — отправлено (push-to-talk, как в Писаре). Чистовик GigaAM уже с пунктуацией.':'«Отправить» из замочка — отправлено.','p');
   return deliver(full,'голос');
 }
-/** Распознавание после отпускания: кнопка крутит дугу, над полем — спокойная волна; пауза как на S24 (0,4–0,9 с). */
+/** Распознавание после отпускания: кнопка крутит дугу, над полем — спокойная волна; пауза как на S24 (0,4–0,9 с). */
 async function recognize(){ const ms=400+Math.round(Math.random()*500); S.recog=true; render(); await wait(ms); S.recog=false; return ms }
 function micUnavailable(){
   if (S.w.mic==='ask'){ if(S.ov){ S.ov.live=`<span class="st">Нужен доступ к микрофону</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">Спросит приложение — лист на секунду развернётся.</span><br><button class="recbtn" data-act="permmic" style="margin-top:10px;background:var(--ink);color:#fff">Разрешить</button>`; return render() } return askMic() }
   if (S.w.mic==='denied' && !S.ov && S.w.model==='ready') return askMic();   // вне листа — наше окно с переходом в настройки
-  const why = S.w.model==='loading'?`распознавание ещё качается (${S.modelPct} %)`:S.w.model!=='ready'?'распознавание не скачано':S.w.mic==='denied'?'нет доступа к микрофону':'микрофон занят звонком';
+  const why = S.w.model==='loading'?`распознавание ещё качается (${S.modelPct} %)`:S.w.model!=='ready'?'распознавание не скачано':S.w.mic==='denied'?'нет доступа к микрофону':'микрофон занят звонком';
   trace(`Микрофон недоступен: ${why}. Поле ввода работает.`,'e'); if(S.ov){ S.ov.live=`<span class="st e">Голос недоступен</span><span style="font-size:14.5px;font-weight:400;color:var(--soft)">${why[0].toUpperCase()+why.slice(1)}.</span>${S.w.mic==='denied'?'<br><button class="recbtn" data-act="sysmic" style="margin-top:10px;background:var(--ink);color:#fff">Открыть настройки</button>':''}` } render();
 }
 let iconT=null, iconLong=false;

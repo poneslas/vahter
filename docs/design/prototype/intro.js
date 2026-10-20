@@ -12,25 +12,24 @@ function introScene(k) {
         <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${'<b></b>'.repeat(9)}</span><span class="tx">Сколько варить гречку?</span></span></div>
         <div class="ai">15–20 минут, воды вдвое больше.</div></div></div>`;
   }
-  if (k === 2) return `<div class="sc sc2">
-    <div class="mcard"><div class="mh"><span class="mi">🍽</span><b>Гастрогид</b><small>мой режим</small></div>
-      <div class="rule"><i>1</i>Не ем острое и свинину</div>
-      <div class="rule"><i>2</i>Аллергия на орехи</div>
-      <div class="rule"><i>3</i>Бюджет до 1500 ₽, советуй 2–3 блюда</div>
-      <div class="start">Начинать с: <b>📷 камеры</b></div>
-      <div class="stamp">всё запомнил</div></div>
-    <div class="use"><div class="later">через неделю, в ресторане…</div>
-      <div class="ms"><div class="g"></div><div class="h"><i></i><b>Гастрогид</b> · одно нажатие</div>
-        <div class="thumb menu"></div>
-        <div class="ai">Судак на гриле и морс — 1200 ₽.</div>
-        <div class="chk"><span>✓ не остро</span><span>✓ без свинины</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div></div></div></div>`;
+  // «Своих знает в лицо»: одна ситуация (ресторан, фото меню) — чату всё объясняешь заново, своему режиму — «как обычно».
+  if (k === 2) return `<div class="sc sc6">
+    <div class="col chat"><div class="hd"><span class="ci">💬</span><b>Чат</b><small>новый</small></div>
+      <div class="bub"><div class="tw">Здравствуйте! Я в ресторане. Не ем острое и свинину, аллергия на орехи, бюджет до 1500 ₽. Посоветуйте 2–3 блюда. Вот меню 📎</div><span class="car"></span></div>
+      <div class="cnt"><span class="w"></span><span class="t"></span></div></div>
+    <div class="col vah"><div class="hd"><span class="ci">🍽</span><b>Гастрогид</b><small>мой режим</small></div>
+      <div class="snap"><span class="thumb"></span><span class="fl"></span></div>
+      <div class="ans">Судак на гриле и морс — 1200 ₽.</div>
+      <div class="chk"><span>✓ не остро</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div>
+      <div class="cnt"><span>⏻ 1 нажатие</span><span class="t"></span></div></div></div>`;
+  // «Знает, кто зачем пришёл»: режимы — кнопки пульта; у каждой на обороте уже написанная просьба. Нажал — она сказана.
   if (k === 3) {
-    const home = '<div class="home">' + '<i></i>'.repeat(12) + '</div>';
-    const ph = (m, sheet, cap) => `<div class="tel"><div class="ml">${m}</div><div class="dev"><span class="key"></span><div class="scr2">${home}${sheet}</div></div><div class="cap">${cap}</div></div>`;
-    return `<div class="sc sc3">
-      ${ph('Переводчик', `<div class="sht"><div class="g"></div>${WAVE}<small>говорите…</small></div>`, '🎙 сразу голос')}
-      ${ph('Что это?', `<div class="sht cam"><div class="g"></div><div class="vf"><div class="shelf"></div><span class="jar a"></span><span class="jar b"></span></div><div class="shut"></div></div>`, '📷 сразу камера')}
-      </div>`;
+    const K = [['💬','Ассистент','как чат, по кнопке','Просто спросите — как в чате. Будильник, звонок, вопрос.'],
+               ['🌐','Переводчик','🎙 сразу голос','Переводи на английский, ответ — вслух. Начинай с голоса.'],
+               ['🔍','Что это?','📷 сразу камера','Скажи, что в кадре и зачем это. Начинай с камеры.'],
+               ['🍽','Гастрогид','свой режим','Не ем острое, орехи нельзя, до 1500 ₽. Начинай с камеры.']];
+    return `<div class="sc sc7">${K.map(([i,t,tag,back],j)=>`<div class="key k${j}"><div class="fc fr"><span class="ki">${i}</span><b>${t}</b><small>${tag}</small></div><div class="fc bk"><small>на обороте</small><p>${back}</p></div></div>`).join('')}
+      <div class="plus">+ свой режим — сколько угодно</div></div>`;
   }
   if (k === 'brain') return `<div class="sc sc5">
     <div class="ups"><div class="up mz"><span class="ui">🧠</span><span><b>Мозг Вахтёра</b><small class="who"><i>DeepSeek</i><i>OpenAI</i><i>Hermes</i></small></span><span class="cl">☁</span></div></div>

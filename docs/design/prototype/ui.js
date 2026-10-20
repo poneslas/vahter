@@ -19,8 +19,8 @@ function linkState(){
 function issue(){
   if (S.w.mic==='denied') return {k:'e',t:'Нет доступа к микрофону. Пока можно писать.',a:[['Разрешить','askmic']]};
   if (S.w.model==='broken') return {k:'e',t:'Файл распознавания повреждён.',a:[['Скачать заново','dl']]};
-  if (S.w.model==='loading') return {k:'p',t:S.w.net==='none'?`Распознавание: ${S.modelPct} % — ждёт сеть`:`Распознавание качается: ${S.modelPct} % из ${mb(MODEL_TOTAL)} МБ`,prog:S.modelPct};
-  if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
+  if (S.w.model==='loading') return {k:'p',t:S.w.net==='none'?`Распознавание: ${S.modelPct} % — ждёт сеть`:`Распознавание качается: ${S.modelPct} % из ${mb(MODEL_TOTAL)} МБ`,prog:S.modelPct};
+  if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
   if (S.w.role!=='ours') return {k:'p',t:'Цифровым помощником выбран Gemini — боковая кнопка откроет его.',a:[['Не сейчас','dismiss'],['Настроить','sysrole']]};
   if (S.w.profile==='unknown' && S.w.role==='ours' && S.sideProbe!=='yes') return S.sideProbe==='no'
       ? {k:'p',t:'Выберите «Вахтёр» цифровым помощником для боковой кнопки: Настройки → кнопки или жесты → помощник. Пункты зависят от телефона.',a:[['Сообщить разработчику','sidereport'],['Открыть настройки','sysside']]}
@@ -47,7 +47,7 @@ function feedHtml(inSheet){
 function itemHtml(it,inSheet){
   if (it.t==='notifask') return `<div class="nask">${I.bell}<span>Сообщить, если закроете лист до ответа?</span><button class="tbtn" data-act="asknotif">Разрешить</button><button class="iconbtn" data-act="notifno" aria-label="Не нужно">${I.x}</button></div>`;
   if (it.t==='me' && it.img && it.up && it.up.st!=='sent'){ const u=it.up;
-    const st = u.st==='wait'?'Ждёт сети — отправлю сам':u.st==='fail'?'Не загрузилось':u.pct>=100&&u.hold?'Загружено · ждёт ваш вопрос':u.pct>=100?`Загружено · отправлю через ${Math.max(1,Math.ceil((2000-(Date.now()-u.t0))/1000))} с`:upLabel(it);
+    const st = u.st==='wait'?'Ждёт сети — отправлю сам':u.st==='fail'?'Не загрузилось':u.pct>=100&&u.hold?'Загружено · ждёт ваш вопрос':u.pct>=100?`Загружено · отправлю через ${Math.max(1,Math.ceil((2000-(Date.now()-u.t0))/1000))} с`:upLabel(it);
     if (it.img.kind==='file') return `<div class="meimg up"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span><button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button>${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}</div><small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>уйдёт вместе с файлом</small></div>`:`<small class="uphint">Можно дописать вопрос — уйдёт вместе с файлом</small>`}</div>`;
     return `<div class="meimg up"><div class="thw" style="${thumbStyle(it.img)}">${thumbHtml(it.img)}${u.st==='up'?`<i class="upbar" style="width:${u.pct}%"></i>`:''}<button class="upx" data-act="upcancel" data-id="${it.id}" aria-label="Отменить отправку">${I.x}</button></div>
       <small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>
@@ -74,7 +74,7 @@ function itemHtml(it,inSheet){
 }
 function stepsHtml(it){
   const n=it.items.length; const pd=it.plan?it.plan.items.filter(p=>p.st==='completed').length:0;
-  const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с${it.plan?` · план ${pd} из ${it.plan.items.length}`:''}`;
+  const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с${it.plan?` · план ${pd} из ${it.plan.items.length}`:''}`;
   return `<div class="steps ${it.open?'open':''}"><button data-act="togglesteps" data-id="${it.id}">${head}${I.chev}</button>
   ${it.plan&&(it.run||it.open)?`<div class="plan"><div class="ph2"><span>План</span><span>ревизия ${it.plan.rev}</span></div>${it.plan.items.map(p=>`<div class="pi ${p.st} ${it.run?'now':''}"><span class="b">${p.st==='completed'?'✓':''}</span><span>${p.c}</span></div>`).join('')}</div>`:''}
   <div class="sl">${it.items.map(s=>`<div class="sitem ${s.phone?'phone':''}"><div><span class="si">${s.i}</span><span>${s.t}</span><span style="margin-left:auto;color:var(--faint);font-size:11px">${s.ms||''}</span></div>${s.d?`<div class="sd">${s.d}</div>`:''}</div>`).join('')}</div></div>`;
@@ -160,7 +160,7 @@ function settings(){
     ${S.modes.map(m=>`<div class="lirow">${li(I[m.icon],esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
     ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
-    ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
+    ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
     ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросит при первой записи','askmic',w.mic==='denied')}
     <div class="lh">Мозги</div>
     ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title, b.kind==='api'?(S.w.key==='ok'?`${b.model} · ключ есть`:S.w.key==='bad'?'Ключ не принимается':'Нет ключа'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Свой сервер: память, поиск, Telegram'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
@@ -234,12 +234,12 @@ function about(){
   <div class="scroll"><div style="padding:0 16px">
     <div style="text-align:center;padding:10px 0 14px">${oursIcon('width:64px;height:64px;border-radius:20px;margin:0 auto')}<div style="font-family:var(--display);font-size:24px;margin-top:10px">${u.ver}</div><div style="color:var(--soft);font-size:13px">стабильная версия</div></div>
     ${u.state==='available'?`<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`:''}
-    ${u.state==='dl'?`<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>`:''}
+    ${u.state==='dl'?`<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>`:''}
     ${u.state==='checking'?'<div class="mnote">Проверяю…</div>':''}${u.state==='latest'?'<div class="note ok">Это последняя версия</div>':''}${u.state==='fail'?'<div class="note bad">Не удалось проверить: нет связи</div>':''}
   </div>
   <div class="list">
     ${li(I.dl,'Проверить обновления','Автоматически раз в 6 часов','check')}
-    ${li(I.wave,'Модели распознавания', S.w.model==='ready'?'Русский · 225 МБ':'Не скачаны','dl')}
+    ${li(I.wave,'Модели распознавания', S.w.model==='ready'?'Русский · 225 МБ':'Не скачаны','dl')}
   </div></div></div>`;
 }
 
@@ -256,9 +256,9 @@ function onb(){
     ${navBar(done?null:['Позже','onbnext'], done?['Открыть','onbnext']:run?['Подключаю…','noop']:['Подключить','keycheck'])}</div></div>` }
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
-  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
+  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
-    else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
+    else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
     if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null;
     if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>` }
   // Сцена — гонка «приложение против кнопки», под ней — что настроить. Единственное действие на любом Android — «Цифровой помощник»
@@ -278,11 +278,11 @@ function onb(){
       : S.sideProbe==='yes' ? li(I.btn,'Вызов','Работает — открылся лист',null,false,I.ok)
       : S.sideProbe==='no' ? li(I.btn,'Вызов','Долгое нажатие «Домой» или жест из угла','sysside')+(S.tileAdded?li(I.list,'Плитка в шторке','Добавлена',null,false,I.ok):li(I.list,'Плитка в шторке','Вахтёр — из быстрых настроек','addtile'))
       : `<div class="sprobe"><span>${I.btn}</span><p>Зажмите кнопку, на которой у вас помощник. Открылся лист?</p><div class="ba"><button class="tbtn" data-act="sideno">Нет</button><button class="tbtn" data-act="sideyes">Да</button></div></div>`;
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${row2}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${row2}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
     if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
-  // Режимы — два экрана: свои режимы (правила один раз) и «сразу нужное» (на одно нажатие меньше). Настраивать нечего.
-  if (st==='rules'){ art=introScene(2); h='Запомнил с первого раза'; p='Создайте свой режим: опишите правила один раз — язык перевода, вкусы, аллергию. Дальше хватает одной кнопки.'; skip=null }
-  if (st==='quick'){ art=introScene(3); h='Знает, кто зачем пришёл'; p='Переводчик открывается сразу голосом, «Что это?» — сразу камерой. На одно нажатие меньше.'; skip=null }
+  // Режимы — два экрана: чем это лучше чата («как обычно» против просьбы заново) и как устроено (кнопка = написанная просьба). Настраивать нечего.
+  if (st==='rules'){ art=introScene(2); h='Своих знает в лицо'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
+  if (st==='quick'){ art=introScene(3); h='Знает, кто зачем пришёл'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
@@ -294,12 +294,12 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
  *  распознано на телефоне; прошлые мельче выше. Поля ввода и вкладок нет: мозгу ничего не уходит. Кнопка и жесты — те же, что в листе. */
 function tryStep(){
   const side=S.w.role==='ours'&&S.sideOk, rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[];
-  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %`:S.w.model!=='ready'?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
+  const why = S.w.model==='loading'?`Распознавание докачивается — ${S.modelPct} %`:S.w.model!=='ready'?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
   const sec = ms => (ms/1000).toFixed(1).replace('.',',');
   const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
   const main = rec ? `<div class="tnow"><div class="eq" data-mode="speak"></div><span class="tst">Слушаю…</span></div>`
     : S.recog ? `<div class="tnow"><div class="eq" data-mode="wave"></div><span class="tst">Распознаю на телефоне…</span></div>`
-    : last ? `<div class="tnow txt" data-k="${shots.length}"><div class="tbig">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)} с</span></div>`
+    : last ? `<div class="tnow txt" data-k="${shots.length}"><div class="tbig">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)} с</span></div>`
     : `<div class="tnow"><span class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь — текст появится здесь'}</span></div>`;
   return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2>
     <p>Зажмите микрофон, скажите фразу и отпустите. Распознаётся на телефоне, никуда не уходит.</p>
@@ -327,7 +327,7 @@ function connectBody(onb){
 function sysRole(){ const o=[['gemini','Gemini'],['ours','Вахтёр']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }
 function sysMic(){ const o=(v,t)=>`<button class="it" data-micperm="${v}"><span class="rad ${S.w.mic===v?'on':''}"></span>${t}</button>`;
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Микрофон</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Приложения → Вахтёр → Разрешения → Микрофон</p><div class="grp">${o('ok','Разрешить только во время использования приложения')}${o('ask','Спрашивать каждый раз')}${o('denied','Запретить')}</div></div>` }
-function sysPick(){ const k=S.picker; const items=k==='gallery'?[['menu','Меню, стр. 1 · 19:42'],['menu2','Меню, стр. 2 · 19:42'],['tea','Чай · 18:10']]:[['Договор аренды.pdf','248 КБ · Загрузки'],['Счёт октябрь.xlsx','36 КБ · Документы'],['Паспорт объекта.pdf','1,2 МБ · Загрузки']];
+function sysPick(){ const k=S.picker; const items=k==='gallery'?[['menu','Меню, стр. 1 · 19:42'],['menu2','Меню, стр. 2 · 19:42'],['tea','Чай · 18:10']]:[['Договор аренды.pdf','248 КБ · Загрузки'],['Счёт октябрь.xlsx','36 КБ · Документы'],['Паспорт объекта.pdf','1,2 МБ · Загрузки']];
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="pickback">${I.back}</button>${k==='gallery'?'Выберите фото':'Недавние файлы'}</div>
   ${k==='gallery'?`<div class="pgrid">${items.map(([c,t])=>`<button data-pickitem="${c}" aria-label="${t}" aria-pressed="${(S.pickSel||[]).includes(c)}"><i class="th ${c}"></i><span class="psel">${(S.pickSel||[]).includes(c)?(S.pickSel.indexOf(c)+1):''}</span></button>`).join('')}</div><div style="display:flex;justify-content:flex-end;padding:12px 16px"><button class="fbtn" data-act="pickdone" ${(S.pickSel||[]).length?'':'disabled'}>Готово${(S.pickSel||[]).length?' ('+S.pickSel.length+')':''}</button></div>`:`<div class="grp">${items.map(([n,s])=>`<button class="it" data-pickitem="${n}|${s.split(' · ')[0]}">${I.doc}<span><b style="font-weight:500">${n}</b><br><small style="color:#777">${s}</small></span></button>`).join('')}</div>`}
   <p style="margin:12px 22px;font-size:12.5px;color:#777">Системный ${k==='gallery'?'выбор фото (Photo Picker)':'выбор файла (ACTION_OPEN_DOCUMENT)'} — разрешения на все файлы приложению не нужны.</p></div>` }
@@ -373,7 +373,7 @@ function sheetEmpty(){
   return `<div class="feed"><div class="sempty"><b>Вам чего?</b><div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div></div></div>` }
 /** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
 function sheetStrip(){
-  if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
+  if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
   if (curMode().id==='main' && !brainReady() && brainOf().kind==='api') return `<div class="ostrip"><span>🧠</span><p>Мозг не подключён — пока только команды телефона</p><button class="tbtn" data-act="brainfromsheet">Подключить</button></div>`;
   return '' }
 function sideCue(){ if (!S.sideCue || !S.ov) return ''; return `<div class="sidecue">${S.w.profile==='unknown'?'Так же — долгое нажатие «Домой»':'Так открывается по боковой кнопке'}<i></i></div>` }

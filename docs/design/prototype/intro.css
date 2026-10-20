@@ -104,67 +104,70 @@
 .sc1 .dk .tx{opacity:0;animation:dtx var(--T) infinite}
 @keyframes dtx{0%,29%{opacity:0}31%,97%{opacity:1}100%{opacity:0}}
 
-/* ── 2. настроил один раз: карточка режима с правилами → штамп → через неделю одно нажатие, ответ по тем же правилам ── */
-.sc2{--T:6s}
-.sc2 .mcard{position:absolute;inset:6px 0;background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 10px 26px -16px rgba(14,26,54,.5);animation:mc var(--T) infinite}
-@keyframes mc{0%,50%{opacity:1;transform:none}56%,100%{opacity:0;transform:translateY(-24px) scale(.92)}}
-.sc2 .mh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.sc2 .mi{width:36px;height:36px;border-radius:12px;background:var(--local-t);display:grid;place-items:center;font-size:19px}
-.sc2 .mh b{font-size:19px;font-weight:700}
-.sc2 .mh small{margin-left:auto;font-size:12px;color:var(--soft)}
-.sc2 .rule{display:flex;gap:9px;align-items:center;font-size:14.5px;padding:7px 0;border-top:1px solid #ECEEE8;opacity:0;animation:var(--k) var(--T) infinite both}
-.sc2 .rule i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;background:var(--local-t);color:var(--local-d);font-size:11px;font-weight:700;display:grid;place-items:center}
-.sc2 .rule:nth-of-type(2){--k:r1}.sc2 .rule:nth-of-type(3){--k:r2}.sc2 .rule:nth-of-type(4){--k:r3}
-.sc2 .start{--k:r4;margin-top:8px;display:inline-block;font-size:13.5px;color:var(--soft);background:#ECEEE8;border-radius:999px;padding:5px 12px;opacity:0;animation:r4 var(--T) infinite both}
-.sc2 .start b{color:var(--ink)}
-@keyframes r1{0%,3%{opacity:0;transform:translateX(-10px)}7%,100%{opacity:1;transform:none}}
-@keyframes r2{0%,11%{opacity:0;transform:translateX(-10px)}15%,100%{opacity:1;transform:none}}
-@keyframes r3{0%,19%{opacity:0;transform:translateX(-10px)}23%,100%{opacity:1;transform:none}}
-@keyframes r4{0%,27%{opacity:0;transform:translateX(-10px)}31%,100%{opacity:1;transform:none}}
-.sc2 .stamp{position:absolute;right:14px;bottom:16px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ok);border:2.5px solid var(--ok);border-radius:10px;padding:5px 10px;opacity:0;transform:rotate(-8deg);animation:stmp var(--T) infinite}
-@keyframes stmp{0%,35%{opacity:0;transform:rotate(-8deg) scale(1.8)}38%{opacity:1;transform:rotate(-8deg) scale(.94)}40%,100%{opacity:1;transform:rotate(-8deg) scale(1)}}
-.sc2 .use{position:absolute;inset:0;opacity:0;animation:us var(--T) infinite}
-@keyframes us{0%,54%{opacity:0}58%,97%{opacity:1}100%{opacity:0}}
-.sc2 .later{text-align:center;font-size:13px;font-style:italic;color:var(--soft)}
-.sc2 .ms{top:26px;border-radius:22px}
-.sc2 .ms .h{margin-bottom:10px}
-.sc2 .thumb{width:84px;height:62px;border-radius:12px;margin-left:auto;position:relative;overflow:hidden;background:linear-gradient(160deg,#F7F1E3,#E6D8B8);opacity:0;animation:s1 var(--T) infinite both}
-.sc2 .thumb::after{content:"";position:absolute;inset:9px 10px;background:repeating-linear-gradient(#8E6E3E 0 2px,transparent 2px 9px);opacity:.55}
-.sc2 .ms .ai{font-size:14px;margin-top:10px;opacity:0;animation:s2 var(--T) infinite both}
-@keyframes s1{0%,61%{opacity:0;transform:scale(.8)}65%,100%{opacity:1;transform:none}}
-@keyframes s2{0%,67%{opacity:0;transform:translateY(6px)}71%,100%{opacity:1;transform:none}}
-.sc2 .chk{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-left:12px}
-.sc2 .chk span{font-size:12px;font-weight:600;color:var(--local-d);background:var(--local-t);border-radius:999px;padding:3px 9px;opacity:0;animation:var(--k) var(--T) infinite both}
-.sc2 .chk span:nth-child(1){--k:c1}.sc2 .chk span:nth-child(2){--k:c2}.sc2 .chk span:nth-child(3){--k:c3}.sc2 .chk span:nth-child(4){--k:c4}
-@keyframes c1{0%,73%{opacity:0;transform:scale(.6)}76%,100%{opacity:1;transform:none}}
-@keyframes c2{0%,76%{opacity:0;transform:scale(.6)}79%,100%{opacity:1;transform:none}}
-@keyframes c3{0%,79%{opacity:0;transform:scale(.6)}82%,100%{opacity:1;transform:none}}
-@keyframes c4{0%,82%{opacity:0;transform:scale(.6)}85%,100%{opacity:1;transform:none}}
+/* ── 2. «как обычно»: слева чат — просьба печатается строка за строкой, счётчик слов и секунд растёт; справа свой режим —
+   щёлк камерой, ответ по правилам за 3 с. Обе колонки стартуют вместе: разница — в том, что нужно сказать ── */
+@property --w{syntax:'<integer>';inherits:false;initial-value:0}
+@property --s{syntax:'<integer>';inherits:false;initial-value:0}
+.sc6{--T:8s;display:flex;gap:10px;align-items:stretch}
+.sc6 .col{flex:1;min-width:0;border-radius:18px;padding:11px 11px 10px;display:flex;flex-direction:column;position:relative}
+.sc6 .chat{background:#E2E5EB}
+.sc6 .vah{background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
+.sc6 .hd{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.sc6 .hd b{font-size:14px;font-weight:700}
+.sc6 .chat .hd b{color:#5B6478}
+.sc6 .hd small{margin-left:auto;font-size:10.5px;color:var(--soft)}
+.sc6 .ci{font-size:15px}
+.sc6 .bub{flex:1;background:#fff;border-radius:12px 12px 3px 12px;padding:8px 9px;font-size:11.5px;line-height:1.38;color:var(--ink);overflow:hidden;position:relative}
+.sc6 .tw{max-height:0;overflow:hidden;animation:tw var(--T) steps(9,end) infinite}
+@keyframes tw{0%,3%{max-height:0}78%,96%{max-height:150px}100%{max-height:0}}
+.sc6 .cnt{display:flex;justify-content:space-between;gap:4px;margin-top:8px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sc6 .chat .cnt{color:#6B7487}
+.sc6 .chat .cnt .w{counter-reset:w var(--w);animation:cw var(--T) linear infinite}
+.sc6 .chat .cnt .w::before{content:"✎\00a0" counter(w) "\00a0слов"}
+@keyframes cw{0%,3%{--w:0}78%,100%{--w:20}}
+.sc6 .cnt .t{counter-reset:s var(--s)}
+.sc6 .cnt .t::before{content:"0:" counter(s,decimal-leading-zero)}
+.sc6 .chat .cnt .t{animation:cs var(--T) linear infinite}
+@keyframes cs{0%,3%{--s:0}78%,100%{--s:40}}
+.sc6 .vah .cnt{color:var(--local-d)}
+.sc6 .vah .cnt .t{animation:cs2 var(--T) linear infinite}
+@keyframes cs2{0%,3%{--s:0}14%,100%{--s:3}}
+.sc6 .snap{position:relative;height:58px;display:flex;justify-content:flex-end}
+.sc6 .thumb{width:76px;height:56px;border-radius:10px;position:relative;overflow:hidden;background:linear-gradient(160deg,#F7F1E3,#E6D8B8);opacity:0;animation:sn1 var(--T) infinite both}
+.sc6 .thumb::after{content:"";position:absolute;inset:8px 9px;background:repeating-linear-gradient(#8E6E3E 0 2px,transparent 2px 8px);opacity:.55}
+@keyframes sn1{0%,4%{opacity:0;transform:scale(.8)}8%,96%{opacity:1;transform:none}100%{opacity:0}}
+.sc6 .fl{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
+@keyframes fl{0%,3%{opacity:0}4%{opacity:.9}8%,100%{opacity:0}}
+.sc6 .ans{position:relative;font-size:12.5px;line-height:1.35;font-weight:500;padding-left:11px;margin-top:9px;opacity:0;animation:sn2 var(--T) infinite both}
+.sc6 .ans::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--server)}
+@keyframes sn2{0%,10%{opacity:0;transform:translateY(6px)}14%,96%{opacity:1;transform:none}100%{opacity:0}}
+.sc6 .chk{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.sc6 .chk span{font-size:10.5px;font-weight:600;color:var(--local-d);background:#fff;border-radius:999px;padding:2px 7px;opacity:0;animation:sn3 var(--T) infinite both}
+.sc6 .chk span:nth-child(2){animation-name:sn4}.sc6 .chk span:nth-child(3){animation-name:sn5}
+@keyframes sn3{0%,15%{opacity:0;transform:scale(.6)}18%,96%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes sn4{0%,18%{opacity:0;transform:scale(.6)}21%,96%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes sn5{0%,21%{opacity:0;transform:scale(.6)}24%,96%{opacity:1;transform:none}100%{opacity:0}}
+.sc6 .vah .cnt{margin-top:auto}
 
-/* ── 3. сразу камера или голос: два телефона, одна и та же боковая кнопка — открывается разное ── */
-.sc3{--T:3.6s;display:flex;gap:18px;justify-content:center;align-items:flex-start}
-.sc3 .tel{width:136px;display:flex;flex-direction:column;align-items:center}
-.sc3 .ml{font-size:15px;font-weight:700;margin-bottom:8px}
-.sc3 .dev{position:relative;width:126px;height:200px;border-radius:24px;background:#1A2236;padding:5px}
-.sc3 .key{position:absolute;right:-5px;top:62px;width:5px;height:34px;border-radius:0 3px 3px 0;background:#3A4258;animation:key var(--T) infinite}
-@keyframes key{0%,9%{right:-5px;background:#3A4258;box-shadow:none}12%,17%{right:-2px;background:var(--local);box-shadow:0 0 0 4px rgba(232,163,23,.35),0 0 18px 4px rgba(232,163,23,.6)}22%,100%{right:-5px;background:#3A4258;box-shadow:none}}
-.sc3 .scr2{position:relative;height:100%;border-radius:19px;overflow:hidden;background:linear-gradient(170deg,#5C7391,#2B3B55)}
-.sc3 .home{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 14px;padding:18px 14px}
-.sc3 .home i{aspect-ratio:1;border-radius:8px;background:rgba(255,255,255,.28)}
-.sc3 .sht{position:absolute;left:0;right:0;bottom:0;height:92px;background:var(--paper);border-radius:16px 16px 0 0;padding:6px 8px;text-align:center;transform:translateY(100%);animation:sht var(--T) cubic-bezier(.3,.8,.3,1) infinite}
-@keyframes sht{0%,16%{transform:translateY(100%)}24%,94%{transform:none}100%{transform:translateY(100%)}}
-.sc3 .sht .g{width:22px;height:3px;border-radius:2px;background:#CBD0C6;margin:0 auto 10px}
-.sc3 .sht small{display:block;margin-top:6px;font-size:11.5px;color:var(--soft)}
-.sc3 .sht.cam{height:100%;border-radius:16px}
-.sc3 .vf{position:relative;height:130px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#3B3F48,#22252C)}
-.sc3 .shelf{position:absolute;left:0;right:0;bottom:22px;height:5px;background:#6B5A44}
-.sc3 .jar{position:absolute;bottom:27px;width:30px;height:50px;border-radius:6px 6px 4px 4px;background:linear-gradient(90deg,#C25B2A,#E8823E 60%,#B54F22)}
-.sc3 .jar::before{content:"";position:absolute;left:4px;right:4px;top:-8px;height:10px;border-radius:3px;background:#2E2E2E}
-.sc3 .jar::after{content:"";position:absolute;left:4px;right:4px;top:16px;height:17px;background:#F3E6C8;border-radius:2px}
-.sc3 .jar.a{left:20px;filter:hue-rotate(80deg) saturate(.7)}.sc3 .jar.b{left:62px}
-.sc3 .shut{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);margin:8px auto 0;background:#fff}
-.sc3 .cap{white-space:nowrap;margin-top:10px;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--local-t);border-radius:999px;padding:5px 12px;opacity:0;animation:cap var(--T) infinite}
-@keyframes cap{0%,24%{opacity:0;transform:translateY(6px)}30%,94%{opacity:1;transform:none}100%{opacity:0}}
+/* ── 3. режимы — кнопки пульта: по очереди переворачиваются, на обороте — уже написанная просьба ── */
+.sc7{--T:10s;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr auto;gap:10px;perspective:700px}
+.sc7 .key{position:relative;transform-style:preserve-3d;animation:var(--k) var(--T) infinite;min-height:0}
+.sc7 .k0{--k:fp0}.sc7 .k1{--k:fp1}.sc7 .k2{--k:fp2}.sc7 .k3{--k:fp3}
+@keyframes fp0{0%,4%{transform:none}8%,20%{transform:rotateY(180deg)}24%,100%{transform:none}}
+@keyframes fp1{0%,26%{transform:none}30%,42%{transform:rotateY(180deg)}46%,100%{transform:none}}
+@keyframes fp2{0%,48%{transform:none}52%,64%{transform:rotateY(180deg)}68%,100%{transform:none}}
+@keyframes fp3{0%,70%{transform:none}74%,92%{transform:rotateY(180deg)}96%,100%{transform:none}}
+.sc7 .fc{position:absolute;inset:0;border-radius:18px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;padding:12px}
+.sc7 .fr{background:var(--surf);border:1.5px solid var(--line);box-shadow:0 8px 20px -14px rgba(14,26,54,.5);justify-content:space-between}
+.sc7 .k3 .fr{border:2px solid var(--local);background:var(--local-t)}
+.sc7 .ki{font-size:22px}
+.sc7 .fr b{font-size:15px;font-weight:700}
+.sc7 .fr small{font-size:11px;font-weight:600;color:var(--local-d)}
+.sc7 .k0 .fr small{color:var(--soft)}
+.sc7 .bk{background:#FFFBEF;border:1.5px dashed #E3C77E;transform:rotateY(180deg)}
+.sc7 .bk small{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--local-d);margin-bottom:4px}
+.sc7 .bk p{margin:0;font-size:12px;line-height:1.35;color:var(--ink);font-style:italic}
+.sc7 .plus{grid-column:1/3;text-align:center;font-size:12.5px;color:var(--soft);padding:2px 0}
 
 @media (prefers-reduced-motion:reduce){.sc *,.sc *::before,.sc *::after{animation-duration:0s!important;animation-delay:0s!important}}
 .sc1 .chain .dk>span{background:none;border:0;padding:0;border-radius:0}
