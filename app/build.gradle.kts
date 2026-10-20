@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -20,7 +22,23 @@ android {
         ndk { abiFilters += "arm64-v8a" } // распознавание: только arm64 — S24 и эмулятор на Apple Silicon
     }
 
+    // Выпускная подпись — из local.properties (не в git): ключ лежит вне репозитория. Нет записей — выпускная сборка без подписи.
+    val localProps = Properties().apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
+    val releaseStore = localProps.getProperty("vahter.release.storeFile")
+    signingConfigs {
+        if (releaseStore != null) create("release") {
+            storeFile = file(releaseStore)
+            storePassword = localProps.getProperty("vahter.release.storePassword")
+            keyAlias = localProps.getProperty("vahter.release.keyAlias")
+            keyPassword = localProps.getProperty("vahter.release.keyPassword")
+        }
+    }
+
     buildTypes {
+        release {
+            isMinifyEnabled = false   // распознавание (onnxruntime) ходит через JNI — ужимать код без правил нельзя
+            if (releaseStore != null) signingConfig = signingConfigs.getByName("release")
+        }
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".dev"

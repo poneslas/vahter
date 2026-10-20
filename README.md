@@ -34,7 +34,9 @@ adb shell cmd role add-role-holder android.app.role.ASSISTANT ru.poneslas.vahter
 adb shell input keyevent KEYCODE_ASSIST        # открыть лист
 ```
 
-Отладочная сборка ставится как отдельное приложение `ru.poneslas.vahter.dev` и подписана отладочным ключом (релизный ключ — после проверки).
+Отладочная сборка ставится как отдельное приложение `ru.poneslas.vahter.dev` и подписана отладочным ключом.
+
+Выпускная — `./gradlew :app:assembleRelease` → `app/build/outputs/apk/release/app-release.apk`, приложение `ru.poneslas.vahter`. Подпись берётся из `local.properties` (`vahter.release.*`, не в git); сам ключ — вне репозитория. Без ключа обновление выпускной сборки не подписать: держите резервную копию ключа и паролей.
 
 ### Проверка на S24 (≈10 минут)
 
