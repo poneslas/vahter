@@ -151,15 +151,9 @@
 @keyframes sn1{0%,4%{opacity:0;transform:scale(.8)}8%,96%{opacity:1;transform:none}100%{opacity:0}}
 .sc6 .flash{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
 @keyframes fl{0%,3%{opacity:0}4%{opacity:.9}8%,100%{opacity:0}}
-.sc6 .ans{position:relative;font-size:12.5px;line-height:1.35;font-weight:500;padding-left:11px;margin-top:9px;opacity:0;animation:sn2 var(--T) infinite both}
+.sc6 .ans{position:relative;font-size:12.5px;line-height:1.4;font-weight:400;color:var(--ink);padding-left:11px;margin-top:10px;opacity:0;animation:sn2 var(--T) infinite both}
 .sc6 .ans::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--server)}
 @keyframes sn2{0%,10%{opacity:0;transform:translateY(6px)}14%,96%{opacity:1;transform:none}100%{opacity:0}}
-.sc6 .chk{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.sc6 .chk span{font-size:10.5px;font-weight:600;color:var(--local-d);background:#fff;border-radius:999px;padding:2px 7px;opacity:0;animation:sn3 var(--T) infinite both}
-.sc6 .chk span:nth-child(2){animation-name:sn4}.sc6 .chk span:nth-child(3){animation-name:sn5}
-@keyframes sn3{0%,15%{opacity:0;transform:scale(.6)}18%,96%{opacity:1;transform:none}100%{opacity:0}}
-@keyframes sn4{0%,18%{opacity:0;transform:scale(.6)}21%,96%{opacity:1;transform:none}100%{opacity:0}}
-@keyframes sn5{0%,21%{opacity:0;transform:scale(.6)}24%,96%{opacity:1;transform:none}100%{opacity:0}}
 .sc6 .vah .cnt{margin-top:auto}
 
 /* ── 3. режимы — кнопки пульта: по очереди переворачиваются, на обороте — уже написанная просьба ── */

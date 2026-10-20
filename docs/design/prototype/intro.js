@@ -22,8 +22,7 @@ function introScene(k) {
       <div class="timer tchat">${sw}<span class="t"></span></div></div>
     <div class="colw"><div class="col vah"><div class="hd"><span class="ci">🍽</span><span class="tt"><b>Гастрогид</b><small>мой режим</small></span></div>
       <div class="snap"><span class="thumb"><i class="mcrd"><b>МЕНЮ</b></i></span><span class="flash"></span></div><div class="scap">📷 отправил фото меню</div>
-      <div class="ans">Судак на гриле и морс — 1200 ₽.</div>
-      <div class="chk"><span>✓ не остро</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div>
+      <div class="ans">Возьмите судака на гриле и морс — 1200${'\u00a0'}₽. Не остро и без орехов — как вы любите.</div>
       <div class="cnt"><span>⏻ 1 нажатие</span></div></div>
       <div class="timer tvah">${sw}<span class="t"></span></div></div></div>`; }
   // «Знает, кто зачем пришёл»: режимы — кнопки пульта; у каждой на обороте уже написанная просьба. Нажал — она сказана.
