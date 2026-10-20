@@ -74,8 +74,8 @@ async function shotGo(q){
   if(!q) setTimeout(()=>$('#cin')?.focus(),50); }
 /** Разрешения — только из приложения: системное окно поверх листа на S24 не показывается (уходит под лист). */
 function permInApp(kind){ S.permRet={screen:S.screen==='app'?'home':S.screen, side:S.pendingSide}; S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat';
-  S.dialog = kind==='mic' ? {ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}
-    : {ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','notif_no','sec2']]};
+  S.dialog = kind==='mic' ? {ic:'🎙',title:'Разрешить приложению «Вахтёр» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}
+    : {ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','notif_no','sec2']]};
   render() }
 function permBack(){ const R=S.permRet; if(!R) return false; S.permRet=null; S.screen=R.screen; openOverlay(R.side?'side':'снова'); return true }
 /** На заблокированном экране по умолчанию ничего не открывается: сначала разблокировка (тот же путь, что проверен на S24), микрофон до неё не включается. */

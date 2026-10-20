@@ -36,7 +36,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.w){ let v=t.dataset.v; if(v==='true')v=true; if(v==='false')v=false; return setWorld(t.dataset.w,v) }
   if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; return render() }
   if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; S.fromSheet=null; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
-  if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Тася — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
+  if (t.dataset.role){ S.w.role=t.dataset.role; S.dismissed=null; trace(t.dataset.role==='ours'?'Вахтёр — помощник. Окном это не запросить (requestable=false) — только экраном настроек.':'Выбран другой помощник.'); return render() }
   if (t.dataset.micperm){ S.w.mic=t.dataset.micperm; return render() }
   if (t.dataset.side){ S.w.side=t.dataset.side; S.dismissed=null; return render() }
   if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); addAct({t:'act',i:'⏰',x:'Будильник поставлен · '+t.dataset.chip,s:'на телефоне · прозвенит через 21 ч',btn:'Открыть будильники',kind:'D',id:Date.now()},{tool:'alarm.set',who:'по правилам',phrase:'поставь будильник → '+t.dataset.chip,params:'time='+t.dataset.chip,confirm:'выбор варианта',lock:S.w.locked}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
@@ -64,10 +64,10 @@ document.addEventListener('click', async e=>{
     case 'sysback': { const R=S.ret; S.screen=R?.screen||'app'; S.page=R?.page||S.page; if(R?.ov){ S.ov=R.ov; S.ov.live = S.w.mic==='ok' ? '<span class="st">Микрофон разрешён — зажмите и говорите</span>' : S.ov.live } return render() }
     case 'dismiss': S.dismissed=issue()?.t; return render();
     case 'dl': S.ov=null; if(S.w.model==='loading'||S.w.model==='ready'){ S.screen='app'; if(S.onboarded) S.page='about'; return render() } return startDl();
-    case 'askmic': if (S.w.mic==='denied'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() } S.dialog={ic:'🎙',title:'Разрешить приложению «Тася» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
+    case 'askmic': if (S.w.mic==='denied'){ S.ret={screen:S.screen,page:S.page,ov:null}; S.screen='sysmic'; return render() } S.dialog={ic:'🎙',title:'Разрешить приложению «Вахтёр» записывать аудио?',opts:[['При использовании приложения','mic_ok'],['Только в этот раз','mic_ok'],['Не разрешать','mic_no','sec2']]}; return render();
     case 'notifno': S.feed=S.feed.filter(f=>f.t!=='notifask'); S.keepScroll=true; return render();
     case 'permmic': return permInApp('mic');
-    case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Тася» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
+    case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
     case 'tgsend': S.tg.push({me:true,html:'/tasya_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/tasya/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
@@ -100,7 +100,7 @@ document.addEventListener('click', async e=>{
     case 'journal': S.page='journal'; S.jopen=null; return render();
     case 'lockscope': S.dialog={title:'На заблокированном экране',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
-    case 'sideyes': S.sideProbe='yes'; trace('Пользователь подтвердил: кнопка открывает Тасю. Запомнили — баннер больше не нужен.','p'); return render();
+    case 'sideyes': S.sideProbe='yes'; trace('Пользователь подтвердил: кнопка открывает Вахтёра. Запомнили — баннер больше не нужен.','p'); return render();
     case 'sideno': S.sideProbe='no'; return render();
     case 'sidereport': S.dialog={title:'Сообщить разработчику',text:'Через «Поделиться» уйдёт: модель телефона, версия Android и оболочки, что не сработало, значения найденных ключей. Своего сервера не нужно.',opts:[['Поделиться…','x'],['Отмена','x','sec2']]}; return render();
     case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
@@ -163,7 +163,7 @@ function cardBtn(b){
 /** Починить системный доступ: ещё не спрашивали — системное окно; отказано — системный экран настроек. Из листа — через приложение (на S24 окна из листа уходят под лист). */
 function permFix(k){ const st=S.w.perms[k], fromSheet=!!S.ov;
   if (fromSheet){ S.ov=null; S.screen='app'; S.onboarded=true; S.page='chat' }
-  if (st==='ask' && k!=='dnd'){ S.permKind=k; S.permSheet=fromSheet; S.dialog={title:`Разрешить приложению «Тася» доступ: ${SYS_PERMS[k]}?`,opts:[[k==='location'?'При использовании приложения':'Разрешить','sysperm_ok'],['Не разрешать','sysperm_no','sec2']]}; return render() }
+  if (st==='ask' && k!=='dnd'){ S.permKind=k; S.permSheet=fromSheet; S.dialog={title:`Разрешить приложению «Вахтёр» доступ: ${SYS_PERMS[k]}?`,opts:[[k==='location'?'При использовании приложения':'Разрешить','sysperm_ok'],['Не разрешать','sysperm_no','sec2']]}; return render() }
   S.permKind=k; S.permRet2={screen:S.screen,page:S.page,sheet:fromSheet?'home':null}; S.screen='sysperm'; trace(k==='dnd'?'Доступ к «Не беспокоить» — особый: только системный экран, окна разрешения нет.':'Отказано раньше — Android больше не покажет окно, ведём в системные настройки приложения.','p'); return render() }
 /** Разблокировка из листа (проверено на S24): лист прячется, своя активность поверх блокировки просит отпечаток, после — лист возвращается и выполняет действие. */
 async function unlockFromSheet(then){ const keep=S.ov; S.ov=null; S.unlocking=true; render(); trace('Лист спрятан → своя активность (setShowWhenLocked) → запрос разблокировки, когда окно получило фокус. Из onCreate система отменяет его через ~180 мс.','p');

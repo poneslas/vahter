@@ -39,9 +39,9 @@ async function deliverModeIn(text, via, img, bubble){
   const m=curMode(); const my=++token; S.busy=true;
   if(!bubble) S.feed.push({t:'me',x:text||'',via:img?(text?via+' · с фото':'фото'):via,img}); if(S.ov){ S.ov.live=''; S.ov.liveQ=false } render();
   if (!brainReady()){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:'Мозг не подключён',text:'Без него режим не ответит. Команды телефона работают и так.',btns:[['Подключить','brainsetup','pri']]}); S.busy=false; return render() }
-  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи. Отправлю, когда появится',s:'в очереди'}); S.busy=false; return render() }
+  if (!brainOk()){ S.feed.push({t:'q',x:qText(),s:'в очереди'}); S.busy=false; return render() }
   const B=brainOf(m); if (B.kind==='api') trace(`Запрос в ${B.title}: промпт режима «${esc(m.title)}» + вся история режима (${S.feed.filter(x=>x.t==='me'||x.t==='ai').length} сообщ., фото тоже) + новая реплика. Начало совпадает с прошлым запросом — провайдер берёт его из кэша.${m.tools?' Действия телефона переданы как функции.':' Действий телефона у режима нет.'}`,'h'); else trace(`Режим «${m.title}»: thread_id=${m.id} → своя сессия Hermes (…:tasya:dm:&lt;телефон&gt;:${m.id}). Промпт режима плагин подмешивает в ход через pre_llm_call${m.tools?'':'; действия телефона для режима выключены — меньше инструментов, быстрее ответ'}.`,'h');
-  maybeAskNotif(); if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true } render();
+  maybeAskNotif(); if (S.ov){ S.ov.live=`<span class="st h shim">Звоню наверх · ${brainOf().title}…</span>`; S.ov.liveQ=true } render();
   await wait(img?1300:900); if(my!==token) return;
   const album = img && img.kind==='album' ? img : null; if (album){ trace(B.kind==='api'?`Одна реплика с ${album.items.length} картинками (image_url, base64 в теле запроса). В следующих запросах альбом едет снова — вся история целиком; одинаковое начало берётся из кэша.`:`Одно событие с ${album.items.length} путями в media_urls; модель со зрением получает их напрямую, без зрения — через vision_analyze по одному.`,'h'); img = album.items.find(x=>x.cls==='menu') || album.items[0] }
   if (m.id==='m-4c1e' && album && album.items.some(x=>x.cls==='menu2'))
@@ -79,7 +79,7 @@ async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиа�
 
 async function think(my,steps){
   maybeAskNotif();
-  if (S.ov){ S.ov.live=`<span class="st h shim">${brainOf().title} думает…</span>`; S.ov.liveQ=true }
+  if (S.ov){ S.ov.live=`<span class="st h shim">Звоню наверх · ${brainOf().title}…</span>`; S.ov.liveQ=true }
   const st={t:'steps',id:Date.now(),run:true,cur:'Думаю…',items:[],plan:null,sec:0}; S.feed.push(st); render(); let ms=0;
   for (const s of steps){
     if (s.todo){ // вызов todo_list: в шагах не показываем, обновляем план целиком по ответу инструмента
@@ -100,7 +100,7 @@ async function route(key,my){
   if (key==='alarm'){ S.feed.push({t:'ph',x:'На когда?'}); S.feed.push({t:'chips',c:['7:00','7:30','8:00']}); trace('Не хватает времени → варианты без модели: стоящие будильники, обычный подъём, первая встреча минус час.','p'); return }
   const B=brainOf();
   if (!brainReady(B)){ S.feed.push({t:'card',who:'h',head:'Нужен мозг',title:B.kind==='api'?'Мозг не подключён':'Hermes не подключён',text:'Команды телефона работают и так.',btns:[['Подключить',B.kind==='api'?'brainsetup':'connect','pri']]}); trace('Не команда телефона, а сервера нет — предлагаем подключить.','e'); return }
-  if (!brainOk()){ S.feed.push({t:'q',x:'Нет связи — отправлю, когда появится',s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
+  if (!brainOk()){ S.feed.push({t:'q',x:qText(),s:'в очереди'}); trace('Вопрос в очереди (Room); уйдёт фоновой задачей, даже если закрыть лист.','e'); return }
   if (key==='dnd'){
     if (S.w.perms.dnd!=='ok'){ S.feed.push({t:'card',who:'p',head:'Телефон · «Не беспокоить»',title:'Нужен доступ к «Не беспокоить»',text:'Android выдаёт его один раз на отдельном экране настроек.',btns:[['Открыть','permfix:dnd','pri'],['Отмена','x','gh']]}); trace('Своё правило «Не беспокоить» без особого доступа не включить (SecurityException, пробник). Просим при первой просьбе — не в первом запуске.','p'); return }
     addAct({t:'act',i:'🌙',x:'Не беспокоить · включено',s:'на телефоне',btn:'Отменить',kind:'C',id:Date.now()},{tool:'dnd.set',who:'по правилам',phrase:'включи не беспокоить',params:'on=true',confirm:'сразу',lock:S.w.locked}); return }
@@ -161,6 +161,8 @@ export RESTIC_PASSWORD_FILE=/root/.restic-pass
 restic init</pre></div><!--b--><ol start="3"><li>Добавьте запуск по расписанию:</li></ol><div class="code"><div class="ch"><span>ini</span><button>Копировать</button></div><pre>[Timer]
 OnCalendar=*-*-* 03:30
 Persistent=true</pre></div><!--b--><h4>Сколько стоит</h4><div class="tbl"><table><tr><th>Вариант</th><th>Место</th><th>В месяц</th><th>Восстановление</th></tr><tr><td>S3, стандарт</td><td>~140 ГБ</td><td>~280 ₽</td><td>минуты</td></tr><tr><td>S3, холодное</td><td>~140 ГБ</td><td>~90 ₽</td><td>часы</td></tr><tr><td>Второй сервер</td><td>200 ГБ</td><td>~450 ₽</td><td>минуты</td></tr></table></div><!--b--><blockquote>Пароль от репозитория храните отдельно от сервера: без него бэкап не открыть.</blockquote><!--b--><p>Все команды — в памятке ниже. Если хотите, могу сам создать бакет и включить таймер — понадобится ваше «да».</p><div class="src-row"><span class="cite">restic.readthedocs.io</span><span class="cite">wiki.archlinux.org</span><span class="cite">habr.com</span></div>`;
+/** Наверху — мозг: без сети не дозвониться, сервер молчит — не берут трубку. Вахтёр при этом на месте. */
+const qText=()=>S.w.net==='none'?'Нет связи. Передам наверх, когда появится':'Наверху не берут трубку. Передам, когда ответят';
 function flushQueue(){ let n=0; S.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло из очереди'; n++ } }); if(n) trace(`Связь есть — очередь (${n}) ушла по порядку.`,'i') }
 
 let toastT=null;

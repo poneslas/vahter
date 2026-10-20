@@ -1,23 +1,23 @@
 /* Приветствие: девиз + 4 карточки. Сцены 1–3 (v3: гонка, правила режима, два телефона) — пока только здесь; приложение (ui/Intro.kt) — прошлая версия. Сцены — только разметка, движение в intro.css. */
 const INTRO = [
-  { k: 0, h: 'Зажал кнопку — сказал — сделано', p: 'Как Алиса или Gemini — только быстрее, без рекламы и с моделью, которую выбираете вы.' },
-  { k: 1, h: 'Не чат, а кнопка', p: 'Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.' },
-  { k: 2, h: 'Настроил один раз', p: 'Язык перевода, вкусы, аллергия — режим помнит ваши правила. Дальше хватает одной кнопки.' },
-  { k: 3, h: 'Сразу камера или голос', p: 'Режим сам решает, с чего начать: меню и вывески — камерой, вопросы — голосом. На одно нажатие меньше.' },
-  { k: 4, h: 'Сказал — сделано', p: 'Будильник, таймер, календарь, звонок — мгновенно, прямо на телефоне, даже без интернета.' },
+  { k: 0, h: 'Вахтёр. Всегда на месте', p: 'Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.' },
+  { k: 1, h: 'Своих — без очереди', p: 'Не нужно открывать приложение и заводить новый чат. Нужный разговор уже ждёт под кнопкой.' },
+  { k: 2, h: 'Своих знает в лицо', p: 'Язык перевода, вкусы, аллергия — режим помнит ваши правила. Дальше хватает одной кнопки.' },
+  { k: 3, h: 'Знает, кто зачем пришёл', p: 'Меню и вывески — сразу камерой, вопросы — сразу голосом. На одно нажатие меньше.' },
+  { k: 4, h: 'Ключи от всех кабинетов', p: 'Будильник, таймер, календарь, звонок — сразу, прямо на телефоне. Сложное — звонит наверх, вашему мозгу.' },
 ];
 const WAVE = '<div class="wave">' + '<i></i>'.repeat(7) + '</div>';
 
 function introScene(k) {
-  if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span></div>`;
+  if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span><span class="post"><i></i>Вахта · на месте</span></div>`;
   if (k === 1) {
     const st = ['Разблокировать','Найти приложение','Открыть','Новый чат'];
     return `<div class="sc sc1">
       <div class="card usual"><div class="hd"><span class="apps"><i></i><i></i><i></i><i></i></span><b>ИИ-приложение</b><span class="clk"></span></div>
-        <div class="chain">${st.map(s=>`<span>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
-      <div class="card tasy"><div class="hd"><span class="pw">⏻</span><b>Тася</b><span class="clk"></span><span class="ok">✓</span></div>
+        <div class="chain">${st.map((s,j)=>`<span class="tk"><em>№${j+1}</em>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
+      <div class="card tasy"><div class="hd"><span class="pw">⏻</span><b>Вахтёр</b><small class="ql free">без очереди</small><span class="clk"></span><span class="ok">✓</span></div>
         <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${'<b></b>'.repeat(9)}</span><span class="tx">Сколько варить гречку?</span></span></div>
-        <div class="loc">🔒 Диктовка на телефоне, голос никуда не уходит</div>
+        <div class="loc">🔒 Чужих не пустит: голос остаётся на телефоне</div>
         <div class="ai">15–20 минут, воды вдвое больше.</div></div></div>`;
   }
   if (k === 2) return `<div class="sc sc2">
@@ -26,7 +26,7 @@ function introScene(k) {
       <div class="rule"><i>2</i>Аллергия на орехи</div>
       <div class="rule"><i>3</i>Бюджет до 1500 ₽, советуй 2–3 блюда</div>
       <div class="start">Начинать с: <b>📷 камеры</b></div>
-      <div class="stamp">записано один раз</div></div>
+      <div class="stamp">пропуск выдан</div></div>
     <div class="use"><div class="later">через неделю, в ресторане…</div>
       <div class="ms"><div class="g"></div><div class="h"><i></i><b>Гастрогид</b> · одно нажатие</div>
         <div class="thumb menu"></div>
@@ -45,7 +45,7 @@ function introScene(k) {
     <div class="me">Будильник на 7 и таймер на минуту</div>
     <div class="acts"><div class="act2"><span class="ic">⏰<span class="ok">✓</span></span><span><b>Будильник поставлен · 7:00</b><small>прозвенит через 9 ч</small></span></div>
       <div class="act2"><span class="ic">⏱<span class="ok">✓</span></span><span><b>Таймер запущен · 1:00</b><small>осталось 0:59</small></span></div></div>
-    <span class="off">✈ без интернета — тоже работает</span></div></div>`;
+    <span class="off">✈ нет связи — вахтёр всё равно на месте</span><span class="up">☎ сложное — звонок наверх: DeepSeek или Hermes</span></div></div>`;
 }
 
 function introHtml() {

@@ -23,7 +23,7 @@ function issue(){
   if (S.w.model==='none') return {k:'p',t:`Чтобы говорить голосом, скачайте распознавание — ${mb(MODEL_TOTAL)} МБ, один раз.`,a:[['Не сейчас','dismiss'],['Скачать','dl']]};
   if (S.w.role!=='ours') return {k:'p',t:'Цифровым помощником выбран Gemini — боковая кнопка откроет его.',a:[['Не сейчас','dismiss'],['Настроить','sysrole']]};
   if (S.w.profile==='unknown' && S.w.role==='ours' && S.sideProbe!=='yes') return S.sideProbe==='no'
-      ? {k:'p',t:'Выберите «Тася» цифровым помощником для боковой кнопки: Настройки → кнопки или жесты → помощник. Пункты зависят от телефона.',a:[['Сообщить разработчику','sidereport'],['Открыть настройки','sysside']]}
+      ? {k:'p',t:'Выберите «Вахтёр» цифровым помощником для боковой кнопки: Настройки → кнопки или жесты → помощник. Пункты зависят от телефона.',a:[['Сообщить разработчику','sidereport'],['Открыть настройки','sysside']]}
       : {k:'p',t:'Зажмите боковую кнопку. Открылось окно ассистента?',a:[['Нет, другое','sideno'],['Да','sideyes']]};
   if (S.w.side==='double') return {k:'p',t:'Ассистент открывается двойным нажатием боковой кнопки. Для удержания: Боковая кнопка → Нажатие и удержание → Цифровой помощник.',a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
   if (S.w.side!=='assistant') return {k:'p',t:`Боковая кнопка открывает ${S.w.side==='bixby'?'Bixby':'меню выключения'}.`,a:[['Не сейчас','dismiss'],['Настроить','sysside']]};
@@ -89,7 +89,7 @@ function attHtml(a){
 
 /* ───────── экраны ───────── */
 function home(){
-  const apps=[['📞','#2F9E5B','Телефон'],['💬','#3B82F6','Сообщения'],['✈️','#2AABEE','Telegram','tg'],['📷','#555','Камера'],['⏰','#1F2937','Часы'],['📅','#E05D44','Календарь'],['⚙️','#6B7280','Настройки'],['ours','','Тася','app']];
+  const apps=[['📞','#2F9E5B','Телефон'],['💬','#3B82F6','Сообщения'],['✈️','#2AABEE','Telegram','tg'],['📷','#555','Камера'],['⏰','#1F2937','Часы'],['📅','#E05D44','Календарь'],['⚙️','#6B7280','Настройки'],['ours','','Вахтёр','app']];
   return `<div class="layer home">${statusBar(false)}<div class="clk">9:41</div><div class="dt">пятница, 17 октября</div>
   <div class="grid">${apps.map(a=>`<button class="app" data-open="${a[3]||''}">${a[0]==='ours'?oursIcon():`<span class="ico" style="background:${a[1]}">${a[0]}</span>`}${a[2]}</button>`).join('')}</div>
   <div class="dock"><span class="ico" style="background:#2F9E5B">📞</span><span class="ico" style="background:#3B82F6">💬</span><span class="ico" style="background:#F59E0B">🌐</span><span class="ico" style="background:#555">📷</span></div></div>`;
@@ -101,7 +101,7 @@ function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; retu
 function liveHtml(){
   if (S.rec){ const ph=PHR[S.rec.key]||{w:[]}; const n=S.rec.n; const fx=Math.max(0,n-2);
     const lbl = S.rec.mode==='hold' ? 'Запись · отпустите — отправится' : 'Запись без рук · кнопка справа — отправить';
-    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">Слушаю…</span>'}</div>` }
+    return `<div class="live"><span class="st p">${lbl}</span>${n?ph.w.slice(0,n).map((w,j)=>`<span class="${j>=fx?'dr':''}">${w}</span>`).join(' '):'<span class="dr">Вахтёр слушает…</span>'}</div>` }
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
@@ -110,7 +110,8 @@ function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accep
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
   return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
 function composerHtml(){
-  const ph=brainReady()?curMode().placeholder:'Команда агенту';
+  // «Вы к кому?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
+  const ph=!brainReady()?'Команда агенту':S.feed.some(f=>f.t==='me')?curMode().placeholder:'Вы к кому?';
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'big':''}" data-mic aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock||'🔒'}<span class="arr">⌃</span></div><div class="composer rec"><div class="fld"><span class="rdot"></span><span class="tm">${recTime()}</span><div class="eq sm" data-mode="speak"></div><span class="slide" style="opacity:${Math.max(.25,1-g.x/70)}">‹ влево — отмена</span></div><div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${modeTabs()}</div>` }
@@ -143,7 +144,7 @@ function settings(){
   <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>Настройки</b></div></div>
   <div class="scroll"><div class="list">
     <div class="lh">Вызов</div>
-    ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',w.role!=='ours')}
+    ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
     <div class="lirow">${li(I.mic,'Слушать сразу при вызове',S.settings.listenOnCall===false?'Запись по нажатию':'Запись начинается сама')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
     ${li(I.hist,'Возвращаться к Ассистенту', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[1],'returnpick')}
@@ -206,9 +207,9 @@ function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter
 function blockedBanner(){ const miss=[...new Set(TOOLS.filter(toolBlocked).map(x=>x.perm))]; if(!miss.length) return '';
   const n=TOOLS.filter(toolBlocked).length;
   return `<div class="banner" style="margin:4px 16px 8px"><span class="bi">${I.warn}</span><p>${n} ${n===1?'действие не работает':n<5?'действия не работают':'действий не работают'}: нет доступа — ${miss.map(k=>SYS_PERMS[k]).join(', ')}.</p><div class="ba"><button class="tbtn" data-permfix="${miss[0]}">Исправить</button></div></div>` }
-/** Системный экран разрешения приложения (Настройки → Приложения → Тася → Разрешения → …). */
+/** Системный экран разрешения приложения (Настройки → Приложения → Вахтёр → Разрешения → …). */
 function sysPerm(){ const k=S.permKind, o=(v,t)=>`<button class="it" data-sysperm="${v}"><span class="rad ${(S.w.perms[k]==='ok')===(v==='ok')?'on':''}"></span>${t}</button>`;
-  return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="syspermback">${I.back}</button>${SYS_PERMS[k].replace(/[«»]/g,'')}</div><p style="margin:0 22px 6px;font-size:13px;color:#666">${k==='dnd'?'Настройки → Уведомления → Доступ к «Не беспокоить»':`Приложения → Тася → Разрешения → ${SYS_PERMS[k]}`}</p><div class="grp">${k==='dnd'?o('ok','Тася — разрешить')+o('denied','Не разрешать'):o('ok',k==='location'?'Разрешить только во время использования':'Разрешить')+o('denied','Не разрешать')}</div></div>` }
+  return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="syspermback">${I.back}</button>${SYS_PERMS[k].replace(/[«»]/g,'')}</div><p style="margin:0 22px 6px;font-size:13px;color:#666">${k==='dnd'?'Настройки → Уведомления → Доступ к «Не беспокоить»':`Приложения → Вахтёр → Разрешения → ${SYS_PERMS[k]}`}</p><div class="grp">${k==='dnd'?o('ok','Вахтёр — разрешить')+o('denied','Не разрешать'):o('ok',k==='location'?'Разрешить только во время использования':'Разрешить')+o('denied','Не разрешать')}</div></div>` }
 function toolsPage(){
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Действия на телефоне</b><small>что выполняется сразу, а что — после вопроса</small></div></div>
   <div class="scroll">${blockedBanner()}<div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b>${toolBlocked(x)?`<small>нет доступа: ${SYS_PERMS[x.perm]}</small>`:toolPending(x)?`<small class="pend">доступ «${SYS_PERMS[x.perm].replace(/[«»]/g,'')}» спросим при первом разе</small>`:''}</span><span class="pword ${toolBlocked(x)?'nope':S.policy[x.id]}">${toolBlocked(x)?'Нет доступа':POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
@@ -242,7 +243,7 @@ function onb(){
   let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=oursIcon('width:96px;height:96px;border-radius:30px'); h='Зажал кнопку — сказал — готово'; p='Таймеры, будильники, фонарик — телефон делает сам, даже без интернета. Остальное отвечает модель, которую выберете вы.'; skip=null; primary=['Начать','onbnext'] }
   if (st==='button'){ const ok=S.w.role==='ours'&&S.sideOk; art='<div style="font-size:64px">⏻</div>'; h='Боковая кнопка'; p='Android разрешает выбрать помощника только в настройках. Я открою нужные экраны.';
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Тася':'Сейчас Gemini','sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка',S.w.side==='assistant'?'Готово':S.w.side==='bixby'?'Сейчас Bixby':'Сейчас меню выключения','sysside',false,S.w.side==='assistant'?I.ok:'')}</div>`; if(ok) skip=null }
+    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',S.w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',false,S.w.role==='ours'?I.ok:'')}${li(I.btn,'Боковая кнопка',S.w.side==='assistant'?'Готово':S.w.side==='bixby'?'Сейчас Bixby':'Сейчас меню выключения','sysside',false,S.w.side==='assistant'?I.ok:'')}</div>`; if(ok) skip=null }
   if (st==='voice'){ art='<div style="font-size:64px;letter-spacing:-4px">▂▅▇▅▂</div>'; h='Голос на телефоне'; p=`Один раз скачать ${mb(MODEL_TOTAL)} МБ. Голос не уходит с телефона и работает без интернета.`;
     if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
     else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
@@ -268,9 +269,9 @@ function connectBody(onb){
   if (P.stage==='done') tail=`<div class="note ok">Подключено. На сервере этот телефон виден как «S24 Ultra».</div>${onb?'':'<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="fbtn" data-act="tochat">К разговору</button></div>'}`;
   return `<div class="h2">${P.stage==='done'?'Подключено':'Подключаюсь'}</div><div class="checks">${ck}</div>${tail}`;
 }
-function sysRole(){ const o=[['gemini','Gemini'],['ours','Тася']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }
+function sysRole(){ const o=[['gemini','Gemini'],['ours','Вахтёр']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }
 function sysMic(){ const o=(v,t)=>`<button class="it" data-micperm="${v}"><span class="rad ${S.w.mic===v?'on':''}"></span>${t}</button>`;
-  return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Микрофон</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Приложения → Тася → Разрешения → Микрофон</p><div class="grp">${o('ok','Разрешить только во время использования приложения')}${o('ask','Спрашивать каждый раз')}${o('denied','Запретить')}</div></div>` }
+  return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Микрофон</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Приложения → Вахтёр → Разрешения → Микрофон</p><div class="grp">${o('ok','Разрешить только во время использования приложения')}${o('ask','Спрашивать каждый раз')}${o('denied','Запретить')}</div></div>` }
 function sysPick(){ const k=S.picker; const items=k==='gallery'?[['menu','Меню, стр. 1 · 19:42'],['menu2','Меню, стр. 2 · 19:42'],['tea','Чай · 18:10']]:[['Договор аренды.pdf','248 КБ · Загрузки'],['Счёт октябрь.xlsx','36 КБ · Документы'],['Паспорт объекта.pdf','1,2 МБ · Загрузки']];
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="pickback">${I.back}</button>${k==='gallery'?'Выберите фото':'Недавние файлы'}</div>
   ${k==='gallery'?`<div class="pgrid">${items.map(([c,t])=>`<button data-pickitem="${c}" aria-label="${t}" aria-pressed="${(S.pickSel||[]).includes(c)}"><i class="th ${c}"></i><span class="psel">${(S.pickSel||[]).includes(c)?(S.pickSel.indexOf(c)+1):''}</span></button>`).join('')}</div><div style="display:flex;justify-content:flex-end;padding:12px 16px"><button class="fbtn" data-act="pickdone" ${(S.pickSel||[]).length?'':'disabled'}>Готово${(S.pickSel||[]).length?' ('+S.pickSel.length+')':''}</button></div>`:`<div class="grp">${items.map(([n,s])=>`<button class="it" data-pickitem="${n}|${s.split(' · ')[0]}">${I.doc}<span><b style="font-weight:500">${n}</b><br><small style="color:#777">${s}</small></span></button>`).join('')}</div>`}
@@ -302,13 +303,13 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
   return `<div class="layer cam2 ${ins?'insheet':''}">${ins?`${statusBar(true)}<div class="csheet">${hdr}<div class="vfwrap">${vf}`:`${vf}${statusBar(false)}`}
   <div class="ctop"><button class="cbtn" data-act="${c.frozen?'camretake':'camcancel'}" aria-label="${c.frozen?'Переснять':'Закрыть камеру'}">${I.x}</button><span class="modeName2">${I[m.icon]} ${esc(m.title)}</span>${c.frozen&&(c.marks.length||c.crop)?`<button class="cbtn" data-act="camundo" aria-label="Отменить последнее">${I.undo}</button>`:'<span style="width:40px"></span>'}</div>
   ${hint?`<div class="chint">${hint}</div>`:''}
-  ${qrec?`<div class="q">${recText()||'Слушаю…'}</div>`:''}
+  ${qrec?`<div class="q">${recText()||'Вахтёр слушает…'}</div>`:''}
   ${ins?'</div>':''}<div class="cbottom">
     ${c.frames.length?`<div class="cstrip">${c.frames.map((f,i)=>`<div class="cfr ${c.editIdx===i?'on':''}"><button class="cfrb" data-frame="${i}" aria-label="Кадр ${i+1}: править"><span class="thw" style="${thumbStyle(f,64,60,24)}">${thumbHtml(f)}</span></button><button class="cfrx" data-framedel="${i}" aria-label="Удалить кадр ${i+1}">${I.x}</button></div>`).join('')}</div>`:''}
     <div class="ctools">${tools.map(([k,t,ic])=>`<button class="ctool" data-ctool="${k}" aria-pressed="${c.tool===k}">${ic}<span>${t}</span></button>`).join('')}</div>
     <div class="crow"><button class="cplus" data-act="camadd" aria-label="Оставить кадр и снять ещё" ${c.editIdx==null&&c.frames.length>=camMax()-1?'disabled':''}>${I.plus}</button><button class="csend" data-act="camsend" aria-label="Отправить${c.frames.length?' все кадры':''}">${I.send}${(c.frames.length+(c.editIdx==null?1:0))>1?`<b class="ccount">${c.frames.length+(c.editIdx==null?1:0)}</b>`:''}</button><button class="mic2 ${qrec?'on':''}" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button></div>
   </div>${ins?modeTabs()+'</div>':''}</div>` }
-function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Тася</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
+function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Вахтёр</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
 function overlay(){
   const O=S.ov; if(!O) return ''; const [d,t]=linkState();
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet ${O.full?'full':''} ${O.pop?'pop':''}">
