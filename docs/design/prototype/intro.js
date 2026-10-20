@@ -9,7 +9,7 @@ const INTRO = [
 const WAVE = '<div class="wave">' + '<i></i>'.repeat(7) + '</div>';
 
 function introScene(k) {
-  if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span><span class="post"><i></i>Вахта · на месте</span></div>`;
+  if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span><span class="post"><i></i>Вахтёр · на месте</span></div>`;
   if (k === 1) {
     const st = ['Разблокировать','Найти приложение','Открыть','Новый чат'];
     return `<div class="sc sc1">
