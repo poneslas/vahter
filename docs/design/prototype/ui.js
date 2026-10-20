@@ -207,11 +207,11 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
 function keyBody(onb){ const K=S.keyCheck;
   const res = !K ? '' : K.stage==='run' ? '<div class="kres run"><span class="spin"></span>Подключаю…</div>'
     : K.stage==='bad' ? `<div class="kres bad"><b>!</b>${K.err}</div>`
-    : `<div class="kres ok"><b>✓</b><span>DeepSeek подключён · отвечает за ${K.ms}<small>понимает фото — фото-режимы доступны</small></span></div>`;
+    : `<div class="kres ok"><b>✓</b><span><strong>DeepSeek подключён</strong><small>отвечает за ${K.ms} · понимает фото</small></span></div>`;   // две строки по смыслу — на узком экране переносить нечего
   return `${onb?'':'<div class="h2">Ключ DeepSeek</div><p style="color:var(--soft);margin:0 0 12px">Хранится в защищённом хранилище телефона (Keystore).</p>'}
     <div class="kfld"><input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="Ключ API · sk-…" autocomplete="off" spellcheck="false"><button class="intool" data-act="keypaste" aria-label="Вставить">${I.paste}</button></div>
     ${onb?'<p class="klbl">Где взять ключ? <b>platform.deepseek.com</b> → API keys. Хранится в защищённом хранилище телефона.</p>':'<div style="display:flex;justify-content:flex-end;margin:8px 0 12px"><button class="fbtn" data-act="keycheck">Проверить</button></div>'}
-    ${res}${onb?`<div class="khm">${I.info}<span>Другие модели — в настройках</span></div>`:''}` }
+    ${onb?`<div class="kslot">${res}</div>`:res}${onb?`<div class="khm">${I.info}<span>Другие модели — в настройках</span></div>`:''}` }   // в мастере место под итог занято заранее — ничего не подскакивает
 function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title);
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="${S.brainRet?'brainback':'settings'}" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
   <div class="scroll"><div class="mform">

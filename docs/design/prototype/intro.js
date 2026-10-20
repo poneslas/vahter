@@ -6,22 +6,26 @@ function introScene(k) {
   if (k === 1) {
     const st = ['Разблокировать','Найти приложение','Открыть','Новый чат'];
     return `<div class="sc sc1">
-      <div class="card usual"><div class="hd"><span class="apps"><i></i><i></i><i></i><i></i></span><b>ИИ-приложение</b><span class="clk"></span></div>
+      <div class="rcard usual"><div class="hd"><span class="apps"><i></i><i></i><i></i><i></i></span><b>ИИ-приложение</b><span class="clk"></span></div>
         <div class="chain">${st.map((s,j)=>`<span class="tk"><em>№${j+1}</em>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
-      <div class="card vah"><div class="hd"><span class="pw">⏻</span><b>Вахтёр</b><small class="ql free">без очереди</small><span class="clk"></span><span class="ok">✓</span></div>
+      <div class="rcard vah"><div class="hd"><span class="pw">⏻</span><b>Вахтёр</b><small class="ql free">без очереди</small><span class="clk"></span><span class="ok">✓</span></div>
         <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${'<b></b>'.repeat(9)}</span><span class="tx">Сколько варить гречку?</span></span></div>
         <div class="ai">15–20 минут, воды вдвое больше.</div></div></div>`;
   }
   // «Своих знает в лицо»: одна ситуация (ресторан, фото меню) — чату всё объясняешь заново, своему режиму — «как обычно».
-  if (k === 2) return `<div class="sc sc6">
-    <div class="col chat"><div class="hd"><span class="ci">💬</span><b>Чат</b><small>новый</small></div>
-      <div class="bub"><div class="tw">Здравствуйте! Я в ресторане. Не ем острое и свинину, аллергия на орехи, бюджет до 1500 ₽. Посоветуйте 2–3 блюда. Вот меню 📎</div><span class="car"></span></div>
-      <div class="cnt"><span class="w"></span><span class="t"></span></div></div>
-    <div class="col vah"><div class="hd"><span class="ci">🍽</span><b>Гастрогид</b><small>мой режим</small></div>
-      <div class="snap"><span class="thumb"><i class="card"><b>МЕНЮ</b></i></span><span class="fl"></span></div><div class="scap">📷 отправил фото меню</div>
-      <div class="ans">Судак на гриле и морс — 1200 ₽.</div>
-      <div class="chk"><span>✓ не остро</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div>
-      <div class="cnt"><span>⏻ 1 нажатие</span><span class="t"></span></div></div></div>`;
+  // Под колонками — секундомеры крупно: сколько ушло на одно и то же.
+  if (k === 2) { const sw = '<svg class="swatch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 3h4M12 3v2.5M18.5 7l1.3-1.3"/></svg>';
+    return `<div class="sc sc6">
+    <div class="colw"><div class="col chat"><div class="hd"><span class="ci">💬</span><span class="tt"><b>Чат</b><small>новый</small></span></div>
+      <div class="ask"><div class="tw">Здравствуйте! Я в ресторане. Не ем острое и свинину, аллергия на орехи, бюджет до 1500 ₽. Посоветуйте 2–3 блюда. Вот меню 📎</div><span class="car"></span></div>
+      <div class="cnt"><span class="w"></span></div></div>
+      <div class="timer chat">${sw}<span class="t"></span></div></div>
+    <div class="colw"><div class="col vah"><div class="hd"><span class="ci">🍽</span><span class="tt"><b>Гастрогид</b><small>мой режим</small></span></div>
+      <div class="snap"><span class="thumb"><i class="mcrd"><b>МЕНЮ</b></i></span><span class="flash"></span></div><div class="scap">📷 отправил фото меню</div>
+      <div class="ans">Судак на гриле и морс — 1200 ₽.</div>
+      <div class="chk"><span>✓ не остро</span><span>✓ без орехов</span><span>✓ до 1500 ₽</span></div>
+      <div class="cnt"><span>⏻ 1 нажатие</span></div></div>
+      <div class="timer vah">${sw}<span class="t"></span></div></div></div>`; }
   // «Знает, кто зачем пришёл»: режимы — кнопки пульта; у каждой на обороте уже написанная просьба. Нажал — она сказана.
   if (k === 3) {
     const K = [['💬','Ассистент','как чат, по кнопке','Просто спросите — как в чате. Будильник, звонок, вопрос.'],

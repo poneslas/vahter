@@ -592,7 +592,9 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .onb .klbl{font-size:12.5px;color:var(--soft);margin:8px 2px 10px}.onb .klbl b{color:var(--ink);font-weight:600}
 .kres{display:flex;gap:10px;align-items:center;border-radius:14px;padding:11px 14px;font-size:14px;margin:4px 0 10px;animation:fade .25s ease both}
 .kres b{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff}
-.kres small{display:block;font-size:12px;color:var(--soft);margin-top:1px}
+.kres strong{display:block;font-weight:600}
+.onb .kslot{min-height:66px}.onb .kslot .kres{margin:0 0 6px}
+.kres small{display:block;font-size:12.5px;color:var(--soft);margin-top:1px}
 .kres.ok{background:#E3F1E6;color:#1F5A2E}.kres.ok b{background:var(--ok)}
 .kres.bad{background:#FBE7E4;color:#8A2A1F}.kres.bad b{background:#C9483B}
 .kres.run{background:#ECEEE8;color:var(--soft)}

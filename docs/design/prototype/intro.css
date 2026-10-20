@@ -51,7 +51,7 @@
 /* ── 1. не чат, а кнопка: гонка. Оба стартуют одновременно; вопрос одинаковый — разница только в пути до него ── */
 @property --n{syntax:'<integer>';inherits:false;initial-value:0}
 .sc1{--T:5s;display:flex;flex-direction:column;gap:10px}
-.sc1 .card{border-radius:18px;padding:12px 14px}
+.sc1 .rcard{border-radius:18px;padding:12px 14px}
 .sc1 .usual{background:#E2E5EB}
 .sc1 .vah{flex:1;background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
 .sc1 .hd{display:flex;align-items:center;gap:9px}
@@ -109,15 +109,19 @@
 @property --w{syntax:'<integer>';inherits:false;initial-value:0}
 @property --s{syntax:'<integer>';inherits:false;initial-value:0}
 .sc6{--T:8s;display:flex;gap:10px;align-items:stretch}
-.sc6 .col{flex:1;min-width:0;border-radius:18px;padding:11px 11px 10px;display:flex;flex-direction:column;position:relative}
+.sc6 .colw{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.sc6 .col{flex:1;min-height:0;border-radius:18px;padding:11px 11px 10px;display:flex;flex-direction:column;position:relative}
 .sc6 .chat{background:#E2E5EB}
 .sc6 .vah{background:var(--local-t);border:2px solid var(--local);box-shadow:0 10px 26px -14px rgba(154,106,0,.6)}
-.sc6 .hd{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.sc6 .hd{display:flex;align-items:center;gap:7px;margin-bottom:9px;min-width:0}
+/* название и пояснение — в две строки: колонка узкая, в одну строку «Гастрогид мой режим» не помещается */
+.sc6 .tt{display:flex;flex-direction:column;min-width:0;line-height:1.1}
+.sc6 .tt b,.sc6 .tt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc6 .hd b{font-size:14px;font-weight:700}
 .sc6 .chat .hd b{color:#5B6478}
-.sc6 .hd small{margin-left:auto;font-size:10.5px;color:var(--soft)}
-.sc6 .ci{font-size:15px}
-.sc6 .bub{flex:1;background:#fff;border-radius:12px 12px 3px 12px;padding:8px 9px;font-size:11.5px;line-height:1.38;color:var(--ink);overflow:hidden;position:relative}
+.sc6 .hd small{font-size:10.5px;color:var(--soft);margin-top:1px}
+.sc6 .ci{font-size:17px;flex:none}
+.sc6 .ask{flex:1;width:100%;background:#fff;border-radius:12px 12px 3px 12px;padding:8px 9px;font-size:11.5px;line-height:1.38;color:var(--ink);overflow:hidden;position:relative}
 .sc6 .tw{max-height:0;overflow:hidden;animation:tw var(--T) steps(9,end) infinite}
 @keyframes tw{0%,3%{max-height:0}78%,96%{max-height:150px}100%{max-height:0}}
 .sc6 .cnt{display:flex;justify-content:space-between;gap:4px;margin-top:8px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -125,23 +129,27 @@
 .sc6 .chat .cnt .w{counter-reset:w var(--w);animation:cw var(--T) linear infinite}
 .sc6 .chat .cnt .w::before{content:"✎\00a0" counter(w) "\00a0слов"}
 @keyframes cw{0%,3%{--w:0}78%,100%{--w:20}}
-.sc6 .cnt .t{counter-reset:s var(--s)}
-.sc6 .cnt .t::before{content:"0:" counter(s,decimal-leading-zero)}
-.sc6 .chat .cnt .t{animation:cs var(--T) linear infinite}
+/* секундомеры под колонками: крупные цифры, иконка часов приглушённая */
+.sc6 .timer{display:flex;align-items:center;justify-content:center;gap:6px;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.sc6 .timer .swatch{width:20px;height:20px;color:#A9B0BE;flex:none}
+.sc6 .timer.chat{color:#6B7487}.sc6 .timer.vah{color:var(--local-d)}.sc6 .timer.vah .swatch{color:#D9B977}
+.sc6 .timer .t{counter-reset:s var(--s)}
+.sc6 .timer .t::before{content:"0:" counter(s,decimal-leading-zero)}
+.sc6 .timer.chat .t{animation:cs var(--T) linear infinite}
 @keyframes cs{0%,3%{--s:0}78%,100%{--s:40}}
 .sc6 .vah .cnt{color:var(--local-d)}
-.sc6 .vah .cnt .t{animation:cs2 var(--T) linear infinite}
+.sc6 .timer.vah .t{animation:cs2 var(--T) linear infinite}
 @keyframes cs2{0%,3%{--s:0}14%,100%{--s:3}}
 .sc6 .snap{position:relative;height:58px;display:flex;justify-content:flex-end}
 /* снимок меню: карточка меню на тёмном столе, чуть повёрнута — фото, а не документ */
 .sc6 .thumb{width:76px;height:56px;border-radius:10px;position:relative;overflow:hidden;background:radial-gradient(120% 90% at 30% 20%,#7A5236,#3E2718 70%);box-shadow:0 4px 10px -4px rgba(0,0,0,.45);opacity:0;animation:sn1 var(--T) infinite both}
-.sc6 .thumb .card{position:absolute;left:14px;top:6px;width:44px;height:52px;border-radius:3px;background:#F4EBD6;transform:rotate(-8deg);box-shadow:0 3px 6px rgba(0,0,0,.35);
+.sc6 .thumb .mcrd{position:absolute;left:14px;top:6px;width:44px;height:52px;border-radius:3px;background:#F4EBD6;transform:rotate(-8deg);box-shadow:0 3px 6px rgba(0,0,0,.35);
   background-image:radial-gradient(circle,#B08A57 .7px,transparent .8px),linear-gradient(#5B4630,#5B4630);background-size:3px 3px,26px 1.5px;background-position:7px 22px,9px 17px;background-repeat:repeat-x,no-repeat}
-.sc6 .thumb .card b{position:absolute;left:0;right:0;top:4px;text-align:center;font-size:6.5px;letter-spacing:.12em;color:#5B4630;font-weight:700}
-.sc6 .thumb .card::after{content:"";position:absolute;left:7px;right:7px;top:30px;height:14px;background:repeating-linear-gradient(#B08A57 0 1px,transparent 1px 5px);opacity:.8}
+.sc6 .thumb .mcrd b{position:absolute;left:0;right:0;top:4px;text-align:center;font-size:6.5px;letter-spacing:.12em;color:#5B4630;font-weight:700}
+.sc6 .thumb .mcrd::after{content:"";position:absolute;left:7px;right:7px;top:30px;height:14px;background:repeating-linear-gradient(#B08A57 0 1px,transparent 1px 5px);opacity:.8}
 .sc6 .scap{font-size:10.5px;color:var(--local-d);text-align:right;margin-top:3px;opacity:0;animation:sn1 var(--T) infinite both}
 @keyframes sn1{0%,4%{opacity:0;transform:scale(.8)}8%,96%{opacity:1;transform:none}100%{opacity:0}}
-.sc6 .fl{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
+.sc6 .flash{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
 @keyframes fl{0%,3%{opacity:0}4%{opacity:.9}8%,100%{opacity:0}}
 .sc6 .ans{position:relative;font-size:12.5px;line-height:1.35;font-weight:500;padding-left:11px;margin-top:9px;opacity:0;animation:sn2 var(--T) infinite both}
 .sc6 .ans::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--server)}
