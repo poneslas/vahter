@@ -32,6 +32,8 @@ data class Mode(
     val brain: String = "deepseek",
     val tools: Boolean = false,
     val builtin: Boolean = false,
+    /** Промпт встроенного режима изменён человеком — не обновлять из ресурсов. У Ассистента промпт — «свои правила». */
+    val promptEdited: Boolean = false,
     val enabled: Boolean = true,
 )
 

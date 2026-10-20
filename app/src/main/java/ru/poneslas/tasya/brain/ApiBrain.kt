@@ -95,7 +95,9 @@ class ApiBrain(
             tr(R.string.brain_u_tebya_net_dostupa_k) +
             tr(R.string.brain_i_predlozhi_podklyuchit_lichnogo_agenta) +
             tr(R.string.brain_seychas_1_s, now)
-        return if (turn.mode.prompt.isBlank()) base else tr(R.string.brain_1_s_rezhim_2_s, base, turn.mode.title, turn.mode.prompt)
+        return if (turn.mode.prompt.isBlank()) base
+        else if (turn.mode.id == ru.poneslas.tasya.core.Modes.MAIN) tr(R.string.brain_svoi_pravila, base, turn.mode.prompt)
+        else tr(R.string.brain_1_s_rezhim_2_s, base, turn.mode.title, turn.mode.prompt)
     }
 
     private fun requestBody(turn: Turn, history: List<ChatMsg>, specs: List<ToolSpec>): String {

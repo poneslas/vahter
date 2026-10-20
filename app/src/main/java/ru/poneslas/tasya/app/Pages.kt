@@ -138,12 +138,14 @@ fun ModePage(activity: MainActivity, id: String) {
             }
         }
         Column {
-            Lh(tr(R.string.pg_chto_delat))
-            if (main) MNote(tr(R.string.pg_osnovnoy_rezhim_bez_svoego_prompta))
-            else if (ro) Text(m.prompt, fontSize = 13.5.sp, color = Ink.ink)
-            else {
-                Area(m.prompt, tr(R.string.pg_naprimer_perevodi_vse_na_kitayskiy)) { v -> ed { it.copy(prompt = v) } }
-                Dictate { text -> ed { it.copy(prompt = (it.prompt.trim() + " " + text).trim()) } }
+            // Промпт меняется у всех режимов. У встроенных — с «Вернуть как было»; у Ассистента — «свои правила» поверх служебных.
+            Lh(tr(if (main) R.string.pg_svoi_pravila else R.string.pg_chto_delat))
+            if (main) MNote(tr(R.string.pg_svoi_pravila_note))
+            Area(m.prompt, tr(if (main) R.string.pg_svoi_pravila_hint else R.string.pg_naprimer_perevodi_vse_na_kitayskiy)) { v -> ed { it.copy(prompt = v, promptEdited = true) } }
+            Dictate { text -> ed { it.copy(prompt = (it.prompt.trim() + " " + text).trim(), promptEdited = true) } }
+            val def = Modes.builtin.firstOrNull { it.id == m.id }?.prompt
+            if (ro && !main && def != null && m.prompt != def) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                TextButton(tr(R.string.pg_vernut_kak_bylo)) { ed { it.copy(prompt = def, promptEdited = false) } }
             }
         }
         if (!ro) {

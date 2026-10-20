@@ -47,6 +47,7 @@ document.addEventListener('click', async e=>{
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; if(S.ov){ S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается.') } S.page='mode'; return render() }
   switch(a){
+    case 'promptreset': { const m=modeById(S.editMode), d=BUILTIN_MODES.find(b=>b.id===m.id); m.prompt=d.prompt; trace('Промпт встроенного режима — снова из текстов приложения: обновится с новой версией и языком.','i'); return render() }
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
     case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();

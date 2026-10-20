@@ -248,12 +248,15 @@
     <string name="pg_oshibka_zagruzki_1_s">Ошибка загрузки: %1$s</string>
     <string name="pg_vstroennyy_rezhim">встроенный режим</string>
     <string name="pg_svoy_rezhim_id_1_s">свой режим · id %1$s, не меняется</string>
-    <string name="pg_vstroennyy_rezhim_ego_mozhno_vklyuchit">Встроенный режим: его можно включить или выключить в «Настройках» и начать разговор заново. Чтобы сделать по-своему — создайте свой режим «+».</string>
+    <string name="pg_vstroennyy_rezhim_ego_mozhno_vklyuchit">Встроенный режим: промпт можно изменить, сам режим — включить или выключить в «Настройках». Чтобы настроить всё по-своему — создайте свой режим «+».</string>
+    <string name="pg_svoi_pravila">Свои правила</string>
+    <string name="pg_svoi_pravila_note">Добавляются к основным инструкциям: действия телефона работают как прежде.</string>
+    <string name="pg_svoi_pravila_hint">Например: отвечай коротко, на «ты»; я живу в Казани</string>
+    <string name="pg_vernut_kak_bylo">Вернуть как было</string>
     <string name="pg_nazvanie">Название</string>
     <string name="pg_kak_nazvat_vkladku">Как назвать вкладку</string>
     <string name="pg_znachok">Значок</string>
     <string name="pg_chto_delat">Что делать</string>
-    <string name="pg_osnovnoy_rezhim_bez_svoego_prompta">Основной режим: без своего промпта, все действия телефона.</string>
     <string name="pg_naprimer_perevodi_vse_na_kitayskiy">Например: переводи всё на китайский и добавляй пиньинь</string>
     <string name="pg_podskazka_v_pustom_razgovore">Подсказка в пустом разговоре</string>
     <string name="pg_chto_syuda_prisylat">Что сюда присылать</string>
@@ -520,6 +523,7 @@
     <string name="brain_u_tebya_net_dostupa_k">У тебя нет доступа к интернету: о погоде, новостях, курсах, расписаниях и других свежих данных честно скажи, что эта модель в интернет не ходит,\u0020</string>
     <string name="brain_i_predlozhi_podklyuchit_lichnogo_agenta">и предложи подключить личного агента (Hermes) — он умеет искать в сети. Не перечисляй свои функции вместо ответа.\u0020</string>
     <string name="brain_seychas_1_s">Сейчас: %1$s.</string>
+    <string name="brain_svoi_pravila">%1$s\n\nПравила пользователя: %2$s</string>
     <string name="brain_1_s_rezhim_2_s">%1$s\n\nРежим «%2$s»: %3$s</string>
     <string name="brain_klyuch_ne_prinyat_proverte_ego">Ключ не принят — проверьте его в настройках мозга.</string>
     <string name="brain_na_schete_1_s_zakonchilis">На счёте %1$s закончились деньги.</string>
