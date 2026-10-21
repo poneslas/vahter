@@ -31,15 +31,15 @@
 
 /* ── 0. девиз: логотип — знак Вахтёра на тёмной плитке, кольца расходятся, как когда он слушает ── */
 .sc0{display:grid;place-items:center}
-.logo{width:132px;height:132px;border-radius:40px;position:relative;display:grid;place-items:center;
-  background:radial-gradient(circle at 50% 50%,#22304F 0%,#10182B 70%);overflow:hidden;
-  box-shadow:0 20px 50px -20px rgba(232,163,23,.55)}
-.logo .vmark{--vs:96px;--c:#F5B52E}
+.logo{width:104px;height:104px;border-radius:32px;margin-bottom:34px;position:relative;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 45%,#FFF8E6 0%,#FBEFD2 55%,#F5DFA8 100%);overflow:hidden;
+  box-shadow:0 14px 34px -18px rgba(154,106,0,.55),inset 0 0 0 1px rgba(154,106,0,.12)}
+.logo .vmark{--vs:76px;--c:var(--local)}
 .logo .vmark .r1,.logo .vmark .r2{animation:vring 1.6s ease-out infinite}.logo .vmark .r2{animation-delay:.55s}
 .logo .vmark .core{animation:vbreath 1.6s ease-in-out infinite}
-.halo{position:absolute;width:132px;height:132px;border-radius:40px;border:2px solid var(--local);opacity:0;animation:halo 1.6s ease-out infinite}
+.halo{position:absolute;width:104px;height:104px;border-radius:32px;margin-bottom:34px;border:2px solid var(--local);opacity:0;animation:halo 1.6s ease-out infinite}
 .halo.b{animation-delay:.8s;border-color:var(--local-d)}
-@keyframes halo{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.6);opacity:0}}
+@keyframes halo{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.32);opacity:0}}
 
 /* ── 1. не чат, а кнопка: гонка. Оба стартуют одновременно; вопрос одинаковый — разница только в пути до него ── */
 @property --n{syntax:'<integer>';inherits:false;initial-value:0}

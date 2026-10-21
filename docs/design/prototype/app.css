@@ -39,10 +39,10 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .app{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;color:#fff;font-size:11.5px;padding:0}
 .ico{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:24px;box-shadow:0 6px 14px -8px rgba(0,0,0,.6)}
 .dock{position:absolute;left:18px;right:18px;bottom:34px;display:flex;justify-content:space-around;padding:12px;background:rgba(255,255,255,.12);border-radius:28px}
-.ours{background:radial-gradient(circle at 50% 50%,#22304F 0%,#10182B 70%);position:relative;display:grid;place-items:center;overflow:hidden}
-.ours .vmark{--vs:74%;--c:#F5B52E}
+.ours{background:radial-gradient(circle at 50% 45%,#FFF8E6 0%,#FBEFD2 55%,#F5DFA8 100%);position:relative;display:grid;place-items:center;overflow:hidden}
+.ours .vmark{--vs:74%;--c:var(--local)}
 .ours .vmark i{animation:none!important}
-.ours .vmark .core{box-shadow:0 0 10px 1px var(--c)}
+.ours .vmark .core{box-shadow:0 0 8px rgba(232,163,23,.6)}
 .ours .vmark .r1{opacity:.7}.ours .vmark .r2{opacity:.35}
 .lock{background:linear-gradient(170deg,#26324F,#0E1A36 70%);color:#E8ECF6}
 .lock .clk{position:absolute;top:110px;width:100%;text-align:center;font-size:76px;font-weight:300;letter-spacing:-.03em}
