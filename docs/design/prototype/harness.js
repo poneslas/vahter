@@ -75,26 +75,10 @@ let openGroup='day', curPreset=null;
 function renderGroups(){ $('#groups').innerHTML=GROUPS.map(([g,t,d])=>`<details class="grp2" data-g="${g}" ${openGroup===g?'open':''}><summary>${t}<small>${d}</small></summary><div class="presets">${PRESETS.map((p,i)=>p[3]===g?`<button class="pre" data-preset="${i}" aria-current="${curPreset===i}"><b>${p[0]}</b><span>${p[1]}</span></button>`:'').join('')}</div></details>`).join('') }
 document.addEventListener('toggle',e=>{ const d=e.target; if(!d.matches||!d.matches('.grp2')||!d.open) return; openGroup=d.dataset.g; document.querySelectorAll('.grp2').forEach(x=>{ if(x!==d) x.open=false }) },true);
 /* вкладки панели */
-let ptab='tour', seenLog=0;
+let ptab='sc', seenLog=0;
 function setPtab(t){ ptab=t; document.querySelectorAll('[data-ptab]').forEach(b=>b.matches('.ptabs button')&&b.setAttribute('aria-pressed',b.dataset.ptab===t)); document.querySelectorAll('.pt').forEach(x=>x.classList.toggle('on',x.dataset.pt.split(' ').includes(t))); if(t==='log'){ seenLog=$('#trace').children.length; $('#lognew').textContent='' } $('#lastlog').style.display=t==='log'?'none':'' }
-/* знакомство */
-const meIn=(id,f)=>(S.feeds[id]||[]).some(it=>it.t==='me'&&f(it));
-const TOUR=[
-  ['Зажмите боковую кнопку','справа на корпусе телефона — откроется лист, запись пойдёт сама',()=>!!S.ov],
-  ['Скажите «Таймер на пять минут»','кнопка «Таймер» ниже — или зажмите микрофон в листе. Телефон сделает сам, без сервера',()=>meIn('main',it=>/таймер/i.test(it.x))],
-  ['Спросите «Что у меня завтра?»','ответит DeepSeek, а календарь посмотрит через действие телефона',()=>meIn('main',it=>/завтра/i.test(it.x))],
-  ['Вкладка «Переводчик» — скажите «Где здесь туалет?»','фраза в «Сказать» ниже или зажмите микрофон; язык перевода записан в правилах режима',()=>meIn('translate',()=>true)],
-  ['Ассистент: скрепка → «Файл»','выберите договор и допишите вопрос, пока он грузится',()=>meIn('main',it=>it.img&&it.img.kind==='file')],
-  ['«+» в конце вкладок — свой режим','надиктуйте промпт микрофоном под полем',()=>S.modes.filter(m=>!m.builtin).length>1],
-  ['Внизу листа — вкладка «Гастрогид», снимите меню','большая кнопка справа — камера; спуск — и снимок уходит сам',()=>meIn('m-4c1e',it=>it.img)],
-];
-let tourStep=0;
-function startTour(){ token++; clearInterval(dlT); ready(); S.screen='home'; S.mode='main'; tourStep=0; curPreset=null; save({k:'tour'}); render(); renderGroups(); renderTour(); setPtab('tour'); trace('Знакомство: телефон уже настроен. Первый запуск — во вкладке «Сценарии».','p') }
-function renderTour(){ const done=tourStep>=TOUR.length;
-  $('#tour').innerHTML=`<h3>${done?'Готово — это основное':'Знакомство'}</h3><p class="tsub">${done?'Остальное — во вкладке «Сценарии»: ответы мозга, первый запуск, сбои.':'Пара нажатий — и ответ. Шаги отмечаются сами, когда вы их делаете.'}</p>
-  <ol>${TOUR.map((t,i)=>`<li class="${i<tourStep?'done':i===tourStep?'cur':''}"><span class="n">${i<tourStep?'✓':i+1}</span><span>${t[0]}${i===tourStep?`<small>${t[1]}</small>`:''}</span></li>`).join('')}</ol>
-  <div class="tact">${done?'<button data-ptab="sc">К сценариям</button>':'<button data-tour="skip">Пропустить шаг</button>'}<button data-tour="restart">Сначала</button></div>` }
-function tourCheck(){ if(curPreset!==null) return; let moved=false; while(tourStep<TOUR.length && TOUR[tourStep][2]()){ tourStep++; moved=true } if(moved) renderTour() }
+/* без пресета: телефон уже настроен, первый запуск — во вкладке «Сценарии» */
+function startFree(){ token++; clearInterval(dlT); ready(); S.screen='home'; S.mode='main'; curPreset=null; save({k:'free'}); render(); renderGroups(); setPtab('sc') }
 /* запоминание */
 function save(v){ try{ localStorage.setItem('vahter-proto',JSON.stringify(v)) }catch{} }
 function restore(){ const h=decodeURIComponent(location.hash.slice(1)); const bySlug=PRESETS.findIndex(p=>p[4]===h); if(bySlug>=0) return {k:'p',slug:h}; try{ return JSON.parse(localStorage.getItem('vahter-proto')) }catch{ return null } }
@@ -102,7 +86,7 @@ $('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<b
 $('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Ответ пришёл, пока лист закрыт'],['ctx','Разговор упёрся в предел модели'],['cron','Hermes: утренняя сводка'],['bg','Hermes: фоновая задача'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 renderGroups();
-{ const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i,true); setPtab('sc') } else startTour() }
+{ const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i,true); setPtab('sc') } else startFree() }
 
 /* телефон: пропорции корпуса S24 Ultra (79 × 162 мм ≈ 1 : 2,05), масштаб — по высоте окна, не больше 90 % */
 const W=400, H=820;
