@@ -93,6 +93,8 @@ object Sheet {
     @Volatile var shrinkOnShow = false
     /** При первом закрытии листа после мастера — «Вахтёр на месте». */
     @Volatile var firstClose = false
+    /** Камеру разрешили из листа (системное окно — в приложении): вернувшийся лист сразу открывает её, второй раз жать не нужно. */
+    @Volatile var cameraAfterShow = false
 
     /** Экран мозга в приложении: из листа — с возвратом в лист, иначе — обычной страницей. */
     fun openBrain(ctx: Context) {
@@ -225,6 +227,10 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
                 context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
             // Голос не скачан — не слушаем и не пишем об этом: строка над лентой уже говорит «Голос не скачан · Скачать».
             else if (cur.primary == Primary.VOICE && settings.listenOnCall && app.voice.installed.value) Sheet.autoListen.value++
+        }
+        if (Sheet.cameraAfterShow) {
+            Sheet.cameraAfterShow = false
+            if (context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
         }
     }
 

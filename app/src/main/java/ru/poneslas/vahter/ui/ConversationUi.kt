@@ -38,6 +38,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -179,12 +180,13 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
     }
 }
 
-/** .ai — точка 7 слева (синяя — мозг), текст с простой разметкой (жирный, заголовки, списки, код). */
+/** .ai — точка 7 слева (синяя — мозг), текст с простой разметкой (жирный, заголовки, списки, код). Текст выделяется
+ *  долгим нажатием — системное меню «Копировать / Поделиться», как в любом поле Android (лист и приложение). */
 @Composable
 private fun AiItem(item: FeedItem.Ai) {
     Box(Modifier.fillMaxWidth().padding(start = 16.dp)) {
         Box(Modifier.offset(x = (-15).dp, y = 8.dp).size(7.dp).clip(CircleShape).background(Ink.server))
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { Markdown(item.text) }
+        SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { Markdown(item.text) } }
     }
 }
 

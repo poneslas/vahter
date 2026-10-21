@@ -2,6 +2,7 @@
 /* ───────── фразы и ответы ───────── */
 const PHR={
   dict:{t:'Проба диктовки',w:['проверяю','диктовку','говорю','отпускаю','кнопку','и','текст','уже','здесь','с','точками','и','запятыми'],fin:'Проверяю диктовку: говорю, отпускаю кнопку — и текст уже здесь, с точками и запятыми.'},
+  torch:{t:'Включи фонарик',w:['включи','фонарик'],fin:'Включи фонарик.'},
   timer:{t:'Таймер на пять минут',w:['таймер','на','пять','минут'],fin:'Таймер на 5 минут.'},
   ask:{t:'Что у меня завтра?',w:['что','у','меня','завтра'],fin:'Что у меня завтра?'},
   backup:{t:'Как настроить бэкап сервера?',w:['как','настроить','бэкап','сервера'],fin:'Как настроить бэкап сервера?'},
@@ -18,11 +19,11 @@ const PHR={
   pr:{t:'(диктовка промпта)',w:['если','есть','рыба','на','гриле','—','советуй','её','первой'],fin:'Если есть рыба на гриле — советуй её первой.'},
   toilet:{t:'Где здесь туалет?',w:['где','здесь','туалет'],fin:'Где здесь туалет?'},
 };
-const guessKey = v => { v=v.toLowerCase(); return /беспокоить/.test(v)?'dnd':/позвони/.test(v)?'call':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
+const guessKey = v => { v=v.toLowerCase(); return /беспокоить/.test(v)?'dnd':/позвони/.test(v)?'call':/фонар/.test(v)?'torch':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
   const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
   const key0=guessKey(text);
-  if (S.w.locked && S.settings.lockScope==='safe' && !['timer','alarm','alarmfz'].includes(key0)){ S.feed.push({t:'me',x:text,via}); S.feed.push({t:'card',who:'p',head:'Экран заблокирован',title:'Разблокируйте, чтобы продолжить',text:'На заблокированном экране сейчас работают только будильник, таймер и фонарик.',btns:[['Разблокировать','unlock_any','pri'],['Отмена','x','gh']]}); return render() }
+  if (S.w.locked && S.settings.lockScope==='safe' && !['timer','alarm','alarmfz','torch'].includes(key0)){ S.feed.push({t:'me',x:text,via}); S.feed.push({t:'card',who:'p',head:'Экран заблокирован',title:'Разблокируйте, чтобы продолжить',text:'На заблокированном экране сейчас работают только будильник, таймер и фонарик.',btns:[['Разблокировать','unlock_any','pri'],['Отмена','x','gh']]}); return render() }
   if (S.mode!=='main') return deliverMode(text, via);
   const key=key0;
   if (S.busy){ S.feed.push({t:'me',x:text,via:via+' · учтено'}); trace('Мозг ещё работает — реплика учтена в идущей работе (как в Telegram).','h'); return render() }
@@ -99,6 +100,7 @@ async function stream(my,html,opts={}){
 }
 async function sendAtt(my,a,cap){ await wait(450); if(my!==token) return false; S.feed.push({t:'att',a,cap}); render(); return true }
 async function route(key,my){
+  if (key==='torch'){ addAct({t:'act',i:'🔦',x:'Фонарик включён',s:'на телефоне',btn:'Выключить',kind:'B',id:Date.now()},{tool:'torch.set',who:'по правилам',phrase:'включи фонарик',params:'on=true',confirm:'сразу',lock:S.w.locked}); trace('Правило: «включи / выключи фонарик» — без сети, CameraManager.setTorchMode. Выключить — та же кнопка.','p'); return }
   if (key==='timer'){ addAct({t:'act',i:'⏱',x:'Таймер запущен · 5:00',s:'на телефоне',btn:'Открыть таймеры',kind:'D',id:Date.now()},{tool:'timer.set',who:'по правилам',phrase:'таймер на пять минут',params:'duration=5:00',confirm:'сразу',lock:S.w.locked}); trace('Правило: «таймер на {длительность}» — без сети. Отменить таймер «Часов» Android не даёт — кнопка честная: «Открыть таймеры».','p'); return }
   if (key==='alarm'){ S.feed.push({t:'ph',x:'На когда?'}); S.feed.push({t:'chips',c:['7:00','7:30','8:00']}); trace('Не хватает времени → варианты без модели: стоящие будильники, обычный подъём, первая встреча минус час.','p'); return }
   const B=brainOf();

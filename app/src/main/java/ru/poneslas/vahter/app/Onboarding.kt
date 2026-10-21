@@ -9,7 +9,6 @@ import ru.poneslas.vahter.ui.RecUi
 import ru.poneslas.vahter.ui.VoiceRow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -80,13 +79,14 @@ import android.provider.Settings
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.runtime.setValue
 import ru.poneslas.vahter.ui.seconds
 
 /**
  * Первый запуск — один мастер (ui.js, onb; Продукт 5.13): каждый экран сначала объясняет живой сценой (ui/Intro.kt),
  * а под ней сразу настраивает то, о чём рассказал. Семь шагов: приветствие → голос → кнопка (пока качается модель) →
- * проба голоса → «Своих знает в лицо» → «Знает, кто зачем пришёл» → мозг. Финал — лист (MainActivity.finishOnboarding).
+ * проба голоса → «Знает, как у вас заведено» → «Привычки знает наизусть» → мозг. Финал — лист (MainActivity.finishOnboarding).
  * Ничего не блокирует, но кнопку не пропустить, не заметив: пока не настроено — «Настроить», «Позже» — через предупреждение.
  */
 @Composable
@@ -244,16 +244,33 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.ui_connect)) to { key.connect(scope) }
             }
         }
-        // .nav: «Позже» или пусто · точки · кнопка. Точки — строго по центру экрана, как в прототипе; кнопка справа берёт
-        // сколько нужно и не ломает слово при крупном шрифте.
-        Box(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+        // Точки — своей строкой над кнопками, по центру: широкая «Подключить» и крупный шрифт их не задевают (onboarding.js, navBar).
+        StepDots(step, steps, Modifier.align(Alignment.CenterHorizontally).padding(top = 14.dp))
+        // .nav: «Позже» или пусто · кнопка; кнопка справа берёт сколько нужно и не ломает слово при крупном шрифте.
+        Box(Modifier.fillMaxWidth().padding(top = 10.dp)) {
             Box(Modifier.align(Alignment.CenterStart)) { skip?.let { (t, a) -> TextButton(t, onClick = a) } }
-            Row(Modifier.align(Alignment.Center), horizontalArrangement = Arrangement.spacedBy(if (LocalDensity.current.fontScale > 1.15f) 4.dp else 6.dp)) {
-                repeat(steps) { i -> Box(Modifier.size(if (i == step) 20.dp else 7.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(if (i == step) Ink.ink else Ink.swOff)) }
-            }
             Box(Modifier.align(Alignment.CenterEnd)) {
                 primary?.let { (t, a) -> PrimaryButton(t, enabled = !(step == steps - 1 && !hasKey && !key.canCheck), onClick = a) }
             }
+        }
+    }
+}
+
+/**
+ * Точки шагов как в Instagram (onboarding.js, onbDots): на виду не больше пяти, окно едет за текущим шагом; крайняя точка
+ * мельче, если за ней есть ещё. Ширина постоянная — 4 × 7 + 20 + 4 × 6.
+ */
+@Composable
+private fun StepDots(step: Int, steps: Int, modifier: Modifier = Modifier) {
+    val k = minOf(steps, 5)
+    val at = (step - 2).coerceIn(0, steps - k)
+    Row(modifier.width(72.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+        repeat(k) { j ->
+            val i = at + j
+            val edge = (j == 0 && i > 0) || (j == k - 1 && i < steps - 1)
+            val w by animateDpAsState(if (i == step) 20.dp else if (edge) 4.dp else 7.dp, label = "dotW")
+            val h by animateDpAsState(if (edge && i != step) 4.dp else 7.dp, label = "dotH")
+            Box(Modifier.size(w, h).clip(RoundedCornerShape(4.dp)).background(if (i == step) Ink.ink else Ink.swOff))
         }
     }
 }
@@ -371,13 +388,19 @@ private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, fr
             if (loading && i >= on) drawRoundRect(Color(0xFFD5D9D0), Offset(x, cy - h / 2), Size(bw, h), r)
             else drawRoundRect(Brush.verticalGradient(listOf(Ink.local, Ink.server), startY = cy - h / 2, endY = cy + h / 2), Offset(x, cy - h / 2), Size(bw, h), r)
         }
-        // шов «рот зашит»: пунктир и крестики; после докачки — разлетаются
+        // шов «рот зашит»: пунктир и крестики — только поверх ещё не готовых точек (ожившие столбики не перекрывает), крестик на
+        // каждые две точки; после докачки — разлетаются, тогда шов во всю ширину, как был
         val k = if (loading) 0f else if (freed < 1f) freed else return@Canvas
+        val rest = if (loading) n - on else n
+        if (rest <= 0) return@Canvas
         val seam = Color(0xFF8A93A6).copy(alpha = 1f - k)
-        var x = -6.dp.toPx()
-        while (x < size.width + 6.dp.toPx() && k < 1f) { drawLine(seam, Offset(x, cy), Offset(x + 7.dp.toPx(), cy), 2.dp.toPx()); x += 12.dp.toPx() }
-        for (j in 0 until 7) {
-            val cx = size.width * (j + .5f) / 7
+        val s0 = if (loading && on > 0) x0 + on * (bw + gap) - 6.dp.toPx() else -6.dp.toPx()
+        val s1 = size.width + 6.dp.toPx()
+        var x = s0
+        while (x < s1 && k < 1f) { drawLine(seam, Offset(x, cy), Offset(x + 7.dp.toPx(), cy), 2.dp.toPx()); x += 12.dp.toPx() }
+        val crosses = if (loading) (rest + 1) / 2 else 7
+        for (j in 0 until crosses) {
+            val cx = s0 + (s1 - s0) * (j + .5f) / crosses
             val dy = (if (j % 2 == 0) -40f else 40f).dp.toPx() * k; val dx = (if (j % 2 == 0) -10f else 10f).dp.toPx() * k
             val rot = (if (j % 2 == 0) -120f else 140f) * k
             rotate(rot, Offset(cx + dx, cy + dy)) {

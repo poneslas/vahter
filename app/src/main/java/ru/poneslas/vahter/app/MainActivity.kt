@@ -82,7 +82,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray, deviceId: Int) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
-        if (requestCode == REQ_MIC && askMicThenSheet) { askMicThenSheet = false; collapse() }
+        if (requestCode == REQ_MIC && askMicThenSheet) {
+            // камеру просили из листа и разрешили — лист вернётся уже с камерой
+            val cam = permissions.indexOf(android.Manifest.permission.CAMERA)
+            if (cam >= 0 && grantResults.getOrNull(cam) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.cameraAfterShow = true
+            askMicThenSheet = false; collapse()
+        }
     }
 
     /** Растёт при каждом возврате в приложение: статусы системных настроек перечитываются от него (баг №1). */

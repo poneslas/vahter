@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -265,7 +266,7 @@ private fun BoxScope.SceneQueue() {
     }
 }
 
-// ── 2. своих знает в лицо: одна ситуация (ресторан, фото меню). Слева чат — просьба печатается строка за строкой, счётчик
+// ── 2. знает, как у вас заведено: одна ситуация (ресторан, фото меню). Слева чат — просьба печатается по словам, счётчик
 //    слов и секунд растёт; справа свой режим — щёлк камерой, ответ по правилам за 3 с. Обе колонки стартуют вместе ──
 
 @Composable
@@ -279,12 +280,18 @@ private fun SceneChat() {
             Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFFE2E5EB)).padding(11.dp)) {
                 ColHead("💬", stringResource(R.string.wiz_chat), stringResource(R.string.wiz_chat_new), Color(0xFF5B6478))
                 val ask = stringResource(R.string.wiz_chat_ask)
-                // по строкам, как печатают: 9 ступенек
-                val shown = (ask.length * (kotlin.math.floor(p * 9f) / 9f)).toInt()
+                // по словам, как печатают; счётчик — сколько слов видно («₽» и «📎» — не слова), как askWords в intro.js
+                val tokens = remember(ask) { ask.split(' ') }
+                val isWord = remember(ask) { tokens.map { tk -> tk.any { it.isLetterOrDigit() } } }
+                val total = isWord.count { it }
+                val w = (total * p).toInt()
+                // показываем токены до w-го слова включительно и знаки без букв сразу за ним
+                var seen = 0
+                val shown = tokens.indices.takeWhile { i -> if (isWord[i]) seen++; seen <= w }.size
                 Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp)).background(Color.White).padding(horizontal = 9.dp, vertical = 8.dp)) {
-                    Text(ask.take(shown), fontSize = 11.5.sp, lineHeight = 1.38.em, color = Ink.ink, overflow = TextOverflow.Clip)
+                    Text(tokens.take(shown).joinToString(" "), fontSize = 12.sp, lineHeight = 1.38.em, color = Ink.ink, overflow = TextOverflow.Clip)
                 }
-                (20 * p).toInt().let { w -> Counter(pluralStringResource(R.plurals.wiz_chat_words, w, w), Color(0xFF6B7487)) }
+                Counter(pluralStringResource(R.plurals.wiz_chat_words, w, w), Color(0xFF6B7487))
             }
             Stopwatch((40 * p).toInt(), Color(0xFF6B7487), Color(0xFFA9B0BE))
         }
@@ -337,7 +344,7 @@ private fun Counter(left: String, color: Color, power: Boolean = false) = Row(Mo
     Text(left, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
-// ── 3. знает, кто зачем пришёл: режимы — кнопки; по очереди переворачиваются, на обороте — уже написанная просьба ──
+// ── 3. привычки знает наизусть: режимы — кнопки; по очереди переворачиваются, на обороте — уже написанная просьба ──
 
 @Composable
 private fun SceneKeys() {

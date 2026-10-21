@@ -118,12 +118,12 @@
 .sc6 .chat .hd b{color:#5B6478}
 .sc6 .hd small{font-size:10.5px;color:var(--soft);margin-top:1px}
 .sc6 .ci{font-size:17px;flex:none}
-.sc6 .ask{flex:1;width:100%;background:#fff;border-radius:12px 12px 3px 12px;padding:8px 9px;font-size:11.5px;line-height:1.38;color:var(--ink);overflow:hidden;position:relative}
-.sc6 .tw{max-height:0;overflow:hidden;animation:tw var(--T) steps(9,end) infinite}
-@keyframes tw{0%,3%{max-height:0}78%,96%{max-height:150px}100%{max-height:0}}
+.sc6 .ask{flex:1;width:100%;background:#fff;border-radius:12px 12px 3px 12px;padding:8px 9px;font-size:12px;line-height:1.38;color:var(--ink);overflow:hidden;position:relative}
+/* по словам: у каждого слова свои кадры tw№ (askWords), счётчик идёт теми же ступеньками — сколько видно, столько и насчитано */
+.sc6 .tw span{animation-duration:var(--T);animation-iteration-count:infinite;animation-timing-function:step-end}
 .sc6 .cnt{display:flex;justify-content:space-between;gap:4px;margin-top:8px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sc6 .chat .cnt{color:#6B7487}
-.sc6 .chat .cnt .w{counter-reset:w var(--w);animation:cw var(--T) linear infinite}
+.sc6 .chat .cnt .w{counter-reset:w var(--w);animation:cw var(--T) steps(20,end) infinite}
 .sc6 .chat .cnt .w::before{content:"✎\00a0" counter(w) "\00a0слов"}
 @keyframes cw{0%,3%{--w:0}78%,100%{--w:20}}
 /* секундомеры под колонками: крупные цифры, иконка часов приглушённая */
@@ -148,7 +148,7 @@
 @keyframes sn1{0%,4%{opacity:0;transform:scale(.8)}8%,96%{opacity:1;transform:none}100%{opacity:0}}
 .sc6 .flash{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
 @keyframes fl{0%,3%{opacity:0}4%{opacity:.9}8%,100%{opacity:0}}
-.sc6 .ans{position:relative;font-size:12.5px;line-height:1.4;font-weight:400;color:var(--ink);padding-left:11px;margin-top:10px;opacity:0;animation:sn2 var(--T) infinite both}
+.sc6 .ans{position:relative;font-size:12px;line-height:1.4;font-weight:400;color:var(--ink);padding-left:11px;margin-top:10px;opacity:0;animation:sn2 var(--T) infinite both}
 .sc6 .ans::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--server)}
 @keyframes sn2{0%,10%{opacity:0;transform:translateY(6px)}14%,96%{opacity:1;transform:none}100%{opacity:0}}
 .sc6 .vah .cnt{margin-top:auto}

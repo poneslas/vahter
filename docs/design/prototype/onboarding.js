@@ -1,6 +1,13 @@
 /* Первый запуск — мастер: шаги, навигация, проба голоса (в Android — app/Onboarding.kt). Сцены шагов — intro.js, кнопка/лист/ключ — ui.js. */
 const ONB=['welcome','voice','button','try','rules','quick','brain'];
-function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
+// точки — своей строкой над кнопками: ширина «Подключить» и крупный шрифт телефона их не задевают
+function navBar(skip,primary){ return `${onbDots()}<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
+/** Точки шагов как в Instagram: на виду не больше пяти, окно едет за текущим шагом; крайняя точка мельче, если за ней есть ещё.
+ *  Ширина постоянная, строка своя — над кнопками, строго по центру (в Android — StepDots). */
+const DOTS_MAX=5;
+function onbDots(){ const n=ONB.length, k=Math.min(n,DOTS_MAX), at=Math.max(0,Math.min(S.onbStep-2,n-k));
+  return `<div class="dots">${Array.from({length:k},(_,j)=>{ const i=at+j, edge=(j===0&&i>0)||(j===k-1&&i<n-1);
+    return `<i class="${i===S.onbStep?'on':edge?'sm':''}"></i>` }).join('')}</div>` }
 function onb(){
   const st=ONB[S.onbStep];
   if (st==='try') return tryStep();
@@ -36,8 +43,8 @@ function onb(){
     extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${row2}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
     if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
   // Режимы — два экрана: чем это лучше чата («как обычно» против просьбы заново) и как устроено (кнопка = написанная просьба). Настраивать нечего.
-  if (st==='rules'){ art=introScene(2); h='Своих знает в лицо'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
-  if (st==='quick'){ art=introScene(3); h='Знает, кто зачем пришёл'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
+  if (st==='rules'){ art=introScene(2); h='Знает, как у вас заведено'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
+  if (st==='quick'){ art=introScene(3); h='Привычки знает наизусть'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
   return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
@@ -52,7 +59,9 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
 const TEQ_N = 13;
 function teqLoading(pct){
   const on = Math.round(pct/100*TEQ_N);
-  return `<div class="teq load">${Array.from({length:TEQ_N},(_,i)=>`<i class="${i<on?'on':''}" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('')}<span class="seam">${'<b></b>'.repeat(7)}</span></div>`;
+  // шов — только по ещё не готовым точкам: ожившие столбики крестики не перекрывают; крестик — на каждые две точки
+  const rest = TEQ_N-on, seam = rest ? `<span class="seam" style="left:${on?`calc(50% - ${(TEQ_N*16-7)/2}px + ${on*16-6}px)`:'-6px'}">${'<b></b>'.repeat(Math.ceil(rest/2))}</span>` : '';
+  return `<div class="teq load">${Array.from({length:TEQ_N},(_,i)=>`<i class="${i<on?'on':''}" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('')}${seam}</div>`;
 }
 function tryStep(){
   const rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[], loading=S.w.model==='loading', ready=S.w.model==='ready';

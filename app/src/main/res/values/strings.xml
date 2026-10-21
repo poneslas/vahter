@@ -530,7 +530,7 @@
     <string name="intro_0_h">Вахтёр. Всегда на месте</string>
     <string name="intro_0_p">Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.</string>
     <string name="intro_1_h">Своих — без очереди</string>
-    <string name="intro_3_h">Знает, кто зачем пришёл</string>
+    <string name="intro_3_h">Привычки знает наизусть</string>
     <string-array name="intro_steps">
         <item>Разблокировать</item><item>Найти приложение</item><item>Открыть</item><item>Новый чат</item>
     </string-array>
@@ -598,7 +598,7 @@
     <string name="sidekey_tile_sub">Вахтёр — из быстрых настроек</string>
     <string name="sidekey_tile_done">Добавлена</string>
     <string name="try_recog">Распознаю на телефоне…</string>
-    <string name="wiz_rules_h">Своих знает в лицо</string>
+    <string name="wiz_rules_h">Знает, как у вас заведено</string>
     <string name="wiz_rules_p">Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.</string>
     <string name="wiz_quick_p">Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.</string>
     <string name="wiz_chat">Чат</string>
@@ -624,6 +624,7 @@
     <string name="key_other">Другие модели — в настройках</string>
     <string name="sheet_chip_alarm">⏰ Будильник на 7</string>
     <string name="sheet_chip_timer">⏱ Таймер на 5 минут</string>
+    <string name="sheet_chip_torch">🔦 Включи фонарик</string>
     <string name="sheet_chip_brain">Что посмотреть в Казани?</string>
     <string name="sheet_strip_no_brain">Мозг не подключён — пока только команды телефона</string>
     <string name="sheet_strip_dl">Распознавание качается — %1$d %%, пока клавиатура</string>

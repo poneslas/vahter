@@ -390,7 +390,9 @@ private fun Scene(st: SheetSt, state: Conversation.State, chips: Boolean, brain:
         Text(cap, fontSize = 23.sp, fontWeight = FontWeight.Medium, color = Ink.ink, textAlign = TextAlign.Center)
         if (sub.isNotEmpty()) Text(sub, fontSize = 13.5.sp, color = Ink.soft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
         if (chips && main) FlowRow(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            (listOf(tr(R.string.sheet_chip_alarm), tr(R.string.sheet_chip_timer)) + if (brain) listOf(tr(R.string.sheet_chip_brain)) else emptyList()).forEach { c ->
+            // три чипа: два в ряд, третий — по центру второго. Без мозга — только то, что телефон делает сам; с мозгом таймер уступает вопросу
+            (if (brain) listOf(R.string.sheet_chip_alarm, R.string.sheet_chip_torch, R.string.sheet_chip_brain)
+             else listOf(R.string.sheet_chip_alarm, R.string.sheet_chip_timer, R.string.sheet_chip_torch)).map { tr(it) }.forEach { c ->
                 Text(c, fontSize = 13.5.sp, color = Ink.ink, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
                     .clickable { onSay(c.replace(Regex("^\\S+ (?=\\p{Lu})"), "")) }.padding(horizontal = 12.dp, vertical = 7.dp))
             }
