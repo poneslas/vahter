@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Значок «Вахтёр» как на первом слайде приветствия (ui/OursIcon.kt): кольцо янтарь→синий, тёмная середина, четыре столбика волны. Холст 108, видимая часть ~72. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FF10182B" android:pathData="M46.55,31.66 h14.90 a14.90,14.90 0 0 1 14.90,14.90 v14.90 a14.90,14.90 0 0 1 -14.90,14.90 h-14.90 a14.90,14.90 0 0 1 -14.90,-14.90 v-14.90 a14.90,14.90 0 0 1 14.90,-14.90 z"/>
-    <path android:fillColor="#F5C35A" android:pathData="M41.90,49.03 h0.00 a2.17,2.17 0 0 1 2.17,2.17 v5.59 a2.17,2.17 0 0 1 -2.17,2.17 h-0.00 a2.17,2.17 0 0 1 -2.17,-2.17 v-5.59 a2.17,2.17 0 0 1 2.17,-2.17 z"/>
-    <path android:fillColor="#F5C35A" android:pathData="M49.97,44.07 h0.00 a2.17,2.17 0 0 1 2.17,2.17 v15.52 a2.17,2.17 0 0 1 -2.17,2.17 h-0.00 a2.17,2.17 0 0 1 -2.17,-2.17 v-15.52 a2.17,2.17 0 0 1 2.17,-2.17 z"/>
-    <path android:fillColor="#7C93FF" android:pathData="M58.03,40.34 h0.00 a2.17,2.17 0 0 1 2.17,2.17 v22.97 a2.17,2.17 0 0 1 -2.17,2.17 h-0.00 a2.17,2.17 0 0 1 -2.17,-2.17 v-22.97 a2.17,2.17 0 0 1 2.17,-2.17 z"/>
-    <path android:fillColor="#7C93FF" android:pathData="M66.10,46.55 h0.00 a2.17,2.17 0 0 1 2.17,2.17 v10.55 a2.17,2.17 0 0 1 -2.17,2.17 h-0.00 a2.17,2.17 0 0 1 -2.17,-2.17 v-10.55 a2.17,2.17 0 0 1 2.17,-2.17 z"/>
+<!-- Знак «солнце» (.vmark в прототипе): ядро с ореолом, внутреннее и внешнее кольцо. Знак 56 на холсте 108. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- ореол -->
+    <path android:pathData="M54,54m-22,0a22,22 0 1,0 44,0a22,22 0 1,0 -44,0">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="54" android:centerY="54" android:gradientRadius="22">
+                <item android:offset="0.4" android:color="#73E8A317"/>
+                <item android:offset="1" android:color="#00E8A317"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- внешнее кольцо -->
+    <path android:strokeColor="#59E8A317" android:strokeWidth="1.6" android:pathData="M54,54m-27.2,0a27.2,27.2 0 1,0 54.4,0a27.2,27.2 0 1,0 -54.4,0"/>
+    <!-- внутреннее кольцо -->
+    <path android:strokeColor="#B3E8A317" android:strokeWidth="2.2" android:pathData="M54,54m-17.4,0a17.4,17.4 0 1,0 34.8,0a17.4,17.4 0 1,0 -34.8,0"/>
+    <!-- ядро -->
+    <path android:fillColor="#FFE8A317" android:pathData="M54,54m-10.64,0a10.64,10.64 0 1,0 21.28,0a10.64,10.64 0 1,0 -21.28,0"/>
 </vector>

@@ -50,7 +50,7 @@ fun ColumnScope.Chat(a: MainActivity) {
     val connected = remember(keyV, brain.id) { app.hasKey(brain.id) }
     // chat(): [свернуть] заголовок режима, точка связи · «DeepSeek · на связи», шестерёнка
     TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
-        onBack = if (a.fromSheet) ({ a.collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
+        onBack = if (a.fromSheet) ({ a.collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.local else Ink.faint) {
         IconBtn(Ic.gear, tr(R.string.ui_settings)) { a.go("settings") }
         // ⋮ — меню разговора (ui.js, chatMenu): изменить режим, журнал действий, начать заново (неактивно, пока разговор пуст).
         Box {

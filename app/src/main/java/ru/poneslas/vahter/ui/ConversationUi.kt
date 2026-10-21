@@ -187,7 +187,7 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
 @Composable
 private fun AiItem(item: FeedItem.Ai) {
     Box(Modifier.fillMaxWidth().padding(start = 16.dp)) {
-        Box(Modifier.offset(x = (-15).dp, y = 8.dp).size(7.dp).clip(CircleShape).background(Ink.server))
+        Box(Modifier.offset(x = (-15).dp, y = 8.dp).size(7.dp).clip(CircleShape).background(Ink.local))
         SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { Markdown(item.text) } }
     }
 }
@@ -243,11 +243,11 @@ private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) 
 @Composable
 private fun StepsItem(item: FeedItem.Steps) {
     var open by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.serverT)) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.localT)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(if (item.running) item.titles.last() else trp(R.plurals.feed_steps, item.titles.size),
-                fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = Ink.serverD, modifier = Modifier.weight(1f))
-            Icon(painterResource(Ic.chev), null, Modifier.size(14.dp).graphicsLayer { rotationZ = if (open) 180f else 0f }, tint = Ink.serverD)
+                fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = Ink.localD, modifier = Modifier.weight(1f))
+            Icon(painterResource(Ic.chev), null, Modifier.size(14.dp).graphicsLayer { rotationZ = if (open) 180f else 0f }, tint = Ink.localD)
         }
         if (open) Column(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
             item.titles.forEach { t ->
@@ -265,8 +265,8 @@ private fun StepsItem(item: FeedItem.Steps) {
 @Composable
 private fun CardItem(item: FeedItem.Card, onCard: (FeedItem.Card, String) -> Unit) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp))) {
-        Text(item.head, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = if (item.phone) Ink.localD else Ink.serverD,
-            modifier = Modifier.fillMaxWidth().background(if (item.phone) Ink.localT else Ink.serverT).padding(horizontal = 12.dp, vertical = 7.dp))
+        Text(item.head, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
+            modifier = Modifier.fillMaxWidth().background(Ink.localT).padding(horizontal = 12.dp, vertical = 7.dp))
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 4.dp)) {
             Text(item.title, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold)
             if (item.text.isNotEmpty()) Text(item.text, fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 6.dp, bottom = 2.dp))

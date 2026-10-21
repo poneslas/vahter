@@ -79,6 +79,7 @@ import android.provider.Settings
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.getValue
@@ -139,8 +140,12 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
         // (полоска загрузки, «Готово», микрофон, строки кнопки), под текстом — резерв [Slot] на самое высокое состояние: не прыгает.
         @Composable fun Art(k: WizScene, minH: Dp = 300.dp) =
             Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = minH), contentAlignment = Alignment.Center) { WizArt(k) }
-        @Composable fun Slot(minH: Dp, content: @Composable ColumnScope.() -> Unit) =
-            Column(Modifier.fillMaxWidth().heightIn(min = minH), content = content)
+        // Шаблон шагов с действием (onboarding.js, .onbact/.onbstat): карточка действия — всегда прямо над точками, место под одну
+        // строку занято заранее; под ней — строка фона (загрузка голоса), тоже заранее. Ничего не прыгает, карточки на одной высоте.
+        @Composable fun Action(content: @Composable ColumnScope.() -> Unit) =
+            Column(Modifier.fillMaxWidth().heightIn(min = 76.dp).padding(top = 4.dp), verticalArrangement = Arrangement.Bottom, content = content)
+        @Composable fun Status(content: @Composable ColumnScope.() -> Unit) =
+            Column(Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(start = 4.dp, top = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically), content = content)
         @Composable fun Head(h: String, p: String) {
             Text(h, fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
             Text(p, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
@@ -152,26 +157,23 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) { VoiceArt() }
                 Head(tr(R.string.wiz_voice_h), tr(R.string.wiz_voice_p, "225"))
                 val error = (dl as? ModelDownload.State.Failed)?.reason
-                Slot(132.dp) {   // полоска с подписью + строка «Микрофон»
-                when {
-                    installed -> Note(tr(R.string.ui_done), ok = true)
-                    running != null -> {
-                        Progress(running.percent)
-                        Text(tr(R.string.wiz_voice_progress, running.percent), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 8.dp))
+                Action {
+                    if (!mic && (installed || running != null)) SetCard { Item(tr(R.string.set_mic), tr(R.string.wiz_voice_mic_sub), icon = Ic.mic) { activity.askMic() } }
+                }
+                Status {
+                    when {
+                        installed -> Text(tr(R.string.wiz_voice_done), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.ok)
+                        running != null -> { Progress(running.percent); Text(tr(R.string.wiz_voice_progress, running.percent), fontSize = 13.sp, color = Ink.soft) }
+                        error != null -> Text(tr(R.string.voice_error, error), fontSize = 13.sp, color = Ink.danger)
                     }
-                    else -> {
-                        if (error != null) Note(tr(R.string.voice_error, error), ok = false)
-                        // «Скачать» — и сразу системный запрос микрофона, пока качается модель (Продукт 5.13).
-                        primary = (if (error == null) tr(R.string.voice_download) else tr(R.string.wiz_voice_retry)) to {
-                            ModelDownload.start(ctx); if (!mic && !app.conversation.state.value.settings.micAsked) activity.askMic(); Unit
-                        }
+                }
+                if (!installed && running == null) {
+                    // «Скачать» — и сразу системный запрос микрофона, пока качается модель (Продукт 5.13).
+                    primary = (if (error == null) tr(R.string.voice_download) else tr(R.string.wiz_voice_retry)) to {
+                        ModelDownload.start(ctx); if (!mic && !app.conversation.state.value.settings.micAsked) activity.askMic(); Unit
                     }
                 }
                 if (installed || running != null) skip = null
-                if (!mic && (installed || running != null)) SetCard(Modifier.padding(top = 12.dp)) {
-                    Item(tr(R.string.set_mic), tr(R.string.wiz_voice_mic_sub), icon = Ic.mic) { activity.askMic() }
-                }
-                }
             }
             2 -> {
                 // Кнопка — один экран на все телефоны. Обязательна только роль «Цифровой помощник» (есть везде с Android 10).
@@ -183,44 +185,44 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 val sideOk = side == SideKey.State.ASSISTANT
                 val ok = role && (!known || sideOk)
                 val check: @Composable () -> Unit = { Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }
-                Art(WizScene.QUEUE, 220.dp)
+                // Гонка чуть меньше, чем во вступлении: под текстом — воздух (onboarding.js, .onb .art .sc1).
+                Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 200.dp), contentAlignment = Alignment.Center) { Box(Modifier.scale(.86f)) { WizArt(WizScene.QUEUE) } }
                 Head(tr(R.string.intro_1_h), tr(when {
-                    ok && known -> R.string.sidekey_p_done
-                    ok && probe == true -> R.string.sidekey_p_done_probe
-                    ok -> R.string.sidekey_p_done_nokey
-                    sideOk -> R.string.sidekey_p_ready
-                    known -> R.string.sidekey_p_todo
-                    else -> R.string.sidekey_p_todo_one
+                    !role -> R.string.sidekey_p_todo_one
+                    known && !sideOk -> R.string.sidekey_p_todo
+                    known -> R.string.sidekey_p_done
+                    probe == true -> R.string.sidekey_p_done_probe
+                    probe == false -> R.string.sidekey_p_probe_no
+                    else -> R.string.sidekey_p_done_nokey
                 }))
-                Slot(196.dp) {   // две строки настроек + подпись про загрузку; проба «Нет» — три строки
-                SetCard {
-                    Item(tr(R.string.set_assistant_role), if (role) tr(R.string.app_name) else tr(R.string.sidekey_not_set, tr(R.string.sidekey_other_assistant)), warn = !role, icon = Ic.spark,
-                        end = if (role) check else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
-                    when {
-                        known && sideOk -> Item(tr(R.string.set_side_key), tr(R.string.sidekey_ready), icon = Ic.btn, end = check) { SideKey.open(activity) }
-                        known -> Item(tr(R.string.set_side_key), tr(R.string.sidekey_not_set, SideKey.now(activity)), warn = true, icon = Ic.btn) { SideKey.open(activity) }
-                        !role -> Item(tr(R.string.set_call), tr(R.string.sidekey_call_any), icon = Ic.btn)
-                        probe == true -> Item(tr(R.string.set_call), tr(R.string.sidekey_probe_ok), icon = Ic.btn, end = check)
-                        probe == false -> {
-                            Item(tr(R.string.set_call), tr(R.string.sidekey_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
-                            if (tileAdded) Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_done), icon = Ic.list, end = check)
-                            else Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_sub), icon = Ic.list) { VahterTile.request(activity) { tileAdded = it } }
-                        }
-                        else -> Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(painterResource(Ic.btn), null, Modifier.size(24.dp).padding(2.dp), tint = Ink.soft)
-                                Spacer(Modifier.width(16.dp))
-                                Text(tr(R.string.sidekey_probe), fontSize = 15.sp, lineHeight = 1.35.em, color = Ink.ink)
+                // Строка боковой кнопки — только если с ней есть что делать: уже открывает помощника (One UI 7+) — строки нет.
+                Action {
+                    SetCard {
+                        Item(tr(R.string.set_assistant_role), if (role) tr(R.string.app_name) else tr(R.string.sidekey_other_assistant), warn = !role, icon = Ic.spark,
+                            end = if (role) check else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
+                        when {
+                            known && !sideOk -> Item(tr(R.string.set_side_key), SideKey.now(activity), warn = true, icon = Ic.btn) { SideKey.open(activity) }
+                            known || !role || probe == true -> {}
+                            probe == false -> {
+                                Item(tr(R.string.set_call), tr(R.string.sidekey_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                                if (tileAdded) Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_done), icon = Ic.list, end = check)
+                                else Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_sub), icon = Ic.list) { VahterTile.request(activity) { tileAdded = it } }
                             }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
-                                TextButton(tr(R.string.ui_no)) { probe = false }
-                                TextButton(tr(R.string.ui_yes)) { probe = true }
+                            else -> Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(painterResource(Ic.btn), null, Modifier.size(24.dp).padding(2.dp), tint = Ink.soft)
+                                    Spacer(Modifier.width(16.dp))
+                                    Text(tr(R.string.sidekey_probe), fontSize = 15.sp, lineHeight = 1.35.em, color = Ink.ink)
+                                }
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+                                    TextButton(tr(R.string.ui_no)) { probe = false }
+                                    TextButton(tr(R.string.ui_yes)) { probe = true }
+                                }
                             }
                         }
                     }
                 }
-                running?.let { Text(tr(R.string.wiz_dl_progress, it.percent) + if (ok) "" else tr(R.string.wiz_dl_hint), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 10.dp)) }
-                }
+                Status { running?.let { Text(tr(R.string.wiz_dl_progress, it.percent), fontSize = 13.sp, color = Ink.soft) } }
                 if (!ok) {
                     // «Настроить» открывает по очереди то, что ещё не настроено.
                     val setup = { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) }
@@ -290,9 +292,8 @@ private fun StepDots(step: Int, steps: Int, modifier: Modifier = Modifier) {
 private data class Shot(val text: String, val ms: Long)
 
 /**
- * Проба голоса (ui.js, tryStep). Герой экрана — эквалайзер Вахтёра ([TryEq]). Пока распознавание качается, его столбики и есть
- * полоска загрузки: готовые шевелятся, остальные — точки, поперёк — шов («рот зашит»); микрофон не работает, справа «Пропустить».
- * Докачалось — шов лопается, столбики оживают, кнопка один раз пульсирует. Дальше фраза — крупно прямо на фоне, без поля и подложки,
+ * Проба голоса (ui.js, tryStep). Герой экрана — знак Вахтёра. Пока распознавание качается, ядро серое, внешнее кольцо — шкала
+ * загрузки; микрофон не работает, справа «Пропустить». Докачалось — знак загорается с прыжком, кнопка один раз пульсирует. Дальше фраза — крупно прямо на фоне, без поля и подложки,
  * «⚡ Распознано на телефоне за 0,7 с»; прошлые бледнеют выше. Внизу — одна тихая строка жестов у той же кнопки, что в листе
  * (кнопка справа: при записи появляется полоса «‹ ‹ Отмена», кнопка не должна прыгать из-под пальца). Мозгу ничего не уходит.
  */
@@ -332,20 +333,13 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
                 old.forEachIndexed { i, sh -> Text(sh.text, fontSize = 14.sp, lineHeight = 1.35.em, color = if (i == old.lastIndex) Ink.soft else Color(0xFFB4BAC4), maxLines = 2) }
             }
         }
-        // Пишет — эквалайзер от настоящей громкости (LevelMeter Писаря): свежий уровень встаёт в центр и расходится к краям,
-        // 13 столбиков — последние ~0,25 с речи; замолчали — оседают. Вверх сразу, вниз плавно.
-        val hist = remember { mutableStateOf(FloatArray(7)) }
-        LaunchedEffect(rec) {
-            if (!rec) { hist.value = FloatArray(7); return@LaunchedEffect }
-            var sm = 0f
-            while (true) {
-                val l = app.voice.level
-                sm = if (l > sm) l else sm * .78f + l * .22f
-                hist.value = FloatArray(7) { i -> if (i == 0) sm else hist.value[i - 1] }
-                kotlinx.coroutines.delay(40)
-            }
+        // Знак Вахтёра — тот же, что в листе (ui.js, .tsun): качается — ядро серое, внешнее кольцо — шкала; докачалось — загорается
+        // с прыжком; слушает — живой от громкости; распознаёт — пунктирное кольцо.
+        val pop = if (freed.value < 1f) { val f = (freed.value / .55f).coerceIn(0f, 1f); .8f + .2f * f + .12f * kotlin.math.sin(f * Math.PI.toFloat()) } else 1f
+        Box(Modifier.height(132.dp).graphicsLayer { scaleX = pop; scaleY = pop }, contentAlignment = Alignment.Center) {
+            ru.poneslas.vahter.assistant.VMark(when { rec -> ru.poneslas.vahter.assistant.SheetSt.REC; proc -> ru.poneslas.vahter.assistant.SheetSt.RECOG; else -> ru.poneslas.vahter.assistant.SheetSt.IDLE },
+                118.dp, sleep = if (!installed) (pct ?: 0) / 100f else null)
         }
-        TryEq(loading = !installed, pct = pct ?: 0, active = rec, calm = proc, freed = freed.value, levels = hist.value)   // голоса нет — точки со швом
         // строка процентов — всегда в резерве: докачалось — текст ниже не прыгает
         Text("${pct ?: 0}\u00A0%", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD, modifier = Modifier.padding(top = 8.dp).alpha(if (loading) 1f else 0f))
         Column(Modifier.fillMaxWidth().heightIn(min = 96.dp).padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -384,54 +378,3 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
     }
 }
 
-/**
- * Эквалайзер-герой пробы голоса (intro.css, .teq): 13 столбиков. В загрузке — прогресс: готовые шевелятся, остальные — точки,
- * поперёк шов с крестиками. [freed] 0→1 сразу после докачки: крестики разлетаются, столбики подпрыгивают. Дальше — дышит,
- * при записи — от настоящей громкости ([levels]: [0] — сейчас, дальше — прошлое), при распознавании — спокойная волна ([calm]).
- */
-@Composable
-private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, freed: Float, levels: FloatArray = FloatArray(7)) {
-    val n = 13
-    val t = seconds()
-    Canvas(Modifier.size(230.dp, 84.dp)) {
-        val bw = 9.dp.toPx(); val gap = 7.dp.toPx()
-        val total = n * bw + (n - 1) * gap
-        val x0 = (size.width - total) / 2; val cy = size.height / 2
-        val on = Math.round(pct / 100f * n)
-        val pop = if (freed < 1f) { val f = (freed / .4f).coerceIn(0f, 1f); .2f + .8f * f + .25f * kotlin.math.sin(f * Math.PI.toFloat()) } else 1f
-        for (i in 0 until n) {
-            val x = x0 + i * (bw + gap)
-            val h = when {
-                loading && i >= on -> bw
-                loading -> (12f + 22f * (.5f + .5f * kotlin.math.sin((t / 1.1f - i * .07f / 1.1f) * 2 * Math.PI.toFloat()))).dp.toPx()
-                // голос: столбик i показывает уровень с задержкой |i − 6| шагов; к краям чуть ниже; в тишине — дрожание в пару пикселей
-                active -> { val d = kotlin.math.abs(i - n / 2); val v = levels.getOrElse(d) { 0f } * (1f - .05f * d)
-                    (10f + 2f * (.5f + .5f * kotlin.math.sin((t * 2.3f + i * .41f) * 2 * Math.PI.toFloat())) + 62f * v.coerceIn(0f, 1f)).dp.toPx() }
-                calm -> (10f + 18f * (.5f + .5f * kotlin.math.sin((t / 1.6f - i * .09f) * 2 * Math.PI.toFloat()))).dp.toPx()
-                else -> (10f + 10f * (.5f + .5f * kotlin.math.sin((t / 3.2f - i * .08f) * 2 * Math.PI.toFloat()))).dp.toPx() * pop
-            }
-            val r = CornerRadius(bw / 2)
-            // градиент — на каждый столбик свой (янтарь сверху → синий снизу), как в прототипе
-            if (loading && i >= on) continue   // не готово — на этом месте стежок шва, без точки
-            drawRoundRect(Brush.verticalGradient(listOf(Ink.local, Ink.server), startY = cy - h / 2, endY = cy + h / 2), Offset(x, cy - h / 2), Size(bw, h), r)
-        }
-        // шов «рот зашит»: на каждом ещё не готовом месте — крестик-стежок ровно вместо точки, через них тонкая нитка;
-        // ожившие столбики не задевает. После докачки стежки разлетаются со всех 13 мест.
-        val k = if (loading) 0f else if (freed < 1f) freed else return@Canvas
-        val first = if (loading) on else 0
-        if (first >= n) return@Canvas
-        val seam = Color(0xFF8A93A6).copy(alpha = 1f - k)
-        val cxOf = { i: Int -> x0 + i * (bw + gap) + bw / 2 }
-        if (k == 0f) drawLine(seam.copy(alpha = .55f), Offset(cxOf(first) - bw / 2, cy), Offset(cxOf(n - 1) + bw / 2, cy), 1.5.dp.toPx())
-        for (j in first until n) {
-            val cx = cxOf(j)
-            val dy = (if (j % 2 == 0) -40f else 40f).dp.toPx() * k; val dx = (if (j % 2 == 0) -10f else 10f).dp.toPx() * k
-            val rot = (if (j % 2 == 0) -120f else 140f) * k
-            rotate(rot, Offset(cx + dx, cy + dy)) {
-                val a = 6.dp.toPx()
-                drawLine(seam, Offset(cx + dx - a / 1.4f, cy + dy - a / 1.4f), Offset(cx + dx + a / 1.4f, cy + dy + a / 1.4f), 2.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(seam, Offset(cx + dx - a / 1.4f, cy + dy + a / 1.4f), Offset(cx + dx + a / 1.4f, cy + dy - a / 1.4f), 2.dp.toPx(), cap = StrokeCap.Round)
-            }
-        }
-    }
-}

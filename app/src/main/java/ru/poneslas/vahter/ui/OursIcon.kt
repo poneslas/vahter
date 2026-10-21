@@ -23,22 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Значок «Вахтёр» (ui.js, oursIcon; .ours): кольцо янтарный→синий, тёмная середина, четыре столбика волны. */
+/** Значок «Вахтёр» (ui.js, oursIcon; .ours): бледно-янтарная плитка, в ней знак — ядро и два кольца. [live] — знак «слушает» (вступление). */
 @Composable
-fun OursIcon(size: Dp, radius: Dp = size * 0.31f) {
-    val k = size.value / 58f
-    Box(Modifier.size(size).clip(RoundedCornerShape(radius)), contentAlignment = Alignment.Center) {
-        Box(Modifier.fillMaxSize().drawBehind {
-            // conic-gradient(from 200deg …): поворачиваем сам градиент, квадрат с запасом закрывает углы
-            rotate(200f - 90f) { drawRect(Brush.sweepGradient(listOf(Ink.local, Color(0xFFF5C35A), Ink.server, Color(0xFF6F86FF), Ink.local), center),
-                topLeft = Offset(-this.size.width, -this.size.height), size = Size(this.size.width * 3, this.size.height * 3)) }
-        })
-        Box(Modifier.fillMaxSize().padding((11 * k).dp).clip(RoundedCornerShape((12 * k).dp)).background(Color(0xFF10182B)))
-        Row(horizontalArrangement = Arrangement.spacedBy((3 * k).dp), verticalAlignment = Alignment.CenterVertically) {
-            listOf(8, 16, 22, 12).forEachIndexed { i, h ->
-                Box(Modifier.width((3.5f * k).dp).height((h * k).dp).clip(RoundedCornerShape((2 * k).dp))
-                    .background(if (i < 2) Color(0xFFF5C35A) else Color(0xFF7C93FF)))
-            }
-        }
+fun OursIcon(size: Dp, radius: Dp = size * 0.31f, live: Boolean = false) {
+    Box(Modifier.size(size).clip(RoundedCornerShape(radius))
+        .background(Brush.radialGradient(0f to Color(0xFFFFF8E6), .55f to Color(0xFFFBEFD2), 1f to Color(0xFFF5DFA8))), contentAlignment = Alignment.Center) {
+        ru.poneslas.vahter.assistant.VMark(if (live) ru.poneslas.vahter.assistant.SheetSt.REC else ru.poneslas.vahter.assistant.SheetSt.IDLE, size * .74f, still = !live, fake = live)
     }
 }

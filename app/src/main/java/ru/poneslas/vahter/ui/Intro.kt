@@ -81,7 +81,7 @@ private fun MiniHeader(title: String, sub: String) = Column {
         Box(Modifier.size(26.dp, 3.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(Ink.server))
+        Box(Modifier.size(7.dp).clip(CircleShape).background(Ink.localD))
         Spacer(Modifier.width(6.dp))
         Text(title, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
         Text(" · $sub", fontSize = 11.5.sp, color = Ink.soft)
@@ -101,7 +101,7 @@ private fun Me(text: String, alpha: Float, modifier: Modifier = Modifier) = Box(
 
 @Composable
 private fun Ai(text: String, alpha: Float, modifier: Modifier = Modifier) = Row(modifier.padding(top = 6.dp).graphicsLayer { this.alpha = alpha; translationY = (1 - alpha) * 16f }) {
-    Box(Modifier.padding(top = 5.dp, end = 6.dp).size(6.dp).clip(CircleShape).background(Ink.server))
+    Box(Modifier.padding(top = 5.dp, end = 6.dp).size(6.dp).clip(CircleShape).background(Ink.localD))
     Text(text, fontSize = 12.sp, lineHeight = 1.35.em, color = Ink.ink)
 }
 
@@ -124,28 +124,17 @@ private fun ActRow(icon: String, title: String, sub: String, alpha: Float, check
     }
 }
 
-// ── 0. девиз: логотип, столбики которого — волна голоса ───────────────
+// ── 0. девиз: логотип — знак Вахтёра на бледно-янтарной плитке, ореол расходится ───────────────
 
 @Composable
 private fun BoxScope.Logo() {
     val t = loop(2400)
-    val w = loop(1200)
-    Box(Modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
-        listOf(0f to Ink.local, .5f to Ink.server).forEach { (d, c) ->
+    Box(Modifier.align(Alignment.Center).padding(bottom = 34.dp), contentAlignment = Alignment.Center) {
+        listOf(0f to Ink.local, .5f to Ink.localD).forEach { (d, c) ->
             val p = (t + d) % 1f
-            Box(Modifier.size(132.dp).graphicsLayer { scaleX = 1 + .6f * p; scaleY = 1 + .6f * p; alpha = .6f * (1 - p) }.border(2.dp, c, RoundedCornerShape(40.dp)))
+            Box(Modifier.size(104.dp).graphicsLayer { scaleX = 1 + .32f * p; scaleY = 1 + .32f * p; alpha = .6f * (1 - p) }.border(2.dp, c, RoundedCornerShape(32.dp)))
         }
-        Box(Modifier.size(132.dp).graphicsLayer { shadowElevation = 30f; shape = RoundedCornerShape(40.dp); clip = true }.drawBehind {
-            rotate(110f) { drawRect(Brush.sweepGradient(listOf(Ink.local, Color(0xFFF5C35A), Ink.server, Color(0xFF6F86FF), Ink.local), center), Offset(-size.width, -size.height), Size(size.width * 3, size.height * 3)) }
-        }, contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxSize().padding(24.dp).clip(RoundedCornerShape(26.dp)).background(Color(0xFF10182B)))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                listOf(0f, .15f, .3f, .1f).forEachIndexed { i, d ->
-                    val h = 14f + 34f * (0.5f + 0.5f * sin((w + d) * 2 * Math.PI.toFloat()))
-                    Box(Modifier.size(7.dp, h.dp).clip(RoundedCornerShape(4.dp)).background(if (i < 2) Color(0xFFF5C35A) else Color(0xFF7C93FF)))
-                }
-            }
-        }
+        OursIcon(104.dp, 32.dp, live = true)
     }
     // табличка поста: лампа мигает — вахтёр на месте
     val lamp = loop(1600)
@@ -174,17 +163,12 @@ private fun Clock(t: Float, n: Int, until: Float, color: Color) {
     Text("⏱ 0:%02d".format(s), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = color)
 }
 
-/** Эквалайзер диктовки в цветах Вахтёра: янтарь → синий. [calm] — спокойная бегущая волна (идёт распознавание). */
+/** Диктовка — живой знак Вахтёра (слушает; голос — имитация, микрофона в мультфильме нет). [calm] — распознаёт. */
 @Composable
 fun DictEq(alpha: Float, bars: Int = 9, maxH: Float = 16f, w: Dp = 3.dp, calm: Boolean = false) {
     if (alpha <= 0f) return
-    val ph = loop(if (calm) 1600 else 380 * 2)
-    Row(Modifier.height(maxH.dp).graphicsLayer { this.alpha = alpha }, horizontalArrangement = Arrangement.spacedBy(2.5.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (i in 0 until bars) {
-            val k = i / (bars - 1f)
-            val h = 4f + (maxH - 4f) * (if (calm) .18f + .32f * (0.5f + 0.5f * sin((ph - i * .09f) * 2 * Math.PI.toFloat())) else 0.5f + 0.5f * sin((ph + i * .37f) * 2 * Math.PI.toFloat()))
-            Box(Modifier.size(w, h.dp).clip(RoundedCornerShape(2.dp)).background(lerp(Ink.local, Ink.server, k)))
-        }
+    Box(Modifier.graphicsLayer { this.alpha = alpha }) {
+        ru.poneslas.vahter.assistant.VMark(if (calm) ru.poneslas.vahter.assistant.SheetSt.RECOG else ru.poneslas.vahter.assistant.SheetSt.REC, if (maxH > 20f) 52.dp else 18.dp, fake = true)
     }
 }
 
@@ -410,8 +394,8 @@ private fun BoxScope.SceneBrain() {
     // наверху — «Мозг Вахтёра»
     val glow = window(t, .58f, .61f, .66f, .72f)
     Row(Modifier.align(Alignment.TopCenter).width(232.dp).height(66.dp)
-        .drawBehind { drawRoundRect(Ink.server.copy(alpha = .22f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), CornerRadius(22.dp.toPx())) }
-        .clip(RoundedCornerShape(16.dp)).background(Ink.serverT).border(1.5.dp, Ink.server, RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 9.dp),
+        .drawBehind { drawRoundRect(Ink.localD.copy(alpha = .22f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), CornerRadius(22.dp.toPx())) }
+        .clip(RoundedCornerShape(16.dp)).background(Ink.localT).border(1.5.dp, Ink.localD, RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(Color.White), contentAlignment = Alignment.Center) { Text("🧠", fontSize = 17.sp) }
         Spacer(Modifier.width(8.dp))
@@ -421,18 +405,18 @@ private fun BoxScope.SceneBrain() {
             val i = (who * names.size).toInt().coerceIn(0, names.size - 1)
             val f = who * names.size - i                                // 0…1 внутри своей трети
             val a = window(f, 0f, .18f, .82f, 1f)
-            Text(names[i], fontSize = 10.5.sp, color = Ink.server, modifier = Modifier.graphicsLayer { alpha = a; translationY = 16f * (1 - a) * (if (f < .5f) 1 else -1) })
+            Text(names[i], fontSize = 10.5.sp, color = Ink.localD, modifier = Modifier.graphicsLayer { alpha = a; translationY = 16f * (1 - a) * (if (f < .5f) 1 else -1) })
         }
         Text("☁", fontSize = 22.sp, color = Color(0xFFB7C2F4))
     }
     // провод и пакет: вверх синий (вопрос), вниз янтарный (ответ)
     Canvas(Modifier.align(Alignment.TopCenter).padding(top = 70.dp).size(10.dp, 44.dp)) {
         var y = 0f
-        while (y < size.height) { drawRect(Ink.server.copy(alpha = .55f), Offset(size.width / 2 - 1.dp.toPx(), y), Size(2.dp.toPx(), 4.dp.toPx())); y += 8.dp.toPx() }
+        while (y < size.height) { drawRect(Ink.localD.copy(alpha = .55f), Offset(size.width / 2 - 1.dp.toPx(), y), Size(2.dp.toPx(), 4.dp.toPx())); y += 8.dp.toPx() }
         val up = ramp(t, .51f, .59f); val down = ramp(t, .65f, .72f)
         val y0 = size.height - 5.dp.toPx(); val y1 = 0f
         when {
-            t in .51f..<.61f -> drawCircle(Ink.server, 5.dp.toPx(), Offset(size.width / 2, y0 + (y1 - y0) * up))
+            t in .51f..<.61f -> drawCircle(Ink.localD, 5.dp.toPx(), Offset(size.width / 2, y0 + (y1 - y0) * up))
             t in .65f..<.73f -> drawCircle(Ink.local, 5.dp.toPx(), Offset(size.width / 2, y1 + (y0 - y1) * down))
         }
     }
@@ -453,7 +437,7 @@ private fun BoxScope.SceneBrain() {
                 Me(stringResource(R.string.wiz_brain_q), ramp(t, .44f, .48f))
                 Box(Modifier.padding(top = 8.dp)) {
                     val call = window(t, .49f, .51f, .70f, .73f) * (if (t in .54f..<.66f) .7f + .3f * sin(t * 160f) else 1f)
-                    Text(stringResource(R.string.wiz_brain_call), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Ink.server, modifier = Modifier.graphicsLayer { alpha = call })
+                    Text(stringResource(R.string.wiz_brain_call), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Ink.localD, modifier = Modifier.graphicsLayer { alpha = call })
                     Ai(stringResource(R.string.wiz_brain_a), ramp(t, .71f, .75f), Modifier.padding(top = 0.dp))
                 }
             }

@@ -69,7 +69,6 @@ import ru.poneslas.vahter.ui.ModeTabs
 import ru.poneslas.vahter.ui.PromptStrip
 import ru.poneslas.vahter.core.Modes
 import ru.poneslas.vahter.core.BrainDesc
-import ru.poneslas.vahter.ui.RecPill
 import ru.poneslas.vahter.ui.UpLine
 import ru.poneslas.vahter.media.PickerActivity
 import ru.poneslas.vahter.core.Conversation
@@ -106,8 +105,8 @@ import androidx.compose.runtime.setValue
 import ru.poneslas.vahter.ui.seconds
 
 /**
- * Что сейчас делает лист (ui.js, sheetSt): ждёт, слушает, распознаёт (янтарь — телефон); звонит наверх и мозг отвечает (синий — мозг).
- * THINK в приложении — мозг печатает ответ: тоже синий, иначе цвет прыгал «синий, пока ждём → янтарь, пока печатает».
+ * Что сейчас делает лист (ui.js, sheetSt): ждёт, слушает, распознаёт, звонит наверх, мозг отвечает. Цвет один — янтарный:
+ * отдельного «синего цвета мозга» нет (Продукт 5, решение 21.10), кто работает — видно подписью.
  */
 enum class SheetSt { IDLE, REC, RECOG, THINK, UP }
 
@@ -171,6 +170,12 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         }
         // Часы свечения: читаются в drawBehind — перерисовка каждый кадр без перекомпоновки.
         val glowT = seconds()
+        // громкость для свечения в записи — та же, что у знака: вверх сразу, вниз плавно
+        val glowLv = remember { mutableFloatStateOf(0f) }
+        LaunchedEffect(st == SheetSt.REC) {
+            if (st != SheetSt.REC) { glowLv.floatValue = 0f; return@LaunchedEffect }
+            while (true) { val l = app.voice.level; val v = glowLv.floatValue; glowLv.floatValue = if (l > v) v + (l - v) * .6f else v * .88f + l * .12f; kotlinx.coroutines.delay(32) }
+        }
         // Разворот в приложение и обратно: [grow] 0 — лист, 1 — полный экран.
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         // Свернули из приложения (тот же экран, SheetActivity.collapse): лист садится с полного экрана на свою прошлую высоту.
@@ -227,14 +232,14 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     .graphicsLayer { alpha = if (shrink && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height + pull.value }
                     .shadow(24.dp, RoundedCornerShape(topStart = corner, topEnd = corner), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = corner, topEnd = corner)).background(Ink.paper)
-                    .then(if (camera) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT) })
+                    .then(if (camera) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT, glowLv.floatValue) })
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                     .padding(bottom = bottomPad),
             ) {
                 // Шапка приложения проявляется сверху, пока лист растёт: к подмене он уже выглядит как экран приложения.
                 if (g > 0f) Box(Modifier.fillMaxWidth().height(with(d) { (92.dp.toPx() * g).toDp() }).graphicsLayer { alpha = g }) {
                     TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
-                        onBack = {}, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
+                        onBack = {}, backIcon = Ic.down, dot = if (connected) Ink.local else Ink.faint) {
                         IconBtn(Ic.gear, tr(R.string.ui_settings)) {}
                         IconBtn(Ic.more, tr(R.string.restart_more)) {}
                     }
@@ -280,7 +285,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     // слева: маленький знак и строка связи — только если что-то не так; в пустом листе — ничего
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         if (!empty) {
-                            VMark(st, 18.dp)
+                            VMark(if (st == SheetSt.REC) SheetSt.IDLE else st, 18.dp, still = st == SheetSt.REC)   // живой — один, над полем
                             if (!connected) {
                                 Spacer(Modifier.width(7.dp))
                                 Text(tr(R.string.sheet_no_key).trim().removePrefix("·").trim(), fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -315,15 +320,11 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         Scene(st, state, first && st == SheetSt.IDLE, connected, start,
                             onSay = { app.conversation.send(it, tr(R.string.sheet_via_tap)) }, onPrev = { expandNow() })
                     } else {
-                        // Волна записи — поверх низа ленты, а не отдельной строкой: высота листа при записи не меняется.
-                        Box(Modifier.fillMaxWidth()) {
-                            Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp), from = start)
-                            RecPill(Modifier.align(Alignment.BottomCenter))
-                        }
+                        Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp), from = start)
                         UpLine(state)
                     }
-                    if (!(empty && st != SheetSt.IDLE)) LiveLine(live, pill = false)
+                    if (!(empty && st != SheetSt.IDLE)) LiveLine(live)   // запись — живой знак своей строкой, на ленту не наезжает
                     Composer(
                         state = state,
                         voice = app.voice,
@@ -352,17 +353,17 @@ private fun CBtn(icon: Int, label: String, onClick: () -> Unit) =
         Icon(painterResource(icon), label, Modifier.size(18.dp), tint = Ink.soft)
     }
 
-/** Свечение снизу за строкой ввода (ui.js, .s2 .glow): ждёт — еле дышит; слушает — янтарь, сильно, пульс; распознаёт и делает сам — янтарь; звонит наверх — синий. */
-private fun DrawScope.glow(st: SheetSt, k: Float, t: Float) {
+/** Свечение снизу за строкой ввода (ui.js, .s2 .glow): ждёт — еле дышит; слушает — от громкости [lv], вместе со знаком; работает — пульс. Всё янтарное. */
+private fun DrawScope.glow(st: SheetSt, k: Float, t: Float, lv: Float = 0f) {
     if (k <= 0f) return
     val (alpha, hDp, period) = when (st) {
-        SheetSt.REC -> Triple(1f, 320f, 1.1f)
+        SheetSt.REC -> Triple(.55f + .45f * lv, 320f * (.92f + .2f * lv), 0f)
         SheetSt.RECOG, SheetSt.THINK -> Triple(.85f, 260f, 1.8f)
         SheetSt.UP -> Triple(.9f, 260f, 1.8f)
         SheetSt.IDLE -> Triple(.4f + .25f * (.5f + .5f * kotlin.math.sin(t / 4f * 2 * Math.PI.toFloat())), 260f, 0f)
     }
     val pulse = if (period > 0f) 1f + .12f * (.5f + .5f * kotlin.math.sin(t / period * 2 * Math.PI.toFloat())) else 1f
-    val c = if (st == SheetSt.UP || st == SheetSt.THINK) Ink.server else Ink.local
+    val c = Ink.local
     val h = hDp * density * pulse
     val center = Offset(size.width / 2, size.height)
     // эллипс 130% ширины × высота свечения: круг радиусом h, растянутый по горизонтали
@@ -372,17 +373,31 @@ private fun DrawScope.glow(st: SheetSt, k: Float, t: Float) {
     }
 }
 
-/** Знак Вахтёра — «лампа на вахте» (ui.js, vMark): ядро и два кольца; состояние листа задаёт цвет и движение. */
+/**
+ * Знак Вахтёра — «лампа на вахте» (ui.js, vMark): янтарное ядро и два кольца. Один на всё: лист, разговор, мастер, вступление, значок.
+ * Слушает — живой: ядро и кольца растут и оседают от громкости (LevelMeter Писаря), своего пульса нет; [fake] — имитация голоса
+ * для мультфильмов (там микрофона нет). Распознаёт или работает — пунктирное кольцо крутится. [still] — без движения (значок).
+ * [sleep] — модель ещё качается: ядро серое, внешнее кольцо заполняется как шкала (0..1).
+ */
 @Composable
-fun VMark(st: SheetSt, size: Dp) {
-    val t = seconds()
-    val c = if (st == SheetSt.UP || st == SheetSt.THINK) Ink.server else Ink.local
-    val reduce = android.provider.Settings.Global.getFloat(LocalContext.current.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-    // «Слушаю» — от настоящей громкости (LevelMeter Писаря): вверх сразу, вниз плавно; замолчали — ядро опадает.
+fun VMark(st: SheetSt, size: Dp, still: Boolean = false, fake: Boolean = false, sleep: Float? = null, color: Color = Ink.local) {
+    val t = if (still) 0f else seconds()
+    val reduce = still || android.provider.Settings.Global.getFloat(LocalContext.current.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    // Громкость: вверх сразу, вниз плавно; замолчали — оседает.
     var lvl by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(st == SheetSt.REC) {
-        if (st != SheetSt.REC) { lvl = 0f; return@LaunchedEffect }
-        while (true) { val l = App.instance.voice.level; lvl = if (l > lvl) l else lvl * .82f + l * .18f; kotlinx.coroutines.delay(32) }
+    val rec = st == SheetSt.REC && sleep == null
+    LaunchedEffect(rec, fake) {
+        if (!rec) { lvl = 0f; return@LaunchedEffect }
+        var syl = 0f; var left = 0
+        while (true) {
+            val l = if (!fake) App.instance.voice.level else {
+                // слоги: 120–260 мс, иногда пауза — как voice() в прототипе
+                if (left <= 0) { left = 4 + (Math.random() * 4).toInt(); syl = if (Math.random() < .18) .05f else .35f + Math.random().toFloat() * .6f }
+                left--; syl
+            }
+            lvl = if (l > lvl) lvl + (l - lvl) * .6f else lvl * .88f + l * .12f
+            kotlinx.coroutines.delay(32)
+        }
     }
     Canvas(Modifier.size(size)) {
         val sec = if (reduce) 0f else t
@@ -390,29 +405,37 @@ fun VMark(st: SheetSt, size: Dp) {
         val mid = Offset(w / 2, w / 2)
         val small = w < 30.dp.toPx()
         fun wave(per: Float, off: Float = 0f) = (((sec + off) / per) % 1f)
-        // ядро «дышит»: в записи — часто
-        val core = if (st == SheetSt.REC) .9f + .02f * kotlin.math.sin(wave(.9f) * 2 * Math.PI.toFloat()) + .45f * lvl
-                   else .9f + .14f * (.5f + .5f * kotlin.math.sin(wave(3.2f) * 2 * Math.PI.toFloat()))
+        val grey = Color(0xFFC9CEC4)
+        val c = if (sleep != null) grey else color
+        val core = when {
+            sleep != null -> .9f
+            rec -> .85f + .6f * lvl
+            else -> .9f + .14f * (.5f + .5f * kotlin.math.sin(wave(3.2f) * 2 * Math.PI.toFloat()))
+        }
         val r0 = w * .19f * core
-        drawCircle(Brush.radialGradient(listOf(c.copy(alpha = .45f), c.copy(alpha = 0f)), center = mid, radius = r0 + w * .35f), radius = r0 + w * .35f, center = mid)
+        if (sleep == null) drawCircle(Brush.radialGradient(listOf(c.copy(alpha = if (rec) .3f + .3f * lvl else .45f), c.copy(alpha = 0f)), center = mid, radius = r0 + w * .35f), radius = r0 + w * .35f, center = mid)
         drawCircle(c, r0, mid)
         val r1 = w * (.5f - .17f); val r2 = w * .5f
         val s1 = (if (small) 1.5f else 2f).dp.toPx(); val s2 = (if (small) 1f else 1.5f).dp.toPx()
-        when (st) {
-            SheetSt.REC -> listOf(0f, .35f).forEachIndexed { i, off ->
-                val p = wave(1.1f, off)
-                val base = if (i == 0) r1 else r2
-                // кольца расходятся всегда (слушаю), но ярче и шире, когда говорят
-                drawCircle(c.copy(alpha = (.25f + .55f * lvl) * (1 - p)), base * (.85f + (.35f + .4f * lvl) * p), mid, style = Stroke(if (i == 0) s1 else s2))
+        when {
+            sleep != null -> {
+                drawCircle(Color(0xFFD5D9D0), r1 - s1 / 2, mid, style = Stroke(s1))
+                val sw = 4.dp.toPx()
+                drawCircle(Color(0xFFE7EAE2), r2 - sw / 2, mid, style = Stroke(sw))
+                drawArc(color, -90f, 360f * sleep.coerceIn(0f, 1f), false, Offset(sw / 2, sw / 2), androidx.compose.ui.geometry.Size(w - sw, w - sw), style = Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round))
             }
-            SheetSt.RECOG, SheetSt.THINK, SheetSt.UP -> {
+            rec -> {
+                drawCircle(c.copy(alpha = .45f + .45f * lvl), (r1 - s1 / 2) * (1f + .3f * lvl), mid, style = Stroke(s1))
+                drawCircle(c.copy(alpha = .2f + .4f * lvl), (r2 - s2 / 2) * (1f + .5f * lvl), mid, style = Stroke(s2))
+            }
+            st == SheetSt.RECOG || st == SheetSt.THINK || st == SheetSt.UP -> {
                 rotate(360f * wave(1.6f), mid) {
                     drawCircle(c.copy(alpha = .8f), r1 - s1 / 2, mid, style = Stroke(s1,
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))))
                 }
                 drawCircle(c.copy(alpha = .2f), r2 - s2 / 2, mid, style = Stroke(s2))
             }
-            SheetSt.IDLE -> {
+            else -> {
                 drawCircle(c.copy(alpha = .45f), r1 - s1 / 2, mid, style = Stroke(s1))
                 drawCircle(c.copy(alpha = .2f), r2 - s2 / 2, mid, style = Stroke(s2))
             }

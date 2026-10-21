@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Значок «Вахтёр» как на первом слайде приветствия (ui/OursIcon.kt): кольцо янтарь→синий, тёмная середина, четыре столбика волны. Одноцветный слой для тематических значков Android 13+. Холст 108, видимая часть ~72. -->
+<!-- Знак «солнце» одним цветом для тематических значков Android 13+: ядро и два кольца, без ореола. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:pathData="M37.66,47.30 h0.00 a2.93,2.93 0 0 1 2.93,2.93 v7.54 a2.93,2.93 0 0 1 -2.93,2.93 h-0.00 a2.93,2.93 0 0 1 -2.93,-2.93 v-7.54 a2.93,2.93 0 0 1 2.93,-2.93 z"/>
-    <path android:fillColor="#FFFFFFFF" android:pathData="M48.55,40.59 h0.00 a2.93,2.93 0 0 1 2.93,2.93 v20.95 a2.93,2.93 0 0 1 -2.93,2.93 h-0.00 a2.93,2.93 0 0 1 -2.93,-2.93 v-20.95 a2.93,2.93 0 0 1 2.93,-2.93 z"/>
-    <path android:fillColor="#FFFFFFFF" android:pathData="M59.45,35.57 h0.00 a2.93,2.93 0 0 1 2.93,2.93 v31.00 a2.93,2.93 0 0 1 -2.93,2.93 h-0.00 a2.93,2.93 0 0 1 -2.93,-2.93 v-31.00 a2.93,2.93 0 0 1 2.93,-2.93 z"/>
-    <path android:fillColor="#FFFFFFFF" android:pathData="M70.34,43.94 h0.00 a2.93,2.93 0 0 1 2.93,2.93 v14.24 a2.93,2.93 0 0 1 -2.93,2.93 h-0.00 a2.93,2.93 0 0 1 -2.93,-2.93 v-14.24 a2.93,2.93 0 0 1 2.93,-2.93 z"/>
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6" android:pathData="M54,54m-27.2,0a27.2,27.2 0 1,0 54.4,0a27.2,27.2 0 1,0 -54.4,0"/>
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2" android:pathData="M54,54m-17.4,0a17.4,17.4 0 1,0 34.8,0a17.4,17.4 0 1,0 -34.8,0"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M54,54m-10.64,0a10.64,10.64 0 1,0 21.28,0a10.64,10.64 0 1,0 -21.28,0"/>
 </vector>

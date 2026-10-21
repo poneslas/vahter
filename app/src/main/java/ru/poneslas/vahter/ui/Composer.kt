@@ -328,34 +328,15 @@ private fun PickItem(icon: Int, title: String, sub: String, onClick: () -> Unit)
 }
 
 /**
- * Волна записи Вахтёра — как столбики значка на приветствии: янтарные к синим, скруглённые, на светлой «таблетке».
- * Пишет — как проба голоса в мастере: центр — громкость сейчас, к краям — она же с задержкой (речь расходится от центра),
- * в тишине столбики лежат, дрожание — пара пикселей. Распознаёт — спокойная бегущая волна.
+ * Запись в разговоре — живой знак Вахтёра своей строкой над полем ввода (ui.js, liveHtml): слушает — ядро и кольца от громкости,
+ * распознаёт — пунктирное кольцо. Эквалайзера нет (Продукт 5, решение 21.10): знак и волна спорили.
  */
 @Composable
 fun RecPill(modifier: Modifier = Modifier) {
     val phase by RecUi.phase.collectAsState()
     if (phase == RecUi.Phase.IDLE) return
-    val voice = App.instance.voice
-    val tr = rememberInfiniteTransition(label = "wave")
-    val w by tr.animateFloat(0f, 1f, infiniteRepeatable(tween(1100, easing = LinearEasing)), label = "w")
-    val bars = 9
-    // громкость с микрофона: быстро вверх, медленно вниз (как у Писаря); история на полширины — для задержки к краям
-    var hist by remember { mutableStateOf(FloatArray(bars / 2 + 1)) }
-    LaunchedEffect(phase) {
-        var sm = 0f
-        while (true) { val l = voice.level; sm = if (l > sm) l else sm * .78f + l * .22f; val h = hist; hist = FloatArray(h.size) { i -> if (i == 0) sm else h[i - 1] }; delay(40) }
-    }
-    // Компактно (ui.js, .recpill): маленькая «таблетка» без подписи — на телефоне широкая волна занимала полэкрана.
-    Row(modifier.padding(vertical = 4.dp).wrapContentWidth().clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
-        .padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.5.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (i in 0 until bars) {
-            val k = i / (bars - 1f)
-            val d = kotlin.math.abs(i - bars / 2)
-            val wob = .5f + .5f * kotlin.math.sin((w + k * .7f) * 2f * Math.PI.toFloat())
-            val h = if (phase == RecUi.Phase.LISTENING) 3f + 1.5f * wob + 15f * (hist[d] * (1f - .06f * d)).coerceIn(0f, 1f) else 3f + 8f * wob
-            Box(Modifier.size(3.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerp(Ink.local, Ink.server, k)))
-        }
+    Box(modifier.height(58.dp), contentAlignment = Alignment.Center) {
+        ru.poneslas.vahter.assistant.VMark(if (phase == RecUi.Phase.LISTENING) ru.poneslas.vahter.assistant.SheetSt.REC else ru.poneslas.vahter.assistant.SheetSt.RECOG, 46.dp)
     }
 }
 
@@ -376,7 +357,7 @@ fun UpLine(state: Conversation.State) {
     val brain = Brains.byId(state.current.brain).title
     val tr2 = rememberInfiniteTransition(label = "up")
     val a by tr2.animateFloat(.45f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a")
-    Text(tr(R.string.live_up, brain), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Ink.serverD,
+    Text(tr(R.string.live_up, brain), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Ink.localD,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).alpha(a))
 }
 
