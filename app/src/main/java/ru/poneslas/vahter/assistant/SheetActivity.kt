@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
@@ -16,6 +15,7 @@ import ru.poneslas.vahter.App
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.app.MainActivity
 import ru.poneslas.vahter.tr
+import ru.poneslas.vahter.ui.VahterTheme
 
 /**
  * Лист — прозрачный экран своей задачи, как AssistantOverlayActivity у Claude (Архитектура 3). Сессия помощника только
@@ -26,8 +26,20 @@ import ru.poneslas.vahter.tr
  *
  * Когда закрывается: ✕, свайп вниз, «Назад», погас экран. Ушли в другое приложение — лист остаётся в своей задаче,
  * вернуться — свайпом или кнопкой (повторный вызов приходит в [onNewIntent]).
+ *
+ * С 0.9.0 лист и приложение — один экран: лист — это MainActivity, развёрнутый — показывает её [Screen] (разговор, настройки,
+ * режим, мозг) в этом же окне. Разворот — лист дорастает до полного экрана и подменяется приложением; «Назад» с первой
+ * страницы и ⌄ — обратно (лист садится с полного экрана). Развёрнутый — не над блокировкой и не закрывается, когда гаснет экран.
  */
-class SheetActivity : ComponentActivity() {
+class SheetActivity : MainActivity() {
+    /** Развёрнут в приложение. */
+    val expanded = mutableStateOf(false)
+    /** Просьба развернуться: SheetScreen доращивает лист до полного экрана и зовёт [showApp]. */
+    val expandAsk = mutableStateOf(false)
+    /** Высота листа (px) — чтобы при сворачивании он сел с полного экрана сразу на свою высоту, без пустого кадра. */
+    var sheetPx = 0
+    private var pending: (() -> Unit)? = null
+    override val appShown get() = expanded.value
     /** Запрошено закрытие: лист уезжает вниз и только потом [finish] (SheetScreen). */
     val closing = mutableStateOf(false)
     /** Растёт при каждом вызове (новый экран или повторный вызов): лист выезжает снизу. Возврат свайпом — без выезда. */
@@ -40,7 +52,6 @@ class SheetActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         window.isNavigationBarContrastEnforced = false
         // Над блокировкой — только если сессия пустила (настройка «На заблокированном экране»); погас экран — лист закрыт.
@@ -48,11 +59,19 @@ class SheetActivity : ComponentActivity() {
         Sheet.activity = this
         registerReceiver(screenOff, android.content.IntentFilter(Intent.ACTION_SCREEN_OFF), RECEIVER_NOT_EXPORTED)
         // Системный «Назад»: в камере — как ✕ камеры (заморожен кадр — переснять), иначе — закрыть лист (баг №9).
+        // Развёрнутый: страницы ловят «Назад» сами (Screen), сюда доходит только мастер — свернуть.
         onBackPressedDispatcher.addCallback(this) {
-            if (Sheet.camera.value) Sheet.cameraBack?.invoke() ?: run { Sheet.camera.value = false } else close()
+            if (expanded.value) collapse()
+            else if (Sheet.camera.value) Sheet.cameraBack?.invoke() ?: run { Sheet.camera.value = false } else close()
         }
+        noAnimation(open = true)
+    }
+
+    override fun start() {
+        enableEdgeToEdge(SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT))
+        fromSheet = true
         setContent {
-            SheetScreen(
+            if (expanded.value) VahterTheme { Screen() } else SheetScreen(
                 onClose = ::close,
                 onExpand = { openApp(settings = false) },
                 onSettings = { openApp(settings = true) },
@@ -62,12 +81,16 @@ class SheetActivity : ComponentActivity() {
                 host = this,
             )
         }
-        noAnimation(open = true)
     }
+
+    /** Намерения листа — только вызов; страницы открывает [openApp]. */
+    override fun readIntent(i: Intent) {}
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         closing.value = false
+        // Вызов помощника, когда развёрнут: на экране — свернуть; вернулись из другого приложения — сразу лист.
+        if (expanded.value) { if (Sheet.visible.value) collapse() else fold() }
         if (!Sheet.visible.value) shows.intValue++
         noAnimation(open = true)
     }
@@ -87,7 +110,7 @@ class SheetActivity : ComponentActivity() {
         App.instance.conversation.touch()                  // «30 минут без дела» — от последнего ухода с листа
         Sheet.camera.value = false
         Sheet.sideCue.value = false
-        if (Sheet.firstClose) { Sheet.firstClose = false; android.widget.Toast.makeText(this, tr(R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
+        if (Sheet.firstClose && !expanded.value) { Sheet.firstClose = false; android.widget.Toast.makeText(this, tr(R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
         Sheet.visible.value = false
     }
 
@@ -98,25 +121,67 @@ class SheetActivity : ComponentActivity() {
     }
 
     /** Закрыть с анимацией: лист уезжает вниз (SheetScreen), потом [finishNow]. */
-    fun close() { if (!isFinishing) closing.value = true }
+    fun close() { if (expanded.value) finishNow() else if (!isFinishing) closing.value = true }
 
     fun finishNow() { finish(); noAnimation(open = false) }
 
     private fun noAnimation(open: Boolean) =
         overrideActivityTransition(if (open) OVERRIDE_TRANSITION_OPEN else OVERRIDE_TRANSITION_CLOSE, 0, 0)
 
-    /** Экран приложения поверх листа: лист закроется, когда приложение нарисует первый кадр (MainActivity). */
+    /**
+     * Развернуть в приложение — в этом же окне. Страница: разговор; настройки (шестерёнка), режим (полоска промпта), мозг —
+     * «Назад» с неё сворачивает обратно в лист. Над блокировкой — сначала разблокировать: приложение над ней не показываем.
+     */
     fun openApp(settings: Boolean, askPerm: String? = null, newMode: Boolean = false, editMode: String? = null, brain: Boolean = false) {
-        startActivity(Intent(this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            .putExtra(MainActivity.EXTRA_FROM_SHEET, true)
-            .putExtra(MainActivity.EXTRA_BRAIN, brain)
-            .putExtra(MainActivity.EXTRA_SETTINGS, settings)
-            .putExtra(MainActivity.EXTRA_NEW_MODE, newMode)
-            .putExtra(MainActivity.EXTRA_ASK_PERM, askPerm)
-            .putExtra(MainActivity.EXTRA_EDIT_MODE, editMode))
-        // Запасной: приложение не поднялось за 1,5 с — лист всё равно убрать.
-        window.decorView.postDelayed({ if (!isFinishing) finishNow() }, 1500)
+        pending = {
+            stack.clear(); stack.add("chat"); sheetReturn = null
+            route(Intent()
+                .putExtra(EXTRA_BRAIN, brain)
+                .putExtra(EXTRA_SETTINGS, settings)
+                .putExtra(EXTRA_NEW_MODE, newMode)
+                .putExtra(EXTRA_EDIT_MODE, editMode))
+            if (settings && !newMode) sheetReturn = "settings"
+            if (askPerm != null) { askMicThenSheet = true; askMic() }
+        }
+        val kg = getSystemService(android.app.KeyguardManager::class.java)
+        if (kg.isKeyguardLocked) kg.requestDismissKeyguard(this, object : android.app.KeyguardManager.KeyguardDismissCallback() {
+            override fun onDismissSucceeded() { expandAsk.value = true }
+        }) else expandAsk.value = true
+    }
+
+    /** Лист дорос до полного экрана — подменить приложением (SheetScreen). */
+    fun showApp() {
+        expandAsk.value = false
+        Sheet.camera.value = false
+        pending?.invoke(); pending = null
+        setShowWhenLocked(false)
+        expanded.value = true
+        App.instance.appVisible.value = true
+    }
+
+    /** Свернуть в лист: лист садится с полного экрана (SheetScreen, [Sheet.shrinkOnShow]). */
+    override fun collapse() {
+        if (!expanded.value) return
+        Sheet.shrinkOnShow = true
+        fold()
+    }
+
+    private fun fold() {
+        expanded.value = false
+        dialogsOff()
+        setShowWhenLocked(true)
+        App.instance.appVisible.value = false
+        if (Sheet.cameraAfterShow) { Sheet.cameraAfterShow = false; Sheet.camera.value = true }
+    }
+
+    override fun leave() = collapse()
+
+    /** Конец мастера в развёрнутом листе — сам лист с «Вам чего?» и подсказками (MainActivity.finishOnboarding). */
+    override fun finishOnboarding() {
+        App.instance.conversation.updateSettings { it.copy(onboarded = true) }
+        App.instance.conversation.selectMode(ru.poneslas.vahter.core.Modes.MAIN)
+        Sheet.firstSheet.value = true; Sheet.sideCue.value = true; Sheet.firstClose = true
+        collapse()
     }
 
     /**
@@ -137,6 +202,6 @@ class SheetActivity : ComponentActivity() {
 
     /** Экран погас — лист закрываем, запись останавливаем (иначе микрофон пишет в кармане; над блокировкой лист не остаётся). */
     private val screenOff = object : android.content.BroadcastReceiver() {
-        override fun onReceive(c: Context, i: Intent) { finishNow() }
+        override fun onReceive(c: Context, i: Intent) { if (!expanded.value) finishNow() }
     }
 }

@@ -112,7 +112,7 @@ enum class SheetSt { IDLE, REC, RECOG, THINK, UP }
  * Лист поверх любого приложения (ui.js, overlay; Продукт 5.1). Шапки нет: ряд — слева маленький знак Вахтёра (и строка связи,
  * только если что-то не так), по центру ручка, справа круглые ⚙ ⤢ ✕. Пустой лист — сцена: знак по центру и «Вам чего?».
  * Снизу за строкой ввода — свечение по состоянию. Развернуть — лист растёт до полного экрана, сверху проявляется шапка
- * приложения, потом startAssistantActivity; свернуть из приложения — то же в обратную сторону ([Sheet.shrinkOnShow]).
+ * приложения, и тот же экран показывает приложение (SheetActivity.showApp); свернуть — то же в обратную сторону ([Sheet.shrinkOnShow]).
  */
 @Composable
 fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, host: SheetActivity, onAddMode: () -> Unit = onSettings, onEditMode: (String) -> Unit = { onSettings() }) {
@@ -170,8 +170,10 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         val glowT = seconds()
         // Разворот в приложение и обратно: [grow] 0 — лист, 1 — полный экран.
         val scope = androidx.compose.runtime.rememberCoroutineScope()
-        val grow = remember { Animatable(if (Sheet.shrinkOnShow) 1f else 0f) }
-        var natural by remember { mutableStateOf(0) }
+        // Свернули из приложения (тот же экран, SheetActivity.collapse): лист садится с полного экрана на свою прошлую высоту.
+        val shrink = remember { Sheet.shrinkOnShow }
+        val grow = remember { Animatable(if (shrink) 1f else 0f) }
+        var natural by remember { mutableStateOf(if (shrink) host.sheetPx else 0) }
         val easing = CubicBezierEasing(.3f, .8f, .3f, 1f)
         fun expandNow() {
             if (grow.isRunning || grow.value > 0f) return
@@ -182,18 +184,19 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         LaunchedEffect(natural > 0) {
             if (natural > 0 && Sheet.shrinkOnShow) { Sheet.shrinkOnShow = false; grow.animateTo(0f, tween(380, easing = easing)) }
         }
-        // Окно листа живёт между показами: при каждом показе — снова лист; свернули из приложения — садится с полного экрана.
-        val shown by Sheet.visible.collectAsState()
-        LaunchedEffect(shown) {
-            if (!shown) return@LaunchedEffect
-            if (Sheet.shrinkOnShow && natural > 0) { Sheet.shrinkOnShow = false; grow.snapTo(1f); grow.animateTo(0f, tween(380, easing = easing)) }
-            else if (!Sheet.shrinkOnShow) grow.snapTo(0f)
+        // Просьба развернуться (шестерёнка, полоска промпта, мозг, ⤢, ручка): дорастить до полного экрана — и в приложение.
+        val ask by host.expandAsk
+        LaunchedEffect(ask) {
+            if (!ask) return@LaunchedEffect
+            if (natural > 0 && !camera) grow.animateTo(1f, tween(380, easing = easing))
+            host.showApp()
         }
 
         // Выезд снизу при вызове и уезд вниз при закрытии (окно экрана — без системной анимации, Theme.Vahter.Sheet).
-        val enter = remember { Animatable(if (Sheet.shrinkOnShow) 1f else 0f) }
+        val enter = remember { Animatable(if (shrink) 1f else 0f) }
         val shows by host.shows
-        LaunchedEffect(shows) { pull.snapTo(0f); if (!Sheet.shrinkOnShow) { enter.snapTo(0f); enter.animateTo(1f, tween(260, easing = easing)) } else enter.snapTo(1f) }
+        val shows0 = remember { shows }
+        LaunchedEffect(shows) { pull.snapTo(0f); if (shrink && shows == shows0) enter.snapTo(1f) else { enter.snapTo(0f); enter.animateTo(1f, tween(260, easing = easing)) } }
         val closing by host.closing
         LaunchedEffect(closing) { if (closing) { enter.animateTo(0f, tween(200, easing = FastOutLinearInEasing)); host.finishNow() } }
 
@@ -216,8 +219,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         g > 0f && natural > 0 -> Modifier.height(with(d) { (natural + (fullPx - natural) * g).toInt().toDp() })
                         else -> Modifier
                     })
-                    .onGloballyPositioned { if (grow.value == 0f && !grow.isRunning) natural = it.size.height }
-                    .graphicsLayer { alpha = if (Sheet.shrinkOnShow && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height + pull.value }
+                    .onGloballyPositioned { if (grow.value == 0f && !grow.isRunning) { natural = it.size.height; host.sheetPx = natural } }
+                    .graphicsLayer { alpha = if (shrink && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height + pull.value }
                     .shadow(24.dp, RoundedCornerShape(topStart = corner, topEnd = corner), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = corner, topEnd = corner)).background(Ink.paper)
                     .then(if (camera) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT) })

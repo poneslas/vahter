@@ -33,17 +33,26 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
-/** Приложение — тот же разговор, что в листе, на весь экран; плюс настройки (Продукт 5.1, 5.11). */
-class MainActivity : ComponentActivity() {
+/**
+ * Приложение — тот же разговор, что в листе, на весь экран; плюс настройки (Продукт 5.1, 5.11).
+ * С 0.9.0 лист ([ru.poneslas.vahter.assistant.SheetActivity]) — тоже MainActivity: развёрнутый лист показывает этот же [Screen],
+ * «Назад» и ⌄ сворачивают его обратно в лист в том же окне. Сама MainActivity — вход с иконки, из уведомлений и ссылок.
+ */
+open class MainActivity : ComponentActivity() {
     var fromSheet by mutableStateOf(false)
-        private set
-    private val stack = mutableStateListOf("chat")
+        protected set
+    protected val stack = mutableStateListOf("chat")
     private var dialog by mutableStateOf<ChoiceDialog?>(null)
 
     data class ChoiceDialog(val title: String, val options: List<Pair<String, String>>, val current: String, val onPick: (String) -> Unit)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        start()
+    }
+
+    /** Окно и содержимое; лист ставит своё (SheetActivity). */
+    protected open fun start() {
         enableEdgeToEdge()
         readIntent(intent)
         setContent { VahterTheme { Screen() } }
@@ -54,7 +63,7 @@ class MainActivity : ComponentActivity() {
         readIntent(intent)
     }
 
-    private var askMicThenSheet = false
+    protected var askMicThenSheet = false
 
     /** Наше окно-лист (не системное): объяснение перед повторным запросом микрофона или переход в настройки. */
     data class PermSheet(val title: String, val text: String, val go: String, val icon: Int = Ic.mic, val later: String? = null, val onLater: (() -> Unit)? = null, val onGo: () -> Unit)
@@ -96,7 +105,9 @@ class MainActivity : ComponentActivity() {
     /** Растёт при каждом возврате в приложение: статусы системных настроек перечитываются от него (баг №1). */
     val resumed = mutableIntStateOf(0)
 
-    override fun onResume() { super.onResume(); App.instance.appVisible.value = true; resumed.intValue++ }
+    /** Приложение на экране (для уведомлений и дочитывания хода); у листа — только развёрнутого. */
+    protected open val appShown get() = true
+    override fun onResume() { super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
     /** Пришли из листа: лист закрываем, когда приложение нарисовало первый кадр, — подмена незаметна (Архитектура 3.1). */
@@ -108,13 +119,18 @@ class MainActivity : ComponentActivity() {
         v.viewTreeObserver.addOnDrawListener(l)
     }
 
-    private fun readIntent(i: Intent) {
+    protected open fun readIntent(i: Intent) {
         fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
         if (fromSheet) hideSheetAfterFirstFrame()
         sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
         i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == android.Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
+        route(i)
+    }
+
+    /** Какую страницу открыть по намерению (стопка страниц). */
+    protected fun route(i: Intent) {
         // Шестерёнка в системном «Цифровом помощнике» открывает приложение через псевдоним SettingsEntry — сразу настройки.
         if (i.component?.className?.endsWith(".SettingsEntry") == true) { stack.clear(); stack.add("chat"); stack.add("settings") }
         if (i.getBooleanExtra(EXTRA_SETTINGS, false) && stack.last() != "settings") stack.add("settings")
@@ -135,23 +151,27 @@ class MainActivity : ComponentActivity() {
     /** Приглашение из ссылки — страница Hermes забирает его один раз. */
     var invite by mutableStateOf<HermesLink?>(null)
     /** Страница, с которой «Назад» сворачивает обратно в лист (пришли на неё из листа). */
-    private var sheetReturn: String? by mutableStateOf(null)
+    protected var sheetReturn: String? by mutableStateOf(null)
     fun back() {
         if (sheetReturn != null && stack.last() == sheetReturn) { sheetReturn = null; collapse(); return }
-        if (stack.size > 1) stack.removeAt(stack.lastIndex) else finish()
+        if (stack.size > 1) stack.removeAt(stack.lastIndex) else leave()
     }
+    /** «Назад» с первой страницы: приложение закрывается, лист сворачивается. */
+    protected open fun leave() = finish()
     fun choose(d: ChoiceDialog) { dialog = d }
     fun hideSheet() { permSheet = null }
+    /** Свернули в лист — открытые окна выбора и разрешений не оставлять. */
+    protected fun dialogsOff() { dialog = null; permSheet = null }
 
     /** Свернуть обратно в лист: finish + showSession (Архитектура 3.1). */
-    fun collapse() { Sheet.shrinkOnShow = true; finish(); Sheet.show(Bundle().apply { putString("src", "app") }) }
+    open fun collapse() { Sheet.shrinkOnShow = true; finish(); Sheet.show(Bundle().apply { putString("src", "app") }) }
 
     /**
      * Финал мастера — лист, а не приложение (Продукт 5.13): он интереснее полноэкранного разговора, и так Вахтёр выглядит каждый день.
      * Пустой лист с «Вам чего?» и чипами, один раз — подсказка у боковой кнопки, при первом закрытии — «Вахтёр на месте».
      * Без роли помощника листа нет (showSession может только активный помощник) — остаётся разговор в приложении и баннер.
      */
-    private fun finishOnboarding() {
+    protected open fun finishOnboarding() {
         App.instance.conversation.updateSettings { it.copy(onboarded = true) }
         if (Sheet.service == null) return
         App.instance.conversation.selectMode(Modes.MAIN)
@@ -160,7 +180,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun Screen() {
+    protected fun Screen() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
         // Пришли с листа: системный «Назад» на первой странице — свернуться обратно в лист, а не закрыть приложение.
