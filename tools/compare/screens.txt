@@ -1,13 +1,15 @@
 # имя | запрос к прототипу (?…#пресет) | экран приложения (page=… или sheet) | подпись
-onb-welcome | onb=0#first | onb:0 | Первый запуск · привет
-onb-button | onb=1#first | onb:1 | Первый запуск · боковая кнопка
-onb-voice | onb=2#first | onb:2 | Первый запуск · голос
-onb-brain | onb=3#first | onb:3 | Первый запуск · мозг
-onb-done | onb=4#first | onb:4 | Первый запуск · готово
+onb-welcome | onb=0#first | onb:0 | Первый запуск · «Вахтёр. Всегда на месте»
+onb-voice | onb=1#first | onb:1 | Первый запуск · «Голос на телефоне»
+onb-button | onb=2#first | onb:2 | Первый запуск · «Своих — без очереди»
+onb-try | onb=3#first | onb:3 | Первый запуск · «Попробуйте голосом»
+onb-rules | onb=4#first | onb:4 | Первый запуск · «Своих знает в лицо»
+onb-quick | onb=5#first | onb:5 | Первый запуск · «Знает, кто зачем пришёл»
+onb-brain | onb=6#first | onb:6 | Первый запуск · «Подключите мозг»
 chat | page=chat#day | chat | Приложение · разговор
 sheet | sheet=1#day | sheet | Лист поверх приложений
 settings | page=settings#day | settings | Настройки
 brain | page=brain&brain=deepseek#day | brain:deepseek | Мозг DeepSeek
-tools | page=actions#day | actions | Действия на телефоне
+actions | page=actions#day | actions | Действия на телефоне
 mode-gastro | page=mode&edit=m-4c1e#day | mode:m-4c1e | Режим «Гастрогид»
 mode-main | page=mode&edit=main#day | mode:main | Режим «Ассистент»
