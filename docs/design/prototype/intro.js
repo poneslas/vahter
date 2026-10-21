@@ -1,14 +1,14 @@
 /* Сцены мастера первого запуска (в Android — ui/Intro.kt). Только разметка; движение — intro.css; шаги и навигация — onboarding.js. */
 
 function introScene(k) {
-  if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span><span class="post"><i></i>Вахтёр · на месте</span></div>`;
+  if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo">${vMark('lg')}</span><span class="post"><i></i>Вахтёр · на месте</span></div>`;
   if (k === 1) {
     const st = ['Разблокировать','Найти приложение','Открыть','Новый чат'];
     return `<div class="sc sc1">
       <div class="rcard usual"><div class="hd"><span class="apps"><i></i><i></i><i></i><i></i></span><b>ИИ-приложение</b><span class="clk"></span></div>
         <div class="chain">${st.map((s,j)=>`<span class="tk"><em>№${j+1}</em>${s}</span><i>→</i>`).join('')}<span class="q">🎙 вопрос</span></div></div>
       <div class="rcard vah"><div class="hd"><span class="pw">⏻</span><b>Вахтёр</b><small class="ql free">без очереди</small><span class="clk"></span><span class="ok">✓</span></div>
-        <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${'<b></b>'.repeat(9)}</span><span class="tx">Сколько варить гречку?</span></span></div>
+        <div class="chain"><span class="k">⏻ Зажать</span><i>→</i><span class="q dk"><span class="deq">${vMark('d')}</span><span class="tx">Сколько варить гречку?</span></span></div>
         <div class="ai">15–20 минут, воды вдвое больше.</div></div></div>`;
   }
   // «Знает, как у вас заведено»: одна ситуация (ресторан, фото меню) — чату всё объясняешь заново, своему режиму — «как обычно».

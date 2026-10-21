@@ -29,18 +29,14 @@
 .act2 b{display:block;font-size:11.5px}
 .act2 small{color:var(--soft);font-size:10px}
 
-/* ── 0. девиз: логотип, столбики которого — волна голоса ── */
+/* ── 0. девиз: логотип — знак Вахтёра на тёмной плитке, кольца расходятся, как когда он слушает ── */
 .sc0{display:grid;place-items:center}
 .logo{width:132px;height:132px;border-radius:40px;position:relative;display:grid;place-items:center;
-  background:conic-gradient(from 200deg,var(--local),#F5C35A,var(--server),#6F86FF,var(--local));animation:lgspin 6s linear infinite;
-  box-shadow:0 20px 50px -20px rgba(47,75,232,.6)}
-.logo::after{content:"";position:absolute;inset:24px;border-radius:26px;background:#10182B}
-.logo i{position:relative;z-index:1;display:flex;gap:6px;align-items:center;height:56px}
-.logo b{display:block;width:7px;border-radius:4px;background:#F5C35A;animation:lb .8s ease-in-out infinite}
-.logo b:nth-child(n+3){background:#7C93FF}
-.logo b:nth-child(1){animation-delay:.0s}.logo b:nth-child(2){animation-delay:.18s}.logo b:nth-child(3){animation-delay:.36s}.logo b:nth-child(4){animation-delay:.12s}
-@keyframes lb{0%,100%{height:14px}50%{height:48px}}
-@keyframes lgspin{to{filter:hue-rotate(0deg)}}
+  background:radial-gradient(circle at 50% 50%,#22304F 0%,#10182B 70%);overflow:hidden;
+  box-shadow:0 20px 50px -20px rgba(232,163,23,.55)}
+.logo .vmark{--vs:96px;--c:#F5B52E}
+.logo .vmark .r1,.logo .vmark .r2{animation:vring 1.6s ease-out infinite}.logo .vmark .r2{animation-delay:.55s}
+.logo .vmark .core{animation:vbreath 1.6s ease-in-out infinite}
 .halo{position:absolute;width:132px;height:132px;border-radius:40px;border:2px solid var(--local);opacity:0;animation:halo 1.6s ease-out infinite}
 .halo.b{animation-delay:.8s;border-color:var(--local-d)}
 @keyframes halo{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.6);opacity:0}}
@@ -86,10 +82,12 @@
 .sc1 .ai{position:relative;font-size:13.5px;line-height:1.35;padding-left:13px;margin-top:10px;opacity:0;animation:t4 var(--T) infinite}
 @keyframes t4{0%,33%{opacity:0;transform:translateY(6px)}37%,97%{opacity:1;transform:none}100%{opacity:0}}
 
-/* диктовка: живой эквалайзер в цветах Вахтёра (янтарь), через миг — готовый текст */
+/* диктовка: живой знак Вахтёра (слушает), через миг — готовый текст */
 .sc1 .dk{display:inline-grid;align-items:center;justify-items:center}
 .sc1 .dk>*{grid-area:1/1}
-.sc1 .deq{display:flex;gap:2.5px;align-items:center;height:16px;animation:eqv var(--T) infinite}
+.sc1 .deq{display:flex;align-items:center;height:18px;animation:eqv var(--T) infinite}
+.sc1 .deq .vmark .r1,.sc1 .deq .vmark .r2{animation:vring .9s ease-out infinite}.sc1 .deq .vmark .r2{animation-delay:.3s}
+.sc1 .deq .vmark .core{animation:vbreath .45s ease-in-out infinite}
 .sc1 .deq b{display:block;width:3px;height:4px;border-radius:2px;animation:eqb .38s ease-in-out infinite alternate}
 .sc1 .deq b:nth-child(1){background:#E8A317;animation-delay:-.1s}.sc1 .deq b:nth-child(2){background:#D9A22A;animation-delay:-.25s}
 .sc1 .deq b:nth-child(3){background:#C99E3E;animation-delay:-.05s}.sc1 .deq b:nth-child(4){background:#B09A5C;animation-delay:-.3s}

@@ -7,7 +7,8 @@ function statusBar(dark){
   const bat='<svg viewBox="0 0 26 13" width="24" height="12"><rect x=".7" y=".7" width="22" height="11.6" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="15.2" height="8.2" rx="1.6" fill="currentColor"/><rect x="23.8" y="4.3" width="1.8" height="4.4" rx=".9" fill="currentColor" fill-opacity=".45"/></svg>';
   const net = S.w.net==='none' ? plane : (S.w.net==='wifi' ? wifi : '') + cell;
   return `<div class="sb ${dark?'d':'l'}"><span>9:41</span><span class="sbi">${net}<span>82%</span>${bat}</span></div><div class="punch"></div>` }
-function oursIcon(st=''){ return `<span class="ico ours" style="${st}"><i><b style="height:8px"></b><b style="height:16px"></b><b style="height:22px"></b><b style="height:12px"></b></i></span>` }
+/** Значок Вахтёра — тёмная плитка, в ней знак: янтарное ядро и два кольца («лампа на вахте»), без движения. */
+function oursIcon(st=''){ return `<span class="ico ours" style="${st}">${vMark('ico')}</span>` }
 const brainOk = () => brainReady() && S.w.net!=='none' && !(brainOf().kind==='hermes'&&S.w.server==='down');
 function linkState(){
   const B=brainOf();
@@ -357,7 +358,7 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.teq.freed',()=>S.modelReadyAt],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
+const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.tsun.freed',()=>S.modelReadyAt],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();

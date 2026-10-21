@@ -39,11 +39,11 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .app{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;color:#fff;font-size:11.5px;padding:0}
 .ico{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:24px;box-shadow:0 6px 14px -8px rgba(0,0,0,.6)}
 .dock{position:absolute;left:18px;right:18px;bottom:34px;display:flex;justify-content:space-around;padding:12px;background:rgba(255,255,255,.12);border-radius:28px}
-.ours{background:conic-gradient(from 200deg,var(--local),#F5C35A,var(--server),#6F86FF,var(--local));position:relative}
-.ours::after{content:"";position:absolute;inset:11px;border-radius:12px;background:#10182B}
-.ours i{position:relative;z-index:1;display:flex;gap:3px;align-items:center}
-.ours i b{display:block;width:3.5px;border-radius:2px;background:#F5C35A}
-.ours i b:nth-child(n+3){background:#7C93FF}
+.ours{background:radial-gradient(circle at 50% 50%,#22304F 0%,#10182B 70%);position:relative;display:grid;place-items:center;overflow:hidden}
+.ours .vmark{--vs:74%;--c:#F5B52E}
+.ours .vmark i{animation:none!important}
+.ours .vmark .core{box-shadow:0 0 10px 1px var(--c)}
+.ours .vmark .r1{opacity:.7}.ours .vmark .r2{opacity:.35}
 .lock{background:linear-gradient(170deg,#26324F,#0E1A36 70%);color:#E8ECF6}
 .lock .clk{position:absolute;top:110px;width:100%;text-align:center;font-size:76px;font-weight:300;letter-spacing:-.03em}
 .lock .dt{position:absolute;top:208px;width:100%;text-align:center;font-size:15px;color:#AEB8D0}
@@ -608,6 +608,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 [data-st=rec] .vmark i{animation:none}
 [data-st=rec] .vmark .r1{opacity:.45}[data-st=rec] .vmark .r2{opacity:.2}   /* маленький в шапке — неподвижный, живой один */
 .vmark.mid{--vs:46px}
+.vmark.d{--vs:18px}
 .live.recl{display:flex;justify-content:center;align-items:center}
 [data-st=recog] .vmark .r1,[data-st=think] .vmark .r1{border-style:dashed;opacity:.8;animation:vspin 1.6s linear infinite}
 @keyframes vbreath{0%,100%{transform:scale(.9)}50%{transform:scale(1.04)}}
@@ -657,6 +658,17 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .tryonb .tfast{align-self:center}
 .tryonb .tpct{font-size:13px;font-weight:600;color:var(--local-d);font-variant-numeric:tabular-nums}
 /* эквалайзер-герой: 13 столбиков (9 px + 7 px зазор); в загрузке — прогресс и шов поперёк ещё не готовых */
+/* проба голоса — большой знак: слушает — живой от громкости; качается модель — кольцо заполняется, ядро спит; докачалось — загорается */
+.tsun{position:relative;display:grid;place-items:center;height:132px}
+.tsun .vmark{--vs:118px}
+.tsun.sleep .vmark .core{background:#C9CEC4;box-shadow:none;animation:none}
+.tsun.sleep .vmark .r1,.tsun.sleep .vmark .r2{border-color:#D5D9D0;opacity:1;animation:none}
+.tsun .prog{position:absolute;width:118px;height:118px;border-radius:50%;
+  background:conic-gradient(var(--local) calc(var(--tp)*1%),transparent 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));transition:background .3s}
+.tsun.freed .vmark{animation:sunon .9s cubic-bezier(.2,.9,.3,1.4) both}
+.tsun.freed .vmark .r1,.tsun.freed .vmark .r2{animation:vring 1s ease-out 2 both}
+@keyframes sunon{0%{transform:scale(.8);filter:saturate(0)}60%{transform:scale(1.08);filter:none}100%{transform:none}}
 .teq{position:relative;height:84px;width:230px;display:flex;align-items:center;justify-content:center;gap:7px}
 .teq .eq{height:84px;gap:7px}.teq .eq i{width:9px;border-radius:5px;background:linear-gradient(var(--local),#C98500)}
 .teq.load i{display:block;width:9px;height:9px;border-radius:5px;background:#D5D9D0;transition:background .3s}

@@ -56,21 +56,15 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
  *  загрузки: готовые шевелятся, остальные — точки, поперёк — шов («рот зашит», микрофон серый, «Пропустить»). Докачалось — шов
  *  лопается, столбики оживают, кнопка один раз пульсирует. Дальше фраза — крупно прямо на фоне, без поля и подложки; прошлые
  *  бледнеют выше. Внизу одна тихая строка жестов у кнопки — той же, что в листе. */
-const TEQ_N = 13;
-function teqLoading(pct){
-  const on = Math.round(pct/100*TEQ_N);
-  // шов «рот зашит»: на каждом ещё не готовом месте — крестик-стежок вместо точки, через них тонкая нитка (ожившие столбики не задевает)
-  const ready=Array.from({length:on},(_,i)=>`<i class="on" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('');
-  return `<div class="teq load">${ready}${on<TEQ_N?`<span class="seam">${'<b></b>'.repeat(TEQ_N-on)}</span>`:''}</div>`;
-}
 function tryStep(){
   const rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[], loading=S.w.model==='loading', ready=S.w.model==='ready';
   const freed = ready && S.modelReadyAt && Date.now()-S.modelReadyAt<1600;   // только что докачалось — шов лопается
   const why = S.w.model!=='ready'&&!loading?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
   const sec = ms => (ms/1000).toFixed(1).replace('.',',');
   const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
-  const hero = loading ? `${teqLoading(S.modelPct)}<div class="tpct">${S.modelPct}${'\u00a0'}%</div>`
-    : `<div class="teq live ${freed?'freed':''}"><div class="eq" data-mode="${rec?'speak':'wave'}"></div>${freed?`<span class="seam pop">${'<b></b>'.repeat(TEQ_N)}</span>`:''}</div>`;
+  // Тот же знак, что в листе: слушает — живой от голоса; распознаёт — пунктирное кольцо; качается — кольцо-шкала, ядро спит.
+  const hero = loading ? `<div class="tsun sleep"><i class="prog" style="--tp:${S.modelPct}"></i>${vMark()}</div><div class="tpct">${S.modelPct}${'\u00a0'}%</div>`
+    : `<div class="tsun ${freed?'freed':''}" data-st="${rec?'rec':S.recog?'recog':'idle'}">${vMark()}</div>`;
   const text = loading ? '<div class="tcap">Вахтёр учит русский…</div>'
     : rec ? '<div class="tcap">Слушаю…</div>' : S.recog ? '<div class="tcap">Распознаю на телефоне…</div>'
     : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
