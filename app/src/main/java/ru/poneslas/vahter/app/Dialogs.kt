@@ -1,5 +1,6 @@
 package ru.poneslas.vahter.app
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ fun PermSheetUi(a: MainActivity, d: MainActivity.PermSheet, close: () -> Unit) {
 /** dialog() с radio: .scrim прижат к низу, .dlg.rdlg — скругление 30, пункты .ropt, внизу «Отмена». */
 @Composable
 fun Choice(d: MainActivity.ChoiceDialog, close: () -> Unit) {
+    BackHandler { close() }
     Box(Modifier.fillMaxSize().background(Color(0x730A0E18)).clickable(interactionSource = null, indication = null) { close() }
         .navigationBarsPadding().padding(14.dp), contentAlignment = Alignment.BottomCenter) {
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(30.dp)).background(Ink.dlg).clickable(interactionSource = null, indication = null) {}
