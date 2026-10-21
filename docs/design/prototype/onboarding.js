@@ -16,13 +16,13 @@ function onb(){
     return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="art">${introScene('brain')}</div>
     <h2>Подключите мозг</h2><p>Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</p>${keyBody(true)}
     ${navBar(done?null:['Позже','onbnext'], done?['Открыть','onbnext']:run?['Подключаю…','noop']:['Подключить','keycheck'])}</div></div>` }
-  let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
+  let art='',h='',p='',extra='',card=null,stat=null,primary=['Далее','onbnext'],skip=['Позже','onbnext'];
   if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
-  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
-    if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
-    else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
-    if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null;
-    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>` }
+  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`GigaAM от Сбера, ${mb(MODEL_TOTAL)} МБ один раз. Дальше голос не уходит с телефона и работает без сети.`;
+    card = S.w.model!=='none' && S.w.mic!=='ok' ? li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic') : '';
+    stat = S.w.model==='ready' ? '<span class="ok">✓ Голос скачан</span>'
+      : S.w.model==='loading' ? `<div class="prog"><i style="width:${S.modelPct}%"></i></div><span>${S.w.net==='none'?'Ждёт сеть — продолжит с того же места':`Скачиваю голос — ${S.modelPct}\u00a0% · можно идти дальше`}</span>` : '';
+    if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null }
   // Обязательна только роль «Цифровой помощник». Боковая кнопка — строкой, только если с ней есть что делать: уже открывает
   // помощника (One UI 7+ по умолчанию) — строки нет; на ней Bixby или меню выключения — «Сейчас …»; незнакомый телефон —
   // после выбора помощника проба «зажмите кнопку». Отдельного шага проверки нет. Текст — одна мысль.
@@ -39,15 +39,18 @@ function onb(){
       : !role || S.sideProbe==='yes' ? ''
       : S.sideProbe==='no' ? li(I.btn,'Вызов','«Домой» долгим нажатием или жест из угла','sysside')+(S.tileAdded?li(I.list,'Плитка в шторке','Добавлена',null,false,I.ok):li(I.list,'Плитка в шторке','Из быстрых настроек','addtile'))
       : `<div class="sprobe"><span>${I.btn}</span><p>Зажмите кнопку помощника. Открылся лист?</p><div class="ba"><button class="tbtn" data-act="sideno">Нет</button><button class="tbtn" data-act="sideyes">Да</button></div></div>`;
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Сейчас Gemini','sysrole',!role,role?I.ok:'')}${row2}</div>${S.w.model==='loading'?`<p class="bgdl">Голос качается — ${S.modelPct} %</p>`:''}`;
+    card = li(I.spark,'Цифровой помощник',role?'Вахтёр':'Сейчас Gemini','sysrole',!role,role?I.ok:'')+row2;
+    stat = S.w.model==='loading' ? `<span>Голос качается — ${S.modelPct}\u00a0%</span>` : '';
     if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
   // Режимы — два экрана: чем это лучше чата («как обычно» против просьбы заново) и как устроено (кнопка = написанная просьба). Настраивать нечего.
   if (st==='rules'){ art=introScene(2); h='Знает, как у вас заведено'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
   if (st==='quick'){ art=introScene(3); h='Привычки знает наизусть'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
   // Сцена — во всём свободном месте, текст — у кнопок. Внутри шага, где по ходу что-то появляется (полоска, «Готово», микрофон,
   // строки кнопки), под текстом — резерв на самое высокое состояние: ничего не подпрыгивает (в Android — Onboarding.kt, Slot).
-  const slot = st==='voice'?'ex ex-voice':st==='button'?'ex ex-btn':'';
-  return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${slot?`<div class="${slot}">${extra}</div>`:extra}${navBar(skip,primary)}</div></div>`;
+  // Шаблон мастера: сцена — свободное место; заголовок и текст (до двух строк); карточка действия — всегда прямо над точками,
+  // место под одну строку занято заранее; под ней строка фона (загрузка голоса) — тоже заранее. Шаги без действия — без них.
+  const act = card===null ? '' : `<div class="onbact">${card?`<div class="setcard">${card}</div>`:''}</div><div class="onbstat">${stat||''}</div>`;
+  return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${act}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
 function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>

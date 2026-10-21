@@ -164,7 +164,11 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .onb{display:flex;flex-direction:column;height:100%;padding:56px 24px 22px}
 .onb .art{flex:1;display:grid;place-items:center;min-height:120px;animation:fade .35s ease both}
 /* резерв под текстом на самое высокое состояние шага: полоска загрузки и «Микрофон»; строки кнопки и подпись про загрузку */
-.onb .ex-voice{min-height:132px}.onb .ex-btn{min-height:150px}   /* кнопка: обычно одна строка; проба «Нет» — три */
+/* карточка действия — над точками, место под одну строку занято заранее; строка фона под ней — тоже */
+.onb .onbact{min-height:78px;display:flex;flex-direction:column;justify-content:flex-end;margin-top:8px}
+.onb .onbact .setcard{margin:0}
+.onb .onbstat{min-height:34px;display:flex;flex-direction:column;justify-content:center;gap:6px;font-size:13px;color:var(--soft);padding:6px 4px 0}
+.onb .onbstat .ok{color:var(--ok);font-weight:600}
 .onb .art .sc1{zoom:.86}   /* гонка в мастере чуть меньше — под текстом воздух */
 .onb h2{font-family:var(--display);font-size:24px;line-height:1.15;font-weight:500;margin:0 0 10px}
 .onb p{color:var(--soft);margin:0 0 12px;font-size:15px}
