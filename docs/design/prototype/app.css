@@ -596,10 +596,10 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .cbtn .ic{width:18px;height:18px}
 
 /* знак Вахтёра — «лампа на вахте» */
-.vmark{--s:72px;--c:var(--local);position:relative;width:var(--s);height:var(--s);display:inline-grid;place-items:center;flex:none}
-.vmark.mini{--s:18px}
+.vmark{--vs:72px;--c:var(--local);position:relative;width:var(--vs);height:var(--vs);display:inline-grid;place-items:center;flex:none}
+.vmark.mini{--vs:18px}
 .vmark i{position:absolute;border-radius:50%}
-.vmark .core{width:38%;height:38%;background:var(--c);box-shadow:0 0 calc(var(--s)*.35) var(--c);animation:vbreath 3.2s ease-in-out infinite}
+.vmark .core{width:38%;height:38%;background:var(--c);box-shadow:0 0 calc(var(--vs)*.35) var(--c);animation:vbreath 3.2s ease-in-out infinite}
 .vmark .r1{inset:17%;border:2px solid var(--c);opacity:.45}
 .vmark .r2{inset:0;border:1.5px solid var(--c);opacity:.2}
 .vmark.mini .r1{border-width:1.5px}.vmark.mini .r2{border-width:1px}
@@ -607,7 +607,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 /* слушает — знак живой: размер ядра и колец, их яркость задаёт voice.js от громкости голоса, как эквалайзер, только кругом */
 [data-st=rec] .vmark i{animation:none}
 [data-st=rec] .vmark .r1{opacity:.45}[data-st=rec] .vmark .r2{opacity:.2}   /* маленький в шапке — неподвижный, живой один */
-.vmark.mid{--s:46px}
+.vmark.mid{--vs:46px}
 .live.recl{display:flex;justify-content:center;align-items:center}
 [data-st=recog] .vmark .r1,[data-st=think] .vmark .r1{border-style:dashed;opacity:.8;animation:vspin 1.6s linear infinite}
 @keyframes vbreath{0%,100%{transform:scale(.9)}50%{transform:scale(1.04)}}
