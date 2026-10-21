@@ -34,19 +34,19 @@ object SideKey {
 
     /** Хвост строки «Не настроено · …» в первом запуске: что сейчас на кнопке. */
     fun now(ctx: Context): String = when (read(ctx)) {
-        State.DOUBLE -> tr(R.string.btn_side_double)
+        State.DOUBLE -> tr(R.string.sidekey_now_double)
         else -> {
             val item = runCatching { Settings.Global.getString(ctx.contentResolver, "function_key_config_longpress_selected_item") }.getOrNull()
             val type = runCatching { Settings.Global.getInt(ctx.contentResolver, "function_key_config_longpress_type") }.getOrNull()
-            if (item?.contains("bixby") == true || type == 0) tr(R.string.btn_side_bixby) else tr(R.string.btn_side_power)
+            if (item?.contains("bixby") == true || type == 0) tr(R.string.sidekey_now_bixby) else tr(R.string.sidekey_now_power)
         }
     }
 
     fun describe(ctx: Context) = when (read(ctx)) {
-        State.ASSISTANT -> tr(R.string.side_nazhatie_i_uderzhanie_tsifrovoy_pomoshch)
-        State.DOUBLE -> tr(R.string.side_pomoshchnik_na_dvoynom_nazhatii_dlya)
-        State.OTHER -> tr(R.string.side_uderzhanie_otkryvaet_bixby_ili_menyu)
-        State.UNKNOWN -> tr(R.string.side_proverka_knopki_zavisit_ot_telefona)
+        State.ASSISTANT -> tr(R.string.sidekey_hold_assistant)
+        State.DOUBLE -> tr(R.string.sidekey_double)
+        State.OTHER -> tr(R.string.sidekey_other)
+        State.UNKNOWN -> tr(R.string.sidekey_unknown)
     }
 
     fun open(ctx: Context) {

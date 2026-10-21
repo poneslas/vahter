@@ -75,9 +75,9 @@ class App : Application() {
     }
 
     fun voiceStatus(): String = when (val s = ModelDownload.state.value) {
-        is ModelDownload.State.Running -> tr(R.string.app_zagruzka_modeli_1_s, s.percent)
-        is ModelDownload.State.Failed -> tr(R.string.app_ne_skachalas_poprobuyte_eshche_raz)
-        else -> if (voice.installed.value) tr(R.string.app_gigaam_na_telefone_rabotaet_bez) else tr(R.string.app_ne_skachano_225_mb)
+        is ModelDownload.State.Running -> tr(R.string.app_voice_loading, s.percent)
+        is ModelDownload.State.Failed -> tr(R.string.app_voice_failed)
+        else -> if (voice.installed.value) tr(R.string.app_voice_ready) else tr(R.string.app_voice_none)
     }
 
     companion object {

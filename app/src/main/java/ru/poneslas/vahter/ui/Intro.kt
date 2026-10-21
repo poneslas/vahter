@@ -263,7 +263,7 @@ private fun BoxScope.SceneQueue() {
                     androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.power), null, Modifier.size(15.dp), tint = Ink.local)
                 }
                 Spacer(Modifier.width(9.dp))
-                Text(stringResource(R.string.intro_ours), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
+                Text(stringResource(R.string.app_name), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(R.string.intro_free), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Ink.localD,
                     modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White).border(1.dp, Color(0xFFEBCB86), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp))
@@ -324,7 +324,7 @@ private fun SceneChat() {
         Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(Modifier.weight(1f).fillMaxWidth().graphicsLayer { shadowElevation = 14f; shape = RoundedCornerShape(18.dp); clip = true }
                 .background(Ink.localT).border(2.dp, Ink.local, RoundedCornerShape(18.dp)).padding(11.dp)) {
-                ColHead("🍽", stringResource(R.string.intro_tab_gastro), stringResource(R.string.intro_my_mode), Ink.ink)
+                ColHead("🍽", stringResource(R.string.mode_gastro), stringResource(R.string.intro_my_mode), Ink.ink)
                 val th = ramp(t, .04f, .08f)
                 Box(Modifier.fillMaxWidth().height(58.dp)) {
                     Box(Modifier.fillMaxSize().graphicsLayer { alpha = th; scaleX = .8f + .2f * th; scaleY = .8f + .2f * th }, contentAlignment = Alignment.CenterEnd) { MenuPhoto() }
@@ -478,7 +478,7 @@ private fun BoxScope.SceneBrain() {
     // лист: сначала сам (будильник, таймер, «нет сети — всё равно сам»), потом сложный вопрос — наверх и ответ
     MiniSheet(Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(top = 112.dp).height(178.dp), round = true) {
         Box(Modifier.fillMaxSize()) {
-            MiniHeader(stringResource(R.string.intro_assistant), stringResource(R.string.intro_online))
+            MiniHeader(stringResource(R.string.mode_assistant), stringResource(R.string.set_link_on))
             val pa = 1f - ramp(t, .40f, .44f)
             if (pa > 0f) Column(Modifier.padding(top = 26.dp).graphicsLayer { alpha = pa }) {
                 ActRow("⏰", stringResource(R.string.intro_s4_r1), stringResource(R.string.wiz_brain_r1s), ramp(t, .03f, .08f), ramp(t, .08f, .14f))
@@ -543,8 +543,8 @@ private fun VoiceArtBody() {
                 }
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text(stringResource(R.string.onb_voice_model), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
-                    Text(stringResource(R.string.onb_voice_model_sub), fontSize = 11.sp, color = Ink.localD)
+                    Text(stringResource(R.string.wiz_voice_model), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
+                    Text(stringResource(R.string.wiz_voice_model_sub), fontSize = 11.sp, color = Ink.localD)
                 }
             }
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
@@ -557,7 +557,7 @@ private fun VoiceArtBody() {
             }
         }
         val l = ramp(t, .52f, .58f) * (1 - ramp(t, .96f, 1f))
-        Text(stringResource(R.string.onb_voice_lock), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Ink.localD, maxLines = 1,
+        Text(stringResource(R.string.wiz_voice_lock), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Ink.localD, maxLines = 1,
             modifier = Modifier.padding(top = 10.dp).graphicsLayer { alpha = l; translationY = 12f * (1 - l) }.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 12.dp, vertical = 5.dp))
     }
 }

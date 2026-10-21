@@ -118,7 +118,7 @@ class RecordingButton(
     var handsFree = false
         set(value) {
             field = value
-            contentDescription = text(if (value) R.string.button_insert else currentDescription())
+            contentDescription = text(if (value) R.string.ui_send else currentDescription())
             invalidate()
         }
 
@@ -503,7 +503,7 @@ class RecordingButton(
             State.RECORDING ->
                 if (handsFree) {
                     // Fits the word inside the circle: "Вставить" and "Insert" alike.
-                    val word = text(R.string.button_insert)
+                    val word = text(R.string.ui_send)
                     labelPaint.textSize = 16 * density
                     val maxWidth = r * 1.6f
                     val w = labelPaint.measureText(word)

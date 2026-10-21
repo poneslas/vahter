@@ -134,7 +134,7 @@ class RecordingBar(
         val timeX = if (side < 0) dotX + dotR + 8 * density else dotX - dotR - 8 * density - timeWidth
         canvas.drawText(time, timeX, textY, timePaint)
 
-        val word = context.getString(R.string.bar_cancel)
+        val word = context.getString(R.string.ui_cancel)
         val hint = if (side < 0) "‹ ‹  $word" else "$word  › ›"
         val hintWidth = hintPaint.measureText(hint)
         val gap = 14 * density

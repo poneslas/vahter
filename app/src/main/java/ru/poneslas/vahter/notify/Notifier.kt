@@ -27,8 +27,8 @@ object Notifier {
 
     fun init(ctx: Context) {
         ctx.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, tr(R.string.ntf_otvety), NotificationManager.IMPORTANCE_HIGH).apply {
-                description = tr(R.string.ntf_otvet_prishel_poka_list_byl)
+            NotificationChannel(CHANNEL, tr(R.string.ntf_channel), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr(R.string.ntf_answer_while_closed)
             },
         )
     }
@@ -45,11 +45,11 @@ object Notifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val public = Notification.Builder(ctx, CHANNEL).setSmallIcon(android.R.drawable.sym_action_chat)
-            .setContentTitle(mode.title).setContentText(tr(R.string.ntf_otvet_gotov)).build()
+            .setContentTitle(mode.title).setContentText(tr(R.string.ntf_answer_ready)).build()
         val n = Notification.Builder(ctx, CHANNEL)
             .setSmallIcon(android.R.drawable.sym_action_chat)
             .setContentTitle(mode.title)
-            .setContentText(if (hide) tr(R.string.ntf_otvet_gotov) else text.lineSequence().take(2).joinToString(" ").take(200))
+            .setContentText(if (hide) tr(R.string.ntf_answer_ready) else text.lineSequence().take(2).joinToString(" ").take(200))
             .setStyle(if (hide) null else Notification.BigTextStyle().bigText(text.take(1000)))
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setPublicVersion(public)

@@ -25,7 +25,7 @@ data class Mode(
     val title: String,
     val icon: String,
     val hint: String = "",
-    val placeholder: String = tr(R.string.mode_vopros_ili_zadacha),
+    val placeholder: String = tr(R.string.mode_assistant_hint),
     val prompt: String = "",
     val accepts: Accepts = Accepts(),
     val primary: Primary = Primary.VOICE,
@@ -42,34 +42,34 @@ object Modes {
 
     val builtin = listOf(
         Mode(
-            id = MAIN, title = tr(R.string.mode_assistent), icon = "spark", builtin = true, tools = true,
-            hint = tr(R.string.mode_sprosite_chto_ugodno_ili_poprosite),
-            placeholder = tr(R.string.mode_sprosit_ili_poprosit),
+            id = MAIN, title = tr(R.string.mode_assistant), icon = "spark", builtin = true, tools = true,
+            hint = tr(R.string.mode_assistant_empty),
+            placeholder = tr(R.string.mode_assistant_ph),
             accepts = Accepts(voice = true, photo = true, file = false),
         ),
         Mode(
-            id = "translate", title = tr(R.string.mode_perevodchik), icon = "transl", builtin = true,
-            hint = tr(R.string.mode_skazhite_ili_napishite_perevedu_mozhno),
-            placeholder = tr(R.string.mode_chto_perevesti),
+            id = "translate", title = tr(R.string.mode_translator), icon = "transl", builtin = true,
+            hint = tr(R.string.mode_translator_empty),
+            placeholder = tr(R.string.mode_translator_ph),
             accepts = Accepts(voice = true, photo = true),
-            prompt = tr(R.string.mode_vse_ne_na_russkom_perevedi),
+            prompt = tr(R.string.mode_translator_prompt),
         ),
         Mode(
-            id = "whatsthis", title = tr(R.string.mode_chto_eto), icon = "lens", builtin = true, primary = Primary.PHOTO,
-            hint = tr(R.string.mode_sfotografiruyte_tovar_vyvesku_ili_menyu),
-            placeholder = tr(R.string.mode_vopros_k_foto),
+            id = "whatsthis", title = tr(R.string.mode_whatsthis), icon = "lens", builtin = true, primary = Primary.PHOTO,
+            hint = tr(R.string.mode_whatsthis_empty),
+            placeholder = tr(R.string.mode_whatsthis_ph),
             accepts = Accepts(voice = true, photo = true),
-            prompt = tr(R.string.mode_polzovatel_v_poezdke_po_foto),
+            prompt = tr(R.string.mode_whatsthis_prompt),
         ),
     )
 
     /** Пример своего режима — как если бы его создали через «+». */
     val sample = Mode(
-        id = "m-4c1e", title = tr(R.string.mode_gastrogid), icon = "food", primary = Primary.PHOTO,
-        hint = tr(R.string.mode_sfotografiruyte_menyu_vyberu_pod_vashi),
-        placeholder = tr(R.string.mode_vopros_k_menyu),
+        id = "m-4c1e", title = tr(R.string.mode_gastro), icon = "food", primary = Primary.PHOTO,
+        hint = tr(R.string.mode_gastro_empty),
+        placeholder = tr(R.string.mode_gastro_ph),
         accepts = Accepts(voice = true, photo = true),
-        prompt = tr(R.string.mode_ya_prishlyu_foto_menyu_mozhet),
+        prompt = tr(R.string.mode_gastro_prompt),
     )
 }
 

@@ -83,7 +83,7 @@ fun PromptStrip(mode: ru.poneslas.vahter.core.Mode, onEdit: (String) -> Unit, mo
         .clickable { onEdit(mode.id) }.padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.Top) {
         Text(mode.prompt, Modifier.weight(1f), color = Ink.soft, fontSize = 13.sp, lineHeight = 1.35.em, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(8.dp))
-        Icon(painterResource(Ic.edit), tr(R.string.mode_izmenit), Modifier.padding(top = 1.dp).size(16.dp), tint = Ink.faint)
+        Icon(painterResource(Ic.edit), tr(R.string.mode_edit), Modifier.padding(top = 1.dp).size(16.dp), tint = Ink.faint)
     }
 }
 
@@ -109,10 +109,10 @@ fun Feed(
             } else {
                 val ctx = androidx.compose.ui.platform.LocalContext.current
                 val way = tr(if (ru.poneslas.vahter.app.SideKey.gestureNav(ctx)) R.string.feed_way_gesture else R.string.feed_way_home)
-                Text(tr(R.string.feed_zazhmite_bokovuyu_knopku_v_lyubom, way), color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
+                Text(tr(R.string.feed_empty, way), color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 24.dp))
                 if (onChip != null) FlowRow(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(tr(R.string.feed_taymer_na_pyat_minut), tr(R.string.feed_razbudi_v_7_30), tr(R.string.feed_kak_nastroit_bekap_servera)).forEach { c ->
+                    listOf(tr(R.string.feed_chip_timer), tr(R.string.feed_chip_alarm), tr(R.string.feed_chip_brain)).forEach { c ->
                         Text(c, fontSize = 13.sp, color = Ink.ink, modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.surf)
                             .border(1.dp, Ink.line, RoundedCornerShape(50)).clickable { onChip(c) }.padding(horizontal = 12.dp, vertical = 6.dp))
                     }
@@ -168,12 +168,12 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
                     }
                     if (item.status != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).clip(CircleShape).background(Color(0x8C000000))
                         .clickable { onCancel(item.id) }, contentAlignment = Alignment.Center) {
-                        Icon(painterResource(Ic.x), tr(R.string.feed_otmenit_otpravku), Modifier.size(16.dp), tint = Color.White)
+                        Icon(painterResource(Ic.x), tr(R.string.feed_cancel_upload), Modifier.size(16.dp), tint = Color.White)
                     }
                 }
                 if (item.status != null) {
                     Text(item.status, fontSize = 11.5.sp, color = Ink.soft)
-                    if (item.text.isEmpty()) Text(tr(R.string.feed_mozhno_dopisat_vopros_uydet_vmeste), fontSize = 11.5.sp, color = Ink.faint)
+                    if (item.text.isEmpty()) Text(tr(R.string.feed_add_question), fontSize = 11.5.sp, color = Ink.faint)
                 } else if (item.text.isEmpty()) Text(item.via, fontSize = 10.5.sp, color = Ink.faint)
             }
             if (item.text.isNotEmpty()) Column(
@@ -211,10 +211,10 @@ private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) 
             val left = at - now
             append(" · ")
             append(when {
-                item.countdown && left > 0 -> tr(R.string.feed_ostalos) + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
-                item.countdown -> tr(R.string.feed_prozvenel)
-                left > 0 -> tr(R.string.feed_prozvenit) + ru.poneslas.vahter.actions.Phone.inText(left)
-                else -> tr(R.string.feed_prozvenel)
+                item.countdown && left > 0 -> tr(R.string.feed_left) + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
+                item.countdown -> tr(R.string.feed_rang)
+                left > 0 -> tr(R.string.feed_rings_in) + ru.poneslas.vahter.actions.Phone.inText(left)
+                else -> tr(R.string.feed_rang)
             })
         }
     }
@@ -353,7 +353,7 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () ->
                     .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
         }
         item {
-            Box(Modifier.padding(start = 2.dp).size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = tr(R.string.feed_novyy_rezhim), onClick = onAdd),
+            Box(Modifier.padding(start = 2.dp).size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = tr(R.string.feed_new_mode), onClick = onAdd),
                 contentAlignment = Alignment.Center) { Text("+", fontSize = 17.sp, color = Ink.soft) }
         }
     }

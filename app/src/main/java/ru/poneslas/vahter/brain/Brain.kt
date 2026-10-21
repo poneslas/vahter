@@ -60,6 +60,6 @@ enum class ErrorKind { AUTH, BALANCE, RATE, CONTEXT, NETWORK, NO_BRAIN, OTHER }
 class FakeBrain : Brain {
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         delay(300)
-        emit(BrainEvent.Error(tr(R.string.brain_mozg_ne_podklyuchen_dobavte_klyuch), ErrorKind.NO_BRAIN))
+        emit(BrainEvent.Error(tr(R.string.brain_no_key_long), ErrorKind.NO_BRAIN))
     }
 }

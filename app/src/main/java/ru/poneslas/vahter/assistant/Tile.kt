@@ -30,7 +30,7 @@ class VahterTile : TileService() {
         /** Системное окно «Добавить плитку?» (Android 13+); [done] — плитка в шторке (добавлена сейчас или уже была). */
         fun request(ctx: Context, done: (Boolean) -> Unit) {
             val sbm = ctx.getSystemService(StatusBarManager::class.java) ?: return done(false)
-            sbm.requestAddTileService(ComponentName(ctx, VahterTile::class.java), tr(R.string.tile_label),
+            sbm.requestAddTileService(ComponentName(ctx, VahterTile::class.java), tr(R.string.app_name),
                 Icon.createWithResource(ctx, R.drawable.ic_launcher_monochrome), ctx.mainExecutor) { r ->
                 done(r == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED || r == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED)
             }

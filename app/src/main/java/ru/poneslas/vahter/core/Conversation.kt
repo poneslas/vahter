@@ -84,7 +84,7 @@ class Conversation(
     /** «+»: новый режим. id выдаётся один раз и не меняется при переименовании (для Hermes это ключ сессии). */
     fun addMode(): String {
         val id = "m-" + java.util.UUID.randomUUID().toString().take(4)
-        updateModes { it + Mode(id = id, title = tr(R.string.feed_novyy_rezhim), icon = "star", placeholder = tr(R.string.mode_vopros_ili_zadacha)) }
+        updateModes { it + Mode(id = id, title = tr(R.string.feed_new_mode), icon = "star", placeholder = tr(R.string.mode_assistant_hint)) }
         return id
     }
 
@@ -98,8 +98,8 @@ class Conversation(
     /** Карточка «Стереть разговор «…»? — Стереть / Отмена» в ленте режима (меню, долгое нажатие, голос). */
     fun askRestart(modeId: String = _state.value.mode) {
         val m = _state.value.modes.firstOrNull { it.id == modeId } ?: return
-        push(modeId, FeedItem.Card(nextId(), tr(R.string.restart_head), tr(R.string.restart_title, m.title), tr(R.string.restart_text),
-            listOf(tr(R.string.restart_yes) to "restart", tr(R.string.restart_no) to "dismiss"), phone = true))
+        push(modeId, FeedItem.Card(nextId(), tr(R.string.ui_restart), tr(R.string.restart_title, m.title), tr(R.string.restart_text),
+            listOf(tr(R.string.restart_yes) to "restart", tr(R.string.ui_cancel) to "dismiss"), phone = true))
     }
 
     /** «Начать заново»: стереть разговор режима с телефона. */
@@ -118,13 +118,13 @@ class Conversation(
         val p = Pending(mode.id, meId, paths, via)
         pendingAttach = p
         touch()
-        push(mode.id, FeedItem.Me(meId, "", via, paths, status = tr(R.string.conv_gotovlyu)))
+        push(mode.id, FeedItem.Me(meId, "", via, paths, status = tr(R.string.conv_preparing)))
         scope.launch {
             kotlinx.coroutines.delay(2000)
             while (pendingAttach === p) {
                 val draft = _state.value.drafts[p.modeId].orEmpty()
                 if (draft.isBlank()) { commit(p, ""); break }
-                replace(p.modeId, p.meId) { (it as FeedItem.Me).copy(status = tr(R.string.conv_zhdet_vash_vopros)) }
+                replace(p.modeId, p.meId) { (it as FeedItem.Me).copy(status = tr(R.string.conv_awaits_question)) }
                 kotlinx.coroutines.delay(300)
             }
         }
@@ -145,7 +145,7 @@ class Conversation(
         val mode = _state.value.modes.firstOrNull { it.id == p.modeId } ?: return
         val images = p.paths
         val n = p.paths.size
-        val note = if (n > 1) tr(R.string.conv_1_s_kadra_po_poryadku, n) else ""
+        val note = if (n > 1) tr(R.string.conv_frames_prefix, n) else ""
         toBrain(mode, (note + text).trim(), images)
     }
 
@@ -216,9 +216,9 @@ class Conversation(
                         BrainEvent.MessageEnd -> Unit
                         is BrainEvent.Error -> push(modeId, when (e.kind) {
                             ErrorKind.NO_BRAIN -> FeedItem.Card(nextId(), tr(R.string.conv_need_brain), tr(R.string.conv_up_no_brain), tr(R.string.conv_up_no_brain_p),
-                                listOf(tr(R.string.sheet_strip_connect) to "brain"), phone = false)
-                            ErrorKind.CONTEXT -> FeedItem.Card(nextId(), tr(R.string.conv_1_s_oshibka, Brains.byId(mode.brain).title), tr(R.string.conv_razgovor_slishkom_dlinnyy),
-                                tr(R.string.conv_model_bolshe_ne_pomeshchaet_vsyu), listOf(tr(R.string.conv_nachat_zanovo) to "restart"), phone = false)
+                                listOf(tr(R.string.ui_connect) to "brain"), phone = false)
+                            ErrorKind.CONTEXT -> FeedItem.Card(nextId(), tr(R.string.conv_error_head, Brains.byId(mode.brain).title), tr(R.string.conv_too_long_h),
+                                tr(R.string.conv_too_long_p), listOf(tr(R.string.ui_restart) to "restart"), phone = false)
                             else -> FeedItem.Err(nextId(), e.text)
                         })
                     }
@@ -256,23 +256,23 @@ class Conversation(
         if (ru.poneslas.vahter.actions.Registry.policy(s, policyId) != Policy.AUTO) return false
         val (item, note) = when (m) {
             is Rules.Match.Timer -> PhoneActions.setTimer(context, m.seconds).fold(
-                { FeedItem.Act(nextId(), "⏱", tr(R.string.conv_taymer_zapushchen_1_s, m.title), tr(R.string.conv_na_telefone), tr(R.string.conv_otkryt_taymery), "timers",
-                    at = System.currentTimeMillis() + m.seconds * 1000L, countdown = true) to tr(R.string.conv_taymer_1_s_zapushchen_na, m.title) },
-                { FeedItem.Act(nextId(), "⏱", tr(R.string.conv_taymer_ne_zapushchen_1_s, m.title), tr(R.string.conv_chasy_ne_otvetili), state = "fail") to null })
+                { FeedItem.Act(nextId(), "⏱", tr(R.string.conv_timer_set, m.title), tr(R.string.conv_on_phone), tr(R.string.conv_open_timers), "timers",
+                    at = System.currentTimeMillis() + m.seconds * 1000L, countdown = true) to tr(R.string.conv_timer_set_long, m.title) },
+                { FeedItem.Act(nextId(), "⏱", tr(R.string.conv_timer_failed, m.title), tr(R.string.conv_clock_silent), state = "fail") to null })
             is Rules.Match.Alarm -> {
                 val t = "%d:%02d".format(m.hour, m.minute)
                 PhoneActions.setAlarm(context, m.hour, m.minute).fold(
-                    { FeedItem.Act(nextId(), "⏰", tr(R.string.conv_budilnik_postavlen_1_s, t), tr(R.string.conv_na_telefone), tr(R.string.conv_otkryt_budilniki), "alarms",
-                        at = ru.poneslas.vahter.actions.Phone.nextOccurrence(m.hour, m.minute)) to tr(R.string.conv_budilnik_na_1_s_postavlen, t) },
-                    { FeedItem.Act(nextId(), "⏰", tr(R.string.conv_budilnik_ne_postavlen_1_s, t), tr(R.string.conv_chasy_ne_otvetili), state = "fail") to null })
+                    { FeedItem.Act(nextId(), "⏰", tr(R.string.conv_alarm_set, t), tr(R.string.conv_on_phone), tr(R.string.conv_open_alarms), "alarms",
+                        at = ru.poneslas.vahter.actions.Phone.nextOccurrence(m.hour, m.minute)) to tr(R.string.conv_alarm_set_long, t) },
+                    { FeedItem.Act(nextId(), "⏰", tr(R.string.conv_alarm_failed, t), tr(R.string.conv_clock_silent), state = "fail") to null })
             }
             is Rules.Match.Torch -> ru.poneslas.vahter.actions.Phone.torch(context, m.on).fold(
-                { FeedItem.Act(nextId(), "🔦", if (m.on) tr(R.string.conv_fonarik_vklyuchen) else tr(R.string.conv_fonarik_vyklyuchen), tr(R.string.conv_na_telefone),
-                    undo = if (m.on) tr(R.string.conv_vyklyuchit) else null, undoAction = if (m.on) "torch:off" else null) to (if (m.on) tr(R.string.conv_fonarik_vklyuchen_2) else tr(R.string.conv_fonarik_vyklyuchen_2)) },
-                { FeedItem.Act(nextId(), "🔦", tr(R.string.conv_fonarik_nedostupen), tr(R.string.conv_kamera_zanyata_ili_vspyshki_net), state = "fail") to null })
+                { FeedItem.Act(nextId(), "🔦", if (m.on) tr(R.string.conv_torch_on) else tr(R.string.conv_torch_off), tr(R.string.conv_on_phone),
+                    undo = if (m.on) tr(R.string.conv_turn_off) else null, undoAction = if (m.on) "torch:off" else null) to (if (m.on) tr(R.string.conv_torch_on_long) else tr(R.string.conv_torch_off_long)) },
+                { FeedItem.Act(nextId(), "🔦", tr(R.string.conv_torch_failed), tr(R.string.conv_torch_failed_why), state = "fail") to null })
         }
         push(mode.id, item)
-        journal(policyId, text, (item as FeedItem.Act).title, if (note != null) tr(R.string.conv_vypolneno) else tr(R.string.conv_ne_vypolneno), tr(R.string.conv_pravilo_na_telefone), text)
+        journal(policyId, text, (item as FeedItem.Act).title, if (note != null) tr(R.string.conv_done) else tr(R.string.conv_not_done), tr(R.string.conv_rule_head), text)
         // Мозг узнаёт о локальном действии из истории — «а перенеси его на 8» сработает.
         if (note != null) { appendHistory(mode.id, ChatMsg("user", text)); appendHistory(mode.id, ChatMsg("assistant", note)) }
         return true
@@ -290,7 +290,7 @@ class Conversation(
         val id = nextId()
         val d = CompletableDeferred<Boolean>()
         pending[id] = d
-        push(modeId, FeedItem.Card(id, tr(R.string.conv_1_s_prosit, Brains.byId(_state.value.current.brain).title), title, detail, listOf(tr(R.string.conv_da) to "yes", tr(R.string.conv_otmena) to "no")))
+        push(modeId, FeedItem.Card(id, tr(R.string.conv_asks, Brains.byId(_state.value.current.brain).title), title, detail, listOf(tr(R.string.ui_yes) to "yes", tr(R.string.ui_cancel) to "no")))
         val ok = d.await()
         pending.remove(id)
         remove(modeId, id)
@@ -330,9 +330,9 @@ class Conversation(
         // Отменили — строка гаснет и говорит, что сделано; модель узнаёт из истории режима.
         if (undo && ok) {
             val modeId = _state.value.saved.feeds.entries.firstOrNull { e -> e.value.any { it.id == item.id } }?.key ?: return
-            replace(modeId, item.id) { (it as FeedItem.Act).copy(state = "undone", subtitle = tr(R.string.conv_otmeneno), undo = null, undoAction = null, countdown = false, at = null) }
-            appendHistory(modeId, ChatMsg("user", tr(R.string.conv_polzovatel_otmenil_knopkoy_1_s, item.title)))
-            appendHistory(modeId, ChatMsg("assistant", tr(R.string.conv_otmeneno_1_s, item.title)))
+            replace(modeId, item.id) { (it as FeedItem.Act).copy(state = "undone", subtitle = tr(R.string.conv_cancelled), undo = null, undoAction = null, countdown = false, at = null) }
+            appendHistory(modeId, ChatMsg("user", tr(R.string.conv_cancelled_by_user, item.title)))
+            appendHistory(modeId, ChatMsg("assistant", tr(R.string.conv_cancelled_long, item.title)))
         }
     }
 }

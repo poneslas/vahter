@@ -215,7 +215,7 @@ class MainActivity : ComponentActivity() {
         // chat(): [свернуть] заголовок режима, точка связи · «DeepSeek · на связи», шестерёнка
         TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
             onBack = if (fromSheet) ({ collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
-            IconBtn(Ic.gear, tr(R.string.sheet_nastroyki)) { go("settings") }
+            IconBtn(Ic.gear, tr(R.string.ui_settings)) { go("settings") }
             // ⋮ — меню разговора (ui.js, chatMenu): изменить режим, журнал действий, начать заново (неактивно, пока разговор пуст).
             Box {
                 var menu by remember { mutableStateOf(false) }
@@ -226,17 +226,17 @@ class MainActivity : ComponentActivity() {
                         text = { Text(label, fontSize = 15.sp, color = if (enabled) Ink.ink else Ink.faint) },
                         leadingIcon = { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(icon), null, Modifier.size(20.dp), tint = if (enabled) Ink.soft else Ink.faint) },
                         enabled = enabled, onClick = { menu = false; onClick() })
-                    row(Ic.edit, tr(R.string.chat_menu_edit_mode)) { go("mode:${state.mode}") }
-                    row(Ic.list, tr(R.string.set_zhurnal_deystviy)) { go("journal") }
-                    row(Ic.hist, tr(R.string.restart_menu), enabled = state.feed.isNotEmpty()) { app.conversation.askRestart() }
+                    row(Ic.edit, tr(R.string.mode_edit)) { go("mode:${state.mode}") }
+                    row(Ic.list, tr(R.string.set_journal)) { go("journal") }
+                    row(Ic.hist, tr(R.string.ui_restart), enabled = state.feed.isNotEmpty()) { app.conversation.askRestart() }
                 }
             }
         }
-        if (!connected) Banner(tr(R.string.set_mozg_ne_podklyuchen_rabotayut_tolko),
-            actions = listOf(tr(R.string.set_podklyuchit) to { go("brain:${brain.id}") }))
+        if (!connected) Banner(tr(R.string.set_no_brain_banner),
+            actions = listOf(tr(R.string.ui_connect) to { go("brain:${brain.id}") }))
         PromptStrip(state.current, onEdit = { go("mode:$it") })
         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
-            modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_klaviatura)) },
+            modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_via_keyboard)) },
             from = Sheet.from.collectAsState().value[state.mode] ?: 0)
         ru.poneslas.vahter.ui.UpLine(state)
         LiveLine(live)
@@ -264,77 +264,77 @@ class MainActivity : ComponentActivity() {
         val notif = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
         val installed by app.voice.installed.collectAsState()
         val dl by ru.poneslas.vahter.pisar.model.ModelDownload.state.collectAsState()
-        TopBar(tr(R.string.sheet_nastroyki), onBack = ::back)
+        TopBar(tr(R.string.ui_settings), onBack = ::back)
         ScrollPage {
-            Section(tr(R.string.set_vyzov))
-            Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (roleHeld) tr(R.string.set_vahter) else tr(R.string.set_ne_vybran_bokovaya_knopka_otkroet), warn = !roleHeld, icon = Ic.spark) {
+            Section(tr(R.string.set_call))
+            Item(tr(R.string.set_assistant_role), if (roleHeld) tr(R.string.app_name) else tr(R.string.set_assistant_role_off), warn = !roleHeld, icon = Ic.spark) {
                 startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
             }
-            Item(tr(R.string.set_bokovaya_knopka), SideKey.describe(this@MainActivity), icon = Ic.btn) { SideKey.open(this@MainActivity) }
-            Item(tr(R.string.set_slushat_srazu_pri_vyzove), tr(if (state.settings.listenOnCall) R.string.set_bokovaya_knopka_zapis_nachinaetsya_sama else R.string.set_zapis_po_nazhatiyu),
+            Item(tr(R.string.set_side_key), SideKey.describe(this@MainActivity), icon = Ic.btn) { SideKey.open(this@MainActivity) }
+            Item(tr(R.string.set_listen_on_call), tr(if (state.settings.listenOnCall) R.string.set_listen_on_call_on else R.string.set_listen_on_call_off),
                 icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
-            Item(tr(R.string.set_vozvrashchatsya_k_assistentu), returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
-                dialog = ChoiceDialog(tr(R.string.set_vozvrashchatsya_k_assistentu), ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
+            Item(tr(R.string.set_return), returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
+                dialog = ChoiceDialog(tr(R.string.set_return), ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
                     app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }
                 }
             }
-            Section(tr(R.string.set_rezhimy))
+            Section(tr(R.string.set_modes))
             state.modes.forEach { m ->
                 if (m.id == Modes.MAIN) Item(m.title, modeSummary(m), icon = Ic.mode(m.icon)) { go("mode:${m.id}") }
                 else ItemWithSwitch(m.title, modeSummary(m), Ic.mode(m.icon), m.enabled,
                     onToggle = { app.conversation.editMode(m.id) { it.copy(enabled = !it.enabled) } }) { go("mode:${m.id}") }
             }
-            Item(tr(R.string.feed_novyy_rezhim), tr(R.string.set_nazvanie_prompt_chto_prinimaet), icon = Ic.plus) { go("mode:" + app.conversation.addMode()) }
-            Section(tr(R.string.set_golos))
+            Item(tr(R.string.feed_new_mode), tr(R.string.set_modes_sub), icon = Ic.plus) { go("mode:" + app.conversation.addMode()) }
+            Section(tr(R.string.set_voice))
             val pct = (dl as? ru.poneslas.vahter.pisar.model.ModelDownload.State.Running)?.percent
-            Item(tr(R.string.set_raspoznavanie_rechi), when { installed -> tr(R.string.set_na_telefone_225_mb); pct != null -> tr(R.string.set_kachaetsya_1_s, pct); else -> tr(R.string.app_ne_skachano_225_mb) },
+            Item(tr(R.string.set_voice_title), when { installed -> tr(R.string.set_voice_ready); pct != null -> tr(R.string.set_voice_loading, pct); else -> tr(R.string.app_voice_none) },
                 warn = !installed && pct == null, icon = Ic.wave) { go("voice") }
             val micOff = !mic && state.settings.micAsked && !shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)
-            Item(tr(R.string.set_mikrofon), tr(when { mic -> R.string.set_tolko_poka_idet_zapis; micOff -> R.string.set_mikrofon_zapreshchen; else -> R.string.set_sprosim_kogda_ponadobitsya }), warn = micOff, icon = Ic.mic) {
+            Item(tr(R.string.set_mic), tr(when { mic -> R.string.set_mic_on; micOff -> R.string.set_mic_denied; else -> R.string.set_mic_ask }), warn = micOff, icon = Ic.mic) {
                 if (!mic) askMic()
             }
-            Section(tr(R.string.set_mozgi))
+            Section(tr(R.string.set_brains))
             Brains.all.forEach { b ->
                 val api = b.kind == BrainDesc.Kind.API
                 val has = app.hasKey(b.id)
-                Item(b.title, if (api) (if (has) tr(R.string.set_1_s_klyuch_est, b.model) else tr(R.string.set_net_klyucha)) else tr(R.string.set_svoy_server_pamyat_poisk_telegram),
+                Item(b.title, if (api) (if (has) tr(R.string.set_brain_has_key, b.model) else tr(R.string.set_brain_no_key)) else tr(R.string.set_hermes_sub),
                     warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { go(if (api) "brain:${b.id}" else "hermes") }
             }
-            Section(tr(R.string.set_uvedomleniya))
-            Item(tr(R.string.set_uvedomleniya), if (notif) tr(R.string.set_kogda_prishel_otvet_a_list) else tr(R.string.set_vyklyucheny), icon = Ic.bell, end = { Sw(notif) }) {
+            Section(tr(R.string.set_notif))
+            Item(tr(R.string.set_notif), if (notif) tr(R.string.set_notif_on) else tr(R.string.set_notif_off), icon = Ic.bell, end = { Sw(notif) }) {
                 if (!notif) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
                 else startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, packageName))
             }
-            Section(tr(R.string.set_deystviya))
+            Section(tr(R.string.set_actions_section))
             val REG = ru.poneslas.vahter.actions.Registry
             val pol = REG.all.map { REG.policy(state.settings, it.id) }
             val blockedN = REG.all.count { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(this@MainActivity, it).isNotEmpty() }
-            Item(tr(R.string.set_deystviya_na_telefone), if (blockedN > 0) tr(R.string.set_net_dostupa_1_s, blockedN) else tr(R.string.set_razresheno_1_s_sprashivat_2, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
+            Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
                 warn = blockedN > 0, icon = Ic.shield) { go("actions") }
-            Item(tr(R.string.set_zhurnal_deystviy), tr(R.string.set_segodnya_1_s, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { go("journal") }
+            Item(tr(R.string.set_journal), tr(R.string.set_journal_today, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { go("journal") }
             Divider()
-            Item(tr(R.string.set_o_programme), tr(R.string.set_versiya_1_s, packageManager.getPackageInfo(packageName, 0).versionName ?: ""), icon = Ic.info)
+            Item(tr(R.string.set_about), tr(R.string.set_about_version, packageManager.getPackageInfo(packageName, 0).versionName ?: ""), icon = Ic.info)
         }
     }
 
     /** model.js, modeSummary(). */
     private fun modeSummary(m: ru.poneslas.vahter.core.Mode): String {
-        if (m.id == Modes.MAIN) return tr(R.string.set_osnovnoy_razgovor_vse_deystviya_telefona)
-        val ins = listOfNotNull(tr(R.string.sheet_foto).takeIf { m.accepts.photo }, tr(R.string.set_fayl).takeIf { m.accepts.file })
-        return listOfNotNull(if (m.builtin) null else tr(R.string.set_svoy), if (m.primary == ru.poneslas.vahter.core.Primary.PHOTO) tr(R.string.set_srazu_kamera) else tr(R.string.sheet_golos),
+        if (m.id == Modes.MAIN) return tr(R.string.set_mode_main_sub)
+        val ins = listOfNotNull(tr(R.string.sheet_via_photo).takeIf { m.accepts.photo }, tr(R.string.set_mode_file).takeIf { m.accepts.file })
+        return listOfNotNull(if (m.builtin) null else tr(R.string.set_mode_custom), if (m.primary == ru.poneslas.vahter.core.Primary.PHOTO) tr(R.string.set_mode_photo_first) else tr(R.string.sheet_via_voice),
             ins.joinToString(", ").ifEmpty { null }).joinToString(" · ")
     }
 
     private fun returnLabel(r: ReturnToAssistant) = when (r) {
-        ReturnToAssistant.MIN30 -> tr(R.string.set_cherez_30_minut_bez_dela)
-        ReturnToAssistant.NEVER -> tr(R.string.set_nikogda_otkryvat_posledniy_rezhim)
-        ReturnToAssistant.ALWAYS -> tr(R.string.set_vsegda_bokovaya_knopka_otkryvaet_assiste)
+        ReturnToAssistant.MIN30 -> tr(R.string.set_return_30m)
+        ReturnToAssistant.NEVER -> tr(R.string.set_return_never)
+        ReturnToAssistant.ALWAYS -> tr(R.string.set_return_always)
     }
 
     private fun lockLabel(s: LockScope) = when (s) {
-        LockScope.OFF -> tr(R.string.set_ne_otkryvat)
-        LockScope.SAFE -> tr(R.string.set_tolko_budilnik_taymer_fonarik)
-        LockScope.ON -> tr(R.string.set_otkryvat)
+        LockScope.OFF -> tr(R.string.set_lock_off)
+        LockScope.SAFE -> tr(R.string.set_lock_safe)
+        LockScope.ON -> tr(R.string.set_lock_on)
     }
 
     /** brainPage(): карточка «Адрес / Модель», ключ, «Умеет», пояснение. */
@@ -343,18 +343,18 @@ class MainActivity : ComponentActivity() {
         val app = App.instance
         val b = Brains.byId(id)
         val state by app.conversation.state.collectAsState()
-        TopBar(b.title, tr(R.string.set_openai_sovmestimyy_api), onBack = ::back)
+        TopBar(b.title, tr(R.string.set_brain_api), onBack = ::back)
         FormPage {
-            SetCard { Item(tr(R.string.set_adres), b.url, icon = Ic.srv); Item(tr(R.string.set_model), b.model, icon = Ic.spark) }
+            SetCard { Item(tr(R.string.set_brain_url), b.url, icon = Ic.srv); Item(tr(R.string.set_brain_model), b.model, icon = Ic.spark) }
             KeyEditor(b)
             Column {
-                Text(tr(R.string.set_umeet), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Text(tr(R.string.set_brain_caps), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    MChip(tr(R.string.set_foto), b.vision); MChip(tr(R.string.set_deystviya_telefona), b.tools); MChip(tr(R.string.set_pamyat), b.memory); MChip(tr(R.string.set_server_poisk), b.server)
+                    MChip(tr(R.string.set_cap_vision), b.vision); MChip(tr(R.string.set_cap_tools), b.tools); MChip(tr(R.string.set_cap_memory), b.memory); MChip(tr(R.string.set_cap_server), b.server)
                 }
             }
-            val users = state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_net) }
-            MNote(tr(R.string.set_rezhimy_na_etom_mozge_1, users))
+            val users = state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }
+            MNote(tr(R.string.set_brain_modes_note, users))
         }
     }
 
@@ -365,13 +365,13 @@ class MainActivity : ComponentActivity() {
         val state by app.conversation.state.collectAsState()
         @Suppress("UNUSED_VARIABLE") val r = resumed.intValue // перечитать доступы после системных окон
         val REG = ru.poneslas.vahter.actions.Registry
-        TopBar(tr(R.string.set_deystviya_na_telefone), tr(R.string.set_chto_vypolnyaetsya_srazu_a_chto), onBack = ::back)
+        TopBar(tr(R.string.set_actions), tr(R.string.actions_subtitle), onBack = ::back)
         ScrollPage {
             val blocked = REG.all.filter { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(this@MainActivity, it).isNotEmpty() }
             if (blocked.isNotEmpty()) {
                 val t = blocked.first()
-                Banner(tr(R.string.set_1_s_ne_rabotaet_net, t.title, REG.specialTitle(t.special!!)),
-                    actions = listOf(tr(R.string.set_ispravit) to { ru.poneslas.vahter.actions.Phone.openDndAccess(this@MainActivity); Unit }))
+                Banner(tr(R.string.actions_blocked, t.title, REG.specialTitle(t.special!!)),
+                    actions = listOf(tr(R.string.actions_fix) to { ru.poneslas.vahter.actions.Phone.openDndAccess(this@MainActivity); Unit }))
             }
             REG.groups.forEach { g ->
                 Section(g)
@@ -380,26 +380,26 @@ class MainActivity : ComponentActivity() {
                     val miss = REG.missing(this@MainActivity, t)
                     val sub = when {
                         p == Policy.OFF || miss.isEmpty() -> null
-                        t.special != null -> tr(R.string.set_net_dostupa_1_s_2, miss.joinToString(", "))
-                        else -> tr(R.string.set_dostup_1_s_sprosim_pri, miss.joinToString(", "))
+                        t.special != null -> tr(R.string.actions_no_access, miss.joinToString(", "))
+                        else -> tr(R.string.actions_will_ask, miss.joinToString(", "))
                     }
                     Item(t.title, sub, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger },
                         minHeight = 52.dp) {
-                        val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to tr(R.string.set_razresheno))) + listOf("ASK" to tr(R.string.set_sprashivat), "OFF" to tr(R.string.set_ne_razresheno))
+                        val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to tr(R.string.actions_policy_auto))) + listOf("ASK" to tr(R.string.actions_policy_ask), "OFF" to tr(R.string.actions_policy_off))
                         dialog = ChoiceDialog(t.title, opts, p.name) { v ->
                             app.conversation.updateSettings { it.copy(policy = it.policy + (t.id to Policy.valueOf(v))) }
                         }
                     }
                 }
             }
-            Section(tr(R.string.set_ekran_blokirovki))
-            Item(tr(R.string.set_na_zablokirovannom_ekrane), lockLabel(state.settings.lockScope), icon = Ic.lock) {
-                dialog = ChoiceDialog(tr(R.string.set_na_zablokirovannom_ekrane), LockScope.entries.map { it.name to lockLabel(it) }, state.settings.lockScope.name) { v ->
+            Section(tr(R.string.actions_lock_h))
+            Item(tr(R.string.actions_lock_sub), lockLabel(state.settings.lockScope), icon = Ic.lock) {
+                dialog = ChoiceDialog(tr(R.string.actions_lock_sub), LockScope.entries.map { it.name to lockLabel(it) }, state.settings.lockScope.name) { v ->
                     app.conversation.updateSettings { it.copy(lockScope = LockScope.valueOf(v)) }
                 }
             }
-            Item(tr(R.string.set_zhurnal_deystviy), tr(R.string.set_segodnya_1_s, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { go("journal") }
-            MNote(tr(R.string.set_razresheno_vypolnyaetsya_srazu_v_razgovo),
+            Item(tr(R.string.set_journal), tr(R.string.set_journal_today, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { go("journal") }
+            MNote(tr(R.string.actions_note),
                 Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 20.dp))
         }
     }
@@ -407,32 +407,32 @@ class MainActivity : ComponentActivity() {
     /** Hermes: ещё не подключается — честно говорим и описываем, что будет (бэклог; Продукт 2, 4). */
     @Composable
     private fun HermesPage() {
-        TopBar("Hermes", tr(R.string.set_svoy_server_skoro), onBack = ::back)
+        TopBar("Hermes", tr(R.string.hermes_subtitle), onBack = ::back)
         FormPage {
-            Note(tr(R.string.set_eshche_ne_rabotaet_podklyuchenie_hermes))
-            Text(tr(R.string.set_hermes_lichnyy_agent_na_vashem) +
-                tr(R.string.set_a_razgovory_pamyat_i_raspisanie), color = Ink.soft)
+            Note(tr(R.string.hermes_not_yet))
+            Text(tr(R.string.hermes_about_1) +
+                tr(R.string.hermes_about_2), color = Ink.soft)
             Column {
-                Text(tr(R.string.set_chto_budet_umet), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Text(tr(R.string.hermes_will_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
                 SetCard {
-                    Item(tr(R.string.set_pamyat_mezhdu_dnyami), tr(R.string.set_pomnit_o_chem_govorili_vchera), icon = Ic.hist)
-                    Item(tr(R.string.set_poisk_v_internete), tr(R.string.set_pogoda_novosti_tseny_raspisaniya_so), icon = Ic.lens)
-                    Item(tr(R.string.set_komandy_na_servere), tr(R.string.set_proverit_bekapy_posmotret_logi_opasnoe), icon = Ic.srv)
-                    Item(tr(R.string.set_raspisanie), tr(R.string.set_napominaniya_i_otchety_v_nuzhnoe), icon = Ic.bell)
-                    Item(tr(R.string.set_plan_dlinnykh_zadach), tr(R.string.set_vidno_kakoy_shag_seychas_i), icon = Ic.list)
-                    Item(tr(R.string.set_fayly_i_kartinki), tr(R.string.set_prisylaet_pdf_tablitsy_kartinki_otkryt), icon = Ic.doc)
-                    Item(tr(R.string.set_tot_zhe_razgovor_v_telegram), tr(R.string.set_nachali_golosom_v_liste_prodolzhili), icon = Ic.chat)
-                    Item(tr(R.string.set_deystviya_telefona), tr(R.string.set_budilnik_kalendar_zvonki_kak_u), icon = Ic.shield)
+                    Item(tr(R.string.hermes_will_memory), tr(R.string.hermes_will_memory_sub), icon = Ic.hist)
+                    Item(tr(R.string.hermes_will_search), tr(R.string.hermes_will_search_sub), icon = Ic.lens)
+                    Item(tr(R.string.hermes_will_server), tr(R.string.hermes_will_server_sub), icon = Ic.srv)
+                    Item(tr(R.string.hermes_will_schedule), tr(R.string.hermes_will_schedule_sub), icon = Ic.bell)
+                    Item(tr(R.string.hermes_will_plan), tr(R.string.hermes_will_plan_sub), icon = Ic.list)
+                    Item(tr(R.string.hermes_will_files), tr(R.string.hermes_will_files_sub), icon = Ic.doc)
+                    Item(tr(R.string.hermes_will_telegram), tr(R.string.hermes_will_telegram_sub), icon = Ic.chat)
+                    Item(tr(R.string.set_cap_tools), tr(R.string.hermes_will_phone), icon = Ic.shield)
                 }
             }
             Column {
-                Text(tr(R.string.set_kak_budet_podklyuchatsya), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Text(tr(R.string.hermes_pair_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
                 SetCard {
-                    Item(tr(R.string.set_ssylka_iz_telegram), tr(R.string.set_botu_hermes_komanda_vahter_pair), icon = Ic.chat, trailing = tr(R.string.set_skoro), trailingColor = Ink.faint)
-                    Item(tr(R.string.set_qr_s_ekrana_kompyutera), tr(R.string.set_ta_zhe_komanda_na_servere), icon = Ic.qr, trailing = tr(R.string.set_skoro), trailingColor = Ink.faint)
-                    Item(tr(R.string.set_vvesti_adres), tr(R.string.set_vladelets_servera_podtverdit_kod), icon = Ic.pen, trailing = tr(R.string.set_skoro), trailingColor = Ink.faint)
+                    Item(tr(R.string.hermes_pair_tg), tr(R.string.hermes_pair_tg_sub), icon = Ic.chat, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
+                    Item(tr(R.string.hermes_pair_qr), tr(R.string.hermes_pair_qr_sub), icon = Ic.qr, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
+                    Item(tr(R.string.hermes_pair_addr), tr(R.string.hermes_pair_addr_sub), icon = Ic.pen, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
                 }
-                MNote(tr(R.string.set_kazhdyy_rezhim_mozhno_budet_perevesti))
+                MNote(tr(R.string.hermes_per_mode))
             }
         }
     }
@@ -443,23 +443,23 @@ class MainActivity : ComponentActivity() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
         var open by remember { mutableStateOf<Long?>(null) }
-        TopBar(tr(R.string.set_zhurnal_deystviy), tr(R.string.set_tolko_na_telefone), onBack = ::back)
+        TopBar(tr(R.string.set_journal), tr(R.string.journal_subtitle), onBack = ::back)
         ScrollPage {
             val list = state.saved.journal.reversed()
-            if (list.isEmpty()) MNote(tr(R.string.set_poka_pusto_zdes_budet_vse), Modifier.padding(horizontal = 22.dp))
+            if (list.isEmpty()) MNote(tr(R.string.journal_empty), Modifier.padding(horizontal = 22.dp))
             list.groupBy { java.text.SimpleDateFormat("d MMMM, EEEE", java.util.Locale("ru")).format(java.util.Date(it.at)) }.forEach { (day, items) ->
-                Section(if (android.text.format.DateUtils.isToday(items.first().at)) tr(R.string.set_segodnya) else day)
+                Section(if (android.text.format.DateUtils.isToday(items.first().at)) tr(R.string.journal_today) else day)
                 items.forEach { j ->
                     Row(Modifier.fillMaxWidth().clickable { open = if (open == j.id) null else j.id }.padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(java.text.SimpleDateFormat("H:mm", java.util.Locale.ROOT).format(java.util.Date(j.at)), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.width(40.dp))
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(j.title, fontSize = 14.5.sp, fontWeight = FontWeight.Medium)
-                            Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == tr(R.string.conv_vypolneno)) Ink.soft else Ink.danger)
+                            Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == tr(R.string.conv_done)) Ink.soft else Ink.danger)
                         }
                     }
                     if (open == j.id) Column(Modifier.padding(start = 76.dp, end = 22.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        listOf(tr(R.string.set_fraza) to "«${j.phrase}»", tr(R.string.set_deystvie) to "${j.tool} ${j.params}", tr(R.string.set_ekran) to if (j.locked) tr(R.string.set_zablokirovan) else tr(R.string.set_otkryt)).forEach { (k, v) ->
+                        listOf(tr(R.string.journal_phrase) to "«${j.phrase}»", tr(R.string.journal_action) to "${j.tool} ${j.params}", tr(R.string.journal_screen) to if (j.locked) tr(R.string.journal_screen_locked) else tr(R.string.journal_screen_open)).forEach { (k, v) ->
                             Row { Text(k, fontSize = 12.5.sp, color = Ink.faint, modifier = Modifier.width(80.dp)); Text(v, fontSize = 12.5.sp) }
                         }
                     }
@@ -468,7 +468,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.set_razresheno); Policy.ASK -> tr(R.string.set_sprashivat); Policy.OFF -> tr(R.string.set_ne_razresheno) }
+    private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.actions_policy_auto); Policy.ASK -> tr(R.string.actions_policy_ask); Policy.OFF -> tr(R.string.actions_policy_off) }
 
     /** Наше окно-лист (app.css, .osheet): ручка, значок, заголовок, текст; справа действие, слева от него «Не сейчас». */
     @Composable
@@ -505,7 +505,7 @@ class MainActivity : ComponentActivity() {
                         Text(label, fontSize = 14.5.sp, color = Color(0xFF14171F), modifier = Modifier.padding(start = 14.dp))
                     }
                 }
-                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton(tr(R.string.conv_otmena), color = Ink.brain, onClick = close) }
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton(tr(R.string.ui_cancel), color = Ink.brain, onClick = close) }
             }
         }
     }

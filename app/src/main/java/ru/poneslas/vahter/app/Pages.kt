@@ -84,7 +84,7 @@ import android.app.role.RoleManager
 @Composable
 fun VoicePage(onBack: () -> Unit) {
     val app = App.instance
-    TopBar(tr(R.string.set_raspoznavanie_rechi), tr(R.string.pg_gigaam_v3_na_telefone_golos), onBack = onBack)
+    TopBar(tr(R.string.set_voice_title), tr(R.string.voice_subtitle), onBack = onBack)
     ScrollPage { VoiceBlock() }
 }
 
@@ -100,21 +100,21 @@ fun VoiceBlock() {
     Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         when {
             installed -> {
-                Text(tr(R.string.pg_vse_gotovo), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
-                Text(tr(R.string.pg_zazhmite_mikrofon_skazhite_chto_nibud), fontSize = 15.sp, color = Ink.soft)
+                Text(tr(R.string.voice_ready_h), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
+                Text(tr(R.string.voice_ready_p), fontSize = 15.sp, color = Ink.soft)
                 ru.poneslas.vahter.ui.TryVoice()
             }
             running != null -> {
-                Text(tr(R.string.pg_gigaam_225_mb_skachivaetsya_odin), fontSize = 15.sp, color = Ink.soft)
+                Text(tr(R.string.voice_about), fontSize = 15.sp, color = Ink.soft)
                 Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Ink.line)) {
                     Box(Modifier.fillMaxWidth(running.percent / 100f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(Ink.ink))
                 }
-                Text(tr(R.string.app_zagruzka_modeli_1_s, running.percent), fontSize = 14.sp, color = Ink.ink)
+                Text(tr(R.string.app_voice_loading, running.percent), fontSize = 14.sp, color = Ink.ink)
             }
             else -> {
-                Text(tr(R.string.pg_gigaam_225_mb_skachivaetsya_odin), fontSize = 15.sp, color = Ink.soft)
-                PrimaryButton(if (error == null) tr(R.string.pg_skachat) else tr(R.string.pg_poprobovat_eshche_raz)) { ModelDownload.start(ctx) }
-                if (error != null) Text(tr(R.string.pg_oshibka_zagruzki_1_s, error), fontSize = 14.sp, color = Ink.danger)
+                Text(tr(R.string.voice_about), fontSize = 15.sp, color = Ink.soft)
+                PrimaryButton(if (error == null) tr(R.string.voice_download) else tr(R.string.voice_retry)) { ModelDownload.start(ctx) }
+                if (error != null) Text(tr(R.string.voice_error, error), fontSize = 14.sp, color = Ink.danger)
             }
         }
     }
@@ -131,13 +131,13 @@ fun ModePage(activity: MainActivity, id: String) {
     // Встроенные режимы только включаются и выключаются (Бэклог №14): остальное — для просмотра.
     val ro = m.builtin
     val ed: ((Mode) -> Mode) -> Unit = { f -> conv.editMode(m.id, f) }
-    TopBar(m.title, if (m.builtin) tr(R.string.pg_vstroennyy_rezhim) else tr(R.string.pg_svoy_rezhim_id_1_s, m.id), onBack = activity::back, titleIcon = Ic.mode(m.icon))
+    TopBar(m.title, if (m.builtin) tr(R.string.mode_builtin) else tr(R.string.mode_custom_id, m.id), onBack = activity::back, titleIcon = Ic.mode(m.icon))
     FormPage {
-        if (ro) Note(tr(R.string.pg_vstroennyy_rezhim_ego_mozhno_vklyuchit))
+        if (ro) Note(tr(R.string.mode_builtin_note))
         if (!ro) {
-            Field(tr(R.string.pg_nazvanie), m.title, tr(R.string.pg_kak_nazvat_vkladku)) { v -> ed { it.copy(title = v) } }
+            Field(tr(R.string.mode_title), m.title, tr(R.string.mode_title_hint)) { v -> ed { it.copy(title = v) } }
             Column {
-                Lh(tr(R.string.pg_znachok))
+                Lh(tr(R.string.mode_icon))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     MODE_ICONS.forEach { k ->
                         val on = m.icon == k
@@ -151,31 +151,31 @@ fun ModePage(activity: MainActivity, id: String) {
         }
         Column {
             // Промпт меняется у всех режимов. У встроенных — с «Вернуть как было»; у Ассистента — «свои правила» поверх служебных.
-            Lh(tr(if (main) R.string.pg_svoi_pravila else R.string.pg_chto_delat))
-            if (main) MNote(tr(R.string.pg_svoi_pravila_note))
-            Area(m.prompt, tr(if (main) R.string.pg_svoi_pravila_hint else R.string.pg_naprimer_perevodi_vse_na_kitayskiy)) { v -> ed { it.copy(prompt = v, promptEdited = true) } }
+            Lh(tr(if (main) R.string.mode_rules else R.string.mode_prompt))
+            if (main) MNote(tr(R.string.mode_rules_note))
+            Area(m.prompt, tr(if (main) R.string.mode_rules_hint else R.string.mode_prompt_hint)) { v -> ed { it.copy(prompt = v, promptEdited = true) } }
             Dictate { text -> ed { it.copy(prompt = (it.prompt.trim() + " " + text).trim(), promptEdited = true) } }
             val def = Modes.builtin.firstOrNull { it.id == m.id }?.prompt
             if (ro && !main && def != null && m.prompt != def) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                TextButton(tr(R.string.pg_vernut_kak_bylo)) { ed { it.copy(prompt = def, promptEdited = false) } }
+                TextButton(tr(R.string.mode_prompt_reset)) { ed { it.copy(prompt = def, promptEdited = false) } }
             }
         }
         if (!ro) {
-            Field(tr(R.string.pg_podskazka_v_pustom_razgovore), m.hint, tr(R.string.pg_chto_syuda_prisylat)) { v -> ed { it.copy(hint = v) } }
-            Field(tr(R.string.pg_podskazka_v_pole_vvoda), m.placeholder, tr(R.string.mode_vopros_k_foto)) { v -> ed { it.copy(placeholder = v) } }
+            Field(tr(R.string.mode_empty_label), m.hint, tr(R.string.mode_empty_hint)) { v -> ed { it.copy(hint = v) } }
+            Field(tr(R.string.mode_ph_label), m.placeholder, tr(R.string.mode_whatsthis_ph)) { v -> ed { it.copy(placeholder = v) } }
         }
         Column {
-            Lh(tr(R.string.pg_prinimaet))
+            Lh(tr(R.string.mode_accepts))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                MChip(tr(R.string.set_golos), m.accepts.voice, Ic.mic, onClick = if (ro) null else ({ ed { it.copy(accepts = it.accepts.copy(voice = !it.accepts.voice)) } }))
-                MChip(tr(R.string.pg_tekst), true, Ic.kbd)
-                MChip(tr(R.string.set_foto), m.accepts.photo, Ic.cam, onClick = if (ro) null else ({ ed { it.copy(accepts = it.accepts.copy(photo = !it.accepts.photo), primary = if (it.accepts.photo) Primary.VOICE else it.primary) } }))
+                MChip(tr(R.string.set_voice), m.accepts.voice, Ic.mic, onClick = if (ro) null else ({ ed { it.copy(accepts = it.accepts.copy(voice = !it.accepts.voice)) } }))
+                MChip(tr(R.string.mode_accepts_text), true, Ic.kbd)
+                MChip(tr(R.string.set_cap_vision), m.accepts.photo, Ic.cam, onClick = if (ro) null else ({ ed { it.copy(accepts = it.accepts.copy(photo = !it.accepts.photo), primary = if (it.accepts.photo) Primary.VOICE else it.primary) } }))
             }
         }
         if (m.accepts.photo && !main) Column {
-            Lh(tr(R.string.pg_glavnoe))
+            Lh(tr(R.string.mode_primary))
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink.chipBg).padding(3.dp)) {
-                listOf(Primary.VOICE to (tr(R.string.set_golos) to Ic.mic), Primary.PHOTO to (tr(R.string.set_foto) to Ic.cam)).forEach { (v, tl) ->
+                listOf(Primary.VOICE to (tr(R.string.set_voice) to Ic.mic), Primary.PHOTO to (tr(R.string.set_cap_vision) to Ic.cam)).forEach { (v, tl) ->
                     val on = m.primary == v
                     Row(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (on) Color.White else Color.Transparent)
                         .clickable(enabled = !ro) { ed { it.copy(primary = v) } }.padding(9.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -185,21 +185,21 @@ fun ModePage(activity: MainActivity, id: String) {
                     }
                 }
             }
-            MNote(if (m.primary == Primary.PHOTO) tr(R.string.pg_bolshaya_knopka_kamera_s_bokovoy)
-                else tr(R.string.pg_bolshaya_knopka_mikrofon_s_bokovoy))
+            MNote(if (m.primary == Primary.PHOTO) tr(R.string.mode_primary_photo_note)
+                else tr(R.string.mode_primary_voice_note))
         }
         SetCard {
-            if (main) Item(tr(R.string.set_deystviya_telefona), tr(R.string.pg_vse_budilnik_taymer_kalendar_zvonki), icon = Ic.shield)
-            else if (ro) Item(tr(R.string.set_deystviya_telefona), if (m.tools) tr(R.string.pg_vklyucheny) else tr(R.string.set_vyklyucheny), icon = Ic.shield)
-            else Item(tr(R.string.set_deystviya_telefona), if (m.tools) tr(R.string.pg_vklyucheny_taymer_budilnik) else tr(R.string.pg_vyklyucheny_menshe_instrumentov_otvet_by),
+            if (main) Item(tr(R.string.set_cap_tools), tr(R.string.mode_tools_all), icon = Ic.shield)
+            else if (ro) Item(tr(R.string.set_cap_tools), if (m.tools) tr(R.string.mode_tools_on) else tr(R.string.set_notif_off), icon = Ic.shield)
+            else Item(tr(R.string.set_cap_tools), if (m.tools) tr(R.string.mode_tools_on) else tr(R.string.mode_tools_off),
                 icon = Ic.shield, end = { Sw(m.tools) }) { ed { it.copy(tools = !it.tools) } }
-            Item(tr(R.string.pg_yazyk_rechi), tr(R.string.pg_russkiy_gigaam_drugie_yazyki_pozzhe), icon = Ic.wave)
+            Item(tr(R.string.mode_lang), tr(R.string.mode_lang_ru), icon = Ic.wave)
         }
         Column {
             SetCard {
-                Item(tr(R.string.kit_mozg), Brains.byId(m.brain).title + if (m.accepts.photo) tr(R.string.pg_nuzhen_so_zreniem) else "", icon = Ic.spark)
+                Item(tr(R.string.key_h), Brains.byId(m.brain).title + if (m.accepts.photo) tr(R.string.mode_brain_needs_vision) else "", icon = Ic.spark)
             }
-            MNote(tr(R.string.pg_istoriya_rezhima_khranitsya_na_telefone))
+            MNote(tr(R.string.mode_brain_note))
         }
         if (!m.builtin) {
             var ask by remember { mutableStateOf(false) }
@@ -208,7 +208,7 @@ fun ModePage(activity: MainActivity, id: String) {
                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(painterResource(Ic.del), null, Modifier.size(18.dp), tint = Ink.danger)
                 Spacer(Modifier.width(8.dp))
-                Text(if (ask) tr(R.string.pg_tochno_udalit_nazhmite_eshche_raz) else tr(R.string.pg_udalit_rezhim), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Ink.danger)
+                Text(if (ask) tr(R.string.mode_delete_confirm) else tr(R.string.mode_delete), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Ink.danger)
             }
         }
     }
@@ -252,7 +252,7 @@ private fun Dictate(onText: (String) -> Unit) {
     Column(Modifier.padding(start = 16.dp, end = 4.dp)) {
         ru.poneslas.vahter.ui.VoiceRow(
             voice = App.instance.voice,
-            field = { Text(msg ?: tr(R.string.pg_zazhmite_i_nadiktuyte_dopishetsya_v), fontSize = 13.sp, color = Ink.soft) },
+            field = { Text(msg ?: tr(R.string.mode_dictate_hint), fontSize = 13.sp, color = Ink.soft) },
             trailing = null,
             onText = { msg = null; onText(it) },
             onMessage = { msg = it },
@@ -292,8 +292,8 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     val key = rememberKeyCtl(Brains.deepseek)
     val scope = rememberCoroutineScope()
 
-    var skip: Pair<String, () -> Unit>? = tr(R.string.pg_pozzhe) to next
-    var primary: Pair<String, () -> Unit>? = tr(R.string.pg_dalee) to next
+    var skip: Pair<String, () -> Unit>? = tr(R.string.ui_later) to next
+    var primary: Pair<String, () -> Unit>? = tr(R.string.ui_next) to next
 
     // Назад по мастеру: системный «Назад» и свайп вправо; свайп влево — вперёд, только если на экране уже можно «Далее».
     // На пробе голоса свайпа нет: у кнопки микрофона жест «влево — отмена». Голос не качали — проба пропускается и назад.
@@ -317,29 +317,29 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
             Text(p, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
         }
         when (step) {
-            0 -> { Art(ru.poneslas.vahter.ui.WizScene.WELCOME); Head(tr(R.string.intro_0_h), tr(R.string.intro_0_p)); skip = null; primary = tr(R.string.intro_start) to next }
+            0 -> { Art(ru.poneslas.vahter.ui.WizScene.WELCOME); Head(tr(R.string.intro_0_h), tr(R.string.intro_0_p)); skip = null; primary = tr(R.string.ui_start) to next }
             1 -> {
                 // Голос — первым: модель качается, пока настраивают кнопку.
                 Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) { ru.poneslas.vahter.ui.VoiceArt() }
-                Head(tr(R.string.pg_golos_na_telefone), tr(R.string.onb_voice_p, "225"))
+                Head(tr(R.string.wiz_voice_h), tr(R.string.wiz_voice_p, "225"))
                 val error = (dl as? ModelDownload.State.Failed)?.reason
                 when {
-                    installed -> Note(tr(R.string.pg_gotovo), ok = true)
+                    installed -> Note(tr(R.string.ui_done), ok = true)
                     running != null -> {
                         Progress(running.percent)
-                        Text(tr(R.string.pg_zagruzka_modeli_1_s_mozhno, running.percent), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 8.dp))
+                        Text(tr(R.string.wiz_voice_progress, running.percent), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 8.dp))
                     }
                     else -> {
-                        if (error != null) Note(tr(R.string.pg_oshibka_zagruzki_1_s, error), ok = false)
+                        if (error != null) Note(tr(R.string.voice_error, error), ok = false)
                         // «Скачать» — и сразу системный запрос микрофона, пока качается модель (Продукт 5.13).
-                        primary = (if (error == null) tr(R.string.pg_skachat) else tr(R.string.pg_eshche_raz)) to {
+                        primary = (if (error == null) tr(R.string.voice_download) else tr(R.string.wiz_voice_retry)) to {
                             ModelDownload.start(ctx); if (!mic && !app.conversation.state.value.settings.micAsked) activity.askMic(); Unit
                         }
                     }
                 }
                 if (installed || running != null) skip = null
                 if (!mic && (installed || running != null)) SetCard(Modifier.padding(top = 12.dp)) {
-                    Item(tr(R.string.set_mikrofon), tr(R.string.pg_nuzhen_dlya_golosovogo_vvoda), icon = Ic.mic) { activity.askMic() }
+                    Item(tr(R.string.set_mic), tr(R.string.wiz_voice_mic_sub), icon = Ic.mic) { activity.askMic() }
                 }
             }
             2 -> {
@@ -354,54 +354,54 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 val check: @Composable () -> Unit = { Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }
                 Art(ru.poneslas.vahter.ui.WizScene.QUEUE, 220.dp)
                 Head(tr(R.string.intro_1_h), tr(when {
-                    ok && known -> R.string.btn_p_done
-                    ok && probe == true -> R.string.btn_p_done_probe
-                    ok -> R.string.btn_p_done_nokey
-                    sideOk -> R.string.btn_p_ready_side
-                    known -> R.string.btn_p_todo
-                    else -> R.string.btn_p_todo_one
+                    ok && known -> R.string.sidekey_p_done
+                    ok && probe == true -> R.string.sidekey_p_done_probe
+                    ok -> R.string.sidekey_p_done_nokey
+                    sideOk -> R.string.sidekey_p_ready
+                    known -> R.string.sidekey_p_todo
+                    else -> R.string.sidekey_p_todo_one
                 }))
                 SetCard {
-                    Item(tr(R.string.set_tsifrovoy_pomoshchnik), if (role) tr(R.string.set_vahter) else tr(R.string.btn_not_set, tr(R.string.btn_other_assistant)), warn = !role, icon = Ic.spark,
+                    Item(tr(R.string.set_assistant_role), if (role) tr(R.string.app_name) else tr(R.string.sidekey_not_set, tr(R.string.sidekey_other_assistant)), warn = !role, icon = Ic.spark,
                         end = if (role) check else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
                     when {
-                        known && sideOk -> Item(tr(R.string.set_bokovaya_knopka), tr(R.string.btn_side_ready), icon = Ic.btn, end = check) { SideKey.open(activity) }
-                        known -> Item(tr(R.string.set_bokovaya_knopka), tr(R.string.btn_not_set, SideKey.now(activity)), warn = true, icon = Ic.btn) { SideKey.open(activity) }
-                        !role -> Item(tr(R.string.btn_call), tr(R.string.btn_call_any), icon = Ic.btn)
-                        probe == true -> Item(tr(R.string.btn_call), tr(R.string.btn_probe_ok), icon = Ic.btn, end = check)
+                        known && sideOk -> Item(tr(R.string.set_side_key), tr(R.string.sidekey_ready), icon = Ic.btn, end = check) { SideKey.open(activity) }
+                        known -> Item(tr(R.string.set_side_key), tr(R.string.sidekey_not_set, SideKey.now(activity)), warn = true, icon = Ic.btn) { SideKey.open(activity) }
+                        !role -> Item(tr(R.string.set_call), tr(R.string.sidekey_call_any), icon = Ic.btn)
+                        probe == true -> Item(tr(R.string.set_call), tr(R.string.sidekey_probe_ok), icon = Ic.btn, end = check)
                         probe == false -> {
-                            Item(tr(R.string.btn_call), tr(R.string.btn_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
-                            if (tileAdded) Item(tr(R.string.btn_tile), tr(R.string.btn_tile_done), icon = Ic.list, end = check)
-                            else Item(tr(R.string.btn_tile), tr(R.string.btn_tile_sub), icon = Ic.list) { ru.poneslas.vahter.assistant.VahterTile.request(activity) { tileAdded = it } }
+                            Item(tr(R.string.set_call), tr(R.string.sidekey_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                            if (tileAdded) Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_done), icon = Ic.list, end = check)
+                            else Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_sub), icon = Ic.list) { ru.poneslas.vahter.assistant.VahterTile.request(activity) { tileAdded = it } }
                         }
                         else -> Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(painterResource(Ic.btn), null, Modifier.size(24.dp).padding(2.dp), tint = Ink.soft)
                                 Spacer(Modifier.width(16.dp))
-                                Text(tr(R.string.btn_probe), fontSize = 15.sp, lineHeight = 1.35.em, color = Ink.ink)
+                                Text(tr(R.string.sidekey_probe), fontSize = 15.sp, lineHeight = 1.35.em, color = Ink.ink)
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
-                                TextButton(tr(R.string.btn_probe_no)) { probe = false }
-                                TextButton(tr(R.string.btn_probe_yes)) { probe = true }
+                                TextButton(tr(R.string.ui_no)) { probe = false }
+                                TextButton(tr(R.string.ui_yes)) { probe = true }
                             }
                         }
                     }
                 }
-                running?.let { Text(tr(R.string.bg_dl, it.percent) + if (ok) "" else tr(R.string.bg_dl_hint), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 10.dp)) }
+                running?.let { Text(tr(R.string.wiz_dl_progress, it.percent) + if (ok) "" else tr(R.string.wiz_dl_hint), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 10.dp)) }
                 if (!ok) {
                     // «Настроить» открывает по очереди то, что ещё не настроено.
                     val setup = { if (!role) activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) else SideKey.open(activity) }
-                    primary = tr(R.string.btn_setup) to setup
-                    skip = tr(R.string.pg_pozzhe) to {
+                    primary = tr(R.string.ui_setup) to setup
+                    skip = tr(R.string.ui_later) to {
                         if (btnWarned) next() else {
                             btnWarned = true
-                            activity.showSheet(MainActivity.PermSheet(tr(R.string.btn_warn_h), tr(R.string.btn_warn_p), tr(R.string.btn_setup), icon = Ic.power,
-                                later = tr(R.string.btn_warn_later), onLater = next, onGo = setup))
+                            activity.showSheet(MainActivity.PermSheet(tr(R.string.sidekey_warn_h), tr(R.string.sidekey_warn_p), tr(R.string.ui_setup), icon = Ic.power,
+                                later = tr(R.string.sidekey_warn_later), onLater = next, onGo = setup))
                         }
                     }
                 } else skip = null
             }
-            3 -> { TryStep(activity, running?.percent, installed, mic); skip = null; if (!installed && running != null) primary = tr(R.string.try_skip) to next }
+            3 -> { TryStep(activity, running?.percent, installed, mic); skip = null; if (!installed && running != null) primary = tr(R.string.ui_skip) to next }
             4 -> { Art(ru.poneslas.vahter.ui.WizScene.CHAT); Head(tr(R.string.wiz_rules_h), tr(R.string.wiz_rules_p)); skip = null }
             5 -> { Art(ru.poneslas.vahter.ui.WizScene.KEYS); Head(tr(R.string.intro_3_h), tr(R.string.wiz_quick_p)); skip = null }
             else -> {
@@ -416,10 +416,10 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 KeyEditor(Brains.deepseek, onboarding = true, ctl = key)
                 val notif = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                 if (hasKey && !notif) SetCard(Modifier.padding(top = 8.dp)) {
-                    Item(tr(R.string.set_uvedomleniya), tr(R.string.pg_soobshchit_ob_otvete_esli_list), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
+                    Item(tr(R.string.set_notif), tr(R.string.wiz_notif_sub), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
                 }
-                if (hasKey) { skip = null; primary = tr(R.string.pg_otkryt) to onDone }
-                else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.key_connect)) to { key.connect(scope) }
+                if (hasKey) { skip = null; primary = tr(R.string.ui_open) to onDone }
+                else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.ui_connect)) to { key.connect(scope) }
             }
         }
         // .nav: «Позже» или пусто · точки · кнопка. Точки — строго по центру экрана, как в прототипе; кнопка справа берёт
@@ -489,7 +489,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.TryStep(activity: Mai
             val center = androidx.compose.ui.text.style.TextAlign.Center
             when {
                 loading -> Text(tr(R.string.try_learning), fontSize = 15.sp, color = Ink.soft, textAlign = center)
-                rec -> Text(tr(R.string.try_listen), fontSize = 15.sp, color = Ink.soft, textAlign = center)
+                rec -> Text(tr(R.string.ui_listening), fontSize = 15.sp, color = Ink.soft, textAlign = center)
                 proc -> Text(tr(R.string.try_recog), fontSize = 15.sp, color = Ink.soft, textAlign = center)
                 last != null -> {
                     Text(last.text, fontSize = 25.sp, lineHeight = 1.25.em, fontWeight = FontWeight.Medium, color = Ink.ink, textAlign = center)

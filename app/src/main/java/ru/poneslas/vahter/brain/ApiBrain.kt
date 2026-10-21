@@ -42,7 +42,7 @@ class ApiBrain(
 
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         val key = apiKey() ?: run {
-            emit(BrainEvent.Error(tr(R.string.brain_mozg_ne_podklyuchen_net_klyucha), ErrorKind.NO_BRAIN)); return@flow
+            emit(BrainEvent.Error(tr(R.string.brain_no_key), ErrorKind.NO_BRAIN)); return@flow
         }
         val history = turn.history.toMutableList()
         val specs = tools.specs(turn.mode)
@@ -53,13 +53,13 @@ class ApiBrain(
             val result = try {
                 stream(key, body) { delta -> emit(BrainEvent.Delta(delta)) }
             } catch (e: ApiError) {
-                emit(BrainEvent.Error(e.message ?: tr(R.string.brain_oshibka_mozga), e.kind)); return@flow
+                emit(BrainEvent.Error(e.message ?: tr(R.string.brain_error_head), e.kind)); return@flow
             } catch (e: UnknownHostException) {
                 emit(BrainEvent.Error(tr(R.string.brain_up_no_net, desc.title), ErrorKind.NETWORK)); return@flow
             } catch (e: SocketTimeoutException) {
-                emit(BrainEvent.Error(tr(R.string.brain_1_s_dolgo_ne_otvechaet, desc.title), ErrorKind.NETWORK)); return@flow
+                emit(BrainEvent.Error(tr(R.string.brain_timeout, desc.title), ErrorKind.NETWORK)); return@flow
             } catch (e: IOException) {
-                emit(BrainEvent.Error(tr(R.string.brain_svyaz_oborvalas_1_s, e.message ?: tr(R.string.brain_oshibka_seti)), ErrorKind.NETWORK)); return@flow
+                emit(BrainEvent.Error(tr(R.string.brain_stream_lost, e.message ?: tr(R.string.brain_net_error)), ErrorKind.NETWORK)); return@flow
             }
             val assistant = ChatMsg("assistant", result.text.ifEmpty { null }, toolCalls = result.toolCalls)
             history += assistant
@@ -78,26 +78,26 @@ class ApiBrain(
     }.flowOn(Dispatchers.IO)
 
     private fun stepTitle(name: String) = when (name) {
-        "alarm_set" -> tr(R.string.brain_stavlyu_budilnik); "alarm_dismiss" -> tr(R.string.brain_vyklyuchayu_budilnik); "alarm_next" -> tr(R.string.brain_smotryu_budilniki)
-        "timer_set" -> tr(R.string.brain_zapuskayu_taymer); "timer_stop" -> tr(R.string.brain_ostanavlivayu_taymer); "calendar_delete" -> tr(R.string.brain_udalyayu_sobytie); "note_delete", "place_delete" -> tr(R.string.brain_zabyvayu); "calendar_query" -> tr(R.string.brain_smotryu_kalendar); "calendar_add" -> tr(R.string.brain_sozdayu_sobytie)
-        "torch_set" -> tr(R.string.reg_fonarik); "volume_set" -> tr(R.string.reg_gromkost); "dnd_set" -> tr(R.string.ph_ne_bespokoit); "media_control" -> tr(R.string.brain_muzyka)
-        "location_get" -> tr(R.string.brain_uznayu_mestopolozhenie); "place_save" -> tr(R.string.brain_zapominayu_mesto); "place_list" -> tr(R.string.brain_smotryu_sokhranennye_mesta)
-        "note_add" -> tr(R.string.brain_zapominayu); "note_find" -> tr(R.string.brain_ishchu_v_zametkakh); "app_open" -> tr(R.string.brain_otkryvayu_prilozhenie); "settings_open" -> tr(R.string.brain_otkryvayu_nastroyki)
-        "call_dial" -> tr(R.string.brain_nabirayu_nomer); "message_draft" -> tr(R.string.brain_gotovlyu_soobshchenie)
-        else -> tr(R.string.brain_deystvie_na_telefone)
+        "alarm_set" -> tr(R.string.brain_step_alarm_set); "alarm_dismiss" -> tr(R.string.brain_step_alarm_off); "alarm_next" -> tr(R.string.brain_step_alarm_next)
+        "timer_set" -> tr(R.string.brain_step_timer_set); "timer_stop" -> tr(R.string.brain_step_timer_off); "calendar_delete" -> tr(R.string.brain_step_cal_del); "note_delete", "place_delete" -> tr(R.string.brain_step_forget); "calendar_query" -> tr(R.string.brain_step_cal_query); "calendar_add" -> tr(R.string.brain_step_cal_add)
+        "torch_set" -> tr(R.string.reg_torch); "volume_set" -> tr(R.string.reg_volume); "dnd_set" -> tr(R.string.phone_screen_dnd); "media_control" -> tr(R.string.brain_step_media)
+        "location_get" -> tr(R.string.brain_step_location); "place_save" -> tr(R.string.brain_step_place_save); "place_list" -> tr(R.string.brain_step_places)
+        "note_add" -> tr(R.string.brain_step_note_save); "note_find" -> tr(R.string.brain_step_note_find); "app_open" -> tr(R.string.brain_step_app_open); "settings_open" -> tr(R.string.brain_step_settings_open)
+        "call_dial" -> tr(R.string.brain_step_call); "message_draft" -> tr(R.string.brain_step_message)
+        else -> tr(R.string.brain_step_generic)
     }
 
     private fun systemPrompt(turn: Turn): String {
         val now = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm", Locale("ru")).format(Date())
-        val base = tr(R.string.brain_ty_golosovoy_assistent_na_telefone) +
-            tr(R.string.brain_rech_polzovatelya_raspoznana_avtomatiche) +
-            tr(R.string.brain_esli_dlya_prosby_est_funktsiya) +
-            tr(R.string.brain_u_tebya_net_dostupa_k) +
-            tr(R.string.brain_i_predlozhi_podklyuchit_lichnogo_agenta) +
-            tr(R.string.brain_seychas_1_s, now)
+        val base = tr(R.string.brain_system_1) +
+            tr(R.string.brain_system_2) +
+            tr(R.string.brain_system_3) +
+            tr(R.string.brain_system_4) +
+            tr(R.string.brain_system_5) +
+            tr(R.string.brain_system_now, now)
         return if (turn.mode.prompt.isBlank()) base
-        else if (turn.mode.id == ru.poneslas.vahter.core.Modes.MAIN) tr(R.string.brain_svoi_pravila, base, turn.mode.prompt)
-        else tr(R.string.brain_1_s_rezhim_2_s, base, turn.mode.title, turn.mode.prompt)
+        else if (turn.mode.id == ru.poneslas.vahter.core.Modes.MAIN) tr(R.string.brain_system_rules, base, turn.mode.prompt)
+        else tr(R.string.brain_system_mode, base, turn.mode.title, turn.mode.prompt)
     }
 
     private fun requestBody(turn: Turn, history: List<ChatMsg>, specs: List<ToolSpec>): String {
@@ -160,12 +160,12 @@ class ApiBrain(
             if (code != 200) {
                 val err = c.errorStream?.bufferedReader()?.readText().orEmpty()
                 throw when {
-                    code == 401 -> ApiError(tr(R.string.brain_klyuch_ne_prinyat_proverte_ego), ErrorKind.AUTH)
-                    code == 402 -> ApiError(tr(R.string.brain_na_schete_1_s_zakonchilis, desc.title), ErrorKind.BALANCE)
-                    code == 429 -> ApiError(tr(R.string.brain_1_s_ogranichivaet_zaprosy_poprobuyte, desc.title), ErrorKind.RATE)
-                    code == 400 && err.contains("context", true) -> ApiError(tr(R.string.brain_razgovor_slishkom_dlinnyy_dlya_modeli), ErrorKind.CONTEXT)
-                    code >= 500 -> ApiError(tr(R.string.brain_u_1_s_sboy_2, desc.title, code), ErrorKind.OTHER)
-                    else -> ApiError(tr(R.string.brain_oshibka_1_s_2_s, desc.title, code, err.take(200)), ErrorKind.OTHER)
+                    code == 401 -> ApiError(tr(R.string.brain_key_rejected), ErrorKind.AUTH)
+                    code == 402 -> ApiError(tr(R.string.brain_no_balance, desc.title), ErrorKind.BALANCE)
+                    code == 429 -> ApiError(tr(R.string.brain_rate_limited, desc.title), ErrorKind.RATE)
+                    code == 400 && err.contains("context", true) -> ApiError(tr(R.string.brain_context_full), ErrorKind.CONTEXT)
+                    code >= 500 -> ApiError(tr(R.string.brain_server_error, desc.title, code), ErrorKind.OTHER)
+                    else -> ApiError(tr(R.string.brain_http_error, desc.title, code, err.take(200)), ErrorKind.OTHER)
                 }
             }
             val text = StringBuilder()
@@ -207,19 +207,19 @@ class ApiBrain(
         c.outputStream.use {
             it.write(buildJsonObject {
                 put("model", desc.model); put("max_tokens", 1)
-                put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", tr(R.string.brain_otvet_odnoy_bukvoy_da)) }) })
+                put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", tr(R.string.brain_check_prompt)) }) })
             }.toString().toByteArray())
         }
         val code = c.responseCode
         val ms = System.currentTimeMillis() - t0
         c.disconnect()
         when (code) {
-            200 -> Result2(true, tr(R.string.brain_otvechaet_1_s_s, "%.1f".format(ms / 1000.0).replace('.', ',')))
-            401 -> Result2(false, tr(R.string.brain_klyuch_ne_prinyat_proverte_chto))
-            402 -> Result2(false, tr(R.string.brain_klyuch_vernyy_no_na_schete))
-            else -> Result2(false, tr(R.string.brain_otvet_1_s_poprobuyte_pozzhe, code))
+            200 -> Result2(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ',')))
+            401 -> Result2(false, tr(R.string.brain_check_key_rejected))
+            402 -> Result2(false, tr(R.string.brain_check_no_balance))
+            else -> Result2(false, tr(R.string.brain_check_http_error, code))
         }
-    }.getOrElse { Result2(false, tr(R.string.brain_net_svyazi_s_1_s, desc.url.removePrefix("https://"))) }
+    }.getOrElse { Result2(false, tr(R.string.brain_no_net, desc.url.removePrefix("https://"))) }
 
     data class Result2(val ok: Boolean, val text: String)
 }

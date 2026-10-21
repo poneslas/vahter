@@ -118,7 +118,7 @@ fun VoiceRow(
 
     fun ready(): Boolean {
         if (!voice.hasMic()) { onNeedMicNow(); return false }
-        if (!voice.installed.value) { onMessageNow(tr(R.string.cmp_golos_eshche_ne_skachan_nastroyki)); return false }
+        if (!voice.installed.value) { onMessageNow(tr(R.string.cmp_no_voice)); return false }
         return true
     }
 
@@ -146,15 +146,15 @@ fun VoiceRow(
             when (r) {
                 is Voice.Result.Text -> onTextNow(r.text)
                 Voice.Result.TooShort -> Unit
-                Voice.Result.Empty -> onMessageNow(tr(R.string.cmp_nichego_ne_rasslyshal_pustaya_zapis))
-                is Voice.Result.Failed -> onMessageNow(tr(R.string.cmp_ne_raspoznal_1_s, r.message))
+                Voice.Result.Empty -> onMessageNow(tr(R.string.cmp_empty_record))
+                is Voice.Result.Failed -> onMessageNow(tr(R.string.cmp_not_recognized, r.message))
             }
         }
     }
 
     fun startHandsFree() {
         if (voice.recording.value || !ready()) return
-        if (!voice.start()) { onMessageNow(tr(R.string.cmp_mikrofon_ne_zavelsya_zvuk_ne)); return }
+        if (!voice.start()) { onMessageNow(tr(R.string.cmp_mic_failed)); return }
         button.setState(RecordingButton.State.RECORDING)
         button.handsFree = true
         showChrome(handsFree = true)
@@ -164,7 +164,7 @@ fun VoiceRow(
         button.onRecordingStart = {
             when {
                 !ready() -> button.setState(RecordingButton.State.IDLE)
-                !voice.start() -> { button.setState(RecordingButton.State.IDLE); onMessageNow(tr(R.string.cmp_mikrofon_ne_zavelsya_zvuk_ne)) }
+                !voice.start() -> { button.setState(RecordingButton.State.IDLE); onMessageNow(tr(R.string.cmp_mic_failed)) }
                 else -> showChrome(handsFree = false)
             }
         }
@@ -253,8 +253,8 @@ fun Composer(
         if (menu) Column(Modifier.padding(start = 16.dp, bottom = 4.dp).widthIn(min = 230.dp)
             .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
             .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
-            if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_kamera), tr(R.string.cmp_snyat_i_otpravit)) { menu = false; onCamera() }
-            if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_galereya), tr(R.string.cmp_sistemnyy_vybor_foto)) { menu = false; onGallery() }
+            if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_camera), tr(R.string.cmp_camera_sub)) { menu = false; onCamera() }
+            if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_gallery), tr(R.string.cmp_gallery_sub)) { menu = false; onGallery() }
         }
         Box(Modifier.padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)) {
             VoiceRow(
@@ -267,23 +267,23 @@ fun Composer(
                             .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(start = if (canAttach) 4.dp else 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_prikrepit)) { menu = !menu }
+                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_attach)) { menu = !menu }
                         Box(Modifier.weight(1f)) {
                             if (state.draft.isEmpty()) Text(placeholder ?: state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
                             BasicTextField(state.draft, onDraft, textStyle = BaseText.copy(fontSize = 14.5.sp),
                                 cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
                         }
-                        if (photoMain && !hasText && state.current.accepts.voice) InTool(Ic.mic, tr(R.string.cmp_sprosit_golosom_bez_ruk)) { handsFreeTick++ }
+                        if (photoMain && !hasText && state.current.accepts.voice) InTool(Ic.mic, tr(R.string.cmp_mic_handsfree)) { handsFreeTick++ }
                     }
                 },
                 trailing = when {
-                    hasText -> { { RoundAction(Ic.send, tr(R.string.cmp_otpravit)) { onSend(state.draft, tr(R.string.cmp_klaviatura)) } } }
-                    photoMain -> { { RoundAction(Ic.cam, tr(R.string.cmp_kamera)) { onCamera?.invoke() } } }
+                    hasText -> { { RoundAction(Ic.send, tr(R.string.ui_send)) { onSend(state.draft, tr(R.string.cmp_via_keyboard)) } } }
+                    photoMain -> { { RoundAction(Ic.cam, tr(R.string.cmp_camera)) { onCamera?.invoke() } } }
                     else -> null
                 },
-                onText = { text -> onSend((state.draft + " " + text).trim(), tr(R.string.sheet_golos)) },
+                onText = { text -> onSend((state.draft + " " + text).trim(), tr(R.string.sheet_via_voice)) },
                 onMessage = ::flash,
-                onNeedMic = { if (onNeedMic != null) onNeedMic() else flash(tr(R.string.cmp_nuzhen_dostup_k_mikrofonu)) },
+                onNeedMic = { if (onNeedMic != null) onNeedMic() else flash(tr(R.string.cmp_need_mic)) },
                 autoListen = autoFlow,
                 cancelKey = state.mode,
             )
@@ -352,8 +352,8 @@ private fun lerpColor(a: Color, b: Color, f: Float) = Color(a.red + (b.red - a.r
 /** Подсказка в поле строки ввода (ui.js, composerHtml): без мозга — «Команда агенту»; Ассистент, пока ничего не спрашивали, — «Вы к кому?». */
 fun composerPlaceholder(state: Conversation.State, connected: Boolean): String? = when {
     state.mode != ru.poneslas.vahter.core.Modes.MAIN -> null
-    !connected -> tr(R.string.cmp_komanda_agentu)
-    state.feed.none { it is ru.poneslas.vahter.core.FeedItem.Me } -> tr(R.string.cmp_vy_k_komu)
+    !connected -> tr(R.string.cmp_hint_no_brain)
+    state.feed.none { it is ru.poneslas.vahter.core.FeedItem.Me } -> tr(R.string.sheet_hello)
     else -> null
 }
 
@@ -394,7 +394,7 @@ fun TryVoice() {
             field = {
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
                     .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (text.isEmpty()) Text(tr(R.string.cmp_poprobuyte_zdes), color = Ink.faint, fontSize = 15.sp)
+                    if (text.isEmpty()) Text(tr(R.string.cmp_try_here), color = Ink.faint, fontSize = 15.sp)
                     BasicTextField(text, { text = it }, textStyle = TextStyle(fontSize = 15.sp, color = Ink.ink),
                         cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
                 }

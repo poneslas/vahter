@@ -31,30 +31,30 @@ data class Tool(
 )
 
 object Registry {
-    val groups = listOf(tr(R.string.reg_chasy), tr(R.string.reg_kalendar), tr(R.string.reg_telefon), tr(R.string.reg_prilozheniya_i_svyaz))
+    val groups = listOf(tr(R.string.reg_group_clock), tr(R.string.reg_group_calendar), tr(R.string.reg_group_phone), tr(R.string.reg_group_apps))
 
     val all = listOf(
-        Tool("alarm.set", tr(R.string.reg_budilnik), tr(R.string.reg_chasy), Policy.AUTO, listOf("alarm_set"), safe = true),
-        Tool("alarm.dismiss", tr(R.string.reg_vyklyuchenie_budilnika), tr(R.string.reg_chasy), Policy.AUTO, listOf("alarm_dismiss"), safe = true),
-        Tool("alarm.next", tr(R.string.reg_blizhayshiy_budilnik), tr(R.string.reg_chasy), Policy.AUTO, listOf("alarm_next"), safe = true),
-        Tool("timer.set", tr(R.string.reg_taymer), tr(R.string.reg_chasy), Policy.AUTO, listOf("timer_set"), safe = true),
-        Tool("timer.stop", tr(R.string.reg_ostanovka_taymera), tr(R.string.reg_chasy), Policy.AUTO, listOf("timer_stop"), safe = true),
-        Tool("calendar.query", tr(R.string.reg_prosmotr_kalendarya), tr(R.string.reg_kalendar), Policy.AUTO, listOf("calendar_query"), perms = listOf(Manifest.permission.READ_CALENDAR)),
-        Tool("calendar.add", tr(R.string.reg_sozdanie_i_udalenie_sobytiy), tr(R.string.reg_kalendar), Policy.ASK, listOf("calendar_add", "calendar_delete"),
+        Tool("alarm.set", tr(R.string.reg_alarm_set), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_set"), safe = true),
+        Tool("alarm.dismiss", tr(R.string.reg_alarm_off), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_dismiss"), safe = true),
+        Tool("alarm.next", tr(R.string.reg_alarm_next), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_next"), safe = true),
+        Tool("timer.set", tr(R.string.reg_timer_set), tr(R.string.reg_group_clock), Policy.AUTO, listOf("timer_set"), safe = true),
+        Tool("timer.stop", tr(R.string.reg_timer_off), tr(R.string.reg_group_clock), Policy.AUTO, listOf("timer_stop"), safe = true),
+        Tool("calendar.query", tr(R.string.reg_cal_query), tr(R.string.reg_group_calendar), Policy.AUTO, listOf("calendar_query"), perms = listOf(Manifest.permission.READ_CALENDAR)),
+        Tool("calendar.add", tr(R.string.reg_cal_edit), tr(R.string.reg_group_calendar), Policy.ASK, listOf("calendar_add", "calendar_delete"),
             perms = listOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)),
-        Tool("torch.set", tr(R.string.reg_fonarik), tr(R.string.reg_telefon), Policy.AUTO, listOf("torch_set"), safe = true),
-        Tool("volume.set", tr(R.string.reg_gromkost), tr(R.string.reg_telefon), Policy.AUTO, listOf("volume_set")),
-        Tool("dnd.set", tr(R.string.ph_ne_bespokoit), tr(R.string.reg_telefon), Policy.AUTO, listOf("dnd_set"), special = "dnd"),
-        Tool("media.control", tr(R.string.reg_upravlenie_muzykoy), tr(R.string.reg_telefon), Policy.AUTO, listOf("media_control")),
-        Tool("location.get", tr(R.string.ph_mestopolozhenie), tr(R.string.reg_telefon), Policy.ASK, listOf("location_get"),
+        Tool("torch.set", tr(R.string.reg_torch), tr(R.string.reg_group_phone), Policy.AUTO, listOf("torch_set"), safe = true),
+        Tool("volume.set", tr(R.string.reg_volume), tr(R.string.reg_group_phone), Policy.AUTO, listOf("volume_set")),
+        Tool("dnd.set", tr(R.string.phone_screen_dnd), tr(R.string.reg_group_phone), Policy.AUTO, listOf("dnd_set"), special = "dnd"),
+        Tool("media.control", tr(R.string.reg_media), tr(R.string.reg_group_phone), Policy.AUTO, listOf("media_control")),
+        Tool("location.get", tr(R.string.phone_screen_location), tr(R.string.reg_group_phone), Policy.ASK, listOf("location_get"),
             perms = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)),
-        Tool("place.save", tr(R.string.reg_sokhranennye_mesta), tr(R.string.reg_telefon), Policy.AUTO, listOf("place_save", "place_list", "place_delete"),
+        Tool("place.save", tr(R.string.reg_places), tr(R.string.reg_group_phone), Policy.AUTO, listOf("place_save", "place_list", "place_delete"),
             perms = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)),
-        Tool("note.remember", tr(R.string.reg_zametki), tr(R.string.reg_telefon), Policy.AUTO, listOf("note_add", "note_find", "note_delete")),
-        Tool("app.open", tr(R.string.reg_zapusk_prilozheniy), tr(R.string.reg_prilozheniya_i_svyaz), Policy.AUTO, listOf("app_open")),
-        Tool("settings.open", tr(R.string.reg_sistemnye_nastroyki), tr(R.string.reg_prilozheniya_i_svyaz), Policy.AUTO, listOf("settings_open")),
-        Tool("call.dial", tr(R.string.reg_zvonki), tr(R.string.reg_prilozheniya_i_svyaz), Policy.ASK, listOf("call_dial"), perms = listOf(Manifest.permission.READ_CONTACTS)),
-        Tool("message.draft", tr(R.string.reg_soobshcheniya), tr(R.string.reg_prilozheniya_i_svyaz), Policy.ASK, listOf("message_draft"),
+        Tool("note.remember", tr(R.string.reg_notes), tr(R.string.reg_group_phone), Policy.AUTO, listOf("note_add", "note_find", "note_delete")),
+        Tool("app.open", tr(R.string.reg_app_open), tr(R.string.reg_group_apps), Policy.AUTO, listOf("app_open")),
+        Tool("settings.open", tr(R.string.reg_settings_open), tr(R.string.reg_group_apps), Policy.AUTO, listOf("settings_open")),
+        Tool("call.dial", tr(R.string.reg_call), tr(R.string.reg_group_apps), Policy.ASK, listOf("call_dial"), perms = listOf(Manifest.permission.READ_CONTACTS)),
+        Tool("message.draft", tr(R.string.reg_message), tr(R.string.reg_group_apps), Policy.ASK, listOf("message_draft"),
             perms = listOf(Manifest.permission.READ_CONTACTS), alwaysAsk = true),
     )
 
@@ -69,13 +69,13 @@ object Registry {
 
     /** Названия доступов — как в системном окне Android. */
     fun permTitle(p: String) = when (p) {
-        Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR -> tr(R.string.reg_kalendar)
-        Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION -> tr(R.string.ph_mestopolozhenie)
-        Manifest.permission.READ_CONTACTS -> tr(R.string.reg_kontakty)
+        Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR -> tr(R.string.reg_group_calendar)
+        Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION -> tr(R.string.phone_screen_location)
+        Manifest.permission.READ_CONTACTS -> tr(R.string.reg_contacts)
         else -> p.substringAfterLast('.')
     }
 
-    fun specialTitle(s: String) = when (s) { "dnd" -> tr(R.string.reg_ne_bespokoit); else -> s }
+    fun specialTitle(s: String) = when (s) { "dnd" -> tr(R.string.reg_dnd); else -> s }
 
     /** Чего не хватает действию: пусто — всё выдано. */
     fun missing(ctx: Context, t: Tool): List<String> {

@@ -103,7 +103,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
     val cameraPanel: @Composable (Modifier, Boolean) -> Unit = { m, full ->
         ru.poneslas.vahter.media.CameraPanel(session, state.current, ru.poneslas.vahter.core.Brains.byId(state.current.brain).maxImages, full,
             onClose = { Sheet.camera.value = false }, onCollapse = { camFull = false },
-            onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) tr(R.string.sheet_albom_1_s, files.size) else tr(R.string.sheet_foto)); if (question.isNotBlank()) app.conversation.send(question, tr(R.string.sheet_golos)) },
+            onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) tr(R.string.sheet_via_album, files.size) else tr(R.string.sheet_via_photo)); if (question.isNotBlank()) app.conversation.send(question, tr(R.string.sheet_via_voice)) },
             modifier = m)
     }
     VahterTheme {
@@ -184,7 +184,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 if (g > 0f) Box(Modifier.fillMaxWidth().height(with(d) { (92.dp.toPx() * g).toDp() }).graphicsLayer { alpha = g }) {
                     ru.poneslas.vahter.app.TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
                         onBack = {}, backIcon = Ic.down, dot = if (connected) Ink.server else Ink.local) {
-                        IconBtn(Ic.gear, tr(R.string.sheet_nastroyki)) {}
+                        IconBtn(Ic.gear, tr(R.string.ui_settings)) {}
                         IconBtn(Ic.more, tr(R.string.restart_more)) {}
                     }
                 }
@@ -211,12 +211,12 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                             VMark(st, 18.dp)
                             if (!connected) {
                                 Spacer(Modifier.width(7.dp))
-                                Text(tr(R.string.sheet_net_klyucha_tolko_komandy_telefona).trim().removePrefix("·").trim(), fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                Text(tr(R.string.sheet_no_key).trim().removePrefix("·").trim(), fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.pointerInput(state.mode) { detectTapGestures(onLongPress = { app.conversation.askRestart() }) })
                             }
                         }
                     }
-                    Box(Modifier.height(24.dp).width(56.dp).clickable(onClickLabel = tr(R.string.sheet_razvernut)) { expandNow() }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.height(24.dp).width(56.dp).clickable(onClickLabel = tr(R.string.sheet_expand)) { expandNow() }, contentAlignment = Alignment.Center) {
                         Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Ink.grab))
                     }
                     Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End)) {
@@ -224,9 +224,9 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                             CBtn(Ic.expand, androidx.compose.ui.res.stringResource(R.string.cam_fullscreen)) { camFull = true }
                             CBtn(Ic.x, androidx.compose.ui.res.stringResource(R.string.cam_close)) { Sheet.camera.value = false }
                         } else {
-                            CBtn(Ic.gear, tr(R.string.sheet_nastroyki), onSettings)
-                            CBtn(Ic.expand, tr(R.string.sheet_razvernut_v_prilozhenie)) { expandNow() }
-                            CBtn(Ic.x, tr(R.string.sheet_zakryt), onClose)
+                            CBtn(Ic.gear, tr(R.string.ui_settings), onSettings)
+                            CBtn(Ic.expand, tr(R.string.sheet_expand_app)) { expandNow() }
+                            CBtn(Ic.x, tr(R.string.ui_close), onClose)
                         }
                     }
                 }
@@ -256,7 +256,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         state = state,
                         voice = app.voice,
                         // В листе «Вам чего?» — заголовком сцены; в поле — подсказка режима.
-                        placeholder = if (!connected) tr(R.string.cmp_komanda_agentu) else null,
+                        placeholder = if (!connected) tr(R.string.cmp_hint_no_brain) else null,
                         onDraft = app.conversation::setDraft,
                         onSend = { text, via -> app.conversation.send(text, via) },
                         onSelectMode = app.conversation::selectMode,
@@ -396,8 +396,8 @@ private fun SheetStrip(noBrain: Boolean, onConnect: () -> Unit) {
     val (icon, text, act) = when {
         pct != null -> Triple("⬇", tr(R.string.sheet_strip_dl, pct), null)
         noVoice && failed -> Triple("⬇", tr(R.string.sheet_strip_dl_failed), tr(R.string.sheet_strip_retry) to { ru.poneslas.vahter.pisar.model.ModelDownload.start(ctx) })
-        noVoice -> Triple("⬇", tr(R.string.sheet_strip_novoice), tr(R.string.pg_skachat) to { ru.poneslas.vahter.pisar.model.ModelDownload.start(ctx) })
-        else -> Triple("🧠", tr(R.string.sheet_strip_nobrain), tr(R.string.sheet_strip_connect) to onConnect)
+        noVoice -> Triple("⬇", tr(R.string.sheet_strip_no_voice), tr(R.string.voice_download) to { ru.poneslas.vahter.pisar.model.ModelDownload.start(ctx) })
+        else -> Triple("🧠", tr(R.string.sheet_strip_no_brain), tr(R.string.ui_connect) to onConnect)
     }
     Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 2.dp).clip(RoundedCornerShape(12.dp)).background(Ink.chipBg)
         .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {

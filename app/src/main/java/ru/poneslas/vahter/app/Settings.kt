@@ -64,7 +64,7 @@ import ru.poneslas.vahter.ui.Ink
 @Composable
 fun TopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?, dot: Color? = null, backIcon: Int = Ic.back, titleIcon: Int? = null, actions: @Composable () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 52.dp).padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (onBack != null) IconBtn(backIcon, tr(R.string.kit_nazad), onClick = onBack)
+        if (onBack != null) IconBtn(backIcon, tr(R.string.ui_back), onClick = onBack)
         Column(Modifier.weight(1f).padding(start = if (onBack != null) 6.dp else 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (titleIcon != null) { Icon(painterResource(titleIcon), null, Modifier.size(20.dp), tint = Ink.ink); Spacer(Modifier.width(8.dp)) }
@@ -267,8 +267,8 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, ctl: KeyCtl = remem
 
     Column(Modifier.fillMaxWidth()) {
         if (!onboarding) {
-            H2(tr(R.string.kit_klyuch_1_s, brain.title))
-            Text(tr(R.string.kit_khranitsya_v_zashchishchennom_khranilish), color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
+            H2(tr(R.string.key_title, brain.title))
+            Text(tr(R.string.key_stored), color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
         }
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).border(1.5.dp, if (bad) Ink.danger else Ink.ink, RoundedCornerShape(12.dp))
             .padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -276,11 +276,11 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, ctl: KeyCtl = remem
                 if (ctl.key.isEmpty()) Text(if (has) "sk-••••••••••••••••" else tr(R.string.key_ph), color = if (has) Ink.ink else Ink.faint)
                 BasicTextField(ctl.key, { ctl.key = it.trim() }, singleLine = true, textStyle = BaseText, cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
             }
-            IconBtn(Ic.paste, tr(R.string.kit_vstavit), tint = Ink.soft) { clipboard.getText()?.text?.trim()?.let { ctl.key = it } }
+            IconBtn(Ic.paste, tr(R.string.key_paste), tint = Ink.soft) { clipboard.getText()?.text?.trim()?.let { ctl.key = it } }
         }
         if (onboarding) Text(tr(R.string.key_where), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 8.dp, bottom = 10.dp))
         else Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End) {
-            PrimaryButton(if (ctl.checking) tr(R.string.kit_proveryayu) else tr(R.string.kit_proverit), enabled = ctl.canCheck) { ctl.connect(scope, onDone) }
+            PrimaryButton(if (ctl.checking) tr(R.string.key_checking) else tr(R.string.key_check), enabled = ctl.canCheck) { ctl.connect(scope, onDone) }
         }
         KeyResult(ctl, reserve = onboarding)
         if (onboarding) Row(Modifier.padding(start = 2.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {

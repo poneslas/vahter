@@ -129,8 +129,8 @@ fun CameraPanel(
     val errUnavailable = stringResource(R.string.cam_unavailable)
     val errNoPicture = stringResource(R.string.cam_no_picture)
     val errNoFrame = stringResource(R.string.cam_no_frame)
-    val errNeedMic = stringResource(R.string.cam_need_mic)
-    val errNeedVoice = stringResource(R.string.cam_need_voice)
+    val errNeedMic = stringResource(R.string.cmp_need_mic)
+    val errNeedVoice = stringResource(R.string.cmp_no_voice)
 
     LaunchedEffect(Unit) {
         try {
@@ -304,7 +304,7 @@ fun CameraPanel(
             }
             if (frozen == null) error?.let { Text(it, color = white, fontSize = 15.sp, style = shadow, modifier = Modifier.align(Alignment.Center).padding(24.dp)) }
             if (listening || asking || question.isNotEmpty())
-                Text(if (listening) stringResource(R.string.cam_listening) else if (asking) stringResource(R.string.cam_recognizing) else question,
+                Text(if (listening) stringResource(R.string.ui_listening) else if (asking) stringResource(R.string.cam_recognizing) else question,
                     color = white, fontSize = 19.sp, fontWeight = FontWeight.Medium, style = shadow,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(start = 20.dp, end = 20.dp, bottom = 18.dp))
         }
@@ -335,7 +335,7 @@ fun CameraPanel(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
                 if (tool == "crop") {
                     ToolChip(stringResource(R.string.cam_reset), null, false, onDark) { crop = Attachments.Crop(0f, 0f, 1f, 1f) }
-                    ToolChip(stringResource(R.string.cam_done), null, true, onDark) { tool = null }
+                    ToolChip(stringResource(R.string.ui_done), null, true, onDark) { tool = null }
                 } else listOf(Triple("crop", R.string.cam_crop, Ic.crop), Triple("circle", R.string.cam_circle, Ic.circle), Triple("arrow", R.string.cam_arrow, Ic.arrow)).forEach { (k, t, ic) ->
                     ToolChip(stringResource(t), ic, tool == k, onDark) { pick(k) }
                 }
@@ -348,7 +348,7 @@ fun CameraPanel(
                 val count = frames.size + if (editIdx == null) 1 else 0
                 Box {
                     Box(Modifier.size(big).clip(CircleShape).background(if (onDark) white else Ink.ink)
-                        .clickable(enabled = !busy, onClickLabel = stringResource(if (frames.isEmpty()) R.string.cam_send else R.string.cam_send_all)) { send(question) },
+                        .clickable(enabled = !busy, onClickLabel = stringResource(if (frames.isEmpty()) R.string.ui_send else R.string.cam_send_all)) { send(question) },
                         contentAlignment = Alignment.Center) {
                         if (busy) Text("…", fontSize = 26.sp, color = if (onDark) Ink.ink else white)
                         else Icon(painterResource(Ic.send), null, Modifier.size(28.dp), tint = if (onDark) Ink.ink else white)
@@ -445,6 +445,6 @@ private fun testFrame(ctx: android.content.Context, w: Int, h: Int): Bitmap? {
     p.shader = android.graphics.LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF36506B.toInt(), 0xFFE8A317.toInt(), android.graphics.Shader.TileMode.CLAMP)
     c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
     p.shader = null; p.color = 0xFFFFFFFF.toInt(); p.textSize = w / 12f; p.textAlign = android.graphics.Paint.Align.CENTER
-    c.drawText(tr(R.string.cam_menyu_testovyy_kadr), w / 2f, h / 2f, p)
+    c.drawText(tr(R.string.cam_test_frame), w / 2f, h / 2f, p)
     return b
 }
