@@ -15,7 +15,13 @@ class Eq{
   }
 }
 let eqs=[]; let last=performance.now();
-(function loop(now){ const dt=Math.min(50,now-last); last=now; eqs.forEach(e=>e.step(dt)); requestAnimationFrame(loop) })(last);
+/* Живой знак: пока идёт запись, громкость «голоса» (та же имитация, что у эквалайзера; в приложении — LevelMeter) кладётся
+   в --lv на экран — по ней знак и свечение листа растут и оседают. Вверх быстро, вниз плавно. */
+const lvSim = new (class{ constructor(){ this.L=0; this.t=0; this.end=0; this.syl=0 } step(dt, on){
+  const inp = on ? Eq.prototype.voice.call(this, dt) : 0; this.L += (inp-this.L)*(inp>this.L?.6:.12); return this.L } })();
+(function loop(now){ const dt=Math.min(50,now-last); last=now; eqs.forEach(e=>e.step(dt));
+  const scr=document.getElementById('scr'); if (scr){ const lv=lvSim.step(dt, !!(typeof S!=='undefined'&&S.rec&&S.rec.key!==null)); scr.style.setProperty('--lv', lv.toFixed(3)) }
+  requestAnimationFrame(loop) })(last);
 
 
 /* запись: зажать — говорить — отпустить; вверх — замочек; влево — отмена */

@@ -105,8 +105,9 @@ function lock(){ return `<div class="layer lock">${statusBar(false)}<div class="
 const voiceOk = () => S.w.model==='ready' && S.w.mic==='ok';
 function recTime(){ const s=S.rec?Math.floor((Date.now()-S.rec.t0)/1000):0; return `0:${String(s).padStart(2,'0')}` }
 function liveHtml(){
-  if (S.rec) return `<div class="live recl"><div class="recpill"><div class="eq sm" data-mode="speak"></div></div></div>`;
-  if (S.recog) return `<div class="live recl"><div class="recpill"><div class="eq sm" data-mode="wave"></div></div></div>`;   // распознаёт — спокойная бегущая волна   // как RecPill в приложении: волна, без слов
+  // Запись в разговоре — тот же живой знак, что в пустом листе, своей строкой над полем (на историю не наезжает). Эквалайзера нет.
+  if (S.rec) return `<div class="live recl" data-st="rec">${vMark('mid')}</div>`;
+  if (S.recog) return `<div class="live recl" data-st="recog">${vMark('mid')}</div>`;
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
@@ -311,8 +312,8 @@ function cam2(){ const c=S.cam; const m=curMode(); const qrec=S.rec&&S.screen===
 function shortcutsPop(){ if(!S.shortcuts) return ''; return `<div class="sc-pop"><small>Вахтёр</small>${activeModes().map(m=>`<button data-shortcut="${m.id}"><span style="width:22px;display:grid;place-items:center;color:#555">${I[m.icon]}</span>${m.title}</button>`).join('')}</div>` }
 /** Знак Вахтёра — «лампа на вахте»: ядро и два кольца. Состояние листа задаёт цвет и движение (CSS, data-st). */
 function vMark(cls=''){ return `<span class="vmark ${cls}" aria-hidden="true"><i class="r2"></i><i class="r1"></i><i class="core"></i></span>` }
-/** Что сейчас делает лист: ждёт, слушает, распознаёт, делает сам (янтарь — телефон), звонит наверх (синий — мозг). */
-function sheetSt(){ if(S.rec) return 'rec'; if(S.recog) return 'recog'; if(S.ov&&S.ov.live&&/st h/.test(S.ov.live)) return 'up'; if(S.busy) return 'think'; return 'idle' }
+/** Что сейчас делает лист: ждёт, слушает, распознаёт, работает (телефон или мозг — один цвет, янтарный; кто — видно подписью). */
+function sheetSt(){ if(S.rec) return 'rec'; if(S.recog) return 'recog'; if(S.busy||(S.ov&&S.ov.live&&/st h/.test(S.ov.live))) return 'think'; return 'idle' }
 /** Пустой лист — сцена, как у ассистентов: знак по центру и одна фраза. Чипы — только в первый раз (финал мастера). */
 function sheetEmpty(){
   const st=sheetSt(), m=curMode(), main=m.id==='main';

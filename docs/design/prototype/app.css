@@ -57,7 +57,7 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .topbar .t small{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft)}
 .iconbtn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;color:var(--ink)}
 .iconbtn:hover{background:rgba(14,26,54,.06)}
-.ldot{width:8px;height:8px;border-radius:50%;background:var(--server);flex:none}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--local);flex:none}
 .ldot.off{background:transparent;border:1.5px dashed var(--faint)}
 .ldot.loc{background:var(--local)}
 .scroll{flex:1;overflow:auto;scrollbar-width:none;min-height:0;display:flex;flex-direction:column}
@@ -227,7 +227,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .me small{display:block;font-size:10.5px;color:var(--faint);text-align:right}
 .ai,.ph{position:relative;padding-left:16px;max-width:100%;min-width:0}
 .ai::before,.ph::before{content:"";position:absolute;left:1px;top:8px;width:7px;height:7px;border-radius:50%}
-.ai::before{background:var(--server)}.ph::before{background:var(--local)}
+.ai::before,.ph::before{background:var(--local)}   /* один цвет: кто ответил — видно по тексту, не по цвету */
 .act{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:9px 11px}
 .act .ai2{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--local-t);color:var(--local-d);flex:none;font-size:15px}
 .act .tx{flex:1;min-width:0}.act .tx b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -236,7 +236,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .act.undone{opacity:.55}
 .card{background:var(--surf);border:1px solid var(--line);border-radius:16px;overflow:hidden;font-size:13.5px}
 .card .who{font-size:11.5px;font-weight:600;padding:7px 12px}
-.who.h{background:var(--server-t);color:var(--server-d)}.who.p{background:var(--local-t);color:var(--local-d)}
+.who.h,.who.p{background:var(--local-t);color:var(--local-d)}
 .card .bd{padding:10px 12px 4px}.card .tt{font-size:15.5px;font-weight:600}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:7px 0 4px;font-size:12.5px}.kv dt{color:var(--faint)}.kv dd{margin:0}
 .btns{display:flex;gap:6px;padding:6px 12px 12px;flex-wrap:wrap}
@@ -248,7 +248,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .empty{padding:24px 8px;color:var(--soft);font-size:14.5px}
 
 /* шаги мозга */
-.steps{border-radius:14px;background:var(--server-t);color:var(--server-d);font-size:12.5px;overflow:hidden}
+.steps{border-radius:14px;background:var(--local-t);color:var(--local-d);font-size:12.5px;overflow:hidden}
 .steps>button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;color:inherit;padding:8px 12px;text-align:left;font-weight:500}
 .steps>button .chev{margin-left:auto;transition:transform .2s}
 .steps.open>button .chev{transform:rotate(180deg)}
@@ -256,7 +256,7 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .steps.open .sl{display:block}
 .sitem{background:var(--surf);border-radius:10px;margin-top:6px;color:var(--ink)}
 .sitem>div:first-child{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px}
-.sitem .si{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--server-t);font-size:12px;flex:none}
+.sitem .si{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--local-t);font-size:12px;flex:none}
 .sitem.phone .si{background:var(--local-t)}
 .sitem .sd{padding:0 10px 9px 40px;font-size:12px;color:var(--soft)}
 .src{display:flex;align-items:center;gap:6px;padding:2px 0}
@@ -265,21 +265,21 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .plan{padding:0 12px 8px;font-size:12.5px}
 .plan .ph2{font-size:11px;font-weight:600;opacity:.75;padding:2px 0 3px;display:flex;justify-content:space-between}
 .plan div.pi{display:flex;gap:8px;align-items:center;padding:2px 0}
-.plan .b{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--server-d);flex:none;display:grid;place-items:center;font-size:9px}
+.plan .b{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--local-d);flex:none;display:grid;place-items:center;font-size:9px}
 .plan .cancelled span{text-decoration:line-through;opacity:.5}.plan .cancelled .b{border-style:dashed}
-.plan .completed .b{background:var(--server-d);color:#fff}.plan .completed span{opacity:.6}
-.plan .in_progress .b{border-color:var(--server-d)}
-.plan .in_progress .b::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--server-d)}
+.plan .completed .b{background:var(--local-d);color:#fff}.plan .completed span{opacity:.6}
+.plan .in_progress .b{border-color:var(--local-d)}
+.plan .in_progress .b::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--local-d)}
 .plan .in_progress.now .b{border-top-color:transparent;animation:spin .9s linear infinite}
 .plan .in_progress.now .b::after{display:none}
-.shim{background:linear-gradient(90deg,var(--server-d) 0 35%,#9AAAFF 47%,#B9C5FF 50%,#9AAAFF 53%,var(--server-d) 65% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 1.5s linear infinite}
+.shim{background:linear-gradient(90deg,var(--local-d) 0 35%,#E8B84A 47%,#F5D58A 50%,#E8B84A 53%,var(--local-d) 65% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 1.5s linear infinite}
 @keyframes sh{from{background-position:100% 0}to{background-position:0 0}}
 
 /* разметка ответа */
 .md{font-size:14.5px;line-height:1.5;min-width:0}
 .md h3{font-size:16.5px;margin:2px 0 6px;font-weight:600;line-height:1.3}.md h4{font-size:14.5px;margin:12px 0 4px;font-weight:600}
 .md p{margin:0 0 8px}.md ul,.md ol{margin:0 0 8px;padding-left:20px}.md li{margin:2px 0}
-.md blockquote{margin:0 0 10px;padding:7px 12px;border-left:3px solid var(--server);background:var(--server-t);border-radius:0 10px 10px 0;color:var(--server-d);font-size:13.5px}
+.md blockquote{margin:0 0 10px;padding:7px 12px;border-left:3px solid var(--local);background:var(--local-t);border-radius:0 10px 10px 0;color:var(--local-d);font-size:13.5px}
 .md .code{background:#10182B;color:#E3E8F6;border-radius:12px;margin:0 0 10px;overflow:hidden}
 .md .code .ch{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;font-size:11px;color:#8FA0C8;background:#17213A}
 .md .code .ch button{border:0;background:transparent;color:#C9D4F1;font-size:11.5px}
@@ -337,11 +337,10 @@ code{font-family:var(--mono);font-size:.86em;background:#EEF0EA;border-radius:6p
 .live{flex:none;min-height:56px;padding:6px 16px 2px;font-size:21px;line-height:1.27;font-weight:500}
 .live:empty{min-height:0;padding:0}
 .live .st{display:block;font-size:11.5px;font-weight:500;color:var(--soft);margin-bottom:3px}
-.st.p{color:var(--local-d)!important}.st.h{color:var(--server-d)!important}.st.e{color:var(--danger)!important}
+.st.p,.st.h{color:var(--local-d)!important}.st.e{color:var(--danger)!important}
 .live.q{font-size:14.5px;font-weight:400;color:var(--soft)}
 .eq{display:flex;align-items:center;justify-content:center;gap:4px;height:38px}
 .eq i{display:block;width:5px;min-height:5px;height:5px;border-radius:3px;background:linear-gradient(var(--local),#C98500)}
-.eq.h i{background:linear-gradient(#6F86FF,var(--server))}
 .eq.off i{background:var(--faint);opacity:.55}
 .eq.sm{height:18px;gap:2.5px}.eq.sm i{width:3px;min-height:3px;height:3px}
 .kbd{flex:none;display:flex;gap:6px;align-items:center;border:1.5px solid var(--ink);border-radius:22px;padding:5px 5px 5px 12px;margin:6px 12px 0;background:#fff}
@@ -537,9 +536,9 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .lockcue.shut{height:44px;width:44px;border-radius:50%;justify-content:center;color:#2E6B30;padding:0}
 .live.recl{min-height:0;padding:2px 16px 4px;display:flex;justify-content:center}
 .recpill{display:inline-flex;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
-.recpill .eq i,.tshot .eq i{background:linear-gradient(var(--local),var(--server))}
+.tshot .eq i{background:linear-gradient(var(--local),#C98500)}
 .micbtn.proc{position:relative}
-.micbtn.proc::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--server);border-right-color:var(--server);animation:spin .9s linear infinite}
+.micbtn.proc::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--local);border-right-color:var(--local);animation:spin .9s linear infinite}
 /* камера в листе: вкладки режимов не наезжают на большую кнопку «Отправить» */
 .cam2.insheet .mtabs{margin-top:6px}
 .cam2.insheet .csend{width:64px;height:64px}
@@ -583,9 +582,8 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .s2.isempty{min-height:54%}
 .s2 .glow{position:absolute;left:0;right:0;bottom:0;height:260px;z-index:-1;pointer-events:none;border-radius:0 0 inherit inherit;
   --gc:232,163,23;background:radial-gradient(130% 100% at 50% 100%,rgba(var(--gc),.30) 0%,rgba(var(--gc),.10) 45%,rgba(var(--gc),0) 75%);opacity:.55;transition:opacity .4s;animation:gbreath 4s ease-in-out infinite}
-.s2[data-st=rec] .glow{opacity:1;height:320px;animation:gpulse 1.1s ease-in-out infinite}
+.s2[data-st=rec] .glow{opacity:calc(.55 + .45*var(--lv,0));height:320px;animation:none;transform:scaleY(calc(.9 + .25*var(--lv,0)))}
 .s2[data-st=recog] .glow,.s2[data-st=think] .glow{opacity:.85;animation:gpulse 1.8s ease-in-out infinite}
-.s2[data-st=up] .glow{--gc:47,75,232;opacity:.9;animation:gpulse 1.8s ease-in-out infinite}
 @keyframes gbreath{0%,100%{opacity:.4}50%{opacity:.65}}
 @keyframes gpulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.12)}}
 .s2 .glow{transform-origin:50% 100%}
@@ -605,11 +603,14 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .vmark .r1{inset:17%;border:2px solid var(--c);opacity:.45}
 .vmark .r2{inset:0;border:1.5px solid var(--c);opacity:.2}
 .vmark.mini .r1{border-width:1.5px}.vmark.mini .r2{border-width:1px}
-[data-st=rec] .vmark .r1,[data-st=rec] .vmark .r2{animation:vring 1.1s ease-out infinite}
-[data-st=rec] .vmark .r2{animation-delay:.35s}
-[data-st=rec] .vmark .core{animation:vbreath .55s ease-in-out infinite}
-[data-st=recog] .vmark .r1,[data-st=think] .vmark .r1,[data-st=up] .vmark .r1{border-style:dashed;opacity:.8;animation:vspin 1.6s linear infinite}
-[data-st=up] .vmark{--c:var(--server)}
+/* слушает — знак живой: ядро и кольца от громкости голоса (voice.js ставит --lv), как эквалайзер, только кругом */
+[data-st=rec] .vmark .core{animation:none;transform:scale(calc(.82 + .55*var(--lv,0)));box-shadow:0 0 calc(var(--s)*(.25 + .45*var(--lv,0))) var(--c)}
+[data-st=rec] .vmark .r1{animation:none;opacity:calc(.3 + .55*var(--lv,0));transform:scale(calc(.96 + .28*var(--lv,0)))}
+[data-st=rec] .vmark .r2{animation:none;opacity:calc(.12 + .4*var(--lv,0));transform:scale(calc(.94 + .5*var(--lv,0)))}
+[data-st=rec] .vmark.mini *{opacity:inherit;transform:none;box-shadow:none}   /* маленький в шапке не дублирует живой */
+.vmark.mid{--s:46px}
+.live.recl{display:flex;justify-content:center;align-items:center}
+[data-st=recog] .vmark .r1,[data-st=think] .vmark .r1{border-style:dashed;opacity:.8;animation:vspin 1.6s linear infinite}
 @keyframes vbreath{0%,100%{transform:scale(.9)}50%{transform:scale(1.04)}}
 @keyframes vring{from{transform:scale(.85);opacity:.7}to{transform:scale(1.45);opacity:0}}
 @keyframes vspin{to{transform:rotate(360deg)}}
@@ -658,9 +659,9 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .tryonb .tpct{font-size:13px;font-weight:600;color:var(--local-d);font-variant-numeric:tabular-nums}
 /* эквалайзер-герой: 13 столбиков (9 px + 7 px зазор); в загрузке — прогресс и шов поперёк ещё не готовых */
 .teq{position:relative;height:84px;width:230px;display:flex;align-items:center;justify-content:center;gap:7px}
-.teq .eq{height:84px;gap:7px}.teq .eq i{width:9px;border-radius:5px;background:linear-gradient(var(--local),var(--server))}
+.teq .eq{height:84px;gap:7px}.teq .eq i{width:9px;border-radius:5px;background:linear-gradient(var(--local),#C98500)}
 .teq.load i{display:block;width:9px;height:9px;border-radius:5px;background:#D5D9D0;transition:background .3s}
-.teq.load i.on{background:linear-gradient(var(--local),var(--server));animation:tqb 1.1s ease-in-out infinite;animation-delay:var(--d)}
+.teq.load i.on{background:linear-gradient(var(--local),#C98500);animation:tqb 1.1s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes tqb{0%,100%{height:12px}50%{height:34px}}
 .teq .seam{display:flex;gap:7px;align-items:center;height:14px;background:linear-gradient(rgba(138,147,166,.55),rgba(138,147,166,.55)) center/100% 1.5px no-repeat}
 .teq .seam b{display:block;width:9px;height:14px;position:relative;flex:none}

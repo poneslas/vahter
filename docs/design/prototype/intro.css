@@ -8,7 +8,7 @@
 .ms{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:22px 22px 0 0;box-shadow:0 -6px 22px -10px rgba(14,26,54,.45);padding:8px 12px 10px;overflow:hidden}
 .ms .g{width:26px;height:3px;border-radius:2px;background:var(--grab,#CBD0C6);margin:0 auto 6px}
 .ms .h{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--soft);margin-bottom:8px}
-.ms .h i{width:7px;height:7px;border-radius:50%;background:var(--server)}
+.ms .h i{width:7px;height:7px;border-radius:50%;background:var(--local-d)}
 .ms .h b{color:var(--ink);font-weight:600;font-size:12.5px}
 .ms .me{font-size:12px;padding:6px 10px;border-radius:14px 14px 3px 14px;max-width:86%;margin-left:auto}
 .ms .ai{font-size:12px;line-height:1.35;padding-left:12px;margin-top:6px}
@@ -42,7 +42,7 @@
 @keyframes lb{0%,100%{height:14px}50%{height:48px}}
 @keyframes lgspin{to{filter:hue-rotate(0deg)}}
 .halo{position:absolute;width:132px;height:132px;border-radius:40px;border:2px solid var(--local);opacity:0;animation:halo 1.6s ease-out infinite}
-.halo.b{animation-delay:.8s;border-color:var(--server)}
+.halo.b{animation-delay:.8s;border-color:var(--local-d)}
 @keyframes halo{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.6);opacity:0}}
 
 /* ── 1. не чат, а кнопка: гонка. Оба стартуют одновременно; вопрос одинаковый — разница только в пути до него ── */
@@ -86,7 +86,7 @@
 .sc1 .ai{position:relative;font-size:13.5px;line-height:1.35;padding-left:13px;margin-top:10px;opacity:0;animation:t4 var(--T) infinite}
 @keyframes t4{0%,33%{opacity:0;transform:translateY(6px)}37%,97%{opacity:1;transform:none}100%{opacity:0}}
 
-/* диктовка: живой эквалайзер в цветах Вахтёра (янтарь → синий), через миг — готовый текст */
+/* диктовка: живой эквалайзер в цветах Вахтёра (янтарь), через миг — готовый текст */
 .sc1 .dk{display:inline-grid;align-items:center;justify-items:center}
 .sc1 .dk>*{grid-area:1/1}
 .sc1 .deq{display:flex;gap:2.5px;align-items:center;height:16px;animation:eqv var(--T) infinite}
@@ -149,7 +149,7 @@
 .sc6 .flash{position:absolute;inset:0;border-radius:12px;background:#fff;opacity:0;animation:fl var(--T) infinite}
 @keyframes fl{0%,3%{opacity:0}4%{opacity:.9}8%,100%{opacity:0}}
 .sc6 .ans{position:relative;font-size:12px;line-height:1.4;font-weight:400;color:var(--ink);padding-left:11px;margin-top:10px;opacity:0;animation:sn2 var(--T) infinite both}
-.sc6 .ans::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--server)}
+.sc6 .ans::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--local-d)}
 @keyframes sn2{0%,10%{opacity:0;transform:translateY(6px)}14%,96%{opacity:1;transform:none}100%{opacity:0}}
 .sc6 .vah .cnt{margin-top:auto}
 
@@ -222,18 +222,18 @@
 .sc5 .up b{display:block;font-size:13.5px}
 .sc5 .up small{display:block;font-size:10.5px;line-height:1.25;color:var(--soft)}
 .sc5 .ui{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:18px}
-.sc5 .mz{flex:none;width:232px;position:relative;border-color:var(--server);background:var(--server-t);animation:dsg var(--T) infinite}
+.sc5 .mz{flex:none;width:232px;position:relative;border-color:var(--local-d);background:var(--local-t);animation:dsg var(--T) infinite}
 .sc5 .mz .ui{background:#fff;font-size:17px}
 .sc5 .mz b{font-size:15px}
 .sc5 .mz .cl{position:absolute;right:12px;top:8px;font-size:22px;color:#B7C2F4}
-.sc5 .who{position:relative;height:14px;overflow:hidden;color:var(--server)!important}
+.sc5 .who{position:relative;height:14px;overflow:hidden;color:var(--local-d)!important}
 .sc5 .who i{position:absolute;left:0;font-style:normal;opacity:0;animation:who 6s infinite}
 .sc5 .who i:nth-child(2){animation-delay:2s}.sc5 .who i:nth-child(3){animation-delay:4s}
 @keyframes who{0%{opacity:0;transform:translateY(8px)}6%,30%{opacity:1;transform:none}36%,100%{opacity:0;transform:translateY(-8px)}}
 @keyframes dsg{0%,58%{box-shadow:0 0 0 0 rgba(47,75,232,0)}61%,66%{box-shadow:0 0 0 6px rgba(47,75,232,.22)}72%,100%{box-shadow:0 0 0 0 rgba(47,75,232,0)}}
-.sc5 .wire{position:absolute;top:70px;height:44px;left:calc(50% - 1px);width:2px;background:repeating-linear-gradient(var(--server) 0 4px,transparent 4px 8px);opacity:.55}
-.sc5 .pk{position:absolute;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--server);top:40px;opacity:0;animation:pk var(--T) infinite}
-@keyframes pk{0%,50%{top:40px;opacity:0}51%{opacity:1}59%{top:-6px;opacity:1;background:var(--server)}61%,64%{top:-6px;opacity:0}65%{top:-6px;opacity:1;background:var(--local)}72%{top:40px;opacity:1;background:var(--local)}73%,100%{top:40px;opacity:0}}
+.sc5 .wire{position:absolute;top:70px;height:44px;left:calc(50% - 1px);width:2px;background:repeating-linear-gradient(var(--local-d) 0 4px,transparent 4px 8px);opacity:.55}
+.sc5 .pk{position:absolute;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--local-d);top:40px;opacity:0;animation:pk var(--T) infinite}
+@keyframes pk{0%,50%{top:40px;opacity:0}51%{opacity:1}59%{top:-6px;opacity:1;background:var(--local-d)}61%,64%{top:-6px;opacity:0}65%{top:-6px;opacity:1;background:var(--local)}72%{top:40px;opacity:1;background:var(--local)}73%,100%{top:40px;opacity:0}}
 .sc5 .ms{top:112px;border-radius:22px}
 .sc5 .ms .h{margin-bottom:4px}
 .sc5 .pa,.sc5 .pb{position:absolute;left:12px;right:12px;top:34px}
@@ -254,7 +254,7 @@
 .sc5 .pb .me{display:table;margin-left:auto;animation:in5d var(--T) infinite both}
 @keyframes in5d{0%,44%{opacity:0;transform:translateY(8px)}48%,100%{opacity:1;transform:none}}
 .sc5 .ca{display:grid;margin-top:8px}.sc5 .ca>*{grid-area:1/1}
-.sc5 .call{font-size:11px;font-weight:500;color:var(--server);opacity:0;animation:call5 var(--T) infinite}
+.sc5 .call{font-size:11px;font-weight:500;color:var(--local-d);opacity:0;animation:call5 var(--T) infinite}
 @keyframes call5{0%,49%{opacity:0}51%,54%{opacity:1}57%{opacity:.4}60%{opacity:1}63%{opacity:.4}66%,70%{opacity:1}73%,100%{opacity:0}}
 .sc5 .pb .ai{position:relative;margin-top:0;opacity:0;animation:in5e var(--T) infinite both}
 @keyframes in5e{0%,71%{opacity:0;transform:translateY(6px)}75%,100%{opacity:1;transform:none}}
