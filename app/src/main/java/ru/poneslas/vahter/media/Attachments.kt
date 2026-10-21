@@ -10,7 +10,6 @@ import android.net.Uri
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -98,6 +97,4 @@ object Attachments {
         BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = s })
     }.getOrNull()
 
-    @Suppress("unused")
-    private fun Bitmap.toJpeg(q: Int) = ByteArrayOutputStream().also { compress(Bitmap.CompressFormat.JPEG, q, it) }.toByteArray()
 }
