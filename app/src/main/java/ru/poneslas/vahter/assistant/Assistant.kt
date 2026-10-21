@@ -9,19 +9,6 @@ import android.service.voice.VoiceInteractionSessionService
 import android.speech.RecognitionService
 import android.speech.SpeechRecognizer
 import android.view.View
-import android.view.WindowManager
-import androidx.compose.ui.platform.ComposeView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.savedstate.SavedStateRegistry
-import androidx.savedstate.SavedStateRegistryController
-import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.flow.MutableStateFlow
 import ru.poneslas.vahter.app.MainActivity
 import ru.poneslas.vahter.App
@@ -72,6 +59,8 @@ object Sheet {
     @Volatile var service: AssistService? = null
     val visible = MutableStateFlow(false)
     @Volatile var session: AssistSession? = null
+    /** Экран листа, пока он жив (на экране или в своей задаче за другим приложением). */
+    @Volatile var activity: SheetActivity? = null
     val prepareHooks = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
     /** Счётчик «начать запись без рук» — меняется при вызове кнопкой. */
     val autoListen = MutableStateFlow(0)
@@ -82,6 +71,9 @@ object Sheet {
 
     /** Свернуть приложение обратно в лист (Архитектура 3.1: finish + showSession). */
     fun show(args: Bundle = Bundle()) = service?.showSession(args, 0)
+
+    /** Убрать лист сразу, без анимации (поверх уже нарисовано приложение). */
+    fun close() { activity?.finishNow(); session?.hide() }
 
     /** Финал мастера — лист (Продукт 5.13): пустой лист с «Вам чего?» и чипами, пока ничего не спросили. */
     val firstSheet = MutableStateFlow(false)
@@ -98,97 +90,34 @@ object Sheet {
 
     /** Экран мозга в приложении: из листа — с возвратом в лист, иначе — обычной страницей. */
     fun openBrain(ctx: Context) {
-        val s = session
-        if (visible.value && s != null) s.openApp(settings = false, brain = true)
-        else ctx.startActivity(Intent(ctx, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, "brain:deepseek").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        val a = activity
+        if (visible.value && a != null) a.openApp(settings = false, brain = true)
+        else ctx.startActivity(Intent(ctx, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, MainActivity.brainPage()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }
 
 /**
- * Окно листа. Сессия сама — LifecycleOwner/SavedStateRegistryOwner/ViewModelStoreOwner, владельцы
- * ставятся на decorView окна (иначе Compose падает — пробник, Архитектура 3).
+ * Сессия помощника — только вход: принимает вызов, решает режим, камеру и запись (как раньше) и открывает экран листа
+ * [SheetActivity] через startAssistantActivity. Своего окна не рисует: окно сессии не задача — жесты листали приложение
+ * под ним, а системные окна разрешений уходили под него (Архитектура 3).
  */
-class AssistSession(context: Context) : VoiceInteractionSession(context),
-    LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
-
-    private val registry = LifecycleRegistry(this)
-    private val savedState = SavedStateRegistryController.create(this)
-    private val store = ViewModelStore()
-    override val lifecycle: Lifecycle get() = registry
-    override val savedStateRegistry: SavedStateRegistry get() = savedState.savedStateRegistry
-    override val viewModelStore: ViewModelStore get() = store
+class AssistSession(context: Context) : VoiceInteractionSession(context) {
 
     override fun onCreate() {
         super.onCreate()
-        savedState.performAttach()
-        savedState.performRestore(null)
-        registry.currentState = Lifecycle.State.CREATED
-        window.window?.let { w ->
-            w.decorView.setViewTreeLifecycleOwner(this)
-            w.decorView.setViewTreeSavedStateRegistryOwner(this)
-            w.decorView.setViewTreeViewModelStoreOwner(this)
-            // Баги №16, №18: клавиатуру, полоску навигации, строку состояния и вырез считает только Compose (imePadding, safeDrawing).
-            // Рамка сессии (fitsSystemWindows в разметке помощника) сдвигала лист сама и не на всю высоту клавиатуры — отключаем её ниже.
-            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(w, false)
-            // Лист прибит к низу экрана: рамка окна помощника не должна сама отступать от полосы жестов и строки состояния
-            // (у окон помощника по умолчанию fitInsetsTypes = системные полосы — на One UI лист висел над полосой жестов).
-            pinToBottom(w)
-            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) // без сдвига окна: система его сдвигала (pan) на 688 px поверх imePadding
-        }
         Sheet.session = this
-        context.registerReceiver(screenOff, android.content.IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED)
     }
 
-    override fun onCreateContentView(): View = ComposeView(context).apply {
-        // Рамки сессии над нашим видом не должны сами отступать от клавиатуры и полос — это делает Compose (баг №16).
-        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                var p = v.parent
-                while (p is android.view.ViewGroup) {
-                    p.fitsSystemWindows = false
-                    p.setPadding(0, 0, 0, 0)
-                    p.setOnApplyWindowInsetsListener { _, insets -> insets }
-                    p = p.parent
-                }
-                v.requestApplyInsets()
-            }
-            override fun onViewDetachedFromWindow(v: View) {}
-        })
-        setViewTreeLifecycleOwner(this@AssistSession)
-        setViewTreeSavedStateRegistryOwner(this@AssistSession)
-        setViewTreeViewModelStoreOwner(this@AssistSession)
-        setContent {
-            SheetScreen(
-                onClose = { hide() },
-                onExpand = { expand() },
-                onSettings = { openApp(settings = true) },
-                onAddMode = { openApp(settings = true, newMode = true) },
-                onEditMode = { id -> openApp(settings = false, editMode = id) },
-                onNeedPerm = { perm -> openApp(settings = false, askPerm = perm) },
-                session = this@AssistSession,
-            )
-        }
+    /** Своего окна у сессии нет: иначе оно лежит выше всех приложений — и листа, и системного окна разрешения (документация setUiEnabled). */
+    override fun onPrepareShow(args: Bundle?, showFlags: Int) {
+        super.onPrepareShow(args, showFlags)
+        setUiEnabled(false)
     }
 
-    /**
-     * Лист прибит к низу экрана: рамка окна помощника не должна сама отступать от полосы жестов и строки состояния
-     * (у окон помощника по умолчанию fitInsetsTypes = системные полосы — лист висел над полосой жестов). Сессия при показе
-     * может вернуть параметры окна (видно при показе из приложения, в финале мастера) — поэтому и в onCreate, и в каждом onShow.
-     */
-    private fun pinToBottom(w: android.view.Window) {
-        w.attributes = w.attributes.apply {
-            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-            fitInsetsTypes = 0
-            fitInsetsSides = 0
-        }
-        @Suppress("DEPRECATION") run { w.navigationBarColor = android.graphics.Color.TRANSPARENT }
-        w.isNavigationBarContrastEnforced = false
-    }
+    override fun onCreateContentView(): View? = null
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
-        // Сессия сама выставляет режим клавиатуры при показе — перекрываем, иначе окно сдвигается поверх imePadding (баг №16).
-        window.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         val app = App.instance
         val conv = app.conversation
         val settings = conv.state.value.settings
@@ -215,8 +144,6 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             val st = conv.state.value
             if (idle > 30 * 60_000 && st.feed.size > (Sheet.from.value[st.mode] ?: 0)) Sheet.from.value = Sheet.from.value + (st.mode to st.feed.size)
         }
-        registry.currentState = Lifecycle.State.RESUMED
-        Sheet.visible.value = true
         // Вызов кнопкой (не из уведомления и не из приложения): голосовой режим сразу слушает без рук.
         val cur = conv.state.value.current
         if (call) {
@@ -232,62 +159,20 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             Sheet.cameraAfterShow = false
             if (context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
         }
-    }
-
-    override fun onHide() {
-        // Запись останавливаем сами: система микрофон после hide() не выключает (Архитектура 3).
-        SheetEvents.onHide?.invoke()
-        App.instance.conversation.touch() // «30 минут без дела» считаем от последнего закрытия листа
-        Sheet.camera.value = false
-        Sheet.sideCue.value = false
-        if (Sheet.firstClose) { Sheet.firstClose = false; android.widget.Toast.makeText(context, tr(R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
-        if (registry.currentState.isAtLeast(Lifecycle.State.CREATED)) registry.currentState = Lifecycle.State.CREATED
-        Sheet.visible.value = false
-        super.onHide()
+        // Лист — экран своей задачи; уже открыт (за другим приложением) — тот же экран выходит вперёд (onNewIntent).
+        // Обычный запуск, не startAssistantActivity: задача «помощника» (ACTIVITY_TYPE_ASSISTANT) лаунчер пропускает при
+        // переключении свайпом — с листа уходили и не возвращались (эмулятор, 21.10). Пока сессия показана, запуск из фона разрешён.
+        val sheet = Intent(context, SheetActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { context.startActivity(sheet) }.isFailure && runCatching { startAssistantActivity(sheet) }.isFailure) hide()
     }
 
     override fun onDestroy() {
-        runCatching { context.unregisterReceiver(screenOff) }
-        registry.currentState = Lifecycle.State.DESTROYED
-        store.clear()
         if (Sheet.session === this) Sheet.session = null
-        Sheet.visible.value = false
         super.onDestroy()
     }
 
-    /** Экран погас — лист закрываем, запись останавливаем (иначе микрофон пишет в кармане). */
-    private val screenOff = object : android.content.BroadcastReceiver() {
-        override fun onReceive(c: Context, i: Intent) { hide() }
-    }
-
-    override fun onLockscreenShown() { hide() }
-
-    /** Системный «назад»: в камере — как ✕ (заморожен кадр — переснять, иначе — в лист), иначе как обычно (баг №9). */
-    override fun onBackPressed() {
-        if (Sheet.camera.value) { Sheet.cameraBack?.invoke() ?: run { Sheet.camera.value = false } } else super.onBackPressed()
-    }
-
-    override fun onComputeInsets(outInsets: Insets) {
-        super.onComputeInsets(outInsets)
-        // Затемнение над листом перехватывает касания — лист не закрывается случайно.
-        outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_FRAME
-    }
-
-    /** Развернуть лист в приложение: сначала запуск активности, потом hide (на скрытой сессии запуск не работает). */
-    private fun expand() = openApp(settings = false)
-
-    fun openApp(settings: Boolean, askPerm: String? = null, newMode: Boolean = false, editMode: String? = null, brain: Boolean = false) {
-        val intent = Intent(context, MainActivity::class.java)
-            .putExtra(MainActivity.EXTRA_FROM_SHEET, true)
-            .putExtra(MainActivity.EXTRA_BRAIN, brain)
-            .putExtra(MainActivity.EXTRA_SETTINGS, settings)
-            .putExtra(MainActivity.EXTRA_NEW_MODE, newMode)
-            .putExtra(MainActivity.EXTRA_ASK_PERM, askPerm)
-            .putExtra(MainActivity.EXTRA_EDIT_MODE, editMode)
-        // Лист закроет само приложение на своём первом кадре; запасной таймер — если активность не поднялась.
-        if (runCatching { startAssistantActivity(intent) }.isFailure) hide()
-        else window.window?.decorView?.postDelayed({ if (Sheet.visible.value) hide() }, 1500)
-    }
+    /** Блокировка: лист над ней не оставляем (разрешённое на блокировке открывается заново по кнопке). */
+    override fun onLockscreenShown() { Sheet.activity?.finishNow(); hide() }
 }
 
 object SheetEvents {

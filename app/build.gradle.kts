@@ -17,8 +17,8 @@ android {
         minSdk = 33
         // S24 — Android 16 (SDK 36). На 37 поднимем вместе с разрешением на локальную сеть (Архитектура, 18.0).
         targetSdk = 36
-        versionCode = 27
-        versionName = "0.7.7"
+        versionCode = 30
+        versionName = "0.8.2"
         ndk { abiFilters += "arm64-v8a" } // распознавание: только arm64 — S24 и эмулятор на Apple Silicon
     }
 
@@ -64,7 +64,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     // Распознавание — как в Гига Писаре для Android: GigaAM v3 e2e CTC в ONNX Runtime.
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.30.0")
-    val camera = "1.4.1"
+    val camera = "1.6.2"
     implementation("androidx.camera:camera-core:$camera")
     implementation("androidx.camera:camera-camera2:$camera")
     implementation("androidx.camera:camera-lifecycle:$camera")

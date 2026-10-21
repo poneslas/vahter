@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.poneslas.vahter.App
+import androidx.compose.runtime.mutableFloatStateOf
 import ru.poneslas.vahter.ui.Composer
 import ru.poneslas.vahter.ui.Feed
 import ru.poneslas.vahter.ui.Ink
@@ -78,6 +79,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
@@ -112,13 +114,13 @@ enum class SheetSt { IDLE, REC, RECOG, THINK, UP }
  * приложения, потом startAssistantActivity; свернуть из приложения — то же в обратную сторону ([Sheet.shrinkOnShow]).
  */
 @Composable
-fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, session: AssistSession, onAddMode: () -> Unit = onSettings, onEditMode: (String) -> Unit = { onSettings() }) {
+fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Unit, onNeedPerm: (String) -> Unit, host: SheetActivity, onAddMode: () -> Unit = onSettings, onEditMode: (String) -> Unit = { onSettings() }) {
     val app = App.instance
     val state by app.conversation.state.collectAsState()
     var live by remember { mutableStateOf<String?>(null) }
     val camera by Sheet.camera.collectAsState()
     fun openCamera() {
-        if (session.context.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) onNeedPerm(android.Manifest.permission.CAMERA)
+        if (host.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) onNeedPerm(android.Manifest.permission.CAMERA)
         else Sheet.camera.value = true
     }
     var camFull by remember { mutableStateOf(false) }
@@ -133,7 +135,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         }
     }
     val cameraPanel: @Composable (Modifier, Boolean) -> Unit = { m, full ->
-        CameraPanel(session, state.current, Brains.byId(state.current.brain).maxImages, full,
+        CameraPanel(host, state.current, Brains.byId(state.current.brain).maxImages, full,
             onClose = { Sheet.camera.value = false }, onCollapse = { camFull = false },
             onSend = { files, question -> Sheet.camera.value = false; app.conversation.attach(files, if (files.size > 1) tr(R.string.sheet_via_album, files.size) else tr(R.string.sheet_via_photo)); if (question.isNotBlank()) app.conversation.send(question, tr(R.string.sheet_via_voice)) },
             modifier = m)
@@ -185,8 +187,15 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             else if (!Sheet.shrinkOnShow) grow.snapTo(0f)
         }
 
+        // Выезд снизу при вызове и уезд вниз при закрытии (окно экрана — без системной анимации, Theme.Vahter.Sheet).
+        val enter = remember { Animatable(if (Sheet.shrinkOnShow) 1f else 0f) }
+        val shows by host.shows
+        LaunchedEffect(shows) { if (!Sheet.shrinkOnShow) { enter.snapTo(0f); enter.animateTo(1f, tween(260, easing = easing)) } else enter.snapTo(1f) }
+        val closing by host.closing
+        LaunchedEffect(closing) { if (closing) { enter.animateTo(0f, tween(200, easing = FastOutLinearInEasing)); host.finishNow() } }
+
         // .ov .dim — затемнение rgba(14,26,54,.32), лист не закрывает; при развороте гаснет
-        BoxWithConstraints(Modifier.fillMaxSize().background(Color(0x520E1A36).copy(alpha = .32f * (1f - grow.value))).clickable(
+        BoxWithConstraints(Modifier.fillMaxSize().background(Color(0x520E1A36).copy(alpha = .32f * (1f - grow.value) * enter.value)).clickable(
             interactionSource = remember { MutableInteractionSource() }, indication = null) { },
             contentAlignment = Alignment.BottomCenter,
         ) {
@@ -204,7 +213,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         else -> Modifier
                     })
                     .onGloballyPositioned { if (grow.value == 0f && !grow.isRunning) natural = it.size.height }
-                    .graphicsLayer { alpha = if (Sheet.shrinkOnShow && natural == 0) 0f else 1f }
+                    .graphicsLayer { alpha = if (Sheet.shrinkOnShow && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height }
                     .shadow(24.dp, RoundedCornerShape(topStart = corner, topEnd = corner), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = corner, topEnd = corner)).background(Ink.paper)
                     .then(if (camera) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT) })
@@ -266,7 +275,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
                     PromptStrip(state.current, onEditMode)
-                    SheetStrip(state.mode == Modes.MAIN && !connected && brain.kind == BrainDesc.Kind.API) { session.openApp(settings = false, brain = true) }
+                    SheetStrip(state.mode == Modes.MAIN && !connected && brain.kind == BrainDesc.Kind.API) { host.openApp(settings = false, brain = true) }
                     val first by Sheet.firstSheet.collectAsState()
                     if (g > 0f) Spacer(Modifier.weight(1f))
                     // Пустой лист — не меньше ~54% экрана (ui.js, .s2.isempty): сцене достаётся всё, кроме ряда, строки ввода и вкладок.
@@ -296,7 +305,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         autoListen = Sheet.autoListen,
                         onNeedMic = { onNeedPerm(android.Manifest.permission.RECORD_AUDIO) },
                         onCamera = ::openCamera,
-                        onGallery = { PickerActivity.launchFromSheet(session) },
+                        onGallery = { PickerActivity.launchFromSheet(host) },
                     )
                 }
             }
@@ -337,6 +346,12 @@ fun VMark(st: SheetSt, size: Dp) {
     val t = seconds()
     val c = if (st == SheetSt.UP) Ink.server else Ink.local
     val reduce = android.provider.Settings.Global.getFloat(LocalContext.current.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    // «Слушаю» — от настоящей громкости (LevelMeter Писаря): вверх сразу, вниз плавно; замолчали — ядро опадает.
+    var lvl by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(st == SheetSt.REC) {
+        if (st != SheetSt.REC) { lvl = 0f; return@LaunchedEffect }
+        while (true) { val l = App.instance.voice.level; lvl = if (l > lvl) l else lvl * .82f + l * .18f; kotlinx.coroutines.delay(32) }
+    }
     Canvas(Modifier.size(size)) {
         val sec = if (reduce) 0f else t
         val w = this.size.minDimension
@@ -344,8 +359,8 @@ fun VMark(st: SheetSt, size: Dp) {
         val small = w < 30.dp.toPx()
         fun wave(per: Float, off: Float = 0f) = (((sec + off) / per) % 1f)
         // ядро «дышит»: в записи — часто
-        val br = if (st == SheetSt.REC) .55f else 3.2f
-        val core = .9f + .14f * (.5f + .5f * kotlin.math.sin(wave(br) * 2 * Math.PI.toFloat()))
+        val core = if (st == SheetSt.REC) .9f + .02f * kotlin.math.sin(wave(.9f) * 2 * Math.PI.toFloat()) + .45f * lvl
+                   else .9f + .14f * (.5f + .5f * kotlin.math.sin(wave(3.2f) * 2 * Math.PI.toFloat()))
         val r0 = w * .19f * core
         drawCircle(Brush.radialGradient(listOf(c.copy(alpha = .45f), c.copy(alpha = 0f)), center = mid, radius = r0 + w * .35f), radius = r0 + w * .35f, center = mid)
         drawCircle(c, r0, mid)
@@ -355,7 +370,8 @@ fun VMark(st: SheetSt, size: Dp) {
             SheetSt.REC -> listOf(0f, .35f).forEachIndexed { i, off ->
                 val p = wave(1.1f, off)
                 val base = if (i == 0) r1 else r2
-                drawCircle(c.copy(alpha = .7f * (1 - p)), base * (.85f + .6f * p), mid, style = Stroke(if (i == 0) s1 else s2))
+                // кольца расходятся всегда (слушаю), но ярче и шире, когда говорят
+                drawCircle(c.copy(alpha = (.25f + .55f * lvl) * (1 - p)), base * (.85f + (.35f + .4f * lvl) * p), mid, style = Stroke(if (i == 0) s1 else s2))
             }
             SheetSt.RECOG, SheetSt.THINK, SheetSt.UP -> {
                 rotate(360f * wave(1.6f), mid) {

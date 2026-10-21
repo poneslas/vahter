@@ -153,6 +153,12 @@ fun CameraPanel(
         kotlinx.coroutines.delay(4000)
         if (preview.previewStreamState.value != PreviewView.StreamState.STREAMING && error == null) error = errNoPicture
     }
+    // Картинка всё же пошла (медленная камера) — предупреждение снимаем.
+    DisposableEffect(preview) {
+        val o = androidx.lifecycle.Observer<PreviewView.StreamState> { st -> if (st == PreviewView.StreamState.STREAMING && error == errNoPicture) error = null }
+        preview.previewStreamState.observeForever(o)
+        onDispose { preview.previewStreamState.removeObserver(o) }
+    }
 
     fun live() { frozen = null; editIdx = null; tool = null; marks.clear(); crop = null; draft = emptyList() }
     fun grab(): Bitmap? = frozen ?: runCatching { preview.bitmap }.getOrNull() ?: testFrame(ctx, preview.width, preview.height)

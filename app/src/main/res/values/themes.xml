@@ -4,5 +4,16 @@
     <style name="Theme.Vahter" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/paper</item>
     </style>
+    <!-- Лист — прозрачный экран поверх чужого приложения (как у Claude): затемнение и выезд рисует сам лист, окно — без анимации. -->
+    <style name="Theme.Vahter.Sheet" parent="Theme.Vahter">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+    </style>
     <color name="paper">#FFF7F8F4</color>
 </resources>

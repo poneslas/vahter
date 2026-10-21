@@ -137,7 +137,7 @@
     <string name="set_side_key">Боковая кнопка</string>
     <string name="set_listen_on_call">Слушать сразу при вызове</string>
     <string name="set_listen_on_call_on">Запись начинается сама</string>
-    <string name="set_return">Возвращаться к Ассистенту</string>
+    <string name="set_return">Запоминать режим</string>
     <string name="set_modes">Режимы</string>
     <string name="set_modes_sub">Название, промпт, что принимает</string>
     <string name="set_voice">Голос</string>
@@ -167,9 +167,12 @@
     <string name="set_mode_file">файл</string>
     <string name="set_mode_custom">Свой</string>
     <string name="set_mode_photo_first">сразу камера</string>
-    <string name="set_return_30m">Через 30 минут без дела</string>
-    <string name="set_return_never">Никогда — открывать последний режим</string>
-    <string name="set_return_always">Всегда — боковая кнопка открывает Ассистента</string>
+    <string name="set_return_30m">На 30 минут — потом снова Ассистент</string>
+    <string name="set_return_30m_short">На 30 минут</string>
+    <string name="set_return_never">Всегда — кнопка открывает последний режим</string>
+    <string name="set_return_never_short">Всегда</string>
+    <string name="set_return_always">Нет — кнопка всегда открывает Ассистента</string>
+    <string name="set_return_always_short">Нет</string>
     <string name="set_lock_off">Не открывать</string>
     <string name="set_lock_safe">Только будильник, таймер, фонарик</string>
     <string name="set_lock_on">Открывать</string>

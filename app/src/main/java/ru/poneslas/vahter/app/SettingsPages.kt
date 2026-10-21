@@ -97,7 +97,7 @@ fun SettingsPage(a: MainActivity) {
         Item(tr(R.string.set_side_key), SideKey.describe(a), icon = Ic.btn) { SideKey.open(a) }
         Item(tr(R.string.set_listen_on_call), tr(if (state.settings.listenOnCall) R.string.set_listen_on_call_on else R.string.set_listen_on_call_off),
             icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
-        Item(tr(R.string.set_return), returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
+        Item(tr(R.string.set_return), returnShort(state.settings.returnToAssistant), icon = Ic.hist) {
             a.choose(MainActivity.ChoiceDialog(tr(R.string.set_return), ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
                 app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }
             })
@@ -155,6 +155,13 @@ private fun returnLabel(r: ReturnToAssistant) = when (r) {
     ReturnToAssistant.MIN30 -> tr(R.string.set_return_30m)
     ReturnToAssistant.NEVER -> tr(R.string.set_return_never)
     ReturnToAssistant.ALWAYS -> tr(R.string.set_return_always)
+}
+
+/** «Запоминать режим» в строке настроек — коротко: «На 30 минут» / «Всегда» / «Нет» (ui.js, RETURN_OPTS). Ключи прежние: NEVER = помнить всегда. */
+private fun returnShort(r: ReturnToAssistant) = when (r) {
+    ReturnToAssistant.MIN30 -> tr(R.string.set_return_30m_short)
+    ReturnToAssistant.NEVER -> tr(R.string.set_return_never_short)
+    ReturnToAssistant.ALWAYS -> tr(R.string.set_return_always_short)
 }
 
 private fun lockLabel(s: LockScope) = when (s) {

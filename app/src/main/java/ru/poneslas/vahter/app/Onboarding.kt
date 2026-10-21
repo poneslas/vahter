@@ -321,7 +321,20 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
                 old.forEachIndexed { i, sh -> Text(sh.text, fontSize = 14.sp, lineHeight = 1.35.em, color = if (i == old.lastIndex) Ink.soft else Color(0xFFB4BAC4), maxLines = 2) }
             }
         }
-        TryEq(loading = !installed, pct = pct ?: 0, active = rec, calm = proc, freed = freed.value)   // голоса нет — точки со швом
+        // Пишет — эквалайзер от настоящей громкости (LevelMeter Писаря): свежий уровень встаёт в центр и расходится к краям,
+        // 13 столбиков — последние ~0,25 с речи; замолчали — оседают. Вверх сразу, вниз плавно.
+        val hist = remember { mutableStateOf(FloatArray(7)) }
+        LaunchedEffect(rec) {
+            if (!rec) { hist.value = FloatArray(7); return@LaunchedEffect }
+            var sm = 0f
+            while (true) {
+                val l = app.voice.level
+                sm = if (l > sm) l else sm * .78f + l * .22f
+                hist.value = FloatArray(7) { i -> if (i == 0) sm else hist.value[i - 1] }
+                kotlinx.coroutines.delay(40)
+            }
+        }
+        TryEq(loading = !installed, pct = pct ?: 0, active = rec, calm = proc, freed = freed.value, levels = hist.value)   // голоса нет — точки со швом
         if (loading) Text("${pct}\u00A0%", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD, modifier = Modifier.padding(top = 8.dp))
         Column(Modifier.fillMaxWidth().heightIn(min = 96.dp).padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val last = shots.lastOrNull()
@@ -362,10 +375,10 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
 /**
  * Эквалайзер-герой пробы голоса (intro.css, .teq): 13 столбиков. В загрузке — прогресс: готовые шевелятся, остальные — точки,
  * поперёк шов с крестиками. [freed] 0→1 сразу после докачки: крестики разлетаются, столбики подпрыгивают. Дальше — дышит,
- * при записи — прыгает ([active]), при распознавании — спокойная волна ([calm]).
+ * при записи — от настоящей громкости ([levels]: [0] — сейчас, дальше — прошлое), при распознавании — спокойная волна ([calm]).
  */
 @Composable
-private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, freed: Float) {
+private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, freed: Float, levels: FloatArray = FloatArray(7)) {
     val n = 13
     val t = seconds()
     Canvas(Modifier.size(230.dp, 84.dp)) {
@@ -379,7 +392,9 @@ private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, fr
             val h = when {
                 loading && i >= on -> bw
                 loading -> (12f + 22f * (.5f + .5f * kotlin.math.sin((t / 1.1f - i * .07f / 1.1f) * 2 * Math.PI.toFloat()))).dp.toPx()
-                active -> (10f + 50f * (.5f + .5f * kotlin.math.sin((t * 3.1f + i * .37f) * 2 * Math.PI.toFloat())) * (.6f + .4f * kotlin.math.sin((t * 1.7f + i) * 2 * Math.PI.toFloat()).let { it * it })).dp.toPx()
+                // голос: столбик i показывает уровень с задержкой |i − 6| шагов; к краям чуть ниже; в тишине — дрожание в пару пикселей
+                active -> { val d = kotlin.math.abs(i - n / 2); val v = levels.getOrElse(d) { 0f } * (1f - .05f * d)
+                    (10f + 2f * (.5f + .5f * kotlin.math.sin((t * 2.3f + i * .41f) * 2 * Math.PI.toFloat())) + 62f * v.coerceIn(0f, 1f)).dp.toPx() }
                 calm -> (10f + 18f * (.5f + .5f * kotlin.math.sin((t / 1.6f - i * .09f) * 2 * Math.PI.toFloat()))).dp.toPx()
                 else -> (10f + 10f * (.5f + .5f * kotlin.math.sin((t / 3.2f - i * .08f) * 2 * Math.PI.toFloat()))).dp.toPx() * pop
             }

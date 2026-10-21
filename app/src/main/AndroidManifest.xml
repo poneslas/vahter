@@ -54,6 +54,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Ссылка-приглашение Hermes: страница /vahter/connect на сервере открывает vahter://connect?url=…&token=… (Архитектура 9.8) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vahter" android:host="connect" />
+            </intent-filter>
         </activity>
 
         <!-- Помощник: сервис, сессия и заглушка распознавания (без неё роль слетает при обновлении) -->
@@ -78,6 +85,18 @@
             </intent-filter>
             <meta-data android:name="android.speech" android:resource="@xml/recognition_service" />
         </service>
+        <!-- Лист — своя задача (taskAffinity): быстрое переключение жестом уводит с него и возвращает на него, как у Claude.
+             Запускается только из сессии помощника (обычный запуск, пока сессия показана). Закрыли — карточка из «Недавних» уходит сама. -->
+        <activity
+            android:name=".assistant.SheetActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="ru.poneslas.vahter.sheet"
+            android:autoRemoveFromRecents="true"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Vahter.Sheet" />
         <activity
             android:name=".assistant.UnlockActivity"
             android:exported="false"
@@ -89,6 +108,14 @@
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <receiver android:name=".notify.OpenSheetReceiver" android:exported="false" />
+        <!-- Файлы от Hermes лежат в кэше (hermes/); «Открыть» отдаёт их системе через FileProvider -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
         <!-- Плитка «Вахтёр» в шторке — запасной вызов, где боковую кнопку не настроить (Продукт 5.13) -->
         <service
             android:name=".assistant.VahterTile"
