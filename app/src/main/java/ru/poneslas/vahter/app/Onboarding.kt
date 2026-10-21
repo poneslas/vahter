@@ -134,28 +134,25 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
             if (dx > px) swipeBack.value() else if (dx < -px && canNext.value()) swipeNext.value()
         })
     }
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-    // Сцена — постоянной высоты (300 dp, на маленьком экране — 42 % высоты, сцена ужимается): заголовок и текст стоят на одном месте
-    // на всех шагах одного устройства (0, 1, 2, 4, 5), а то, что появляется по ходу, — в резерве под текстом ([Slot]). onboarding.js, .onb.fixed.
-    val artH = minOf(300.dp, maxHeight * .42f)
     Column(Modifier.fillMaxSize().then(swipe).statusBarsPadding().navigationBarsPadding().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 22.dp)) {
-        @Composable fun Scaled(content: @Composable () -> Unit) =
-            Box(Modifier.fillMaxWidth().height(artH), contentAlignment = Alignment.Center) { Box(Modifier.scale((artH / 300.dp).coerceIn(.5f, 1f))) { content() } }
-        @Composable fun Art(k: WizScene) = Scaled { WizArt(k) }
-        @Composable fun Slot(content: @Composable ColumnScope.() -> Unit = {}) =
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()), content = content)
+        // Сцена — во всём свободном месте над текстом, текст — у кнопок (как было). Внутри шага, где по ходу что-то появляется
+        // (полоска загрузки, «Готово», микрофон, строки кнопки), под текстом — резерв [Slot] на самое высокое состояние: не прыгает.
+        @Composable fun Art(k: WizScene, minH: Dp = 300.dp) =
+            Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = minH), contentAlignment = Alignment.Center) { WizArt(k) }
+        @Composable fun Slot(minH: Dp, content: @Composable ColumnScope.() -> Unit) =
+            Column(Modifier.fillMaxWidth().heightIn(min = minH), content = content)
         @Composable fun Head(h: String, p: String) {
             Text(h, fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
             Text(p, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 12.dp))
         }
         when (step) {
-            0 -> { Art(WizScene.WELCOME); Head(tr(R.string.intro_0_h), tr(R.string.intro_0_p)); Slot(); skip = null; primary = tr(R.string.ui_start) to next }
+            0 -> { Art(WizScene.WELCOME); Head(tr(R.string.intro_0_h), tr(R.string.intro_0_p)); skip = null; primary = tr(R.string.ui_start) to next }
             1 -> {
                 // Голос — первым: модель качается, пока настраивают кнопку.
-                Scaled { VoiceArt() }
+                Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) { VoiceArt() }
                 Head(tr(R.string.wiz_voice_h), tr(R.string.wiz_voice_p, "225"))
                 val error = (dl as? ModelDownload.State.Failed)?.reason
-                Slot {
+                Slot(132.dp) {   // полоска с подписью + строка «Микрофон»
                 when {
                     installed -> Note(tr(R.string.ui_done), ok = true)
                     running != null -> {
@@ -186,7 +183,7 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 val sideOk = side == SideKey.State.ASSISTANT
                 val ok = role && (!known || sideOk)
                 val check: @Composable () -> Unit = { Text("✓", color = Ink.ok, fontWeight = FontWeight.Bold) }
-                Art(WizScene.QUEUE)
+                Art(WizScene.QUEUE, 220.dp)
                 Head(tr(R.string.intro_1_h), tr(when {
                     ok && known -> R.string.sidekey_p_done
                     ok && probe == true -> R.string.sidekey_p_done_probe
@@ -195,7 +192,7 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                     known -> R.string.sidekey_p_todo
                     else -> R.string.sidekey_p_todo_one
                 }))
-                Slot {
+                Slot(196.dp) {   // две строки настроек + подпись про загрузку; проба «Нет» — три строки
                 SetCard {
                     Item(tr(R.string.set_assistant_role), if (role) tr(R.string.app_name) else tr(R.string.sidekey_not_set, tr(R.string.sidekey_other_assistant)), warn = !role, icon = Ic.spark,
                         end = if (role) check else null) { activity.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) }
@@ -238,8 +235,8 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 } else skip = null
             }
             3 -> { TryStep(activity, running?.percent, installed, mic); skip = null; if (!installed && running != null) primary = tr(R.string.ui_skip) to next }
-            4 -> { Art(WizScene.CHAT); Head(tr(R.string.wiz_rules_h), tr(R.string.wiz_rules_p)); Slot(); skip = null }
-            5 -> { Art(WizScene.KEYS); Head(tr(R.string.intro_3_h), tr(R.string.wiz_quick_p)); Slot(); skip = null }
+            4 -> { Art(WizScene.CHAT); Head(tr(R.string.wiz_rules_h), tr(R.string.wiz_rules_p)); skip = null }
+            5 -> { Art(WizScene.KEYS); Head(tr(R.string.intro_3_h), tr(R.string.wiz_quick_p)); skip = null }
             else -> {
                 // Мозг — последним. «Подключить» — главная кнопка внизу; подключили — «Открыть» ведёт в лист.
                 // Уведомления — здесь же, пока экран приложения открыт: из листа системное окно показать нечем.
@@ -267,7 +264,6 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 primary?.let { (t, a) -> PrimaryButton(t, enabled = !(step == steps - 1 && !hasKey && !key.canCheck), onClick = a) }
             }
         }
-    }
     }
 }
 

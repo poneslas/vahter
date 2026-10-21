@@ -45,9 +45,10 @@ function onb(){
   // Режимы — два экрана: чем это лучше чата («как обычно» против просьбы заново) и как устроено (кнопка = написанная просьба). Настраивать нечего.
   if (st==='rules'){ art=introScene(2); h='Знает, как у вас заведено'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
   if (st==='quick'){ art=introScene(3); h='Привычки знает наизусть'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
-  // Сцена — постоянной высоты, заголовок и текст на одном месте на всех таких шагах; что появляется по ходу (полоска, «Готово»,
-  // микрофон, настройки кнопки) — в зарезервированное место под текстом: ничего не подпрыгивает (в Android — Onboarding.kt, Art/Slot).
-  return `<div class="layer appv">${statusBar(true)}<div class="onb fixed"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p><div class="ex">${extra}</div>${navBar(skip,primary)}</div></div>`;
+  // Сцена — во всём свободном месте, текст — у кнопок. Внутри шага, где по ходу что-то появляется (полоска, «Готово», микрофон,
+  // строки кнопки), под текстом — резерв на самое высокое состояние: ничего не подпрыгивает (в Android — Onboarding.kt, Slot).
+  const slot = st==='voice'?'ex ex-voice':st==='button'?'ex ex-btn':'';
+  return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${slot?`<div class="${slot}">${extra}</div>`:extra}${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
 function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>
