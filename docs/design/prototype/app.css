@@ -163,6 +163,9 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 /* первый запуск */
 .onb{display:flex;flex-direction:column;height:100%;padding:56px 24px 22px}
 .onb .art{flex:1;display:grid;place-items:center;min-height:120px;animation:fade .35s ease both}
+/* шаги одного устройства: сцена постоянной высоты, под текстом — резерв для того, что появляется по ходу */
+.onb.fixed .art{flex:none;height:300px;min-height:0}
+.onb.fixed .ex{flex:1;min-height:0;overflow:auto}
 .onb h2{font-family:var(--display);font-size:24px;line-height:1.15;font-weight:500;margin:0 0 10px}
 .onb p{color:var(--soft);margin:0 0 12px;font-size:15px}
 .onb .nav{position:relative;display:flex;justify-content:space-between;align-items:center;padding-top:14px;flex:none}

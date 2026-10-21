@@ -45,7 +45,9 @@ function onb(){
   // Режимы — два экрана: чем это лучше чата («как обычно» против просьбы заново) и как устроено (кнопка = написанная просьба). Настраивать нечего.
   if (st==='rules'){ art=introScene(2); h='Знает, как у вас заведено'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
   if (st==='quick'){ art=introScene(3); h='Привычки знает наизусть'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
-  return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
+  // Сцена — постоянной высоты, заголовок и текст на одном месте на всех таких шагах; что появляется по ходу (полоска, «Готово»,
+  // микрофон, настройки кнопки) — в зарезервированное место под текстом: ничего не подпрыгивает (в Android — Onboarding.kt, Art/Slot).
+  return `<div class="layer appv">${statusBar(true)}<div class="onb fixed"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p><div class="ex">${extra}</div>${navBar(skip,primary)}</div></div>`;
 }
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
 function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>
@@ -64,7 +66,7 @@ function tryStep(){
   const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
   // Тот же знак, что в листе: слушает — живой от голоса; распознаёт — пунктирное кольцо; качается — кольцо-шкала, ядро спит.
   const hero = loading ? `<div class="tsun sleep"><i class="prog" style="--tp:${S.modelPct}"></i>${vMark()}</div><div class="tpct">${S.modelPct}${'\u00a0'}%</div>`
-    : `<div class="tsun ${freed?'freed':''}" data-st="${rec?'rec':S.recog?'recog':'idle'}">${vMark()}</div>`;
+    : `<div class="tsun ${freed?'freed':''}" data-st="${rec?'rec':S.recog?'recog':'idle'}">${vMark()}</div><div class="tpct" style="visibility:hidden">0${'\u00a0'}%</div>`;   // строка процентов — в резерве, текст не прыгает
   const text = loading ? '<div class="tcap">Вахтёр учит русский…</div>'
     : rec ? '<div class="tcap">Слушаю…</div>' : S.recog ? '<div class="tcap">Распознаю на телефоне…</div>'
     : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
