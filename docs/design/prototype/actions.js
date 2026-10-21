@@ -114,7 +114,7 @@ document.addEventListener('click', async e=>{
     case 'sideyes': S.sideProbe='yes'; trace('Пользователь подтвердил: кнопка открывает Вахтёра. Запомнили — баннер больше не нужен.','p'); return render();
     case 'sideno': S.sideProbe='no'; return render();
     case 'sidereport': S.dialog={title:'Сообщить разработчику',text:'Через «Поделиться» уйдёт: модель телефона, версия Android и оболочки, что не сработало, значения найденных ключей. Своего сервера не нужно.',opts:[['Поделиться…','x'],['Отмена','x','sec2']]}; return render();
-    case 'returnpick': S.dialog={title:'Возвращаться к Ассистенту',radio:RETURN_OPTS,cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
+    case 'returnpick': S.dialog={title:'Запоминать режим',radio:RETURN_OPTS.map(o=>o.slice(0,2)),cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();
     case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace('Лист на время выбора прячется (иначе на S24 окно выбора откроется под ним), после выбора возвращается с вложением — проверено на S24.','p'); return render();
     case 'pickdone': { const sel=S.pickSel||[]; S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; const items=sel.map(cls=>({cls,marks:[],crop:null})); uploadPhoto(items.length>1?{kind:'album',items}:{kind:'photo',...items[0]},'',items.length>1?`альбом · ${items.length}`:'фото'); trace(items.length>1?`Несколько фото из галереи — одна реплика, ${items.length} картинки.`:'Фото из галереи — как со спуска камеры.','p'); return }
