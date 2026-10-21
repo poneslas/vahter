@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import ru.poneslas.vahter.ui.Ic
 import androidx.compose.ui.text.style.TextOverflow
@@ -176,6 +177,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             if (grow.isRunning || grow.value > 0f) return
             scope.launch { grow.animateTo(1f, tween(380, easing = easing)); onExpand() }
         }
+        // Лист за пальцем: вниз — уезжает весь (pull, px), вверх — растёт (grow); отпустили — доводим или возвращаем.
+        val pull = remember { Animatable(0f) }
         LaunchedEffect(natural > 0) {
             if (natural > 0 && Sheet.shrinkOnShow) { Sheet.shrinkOnShow = false; grow.animateTo(0f, tween(380, easing = easing)) }
         }
@@ -190,12 +193,13 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         // Выезд снизу при вызове и уезд вниз при закрытии (окно экрана — без системной анимации, Theme.Vahter.Sheet).
         val enter = remember { Animatable(if (Sheet.shrinkOnShow) 1f else 0f) }
         val shows by host.shows
-        LaunchedEffect(shows) { if (!Sheet.shrinkOnShow) { enter.snapTo(0f); enter.animateTo(1f, tween(260, easing = easing)) } else enter.snapTo(1f) }
+        LaunchedEffect(shows) { pull.snapTo(0f); if (!Sheet.shrinkOnShow) { enter.snapTo(0f); enter.animateTo(1f, tween(260, easing = easing)) } else enter.snapTo(1f) }
         val closing by host.closing
         LaunchedEffect(closing) { if (closing) { enter.animateTo(0f, tween(200, easing = FastOutLinearInEasing)); host.finishNow() } }
 
         // .ov .dim — затемнение rgba(14,26,54,.32), лист не закрывает; при развороте гаснет
-        BoxWithConstraints(Modifier.fillMaxSize().background(Color(0x520E1A36).copy(alpha = .32f * (1f - grow.value) * enter.value)).clickable(
+        val pullK = if (natural > 0) (1f - pull.value / natural).coerceIn(0f, 1f) else 1f
+        BoxWithConstraints(Modifier.fillMaxSize().background(Color(0x520E1A36).copy(alpha = .32f * (1f - grow.value) * enter.value * pullK)).clickable(
             interactionSource = remember { MutableInteractionSource() }, indication = null) { },
             contentAlignment = Alignment.BottomCenter,
         ) {
@@ -213,7 +217,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         else -> Modifier
                     })
                     .onGloballyPositioned { if (grow.value == 0f && !grow.isRunning) natural = it.size.height }
-                    .graphicsLayer { alpha = if (Sheet.shrinkOnShow && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height }
+                    .graphicsLayer { alpha = if (Sheet.shrinkOnShow && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height + pull.value }
                     .shadow(24.dp, RoundedCornerShape(topStart = corner, topEnd = corner), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = corner, topEnd = corner)).background(Ink.paper)
                     .then(if (camera) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT) })
@@ -228,22 +232,43 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         IconBtn(Ic.more, tr(R.string.restart_more)) {}
                     }
                 }
-                // Ряд листа: потянуть вниз — закрыть, вверх — развернуть в приложение (баг №5).
-                val density = LocalDensity.current
-                var drag by remember { mutableStateOf(0f) }
+                // Ряд листа за пальцем (баг №5): вниз — лист уезжает весь, вверх — растёт к полному экрану.
+                // Отпустили: дальше трети пути или резкий взмах — закрыть / развернуть, иначе — на место.
+                val drag = remember { floatArrayOf(0f) }
+                val tracker = remember { VelocityTracker() }
+                val full by androidx.compose.runtime.rememberUpdatedState(fullPx)
                 val dragArea = Modifier.pointerInput(Unit) {
+                    val fling = 1200.dp.toPx()
+                    fun settle() {
+                        val v = tracker.calculateVelocity().y
+                        tracker.resetTracking(); drag[0] = 0f
+                        scope.launch {
+                            when {
+                                pull.value > 0f && (pull.value > natural / 3f || v > fling) -> onClose()
+                                pull.value > 0f -> pull.animateTo(0f, tween(220, easing = easing))
+                                grow.value > 0f && (grow.value > .33f || v < -fling) -> { grow.animateTo(1f, tween(260, easing = easing)); onExpand() }
+                                grow.value > 0f -> grow.animateTo(0f, tween(220, easing = easing))
+                            }
+                        }
+                    }
                     detectVerticalDragGestures(
-                        onDragStart = { drag = 0f },
-                        onVerticalDrag = { ch, dy -> ch.consume(); drag += dy },
-                        onDragEnd = {
-                            val px = with(density) { 48.dp.toPx() }
-                            if (drag > px) onClose() else if (drag < -px) expandNow()
-                            drag = 0f
+                        onDragStart = { drag[0] = 0f; tracker.resetTracking() },
+                        onVerticalDrag = { ch, dy ->
+                            ch.consume()
+                            drag[0] += dy
+                            tracker.addPosition(ch.uptimeMillis, Offset(0f, drag[0]))
+                            val d0 = drag[0]
+                            val room = (full - natural).coerceAtLeast(1).toFloat()
+                            scope.launch {
+                                if (d0 >= 0f || camera || natural == 0) { grow.snapTo(0f); pull.snapTo(d0.coerceAtLeast(0f)) }
+                                else { pull.snapTo(0f); grow.snapTo((-d0 / room).coerceIn(0f, 1f)) }
+                            }
                         },
-                        onDragCancel = { drag = 0f },
+                        onDragEnd = ::settle,
+                        onDragCancel = ::settle,
                     )
                 }
-                Row(dragArea.fillMaxWidth().height(52.dp * (1f - g)).graphicsLayer { alpha = 1f - g; translationY = drag.coerceAtLeast(0f) * 0.4f }
+                Row(dragArea.fillMaxWidth().height(52.dp * (1f - g)).graphicsLayer { alpha = 1f - g }
                     .padding(start = 16.dp, end = 10.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     // слева: маленький знак и строка связи — только если что-то не так; в пустом листе — ничего
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {

@@ -163,7 +163,8 @@ class MainActivity : ComponentActivity() {
     private fun Screen() {
         val app = App.instance
         val state by app.conversation.state.collectAsState()
-        BackHandler(stack.size > 1) { back() }
+        // Пришли с листа: системный «Назад» на первой странице — свернуться обратно в лист, а не закрыть приложение.
+        BackHandler(stack.size > 1 || (fromSheet && state.settings.onboarded)) { if (stack.size > 1) back() else collapse() }
         Box(Modifier.fillMaxSize().background(Ink.paper)) {
             Column(Modifier.fillMaxSize().imePadding()) {
                 val page = stack.last()
