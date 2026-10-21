@@ -250,20 +250,21 @@ function about(){
 }
 
 function hermesPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${hermesBody(false)}</div></div></div>` }
-const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
+// Подключение к Hermes через его API-сервер за Caddy (Архитектура 9.0, 9.8): ссылка-приглашение с ключом телефона или адрес и ключ руками.
+const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['hermes','Hermes на сервере'],['key','Ключ этого телефона']];
 function hermesBody(onb){
   const P=S.pair;
   if (!P) return `<div class="h2">Ваш сервер</div><p style="color:var(--soft);margin:0 0 12px">Hermes отвечает на всё, что сложнее команд телефона.</p>
-    <div class="setcard">${li(I.chat,'Ссылка из Telegram','Напишите боту /vahter_pair','viatg')}${li(I.qr,'QR с экрана компьютера','Та же команда на сервере','viaqr')}${li(I.pen,'Ввести адрес','Владелец подтвердит код','viaaddr')}</div>`;
+    <div class="setcard">${li(I.chat,'Ссылка-приглашение','На сервере: vahter-invite.sh «имя телефона» — ссылку можно переслать себе в Telegram и открыть здесь','viatg')}${li(I.paste,'Вставить приглашение','Ссылка скопирована — вставить из буфера','viaqr')}${li(I.pen,'Ввести адрес и ключ','Адрес вида https://hermes.example.ru и ключ телефона из приглашения','viaaddr')}</div>`;
   if (P.via==='addr'&&P.stage==='input') return `<div class="h2">Адрес сервера</div>
-    <input class="field ${P.err?'err':''}" id="addr" value="${esc(P.addr||'hermes.example.ru')}" autocomplete="off" spellcheck="false">
-    <p style="font-size:12.5px;color:${P.err?'var(--danger)':'var(--soft)'}">${P.err||'Например, hermes.example.ru'}</p>
+    <input class="field ${P.err?'err':''}" id="addr" value="${esc(P.addr||'https://hermes.example.ru')}" autocomplete="off" spellcheck="false">
+    <input class="field" id="tok" value="" placeholder="Ключ телефона из приглашения" autocomplete="off" spellcheck="false" style="margin-top:8px">
+    <p style="font-size:12.5px;color:${P.err?'var(--danger)':'var(--soft)'}">${P.err||'Ключ телефона хранится в Keystore; ключ API Hermes телефон не знает — его подставляет сервер'}</p>
     <div style="display:flex;justify-content:flex-end;gap:6px"><button class="tbtn" data-act="pairreset">Назад</button><button class="fbtn" data-act="addrgo">Подключиться</button></div>`;
   const ck=P.checks.map(c=>`<div class="ck ${c.s}"><span class="s">${c.s==='ok'?'✓':c.s==='bad'?'!':''}</span><span>${c.t}${c.d?`<small>${c.d}</small>`:''}</span></div>`).join('');
   let tail='';
-  if (P.stage==='code') tail=`<div class="card"><div class="who h">Ждёт подтверждения</div><div class="bd"><div class="big">${P.code}</div><p style="text-align:center;font-size:12.5px;color:var(--soft);margin:0 0 6px">Код живёт час. На сервере:</p><p style="text-align:center;margin:0"><code>hermes pairing approve vahter ${P.code.replace('-','')}</code></p></div><div class="btns" style="justify-content:center"><button class="cb pri" data-act="copycmd">Скопировать команду</button><button class="cb gh" data-act="pairreset">Отмена</button></div></div>`;
   if (P.stage==='fail') tail=`<div class="note bad">${P.err}</div><div style="display:flex;justify-content:flex-end;gap:6px;margin-top:10px"><button class="tbtn" data-act="pairreset">Другой способ</button><button class="fbtn" data-act="${P.retry}">${P.retryLabel}</button></div>`;
-  if (P.stage==='done') tail=`<div class="note ok">Подключено. На сервере этот телефон виден как «S24 Ultra».</div>${onb?'':'<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="fbtn" data-act="tochat">К разговору</button></div>'}`;
+  if (P.stage==='done') tail=`<div class="note ok">Подключено. На сервере этот телефон — «S24 Ultra» (vahter-revoke.sh отзывает ключ). Сессии режимов живут на сервере, память Hermes общая с Telegram.</div>${onb?'':'<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="fbtn" data-act="tochat">К разговору</button></div>'}`;
   return `<div class="h2">${P.stage==='done'?'Подключено':'Подключаюсь'}</div><div class="checks">${ck}</div>${tail}`;
 }
 function sysRole(){ const o=[['gemini','Gemini'],['ours','Вахтёр']]; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Цифровой помощник</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Приложения → Выбор приложений по умолчанию</p><div class="grp">${o.map(x=>`<button class="it" data-role="${x[0]}"><span class="rad ${S.w.role===x[0]?'on':''}"></span>${x[1]}</button>`).join('')}</div></div>` }

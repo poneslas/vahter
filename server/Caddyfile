@@ -1,0 +1,83 @@
+# Caddy на сервере Hermes: сайт для Вахтёра (Архитектура 9.8). Файл целиком заменяет /opt/edge/edge-web/Caddyfile
+# (прежний блок proxy.example.org оставлен как был). Порт 443 держит SNI-роутер (nginx stream), он отдаёт сюда
+# соединения с именем {$VAHTER_HOST}; сертификат Caddy получает сам по TLS-ALPN через тот же порт (http-проверка выключена:
+# 80 наружу закрыт). Ключ API Hermes телефон не знает: Caddy проверяет ключ телефона и подставляет свой.
+{
+	https_port 9443
+}
+
+https://proxy.example.org:9443 {
+	bind 127.0.0.1
+	tls /etc/letsencrypt/live/proxy.example.org/fullchain.pem /etc/letsencrypt/live/proxy.example.org/privkey.pem
+	respond 403
+}
+
+https://{$VAHTER_HOST}:9443 {
+	bind 127.0.0.1
+	tls {
+		issuer acme {
+			disable_http_challenge
+		}
+	}
+	request_body {
+		max_size 25MB
+	}
+	log {
+		output file /data/vahter-access.log {
+			roll_size 10MB
+			roll_keep 3
+		}
+		format filter {
+			wrap json
+			fields {
+				# ключи телефонов в журнал не пишем
+				request>headers>Authorization delete
+			}
+		}
+	}
+
+	# Ключи телефонов: по одной строке на устройство, файл генерирует vahter-invite.sh
+	import /etc/caddy/vahter-devices.caddy
+
+	# Только то, что нужно приложению: модели (проверка), чат, ответ на подтверждение команды. Остальной API Hermes закрыт.
+	@api {
+		path /v1/models /v1/chat/completions /v1/runs/*
+	}
+	handle @api {
+		handle @device {
+			reverse_proxy 127.0.0.1:8642 {
+				header_up Authorization "Bearer {$API_SERVER_KEY}"
+				header_up -X-Forwarded-For
+				flush_interval -1
+				transport http {
+					read_timeout 20m
+					write_timeout 5m
+					response_header_timeout 20m
+				}
+			}
+		}
+		respond 401
+	}
+
+	# Файлы от Hermes для телефона: только папка vahter-out дома Hermes (/root/.hermes/vahter-out), тем же ключом телефона
+	handle /vahter/files/* {
+		handle @device {
+			root * /srv
+			file_server {
+				hide .*
+			}
+		}
+		respond 401
+	}
+
+	# Страница приглашения: ключ в #фрагменте, на сервер не уходит; открывает vahter://connect?url=…&token=…
+	handle /vahter/connect {
+		root * /etc/caddy
+		rewrite * /connect.html
+		file_server
+	}
+
+	handle {
+		respond 404
+	}
+}

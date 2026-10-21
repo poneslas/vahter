@@ -104,7 +104,7 @@ class ApiBrain(
     private fun requestBody(turn: Turn, history: List<ChatMsg>, specs: List<ToolSpec>): String {
         val messages = buildJsonArray {
             add(buildJsonObject { put("role", "system"); put("content", systemPrompt(turn)) })
-            for (m in history) add(toJson(m))
+            for (m in history) add(chatMsgJson(m))
         }
         return buildJsonObject {
             put("model", desc.model)
@@ -121,26 +121,6 @@ class ApiBrain(
                 })
             })
         }.toString()
-    }
-
-    private fun toJson(m: ChatMsg): JsonObject = buildJsonObject {
-        put("role", m.role)
-        if (m.role == "user" && m.images.isNotEmpty()) {
-            put("content", buildJsonArray {
-                if (!m.content.isNullOrBlank()) add(buildJsonObject { put("type", "text"); put("text", m.content) })
-                for (img in m.images) add(buildJsonObject {
-                    val url = if (img.startsWith("data:")) img else Attachments.dataUrl(java.io.File(img))
-                    put("type", "image_url"); put("image_url", buildJsonObject { put("url", url) })
-                })
-            })
-        } else if (m.content != null) put("content", m.content) else put("content", "")
-        if (m.toolCalls.isNotEmpty()) put("tool_calls", buildJsonArray {
-            for (c in m.toolCalls) add(buildJsonObject {
-                put("id", c.id); put("type", "function")
-                put("function", buildJsonObject { put("name", c.name); put("arguments", c.arguments) })
-            })
-        })
-        if (m.toolCallId != null) put("tool_call_id", m.toolCallId)
     }
 
     private class Result(val text: String, val toolCalls: List<ToolCallMsg>)
@@ -225,5 +205,23 @@ class ApiBrain(
     data class Result2(val ok: Boolean, val text: String)
 }
 
-@Suppress("unused")
-private fun JsonObject.str(k: String) = this[k]?.jsonPrimitive?.contentOrNull
+/** Сообщение истории в формате OpenAI chat: картинки — `image_url` с data-URL (общее для [ApiBrain] и [HermesBrain]). */
+internal fun chatMsgJson(m: ChatMsg): JsonObject = buildJsonObject {
+    put("role", m.role)
+    if (m.role == "user" && m.images.isNotEmpty()) {
+        put("content", buildJsonArray {
+            if (!m.content.isNullOrBlank()) add(buildJsonObject { put("type", "text"); put("text", m.content) })
+            for (img in m.images) add(buildJsonObject {
+                val url = if (img.startsWith("data:")) img else Attachments.dataUrl(java.io.File(img))
+                put("type", "image_url"); put("image_url", buildJsonObject { put("url", url) })
+            })
+        })
+    } else if (m.content != null) put("content", m.content) else put("content", "")
+    if (m.toolCalls.isNotEmpty()) put("tool_calls", buildJsonArray {
+        for (c in m.toolCalls) add(buildJsonObject {
+            put("id", c.id); put("type", "function")
+            put("function", buildJsonObject { put("name", c.name); put("arguments", c.arguments) })
+        })
+    })
+    if (m.toolCallId != null) put("tool_call_id", m.toolCallId)
+}

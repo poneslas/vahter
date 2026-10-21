@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application>
+    <!-- Отладочная сборка ходит к Hermes по http на 10.0.2.2 — SSH-туннель с Mac в эмулятор (Архитектура 9.8); выпускная — только https -->
+    <application android:networkSecurityConfig="@xml/network_security_config">
         <receiver android:name=".DebugAsr" android:exported="true" />
             <receiver android:name=".DebugSay" android:exported="true" />
     </application>

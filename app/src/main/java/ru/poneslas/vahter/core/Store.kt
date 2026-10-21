@@ -20,6 +20,8 @@ data class Saved(
     val lastUse: Long = 0,
     val notes: List<Note> = emptyList(),
     val journal: List<JournalEntry> = emptyList(),
+    /** Сессии режимов в Hermes (ключ — id режима); история этих режимов живёт на сервере. */
+    val hermesSessions: Map<String, HermesSession> = emptyMap(),
 )
 
 class Store(context: Context) {

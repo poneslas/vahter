@@ -11,7 +11,7 @@ import ru.poneslas.vahter.core.Mode
 /**
  * Мозг: реплика → поток событий (Архитектура, 2.2). Набор событий полный, по Hermes;
  * прямой API использует подмножество. Реализации: [FakeBrain], [ApiBrain] (DeepSeek и любой OpenAI-совместимый),
- * HermesBrain — этап 5.
+ * [HermesBrain] (Hermes через его API-сервер, Архитектура 9.0).
  */
 interface Brain {
     fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent>
@@ -52,14 +52,21 @@ sealed interface BrainEvent {
     /** Новое сообщение для истории режима (ответ ассистента, вызов функции, результат функции). */
     data class History(val msg: ChatMsg) : BrainEvent
     data class Error(val text: String, val kind: ErrorKind = ErrorKind.OTHER) : BrainEvent
+    /**
+     * Мозг просит подтвердить команду на сервере (Hermes, `approval.request`): карточка с вариантами сервера
+     * («Один раз / До конца сессии / Всегда / Нет»), ответ — [respond] с выбранным вариантом. Ход ждёт ответа на открытом потоке.
+     */
+    data class Ask(val title: String, val text: String, val choices: List<Pair<String, String>>, val respond: suspend (String) -> Unit) : BrainEvent
+    /** Файл от мозга (Hermes, тег `MEDIA:`): скачан в [path]; не доставлен — [path] = null и [note] почему (остался на сервере). */
+    data class Attachment(val name: String, val path: String?, val image: Boolean, val note: String? = null) : BrainEvent
 }
 
 enum class ErrorKind { AUTH, BALANCE, RATE, CONTEXT, NETWORK, NO_BRAIN, OTHER }
 
 /** Мозг не подключён: в ленте — карточка «Наверх не дозвониться» с «Подключить» (Продукт 5.13). Команды телефона работают и без него. */
-class FakeBrain : Brain {
+class FakeBrain(private val why: () -> String = { tr(R.string.brain_no_key_long) }) : Brain {
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         delay(300)
-        emit(BrainEvent.Error(tr(R.string.brain_no_key_long), ErrorKind.NO_BRAIN))
+        emit(BrainEvent.Error(why(), ErrorKind.NO_BRAIN))
     }
 }

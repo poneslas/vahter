@@ -31,6 +31,9 @@ import ru.poneslas.vahter.actions.Phone
 import ru.poneslas.vahter.assistant.Sheet
 import ru.poneslas.vahter.actions.Launch
 
+/** После стольких минут тишины следующая реплика режима на Hermes начинает новую сессию (Архитектура 9.7). */
+private const val HERMES_IDLE_MS = 30 * 60 * 1000L
+
 /**
  * Разговор: лента и история каждого режима, текущий режим, черновики поля, настройки.
  * Один на лист и приложение (Продукт 5.1). Хранится на телефоне ([Store]).
@@ -65,6 +68,8 @@ class Conversation(
     private fun nextId() = ++seq
     private var job: Job? = null
     private val pending = mutableMapOf<Long, CompletableDeferred<Boolean>>()
+    /** Открытые просьбы Hermes подтвердить команду (id карточки → ответ серверу). */
+    private val asks = mutableMapOf<Long, suspend (String) -> Unit>()
 
     init {
         _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) } } }.launchIn(scope)
@@ -95,7 +100,7 @@ class Conversation(
     fun editMode(id: String, f: (Mode) -> Mode) = updateModes { list -> list.map { if (it.id == id) f(it) else it } }
 
     fun deleteMode(id: String) = edit { s ->
-        s.copy(modes = s.modes.filterNot { it.id == id }, feeds = s.feeds - id, histories = s.histories - id,
+        s.copy(modes = s.modes.filterNot { it.id == id }, feeds = s.feeds - id, histories = s.histories - id, hermesSessions = s.hermesSessions - id,
             mode = if (s.mode == id) Modes.MAIN else s.mode)
     }
 
@@ -106,8 +111,23 @@ class Conversation(
             listOf(tr(R.string.restart_yes) to "restart", tr(R.string.ui_cancel) to "dismiss"), phone = true))
     }
 
-    /** «Начать заново»: стереть разговор режима с телефона. */
-    fun restart(modeId: String = _state.value.mode) = edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId) }
+    /** «Начать заново»: стереть разговор режима с телефона; у Hermes — и забыть сессию (следующая реплика начнёт новую). */
+    fun restart(modeId: String = _state.value.mode) = edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId, hermesSessions = it.hermesSessions - modeId) }
+
+    /** Сменить мозг режима: разговор начинается заново — историю между мозгами не переносим (Архитектура 2.2). */
+    fun setBrain(modeId: String, brainId: String) {
+        if (_state.value.modes.firstOrNull { it.id == modeId }?.brain == brainId) return
+        editMode(modeId) { it.copy(brain = brainId) }
+        restart(modeId)
+    }
+
+    /** Сессия режима в Hermes — id из заголовка; после 30 минут тишины — новая (Архитектура 9.7). */
+    fun hermesSession(modeId: String): String? {
+        val s = _state.value.saved.hermesSessions[modeId] ?: return null
+        return if (System.currentTimeMillis() - s.at > HERMES_IDLE_MS) null else s.id
+    }
+    fun setHermesSession(modeId: String, id: String) = edit { it.copy(hermesSessions = it.hermesSessions + (modeId to HermesSession(id, System.currentTimeMillis()))) }
+    fun clearHermesSessions() = edit { it.copy(hermesSessions = emptyMap()) }
 
     /** Вложение ждёт отправки: 2 с на «✕» и на вопрос; начат вопрос — ждёт его (Продукт 5.17). */
     private data class Pending(val modeId: String, val meId: Long, val paths: List<String>, val via: String)
@@ -188,6 +208,8 @@ class Conversation(
             _state.update { it.copy(busy = true) }
             var answerId: Long? = null
             var stepsId: Long? = null
+            var askId: Long? = null
+            var filesId: Long? = null
             val answer = StringBuilder()
             val who = Brains.byId(mode.brain).title
             val phrase = clean
@@ -217,6 +239,23 @@ class Conversation(
                             answerId = null // следующий текст — новым сообщением после шагов
                         }
                         is BrainEvent.History -> appendHistory(modeId, e.msg)
+                        // Hermes просит подтвердить команду на сервере: карточка с его вариантами; ответ уходит на сервер, ход ждёт на потоке.
+                        is BrainEvent.Ask -> {
+                            askId?.let { remove(modeId, it) }
+                            val id = nextId()
+                            askId = id
+                            asks[id] = e.respond
+                            push(modeId, FeedItem.Card(id, tr(R.string.conv_asks, who), e.title, e.text, e.choices.map { (label, key) -> label to "ask:$key" }, phone = false))
+                            answerId = null
+                        }
+                        // Файлы одного хода — одним элементом: картинки сеткой, документы карточками (после текста).
+                        is BrainEvent.Attachment -> {
+                            val id = filesId ?: nextId().also { filesId = it; push(modeId, FeedItem.Files(it)) }
+                            replace(modeId, id) { (it as FeedItem.Files).let { f ->
+                                if (e.image && e.path != null) f.copy(images = f.images + e.path) else f.copy(files = f.files + FileRef(e.name, e.path, e.note))
+                            } }
+                            answerId = null
+                        }
                         BrainEvent.MessageEnd -> Unit
                         is BrainEvent.Error -> push(modeId, when (e.kind) {
                             ErrorKind.NO_BRAIN -> FeedItem.Card(nextId(), tr(R.string.conv_need_brain), tr(R.string.conv_up_no_brain), tr(R.string.conv_up_no_brain_p),
@@ -228,6 +267,7 @@ class Conversation(
                     }
                 }
             } finally {
+                askId?.let { id -> asks.remove(id); remove(modeId, id) }
                 stepsId?.let { id -> replace(modeId, id) { (it as FeedItem.Steps).copy(running = false) } }
                 edit { st -> st.copy(feeds = st.feeds + (modeId to st.feeds[modeId].orEmpty().map { if (it is FeedItem.Ai && !it.done) it.copy(done = true, text = it.text.trimEnd()) else it })) }
                 _state.update { it.copy(busy = false) }
@@ -307,7 +347,12 @@ class Conversation(
             "no" -> pending[card.id]?.complete(false) ?: remove(_state.value.mode, card.id)
             "restart" -> restart()
             "brain" -> Sheet.openBrain(context)
-            else -> remove(_state.value.mode, card.id)
+            else -> if (action.startsWith("ask:")) {
+                val respond = asks.remove(card.id)
+                val modeId = _state.value.saved.feeds.entries.firstOrNull { e -> e.value.any { it.id == card.id } }?.key ?: _state.value.mode
+                remove(modeId, card.id)
+                if (respond != null) scope.launch { respond(action.removePrefix("ask:")) }
+            } else remove(_state.value.mode, card.id)
         }
     }
 

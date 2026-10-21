@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import ru.poneslas.vahter.brain.ApiBrain
 import ru.poneslas.vahter.brain.Brain
 import ru.poneslas.vahter.brain.FakeBrain
+import ru.poneslas.vahter.brain.HermesBrain
+import ru.poneslas.vahter.brain.HermesLink
 import ru.poneslas.vahter.core.BrainDesc
 import ru.poneslas.vahter.core.Brains
 import ru.poneslas.vahter.core.Conversation
@@ -43,9 +45,29 @@ class App : Application() {
     val keyVersion = MutableStateFlow(0)
 
     private val fake = FakeBrain()
+    private val fakeHermes = FakeBrain { tr(R.string.hermes_no_link) }
     private val apiBrains = mutableMapOf<String, ApiBrain>()
 
     fun apiBrain(d: BrainDesc) = apiBrains.getOrPut(d.id) { ApiBrain(d, { secrets.get("key:${d.id}") }) }
+
+    /** Hermes: адрес — в настройках, ключ телефона — в Keystore; сессии режимов — в разговоре (Архитектура 9.0). */
+    val hermesBrain: HermesBrain by lazy {
+        HermesBrain(Brains.hermes, ::hermesLink, { id -> conversation.hermesSession(id) }, { id, sid -> conversation.setHermesSession(id, sid) })
+    }
+
+    fun hermesLink(): HermesLink? {
+        val url = conversation.state.value.settings.hermesUrl.takeIf { it.isNotBlank() } ?: return null
+        val token = secrets.get("key:hermes") ?: return null
+        return HermesLink(url, token)
+    }
+
+    /** Подключить или отключить (null) Hermes: адрес и ключ телефона вместе; сессии режимов на старом сервере забываем. */
+    fun setHermes(link: HermesLink?) {
+        secrets.put("key:hermes", link?.token)
+        conversation.updateSettings { it.copy(hermesUrl = link?.url.orEmpty()) }
+        conversation.clearHermesSessions()
+        keyVersion.value++
+    }
 
     fun hasKey(brainId: String) = secrets.has("key:$brainId")
 
@@ -56,13 +78,18 @@ class App : Application() {
 
     private fun brainFor(mode: Mode): Brain {
         val d = Brains.byId(mode.brain)
-        return if (d.kind == BrainDesc.Kind.API && hasKey(d.id)) apiBrain(d) else fake
+        return when {
+            d.kind == BrainDesc.Kind.HERMES -> if (hermesLink() != null) hermesBrain else fakeHermes
+            hasKey(d.id) -> apiBrain(d)
+            else -> fake
+        }
     }
 
     override fun onCreate() {
         super.onCreate()
         instance = this
         secrets = Secrets(this)
+        HermesBrain.debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         Notifier.init(this)
         conversation = Conversation(this, scope, Store(this), ::brainFor) { mode, text -> Notifier.answer(this, mode, text) }
         voice = Voice(this, scope)

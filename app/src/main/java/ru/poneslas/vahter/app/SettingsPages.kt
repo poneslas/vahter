@@ -52,6 +52,27 @@ import androidx.compose.foundation.clickable
 import ru.poneslas.vahter.ui.TopBar
 import ru.poneslas.vahter.ui.Note
 import android.provider.Settings as AndroidSettings
+import ru.poneslas.vahter.brain.HermesBrain
+import ru.poneslas.vahter.brain.HermesLink
+import ru.poneslas.vahter.ui.H2
+import ru.poneslas.vahter.ui.BaseText
+import ru.poneslas.vahter.ui.IconBtn
+import ru.poneslas.vahter.ui.PrimaryButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clip
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
@@ -100,7 +121,9 @@ fun SettingsPage(a: MainActivity) {
         Brains.all.forEach { b ->
             val api = b.kind == BrainDesc.Kind.API
             val has = app.hasKey(b.id)
-            Item(b.title, if (api) (if (has) tr(R.string.set_brain_has_key, b.model) else tr(R.string.set_brain_no_key)) else tr(R.string.set_hermes_sub),
+            val hermes = if (api) null else app.hermesLink()
+            Item(b.title, if (api) (if (has) tr(R.string.set_brain_has_key, b.model) else tr(R.string.set_brain_no_key))
+                else if (hermes != null) tr(R.string.set_hermes_on, HermesBrain.host(hermes.url)) else tr(R.string.set_hermes_sub),
                 warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { a.go(if (api) "brain:${b.id}" else "hermes") }
         }
         Section(tr(R.string.set_notif))
@@ -207,36 +230,108 @@ fun ActionsPage(a: MainActivity) {
     }
 }
 
-/** Hermes: ещё не подключается — честно говорим и описываем, что будет (бэклог; Продукт 2, 4). */
+/** Состояние страницы Hermes: адрес, ключ, проверка, итог. Снаружи Composable — чтобы «Подключить» из приглашения и из поля шли одним путём. */
+class HermesCtl {
+    var url by mutableStateOf("")
+    var token by mutableStateOf("")
+    var manual by mutableStateOf(false)
+    var checking by mutableStateOf(false)
+    var status by mutableStateOf<Pair<Boolean, String>?>(null)
+    val canConnect get() = !checking && url.length > 8 && token.length > 10
+
+    fun connect(scope: kotlinx.coroutines.CoroutineScope, link: HermesLink, save: Boolean) {
+        val app = App.instance
+        checking = true; status = null
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { app.hermesBrain.check(link) }
+            checking = false
+            status = r.ok to r.text
+            if (r.ok && save) { app.setHermes(link); token = ""; url = ""; manual = false }
+        }
+    }
+}
+
+/**
+ * Hermes (ui.js, hermesPage): подключение к своему серверу через ссылку-приглашение или адрес и ключ телефона (Архитектура 9.8);
+ * подключён — адрес, ключ, «Умеет», режимы на нём, «Отключить». Честно: действий телефона у Hermes нет (9.0).
+ */
 @Composable
 fun HermesPage(a: MainActivity) {
-    TopBar("Hermes", tr(R.string.hermes_subtitle), onBack = a::back)
+    val app = App.instance
+    val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboardManager.current
+    val state by app.conversation.state.collectAsState()
+    val keyV by app.keyVersion.collectAsState()
+    val link = remember(keyV, state.settings.hermesUrl) { app.hermesLink() }
+    val ctl = remember { HermesCtl() }
+    // Пришли по ссылке-приглашению — подключаемся сразу, ничего вводить не нужно.
+    LaunchedEffect(a.invite) { a.invite?.let { inv -> a.invite = null; ctl.connect(scope, inv, save = true) } }
+    TopBar("Hermes", tr(if (link != null) R.string.hermes_subtitle_on else R.string.hermes_subtitle), onBack = a::back)
     FormPage {
-        Note(tr(R.string.hermes_not_yet))
-        Text(tr(R.string.hermes_about_1) +
-            tr(R.string.hermes_about_2), color = Ink.soft)
+        if (link == null) {
+            H2(tr(R.string.hermes_h))
+            Text(tr(R.string.hermes_about_1) + tr(R.string.hermes_about_2), color = Ink.soft)
+            Column {
+                Text(tr(R.string.hermes_pair_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                SetCard {
+                    Item(tr(R.string.hermes_pair_tg), tr(R.string.hermes_pair_tg_sub), icon = Ic.chat)
+                    Item(tr(R.string.hermes_paste_invite), tr(R.string.hermes_paste_invite_sub), icon = Ic.paste) {
+                        val inv = HermesBrain.parseInvite(clipboard.getText()?.text.orEmpty())
+                        if (inv != null) ctl.connect(scope, inv, save = true) else ctl.status = false to tr(R.string.hermes_paste_bad)
+                    }
+                    Item(tr(R.string.hermes_pair_addr), tr(R.string.hermes_pair_addr_sub), icon = Ic.pen) { ctl.manual = true }
+                }
+            }
+            if (ctl.manual) Column {
+                Text(tr(R.string.hermes_addr_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+                Field(ctl.url, tr(R.string.hermes_addr_ph), bad = ctl.status?.first == false && ctl.url.isNotEmpty() && !ctl.url.startsWith("https://")) { ctl.url = it.trim() }
+                Spacer(Modifier.height(8.dp))
+                Field(ctl.token, tr(R.string.hermes_token_ph), paste = { clipboard.getText()?.text?.trim()?.let { t -> HermesBrain.parseInvite(t)?.let { ctl.url = it.url; ctl.token = it.token } ?: run { ctl.token = t } } }) { ctl.token = it.trim() }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
+                    PrimaryButton(if (ctl.checking) tr(R.string.key_checking) else tr(R.string.hermes_connect), enabled = ctl.canConnect) {
+                        ctl.connect(scope, HermesLink(ctl.url.trimEnd('/'), ctl.token), save = true)
+                    }
+                }
+            }
+            StatusLine(ctl.checking, ctl.status, tr(R.string.key_ok, "Hermes"))
+        } else {
+            SetCard {
+                Item(tr(R.string.set_brain_url), HermesBrain.host(link.url), icon = Ic.srv)
+                Item(tr(R.string.hermes_token_stored), tr(R.string.hermes_token_stored_sub), icon = Ic.lock)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                PrimaryButton(if (ctl.checking) tr(R.string.key_checking) else tr(R.string.hermes_recheck), enabled = !ctl.checking) { ctl.connect(scope, link, save = false) }
+            }
+            StatusLine(ctl.checking, ctl.status, tr(R.string.key_ok, "Hermes"))
+            Note(tr(R.string.hermes_connected_note), ok = true)
+            val users = state.modes.filter { it.brain == Brains.hermes.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }
+            MNote(tr(R.string.hermes_modes_note, users))
+            SetCard { Item(tr(R.string.hermes_disconnect), tr(R.string.hermes_disconnect_sub), icon = Ic.del) { app.setHermes(null); ctl.status = null } }
+        }
         Column {
             Text(tr(R.string.hermes_will_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
             SetCard {
                 Item(tr(R.string.hermes_will_memory), tr(R.string.hermes_will_memory_sub), icon = Ic.hist)
                 Item(tr(R.string.hermes_will_search), tr(R.string.hermes_will_search_sub), icon = Ic.lens)
                 Item(tr(R.string.hermes_will_server), tr(R.string.hermes_will_server_sub), icon = Ic.srv)
-                Item(tr(R.string.hermes_will_schedule), tr(R.string.hermes_will_schedule_sub), icon = Ic.bell)
-                Item(tr(R.string.hermes_will_plan), tr(R.string.hermes_will_plan_sub), icon = Ic.list)
-                Item(tr(R.string.hermes_will_files), tr(R.string.hermes_will_files_sub), icon = Ic.doc)
                 Item(tr(R.string.hermes_will_telegram), tr(R.string.hermes_will_telegram_sub), icon = Ic.chat)
                 Item(tr(R.string.set_cap_tools), tr(R.string.hermes_will_phone), icon = Ic.shield)
             }
-        }
-        Column {
-            Text(tr(R.string.hermes_pair_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
-            SetCard {
-                Item(tr(R.string.hermes_pair_tg), tr(R.string.hermes_pair_tg_sub), icon = Ic.chat, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
-                Item(tr(R.string.hermes_pair_qr), tr(R.string.hermes_pair_qr_sub), icon = Ic.qr, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
-                Item(tr(R.string.hermes_pair_addr), tr(R.string.hermes_pair_addr_sub), icon = Ic.pen, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
-            }
             MNote(tr(R.string.hermes_per_mode))
         }
+    }
+}
+
+/** Поле ввода в стиле ключа (KeyEditor): рамка, подсказка, необязательная кнопка «Вставить». */
+@Composable
+private fun Field(value: String, hint: String, bad: Boolean = false, paste: (() -> Unit)? = null, onChange: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).border(1.5.dp, if (bad) Ink.danger else Ink.ink, RoundedCornerShape(12.dp))
+        .padding(start = 12.dp, end = if (paste == null) 12.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
+            if (value.isEmpty()) Text(hint, color = Ink.faint)
+            BasicTextField(value, onChange, singleLine = true, textStyle = BaseText, cursorBrush = SolidColor(Ink.ink), modifier = Modifier.fillMaxWidth())
+        }
+        if (paste != null) IconBtn(Ic.paste, tr(R.string.key_paste), tint = Ink.soft, onClick = paste)
     }
 }
 

@@ -1,6 +1,7 @@
 package ru.poneslas.vahter.ui
 
 import ru.poneslas.vahter.R
+import ru.poneslas.vahter.actions.Launch
 import ru.poneslas.vahter.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -132,6 +133,7 @@ fun Feed(
                     is FeedItem.Act -> ActItem(item, onAct)
                     is FeedItem.Steps -> StepsItem(item)
                     is FeedItem.Card -> CardItem(item, onCard)
+                    is FeedItem.Files -> FilesItem(item)
                     is FeedItem.Err -> Text(item.text, color = Ink.errText, fontSize = 13.5.sp,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)).background(Ink.dangerT)
                             .drawBehind { drawRect(Ink.danger, size = Size(3.dp.toPx(), size.height)) }
@@ -278,6 +280,38 @@ private fun CardItem(item: FeedItem.Card, onCard: (FeedItem.Card, String) -> Uni
         }
     }
 }
+
+/** Файлы от мозга: картинки — ряд миниатюр (как у реплики), документы — карточка «имя · размер · Открыть»; недоставленный — имя и почему. */
+@Composable
+private fun FilesItem(item: FeedItem.Files) {
+    val ctx = LocalContext.current
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (item.images.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val n = item.images.size
+            item.images.forEach { path ->
+                val bmp = remember(path) { Attachments.thumb(path, 600) }
+                if (bmp != null) Image(bmp.asImageBitmap(), null,
+                    Modifier.size(if (n > 1) 120.dp else 240.dp, if (n > 1) 90.dp else 180.dp).clip(RoundedCornerShape(14.dp)).clickable { Launch.openFile(ctx, path) },
+                    contentScale = ContentScale.Crop)
+            }
+        }
+        item.files.forEach { f ->
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(14.dp))
+                .let { m -> if (f.path != null) m.clickable { Launch.openFile(ctx, f.path) } else m }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(Ic.doc), null, Modifier.size(22.dp), tint = if (f.path != null) Ink.ink else Ink.faint)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(f.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    val size = f.path?.let { java.io.File(it).length() }
+                    Text(f.note ?: (if (size != null) sizeText(size) else ""), fontSize = 12.sp, color = if (f.note != null) Ink.danger else Ink.soft)
+                }
+                if (f.path != null) Text(tr(R.string.feed_open), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD)
+            }
+        }
+    }
+}
+
+private fun sizeText(b: Long) = if (b < 1024 * 1024) tr(R.string.feed_size_kb, (b + 1023) / 1024) else tr(R.string.feed_size_mb, "%.1f".format(b / 1048576.0).replace('.', ','))
 
 /** Простая разметка ответа: «# заголовок», «- пункт», «1. пункт», **жирный**, `код`, блоки ``` . */
 @Composable

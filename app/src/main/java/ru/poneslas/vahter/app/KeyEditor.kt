@@ -120,24 +120,29 @@ fun KeyEditor(brain: BrainDesc, onboarding: Boolean = false, ctl: KeyCtl = remem
  * «Подключаю…» / итог / ошибка сменяют друг друга без сдвига экрана.
  */
 @Composable
-private fun KeyResult(ctl: KeyCtl, reserve: Boolean) {
-    val st = ctl.status
+private fun KeyResult(ctl: KeyCtl, reserve: Boolean) =
+    StatusLine(ctl.checking, ctl.status, tr(R.string.key_ok, ctl.brain.title), if (ctl.brain.vision) tr(R.string.key_vision) else null, reserve)
+
+/** Строка итога подключения — общая для ключа API и для Hermes: [status] = подключено → (true, «отвечает за 0,4 с»), иначе (false, что не так). */
+@Composable
+fun StatusLine(checking: Boolean, status: Pair<Boolean, String>?, okTitle: String, okExtra: String? = null, reserve: Boolean = false) {
+    val st = status
     Box(Modifier.fillMaxWidth().then(if (reserve) Modifier.heightIn(min = 66.dp) else Modifier)) {
-        if (!ctl.checking && st == null) return@Box
-        val (bg, fg) = when { ctl.checking -> Ink.chipBg to Ink.soft; st?.first == true -> Color(0xFFE3F1E6) to Color(0xFF1F5A2E); else -> Color(0xFFFBE7E4) to Color(0xFF8A2A1F) }
+        if (!checking && st == null) return@Box
+        val (bg, fg) = when { checking -> Ink.chipBg to Ink.soft; st?.first == true -> Color(0xFFE3F1E6) to Color(0xFF1F5A2E); else -> Color(0xFFFBE7E4) to Color(0xFF8A2A1F) }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp).clip(RoundedCornerShape(14.dp)).background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            if (ctl.checking) CircularProgressIndicator(Modifier.size(16.dp), color = Ink.ink, trackColor = Ink.swOff, strokeWidth = 2.dp)
+            if (checking) CircularProgressIndicator(Modifier.size(16.dp), color = Ink.ink, trackColor = Ink.swOff, strokeWidth = 2.dp)
             else Box(Modifier.size(22.dp).clip(CircleShape).background(if (st?.first == true) Ink.ok else Color(0xFFC9483B)), contentAlignment = Alignment.Center) {
                 Text(if (st?.first == true) "✓" else "!", fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.width(10.dp))
             Column {
                 when {
-                    ctl.checking -> Text(tr(R.string.key_connecting), fontSize = 14.sp, color = fg)
+                    checking -> Text(tr(R.string.key_connecting), fontSize = 14.sp, color = fg)
                     st?.first == true -> {
-                        Text(tr(R.string.key_ok, ctl.brain.title), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(st.second + if (ctl.brain.vision) " · " + tr(R.string.key_vision) else "", fontSize = 12.5.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(okTitle, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(st.second + if (okExtra != null) " · $okExtra" else "", fontSize = 12.5.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     else -> Text(st?.second.orEmpty(), fontSize = 14.sp, color = fg)
                 }

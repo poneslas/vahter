@@ -98,9 +98,11 @@ object Brains {
         url = "https://api.deepseek.com", model = "deepseek-chat",
         vision = true, tools = true,
     )
+    /** Hermes через его встроенный OpenAI-совместимый API: инструменты выполняются на сервере, действий телефона у него нет (Архитектура 9.0). */
     val hermes = BrainDesc(
         id = "hermes", kind = BrainDesc.Kind.HERMES, title = "Hermes",
-        vision = true, tools = true, memory = true, server = true,
+        model = "hermes-agent",
+        vision = true, tools = false, memory = true, server = true,
     )
     val all = listOf(deepseek, hermes)
     fun byId(id: String) = all.firstOrNull { it.id == id } ?: deepseek
@@ -125,7 +127,13 @@ data class Settings(
     val listenOnCall: Boolean = true,
     /** Микрофон уже спрашивали системным окном: если доступа нет и объяснять уже нельзя — Android больше не спросит, ведём в настройки. */
     val micAsked: Boolean = false,
+    /** Адрес сервера Hermes (https://…); ключ телефона — в Keystore ([Secrets], «key:hermes»). Пусто — Hermes не подключён. */
+    val hermesUrl: String = "",
 )
+
+/** Сессия режима в Hermes: id из заголовка X-Hermes-Session-Id и время последней реплики — после 30 минут тишины начинается новая (Архитектура 9.7). */
+@Serializable
+data class HermesSession(val id: String, val at: Long)
 
 /** Элемент ленты разговора. */
 @Serializable
@@ -178,7 +186,15 @@ sealed interface FeedItem {
     /** Ошибка по-русски. */
     @Serializable
     data class Err(override val id: Long, val text: String) : FeedItem
+
+    /** Файлы от мозга (Hermes): картинки — сеткой, остальные — карточками по одному (Продукт, С10). */
+    @Serializable
+    data class Files(override val id: Long, val images: List<String> = emptyList(), val files: List<FileRef> = emptyList()) : FeedItem
 }
+
+/** Файл от мозга: имя, путь в кэше телефона (null — не доставлен, [note] почему). */
+@Serializable
+data class FileRef(val name: String, val path: String? = null, val note: String? = null)
 
 /** Заметка или сохранённое место — хранится на телефоне, мозг находит через note_find / place_list. */
 @Serializable

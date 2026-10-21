@@ -3,6 +3,9 @@ package ru.poneslas.vahter.app
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import android.content.Intent
+import ru.poneslas.vahter.brain.HermesBrain
+import ru.poneslas.vahter.brain.HermesLink
+import ru.poneslas.vahter.core.Brains
 import android.os.Bundle
 import android.provider.Settings as AndroidSettings
 import androidx.activity.ComponentActivity
@@ -100,7 +103,7 @@ class MainActivity : ComponentActivity() {
     private fun hideSheetAfterFirstFrame() {
         val v = window.decorView
         val l = object : android.view.ViewTreeObserver.OnDrawListener {
-            override fun onDraw() { v.post { v.viewTreeObserver.removeOnDrawListener(this); Sheet.session?.hide() } }
+            override fun onDraw() { v.post { v.viewTreeObserver.removeOnDrawListener(this); Sheet.close() } }
         }
         v.viewTreeObserver.addOnDrawListener(l)
     }
@@ -119,11 +122,18 @@ class MainActivity : ComponentActivity() {
         // Полоска промпта в листе → страница режима; «Назад» с неё возвращает лист, а не настройки.
         i.getStringExtra(EXTRA_EDIT_MODE)?.let { id -> stack.clear(); stack.add("chat"); stack.add("mode:$id"); sheetReturn = "mode:$id" }
         // Строка «Мозг не подключён · Подключить» или карточка «Наверх не дозвониться» в листе → экран мозга; «Назад» — снова лист.
-        if (i.getBooleanExtra(EXTRA_BRAIN, false)) { stack.clear(); stack.add("chat"); stack.add("brain:deepseek"); sheetReturn = "brain:deepseek" }
+        if (i.getBooleanExtra(EXTRA_BRAIN, false)) { val p = brainPage(); stack.clear(); stack.add("chat"); stack.add(p); sheetReturn = p }
+        // Ссылка-приглашение Hermes (vahter://connect?url=…&token=…): страница Hermes подключается сама.
+        if (i.action == Intent.ACTION_VIEW && i.data?.scheme == "vahter") {
+            invite = HermesBrain.parseInvite(i.dataString.orEmpty())
+            stack.clear(); stack.add("chat"); stack.add("settings"); stack.add("hermes")
+        }
         if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { if (stack.last() != "settings") stack.add("settings"); stack.add("mode:" + App.instance.conversation.addMode()) }
     }
 
     fun go(page: String) { stack.add(page) }
+    /** Приглашение из ссылки — страница Hermes забирает его один раз. */
+    var invite by mutableStateOf<HermesLink?>(null)
     /** Страница, с которой «Назад» сворачивает обратно в лист (пришли на неё из листа). */
     private var sheetReturn: String? by mutableStateOf(null)
     fun back() {
@@ -187,6 +197,8 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_EDIT_MODE = "editMode"
         const val EXTRA_NEW_MODE = "new_mode"
         const val EXTRA_BRAIN = "brain"
+        /** Страница мозга текущего режима: DeepSeek — ключ, Hermes — подключение. */
+        fun brainPage(): String = if (App.instance.conversation.state.value.current.brain == Brains.hermes.id) "hermes" else "brain:deepseek"
         const val EXTRA_ASK_PERM = "ask_perm"
         const val REQ_MIC = 11
     }
