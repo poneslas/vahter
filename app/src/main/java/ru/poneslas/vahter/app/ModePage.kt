@@ -136,10 +136,10 @@ fun ModePage(a: MainActivity, id: String) {
             Item(tr(R.string.mode_lang), tr(R.string.mode_lang_ru), icon = Ic.wave)
         }
         Column {
-            // Мозг режима: DeepSeek или Hermes; смена начинает разговор заново (Архитектура 2.2). Фото-режимам — только со зрением.
+            // Мозг режима: DeepSeek или Hermes; смена начинает разговор заново (Архитектура 2.2). Фото-режимам — только со зрением; подпись «нужен со зрением» — только если у текущего его нет.
             val hermesOn = App.instance.hermesLink() != null
             SetCard {
-                Item(tr(R.string.key_h), Brains.byId(m.brain).title + if (m.accepts.photo) tr(R.string.mode_brain_needs_vision) else "", icon = Ic.spark,
+                Item(tr(R.string.key_h), Brains.byId(m.brain).title + if (m.accepts.photo && !Brains.byId(m.brain).vision) tr(R.string.mode_brain_needs_vision) else "", icon = Ic.spark,
                     warn = m.brain == Brains.hermes.id && !hermesOn) {
                     val opts = Brains.all.filter { !m.accepts.photo || it.vision }
                         .map { it.id to (it.title + if (it.id == Brains.hermes.id && !hermesOn) " · " + tr(R.string.mode_brain_hermes_off) else "") }

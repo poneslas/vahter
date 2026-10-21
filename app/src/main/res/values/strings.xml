@@ -217,7 +217,7 @@
     <string name="hermes_will_files_sub">Присылает PDF, таблицы, картинки — открыть или поделиться</string>
     <string name="hermes_will_telegram">Та же память, что в Telegram</string>
     <string name="hermes_will_telegram_sub">Что Hermes запомнил в Telegram, знает и здесь; сами разговоры — раздельные</string>
-    <string name="hermes_will_phone">Пока нет: будильник и таймер телефон ставит сам по простой фразе, остальное — у DeepSeek</string>
+    <string name="hermes_will_phone">Пока нет — будильник и таймер ставит сам телефон</string>
     <string name="hermes_pair_h">Как подключить</string>
     <string name="hermes_pair_tg">Ссылка-приглашение</string>
     <string name="hermes_pair_tg_sub">На сервере: vahter-invite.sh «имя телефона» — ссылку можно переслать себе в Telegram и открыть здесь</string>
@@ -687,12 +687,11 @@
     <string name="hermes_addr_ph">https://hermes.example.ru</string>
     <string name="hermes_token_ph">Ключ телефона из приглашения</string>
     <string name="hermes_token_stored">Ключ телефона</string>
-    <string name="hermes_token_stored_sub">Хранится в защищённом хранилище телефона (Keystore). Это не ключ API Hermes: сервер меняет его на свой.</string>
+    <string name="hermes_token_stored_sub">Только на этом телефоне, в защищённом хранилище</string>
     <string name="hermes_connect">Подключить</string>
     <string name="hermes_recheck">Проверить</string>
     <string name="hermes_disconnect">Отключить</string>
     <string name="hermes_disconnect_sub">Ключ телефона стирается; разговоры режимов на Hermes начнутся заново</string>
-    <string name="hermes_connected_note">Подключено. Сессии режимов живут на сервере: сменили телефон — разговор не переедет, память Hermes — общая.</string>
     <string name="hermes_modes_note">Режимы на Hermes: %1$s. История режима хранится на сервере, телефон шлёт только новую реплику. После 30 минут тишины начинается новая сессия.</string>
     <string name="hermes_no_link">Hermes не подключён. Подключите его: Настройки → Мозги → Hermes.</string>
     <string name="hermes_system_1">Ты отвечаешь в приложении «Вахтёр» на телефоне: человек говорит голосом и читает ответ с маленького экрана. Отвечай по-русски, коротко и по делу, без таблиц. Действий на телефоне (будильник, таймер, звонки) у тебя нет — простые команды телефон выполняет сам, не обещай их выполнить. Файлы и картинки для телефона сохраняй только в папку vahter-out в домашней папке Hermes (HERMES_HOME/vahter-out, права уже есть) и отдавай каждый отдельной строкой тегом MEDIA:/полный/путь — иначе телефон их не увидит.\u0020</string>
@@ -709,7 +708,10 @@
     <string name="hermes_err_http">Ошибка Hermes (%1$d): %2$s</string>
     <string name="hermes_err_turn">Hermes не закончил ответ: %1$s</string>
     <string name="hermes_run_lost">Hermes не закончил ответ: сервер перезапускался, ход потерян. Спросите ещё раз.</string>
-    <string name="hermes_run_cancelled">Ход остановлен.</string>
+    <string name="hermes_prov_rate">Наверху перерыв: сервис модели ограничивает запросы. Попробуйте через минуту.</string>
+    <string name="hermes_prov_auth">Hermes не может войти в сервис модели — это чинится на сервере.</string>
+    <string name="hermes_prov_rejected">Сервис модели отклонил запрос. Попробуйте сказать иначе.</string>
+    <string name="hermes_prov_down">Hermes не достучался до сервиса модели. Попробуйте ещё раз через минуту.</string>
     <string name="hermes_asks">Команда на сервере</string>
     <string name="hermes_ask_once">Один раз</string>
     <string name="hermes_ask_session">До конца сессии</string>

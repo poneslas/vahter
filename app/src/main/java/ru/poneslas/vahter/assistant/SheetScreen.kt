@@ -105,7 +105,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import ru.poneslas.vahter.ui.seconds
 
-/** Что сейчас делает лист (ui.js, sheetSt): ждёт, слушает, распознаёт, делает сам (янтарь — телефон), звонит наверх (синий — мозг). */
+/**
+ * Что сейчас делает лист (ui.js, sheetSt): ждёт, слушает, распознаёт (янтарь — телефон); звонит наверх и мозг отвечает (синий — мозг).
+ * THINK в приложении — мозг печатает ответ: тоже синий, иначе цвет прыгал «синий, пока ждём → янтарь, пока печатает».
+ */
 enum class SheetSt { IDLE, REC, RECOG, THINK, UP }
 
 /**
@@ -171,7 +174,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         // Разворот в приложение и обратно: [grow] 0 — лист, 1 — полный экран.
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         // Свернули из приложения (тот же экран, SheetActivity.collapse): лист садится с полного экрана на свою прошлую высоту.
-        val shrink = remember { Sheet.shrinkOnShow }
+        // Высоты листа ещё нет (экран создан заново) — садиться не с чего: просто лист, иначе он остался бы невидимым (0.8.3).
+        val shrink = remember { (Sheet.shrinkOnShow && host.sheetPx > 0).also { if (!it) Sheet.shrinkOnShow = false } }
         val grow = remember { Animatable(if (shrink) 1f else 0f) }
         var natural by remember { mutableStateOf(if (shrink) host.sheetPx else 0) }
         val easing = CubicBezierEasing(.3f, .8f, .3f, 1f)
@@ -358,7 +362,7 @@ private fun DrawScope.glow(st: SheetSt, k: Float, t: Float) {
         SheetSt.IDLE -> Triple(.4f + .25f * (.5f + .5f * kotlin.math.sin(t / 4f * 2 * Math.PI.toFloat())), 260f, 0f)
     }
     val pulse = if (period > 0f) 1f + .12f * (.5f + .5f * kotlin.math.sin(t / period * 2 * Math.PI.toFloat())) else 1f
-    val c = if (st == SheetSt.UP) Ink.server else Ink.local
+    val c = if (st == SheetSt.UP || st == SheetSt.THINK) Ink.server else Ink.local
     val h = hDp * density * pulse
     val center = Offset(size.width / 2, size.height)
     // эллипс 130% ширины × высота свечения: круг радиусом h, растянутый по горизонтали
@@ -372,7 +376,7 @@ private fun DrawScope.glow(st: SheetSt, k: Float, t: Float) {
 @Composable
 fun VMark(st: SheetSt, size: Dp) {
     val t = seconds()
-    val c = if (st == SheetSt.UP) Ink.server else Ink.local
+    val c = if (st == SheetSt.UP || st == SheetSt.THINK) Ink.server else Ink.local
     val reduce = android.provider.Settings.Global.getFloat(LocalContext.current.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     // «Слушаю» — от настоящей громкости (LevelMeter Писаря): вверх сразу, вниз плавно; замолчали — ядро опадает.
     var lvl by remember { mutableFloatStateOf(0f) }

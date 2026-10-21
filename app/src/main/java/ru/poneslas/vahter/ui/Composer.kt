@@ -329,7 +329,8 @@ private fun PickItem(icon: Int, title: String, sub: String, onClick: () -> Unit)
 
 /**
  * Волна записи Вахтёра — как столбики значка на приветствии: янтарные к синим, скруглённые, на светлой «таблетке».
- * Пишет — высота от громкости (LevelMeter Писаря) с живым дрожанием; распознаёт — спокойная бегущая волна.
+ * Пишет — как проба голоса в мастере: центр — громкость сейчас, к краям — она же с задержкой (речь расходится от центра),
+ * в тишине столбики лежат, дрожание — пара пикселей. Распознаёт — спокойная бегущая волна.
  */
 @Composable
 fun RecPill(modifier: Modifier = Modifier) {
@@ -338,18 +339,21 @@ fun RecPill(modifier: Modifier = Modifier) {
     val voice = App.instance.voice
     val tr = rememberInfiniteTransition(label = "wave")
     val w by tr.animateFloat(0f, 1f, infiniteRepeatable(tween(1100, easing = LinearEasing)), label = "w")
-    var level by remember { mutableFloatStateOf(0f) }
-    // громкость с микрофона: быстро вверх, медленно вниз (как у Писаря)
-    LaunchedEffect(phase) { while (true) { val l = voice.level; level = if (l > level) l else level * .86f + l * .14f; delay(32) } }
     val bars = 9
+    // громкость с микрофона: быстро вверх, медленно вниз (как у Писаря); история на полширины — для задержки к краям
+    var hist by remember { mutableStateOf(FloatArray(bars / 2 + 1)) }
+    LaunchedEffect(phase) {
+        var sm = 0f
+        while (true) { val l = voice.level; sm = if (l > sm) l else sm * .78f + l * .22f; val h = hist; hist = FloatArray(h.size) { i -> if (i == 0) sm else h[i - 1] }; delay(40) }
+    }
     // Компактно (ui.js, .recpill): маленькая «таблетка» без подписи — на телефоне широкая волна занимала полэкрана.
     Row(modifier.padding(vertical = 4.dp).wrapContentWidth().clip(RoundedCornerShape(50)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(50))
         .padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.5.dp), verticalAlignment = Alignment.CenterVertically) {
         for (i in 0 until bars) {
             val k = i / (bars - 1f)
-            val center = 1f - kotlin.math.abs(k - .5f) * 1.2f
+            val d = kotlin.math.abs(i - bars / 2)
             val wob = .5f + .5f * kotlin.math.sin((w + k * .7f) * 2f * Math.PI.toFloat())
-            val h = if (phase == RecUi.Phase.LISTENING) 3f + 15f * (.25f * wob + .75f * level * center).toFloat().coerceIn(0f, 1f) else 3f + 8f * wob
+            val h = if (phase == RecUi.Phase.LISTENING) 3f + 1.5f * wob + 15f * (hist[d] * (1f - .06f * d)).coerceIn(0f, 1f) else 3f + 8f * wob
             Box(Modifier.size(3.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerp(Ink.local, Ink.server, k)))
         }
     }

@@ -309,8 +309,8 @@ fun HermesPage(a: MainActivity) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 PrimaryButton(if (ctl.checking) tr(R.string.key_checking) else tr(R.string.hermes_recheck), enabled = !ctl.checking) { ctl.connect(scope, link, save = false) }
             }
+            // Итог проверки — только StatusLine после «Проверить»; постоянная зелёная плашка читалась как разовая подсказка.
             StatusLine(ctl.checking, ctl.status, tr(R.string.key_ok, "Hermes"))
-            Note(tr(R.string.hermes_connected_note), ok = true)
             val users = state.modes.filter { it.brain == Brains.hermes.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }
             MNote(tr(R.string.hermes_modes_note, users))
             SetCard { Item(tr(R.string.hermes_disconnect), tr(R.string.hermes_disconnect_sub), icon = Ic.del) { app.setHermes(null); ctl.status = null } }

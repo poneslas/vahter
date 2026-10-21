@@ -259,6 +259,7 @@ class Conversation(
         jobs[modeId] = scope.launch {
             _state.update { it.copy(busyModes = it.busyModes + modeId) }
             var answerId: Long? = null
+            var lastAi: Long? = null
             var stepsId: Long? = null
             var askId: Long? = null
             var filesId: Long? = null
@@ -271,7 +272,7 @@ class Conversation(
                         is BrainEvent.Delta -> {
                             answer.append(e.text)
                             val id = answerId
-                            if (id == null) { answerId = nextId().also { push(modeId, FeedItem.Ai(it, e.text, done = false)) } }
+                            if (id == null) { answerId = nextId().also { lastAi = it; push(modeId, FeedItem.Ai(it, e.text, done = false)) } }
                             else replace(modeId, id) { (it as FeedItem.Ai).copy(text = it.text + e.text) }
                         }
                         is BrainEvent.Step -> {
@@ -303,11 +304,15 @@ class Conversation(
                         BrainEvent.MessageEnd -> ended = true
                         is BrainEvent.Error -> {
                             ended = true
+                            if (e.dropAnswer) lastAi?.let { remove(modeId, it); answerId = null }
                             push(modeId, when (e.kind) {
                                 ErrorKind.NO_BRAIN -> FeedItem.Card(nextId(), tr(R.string.conv_need_brain), tr(R.string.conv_up_no_brain), tr(R.string.conv_up_no_brain_p),
                                     listOf(tr(R.string.ui_connect) to "brain"), phone = false)
                                 ErrorKind.CONTEXT -> FeedItem.Card(nextId(), tr(R.string.conv_error_head, Brains.byId(mode.brain).title), tr(R.string.conv_too_long_h),
                                     tr(R.string.conv_too_long_p), listOf(tr(R.string.ui_restart) to "restart"), phone = false)
+                                // Не узнали телефон или ключ — это «нужна настройка», а не сбой: карточка с кнопкой, как без мозга.
+                                ErrorKind.AUTH -> FeedItem.Card(nextId(), tr(R.string.conv_error_head, who), tr(R.string.conv_need_brain), e.text,
+                                    listOf(tr(R.string.ui_connect) to "brain"), phone = false)
                                 else -> FeedItem.Err(nextId(), e.text)
                             })
                         }

@@ -51,7 +51,8 @@ sealed interface BrainEvent {
     data class Step(val title: String, val phone: Boolean) : BrainEvent
     /** Новое сообщение для истории режима (ответ ассистента, вызов функции, результат функции). */
     data class History(val msg: ChatMsg) : BrainEvent
-    data class Error(val text: String, val kind: ErrorKind = ErrorKind.OTHER) : BrainEvent
+    /** [dropAnswer] — уже показанный текст ответа на деле был ошибкой (Hermes присылает ошибки провайдера обычным ответом): убрать его. */
+    data class Error(val text: String, val kind: ErrorKind = ErrorKind.OTHER, val dropAnswer: Boolean = false) : BrainEvent
     /**
      * Мозг просит подтвердить команду на сервере (Hermes, `approval.request`): карточка с вариантами сервера
      * («Один раз / До конца сессии / Всегда / Нет»), ответ — [respond] с выбранным вариантом. Ход ждёт ответа на открытом потоке.

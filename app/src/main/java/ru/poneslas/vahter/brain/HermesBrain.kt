@@ -234,12 +234,36 @@ class HermesBrain(
         if (f.text.isEmpty() && output.isNotBlank()) filter.feed(output)
         filter.finish()
         for (m in f.media) out.emit(fetch(l, m))
-        when (status) {
-            "failed" -> out.emit(BrainEvent.Error(tr(R.string.hermes_err_turn, st.str("error") ?: tr(R.string.brain_error_head)), ErrorKind.OTHER))
-            "cancelled" -> if (f.text.isBlank()) out.emit(BrainEvent.Error(tr(R.string.hermes_run_cancelled), ErrorKind.OTHER))
+        // Ошибки провайдера Hermes присылает обычным ответом — узнаём по словарю и показываем красной плашкой (Продукт 5.16).
+        val provider = providerError(f.text.toString())
+        when {
+            provider != null -> out.emit(provider)
+            status == "failed" -> out.emit(BrainEvent.Error(tr(R.string.hermes_err_turn, st.str("error") ?: tr(R.string.brain_error_head)), ErrorKind.OTHER))
         }
-        if (f.text.isNotBlank()) out.emit(BrainEvent.History(ChatMsg("assistant", f.text.toString())))
+        if (f.text.isNotBlank() && provider == null) out.emit(BrainEvent.History(ChatMsg("assistant", f.text.toString())))
         out.emit(BrainEvent.MessageEnd)
+    }
+
+    /**
+     * Ответ, который на деле — ошибка сервиса модели (gateway/run.py: _PROVIDER_ERROR_REPLIES, _CONTEXT_OVERFLOW_REPLY и «сырые»
+     * ошибки API). Известное — по-русски, незнакомое с признаками ошибки — исходным текстом, но красным. Обычный ответ — null.
+     */
+    private fun providerError(text: String): BrainEvent.Error? {
+        val t = text.trim()
+        if (t.isEmpty() || t.length > 700) return null
+        val low = t.lowercase()
+        fun e(res: Int, kind: ErrorKind = ErrorKind.OTHER) = BrainEvent.Error(tr(res), kind, dropAnswer = true)
+        return when {
+            "grown too long for me to read" in low -> e(R.string.conv_too_long_p, ErrorKind.CONTEXT)
+            "ai model service is rate-limiting" in low || "usage limit is reached" in low || "temporarily overloaded" in low ->
+                e(R.string.hermes_prov_rate, ErrorKind.RATE)
+            "sign-in to the ai model service failed" in low -> e(R.string.hermes_prov_auth)
+            "ai model service rejected" in low -> e(R.string.hermes_prov_rejected)
+            "connection to the ai model service was interrupted" in low || "isn't reachable right now" in low ||
+                "could not reach the ai model service" in low || "ai model service kept failing" in low -> e(R.string.hermes_prov_down, ErrorKind.NETWORK)
+            PROVIDER_RAW.containsMatchIn(t) -> BrainEvent.Error(t, ErrorKind.OTHER, dropAnswer = true)
+            else -> null
+        }
     }
 
     /** `approval.request`: команда и причина — как прислал сервер (Продукт 5: пересказ не выдумываем), варианты — его список. */
@@ -350,6 +374,9 @@ class HermesBrain(
 }
 
 private fun JsonObject.str(k: String) = this[k]?.jsonPrimitive?.contentOrNull
+
+/** Начало «сырой» ошибки API, как её узнаёт сам Hermes (gateway/run.py, _PROVIDER_ERROR_MARKERS) — с начала строки. */
+private val PROVIDER_RAW = Regex("""(?im)^\W*(api\s+(call\s+)?failed|provider\s+authentication\s+failed|non-retryable\s+error|rate\s+limited\s+after\s+\d+\s+retries|error\s+code\s*:|incorrect\s+api\s+key|invalid\s+api\s+key)""")
 
 /**
  * Построчный фильтр потока: строки `MEDIA:/путь` уходят в [onMedia], остальное — в [onText] как есть. Хвост без перевода
