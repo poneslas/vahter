@@ -174,7 +174,7 @@ function settings(){
     <div class="lh">Уведомления</div>
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
-    ${li(I.shield,'Действия на телефоне',TOOLS.some(toolBlocked)?`Нет доступа — ${TOOLS.filter(toolBlocked).length}`:`Разрешено ${Object.values(S.policy).filter(p=>p==='auto').length}, спрашивать ${Object.values(S.policy).filter(p=>p==='ask').length}, не разрешено ${Object.values(S.policy).filter(p=>p==='off').length}`,'tools',TOOLS.some(toolBlocked))}
+    ${li(I.shield,'Действия на телефоне',TOOLS.some(toolBlocked)?`Нет доступа — ${TOOLS.filter(toolBlocked).length}`:`Разрешено ${Object.values(S.policy).filter(p=>p==='auto').length}, спрашивать ${Object.values(S.policy).filter(p=>p==='ask').length}, не разрешено ${Object.values(S.policy).filter(p=>p==='off').length}`,'actions',TOOLS.some(toolBlocked))}
     ${li(I.list,'Журнал действий',`Сегодня — ${S.journal.filter(j=>j.day==='Сегодня').length}`,'journal')}
     <div class="divider"></div>
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
@@ -197,7 +197,7 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
         : `<button class="dmic" data-mic data-into="prompt" aria-label="Надиктовать">${I.mic}</button><span class="dhint">Зажмите и надиктуйте — допишется в конец. Можно поправить руками.</span>`}</div>`}${(()=>{ const d=BUILTIN_MODES.find(b=>b.id===m.id); return d&&!main&&m.prompt!==d.prompt?`<div style="text-align:right"><button class="tbtn" data-act="promptreset">Вернуть как было</button></div>`:'' })()}</div>
     ${main||m.builtin?'':`${field('hint','Подсказка в пустом разговоре','Что сюда присылать')}${field('placeholder','Подсказка в поле ввода','Вопрос к фото')}`}
     <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('file','Файл',I.doc)}</div></div>
-    ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки и ярлыка — сразу видоискатель. Спросить голосом — микрофон в поле или рядом со спуском.':'Большая кнопка — микрофон. С боковой кнопки и ярлыка — сразу слушает.'}</p></div>`:''}
+    ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки — сразу видоискатель. Спросить голосом — микрофон в поле.':'Большая кнопка — микрофон. С боковой кнопки — сразу слушает.'}</p></div>`:''}
     <div class="setcard">${main?li(I.shield,'Действия телефона','Все'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены':'Выключены · ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский')}${li(I.wave,'Озвучка ответа','Позже','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
     <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}</div>
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>vahter:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
@@ -226,7 +226,7 @@ function blockedBanner(){ const miss=[...new Set(TOOLS.filter(toolBlocked).map(x
 /** Системный экран разрешения приложения (Настройки → Приложения → Вахтёр → Разрешения → …). */
 function sysPerm(){ const k=S.permKind, o=(v,t)=>`<button class="it" data-sysperm="${v}"><span class="rad ${(S.w.perms[k]==='ok')===(v==='ok')?'on':''}"></span>${t}</button>`;
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="syspermback">${I.back}</button>${SYS_PERMS[k].replace(/[«»]/g,'')}</div><p style="margin:0 22px 6px;font-size:13px;color:#666">${k==='dnd'?'Настройки → Уведомления → Доступ к «Не беспокоить»':`Приложения → Вахтёр → Разрешения → ${SYS_PERMS[k]}`}</p><div class="grp">${k==='dnd'?o('ok','Вахтёр — разрешить')+o('denied','Не разрешать'):o('ok',k==='location'?'Разрешить только во время использования':'Разрешить')+o('denied','Не разрешать')}</div></div>` }
-function toolsPage(){
+function actionsPage(){
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Действия на телефоне</b><small>что выполняется сразу, а что — после вопроса</small></div></div>
   <div class="scroll">${blockedBanner()}<div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b>${toolBlocked(x)?`<small>нет доступа: ${SYS_PERMS[x.perm]}</small>`:toolPending(x)?`<small class="pend">доступ «${SYS_PERMS[x.perm].replace(/[«»]/g,'')}» спросим при первом разе</small>`:''}</span><span class="pword ${toolBlocked(x)?'nope':S.policy[x.id]}">${toolBlocked(x)?'Нет доступа':POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
     <div class="lh">Экран блокировки</div>${li(I.lock,'На заблокированном экране', LOCK_SCOPE.find(o=>o[0]===S.settings.lockScope)[1],'lockscope')}
@@ -249,83 +249,9 @@ function about(){
   </div></div></div>`;
 }
 
-/* Первый запуск — один мастер: каждый экран сначала объясняет (живая сцена), потом сразу настраивает то, о чём рассказал.
-   Голос первым: модель качается, пока настраивают кнопку; потом проба, свои режимы, «сразу голос / камера», мозг — последним; финал — в листе. */
-const ONB=['welcome','voice','button','try','rules','quick','brain'];
-function navBar(skip,primary){ return `<div class="nav">${skip?`<button class="tbtn" data-act="${skip[1]}">${skip[0]}</button>`:'<span style="width:60px"></span>'}<div class="dots">${ONB.map((_,i)=>`<i class="${i===S.onbStep?'on':''}"></i>`).join('')}</div>${primary?`<button class="fbtn" data-act="${primary[1]}">${primary[0]}</button>`:'<span style="width:60px"></span>'}</div>` }
-function onb(){
-  const st=ONB[S.onbStep];
-  if (st==='try') return tryStep();
-  if (st==='brain'){ const K=S.keyCheck, done=S.w.key==='ok'&&K&&K.stage==='done', run=K&&K.stage==='run';
-    // Как остальные шаги: сцена — в растягиваемой области, заголовок, текст и поле ключа — внизу.
-    return `<div class="layer appv">${statusBar(true)}<div class="onb wbrain"><div class="art">${introScene('brain')}</div>
-    <h2>Подключите мозг</h2><p>Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</p>${keyBody(true)}
-    ${navBar(done?null:['Позже','onbnext'], done?['Открыть','onbnext']:run?['Подключаю…','noop']:['Подключить','keycheck'])}</div></div>` }
-  let art='',h='',p='',extra='',primary=['Далее','onbnext'],skip=['Позже','onbnext'];
-  if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
-  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`Речь распознаёт GigaAM — открытая модель Сбера. Скачать один раз ${mb(MODEL_TOTAL)} МБ, дальше голос не уходит с телефона и работает без интернета.`;
-    if (S.w.model==='ready') extra='<div class="note ok">Готово</div>';
-    else if (S.w.model==='loading') extra=`<div class="prog"><i style="width:${S.modelPct}%"></i></div><p style="font-size:13px;margin-top:8px">${S.w.net==='none'?'Ждёт сеть — продолжит с того же места.':`${S.modelPct} % — можно идти дальше, докачается само.`}</p>`;
-    if (S.w.model==='none'||S.w.model==='broken') primary=['Скачать','dl']; else skip=null;
-    if (S.w.model!=='none' && S.w.mic!=='ok') extra += `<div class="setcard" style="margin-top:12px">${li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic')}</div>` }
-  // Сцена — гонка «приложение против кнопки», под ней — что настроить. Единственное действие на любом Android — «Цифровой помощник»
-  // (роль есть везде с Android 10). Кнопка Samsung «Цифровой помощник» открывает того, кто выбран помощником: если удержание
-  // уже на нём (по умолчанию в One UI 7+), выбрали Вахтёра — кнопка заработала сама, вторая строка сразу с ✓. Иначе — «Настроить».
-  // Незнакомый телефон: что на кнопке, не прочитать — проба «зажмите кнопку», не вышло — способы вызова и плитка в шторке.
-  if (st==='button'){ const role=S.w.role==='ours', known=S.w.profile!=='unknown', ok=btnDone(), sideReady=known&&S.sideOk;
-    art=introScene(1); h='Своих — без очереди';
-    p=ok?(known?'Готово: зажатие боковой кнопки откроет Вахтёра. Можно проверить прямо сейчас.':S.sideProbe==='yes'?'Готово: Вахтёр открывается кнопкой.':'Готово: Вахтёр — помощник телефона.')
-      :sideReady?'Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Кнопка уже открывает помощника — осталось выбрать помощником Вахтёра.'
-      :known?'Зажали кнопку — и сразу вопрос, без приложений и новых чатов. Включается в настройках телефона, «Настроить» откроет их по очереди.'
-      :'Вызвали помощника — и сразу вопрос, без приложений и новых чатов. Помощника выбирают в настройках телефона, «Настроить» откроет нужный экран.';
-    const sideSum={bixby:'сейчас Bixby',double:'помощник — на двойном нажатии',power:'сейчас меню выключения'}[S.w.side];
-    const row2 = known
-      ? (S.sideOk ? li(I.btn,'Боковая кнопка','Зажатие — цифровой помощник · настраивать не нужно','sysside',false,I.ok) : li(I.btn,'Боковая кнопка','Не настроено · '+sideSum,'sysside',true))
-      : !role ? li(I.btn,'Вызов','Кнопка или жест — зависит от телефона')
-      : S.sideProbe==='yes' ? li(I.btn,'Вызов','Работает — открылся лист',null,false,I.ok)
-      : S.sideProbe==='no' ? li(I.btn,'Вызов','Долгое нажатие «Домой» или жест из угла','sysside')+(S.tileAdded?li(I.list,'Плитка в шторке','Добавлена',null,false,I.ok):li(I.list,'Плитка в шторке','Вахтёр — из быстрых настроек','addtile'))
-      : `<div class="sprobe"><span>${I.btn}</span><p>Зажмите кнопку, на которой у вас помощник. Открылся лист?</p><div class="ba"><button class="tbtn" data-act="sideno">Нет</button><button class="tbtn" data-act="sideyes">Да</button></div></div>`;
-    extra=`<div class="setcard">${li(I.spark,'Цифровой помощник',role?'Вахтёр':'Не настроено · сейчас Gemini','sysrole',!role,role?I.ok:'')}${row2}</div>${S.w.model==='loading'?`<p class="bgdl">Распознавание качается — ${S.modelPct} %.${ok?'':' Пока настройте кнопку.'}</p>`:''}`;
-    if (ok) skip=null; else { primary=['Настроить','btnsetup']; skip=['Позже','btnlater'] } }
-  // Режимы — два экрана: чем это лучше чата («как обычно» против просьбы заново) и как устроено (кнопка = написанная просьба). Настраивать нечего.
-  if (st==='rules'){ art=introScene(2); h='Своих знает в лицо'; p='Чату каждый раз объясняешь всё заново. Своему режиму — один раз: правила он помнит и сразу открывает камеру.'; skip=null }
-  if (st==='quick'){ art=introScene(3); h='Знает, кто зачем пришёл'; p='Каждый режим — уже написанная просьба: нажали, и она сказана. Ассистент — как чат, только по кнопке.'; skip=null }
-  return `<div class="layer appv">${statusBar(true)}<div class="onb"><div class="art">${art}</div><h2>${h}</h2><p>${p}</p>${extra}${navBar(skip,primary)}</div></div>`;
-}
-/** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
-function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>
-  <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
-    <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
-  <div class="lock">🔒 чужих не пустит: голос остаётся здесь</div></div>` }
-/** Первый запуск: проба голоса. Герой экрана — эквалайзер Вахтёра. Пока распознавание качается, его столбики и есть полоска
- *  загрузки: готовые шевелятся, остальные — точки, поперёк — шов («рот зашит», микрофон серый, «Пропустить»). Докачалось — шов
- *  лопается, столбики оживают, кнопка один раз пульсирует. Дальше фраза — крупно прямо на фоне, без поля и подложки; прошлые
- *  бледнеют выше. Внизу одна тихая строка жестов у кнопки — той же, что в листе. */
-const TEQ_N = 13;
-function teqLoading(pct){
-  const on = Math.round(pct/100*TEQ_N);
-  return `<div class="teq load">${Array.from({length:TEQ_N},(_,i)=>`<i class="${i<on?'on':''}" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('')}<span class="seam">${'<b></b>'.repeat(7)}</span></div>`;
-}
-function tryStep(){
-  const rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[], loading=S.w.model==='loading', ready=S.w.model==='ready';
-  const freed = ready && S.modelReadyAt && Date.now()-S.modelReadyAt<1600;   // только что докачалось — шов лопается
-  const why = S.w.model!=='ready'&&!loading?'Голос не скачан — можно потом в настройках':S.w.mic==='denied'?'Микрофон запрещён — разрешите его в настройках':S.w.mic!=='ok'?'Нажмите на микрофон — Android спросит доступ':'';
-  const sec = ms => (ms/1000).toFixed(1).replace('.',',');
-  const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
-  const hero = loading ? `${teqLoading(S.modelPct)}<div class="tpct">${S.modelPct}${'\u00a0'}%</div>`
-    : `<div class="teq live ${freed?'freed':''}"><div class="eq" data-mode="${rec?'speak':'wave'}"></div>${freed?`<span class="seam pop">${'<b></b>'.repeat(7)}</span>`:''}</div>`;
-  const text = loading ? '<div class="tcap">Вахтёр учит русский…</div>'
-    : rec ? '<div class="tcap">Слушаю…</div>' : S.recog ? '<div class="tcap">Распознаю на телефоне…</div>'
-    : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
-    : `<div class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь'}</div>`;
-  const p = loading ? 'Вахтёр пока учит русский — подождите или попробуйте потом в листе.' : 'Зажмите микрофон и скажите что-нибудь — проверим, как слышно.';
-  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2><p>${p}</p>
-    <div class="tstage">${old.length&&!rec&&!S.recog&&!loading?`<div class="told">${old.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div>`:''}
-      <div class="thero">${hero}</div><div class="ttext">${text}</div></div>
-    ${composerHtml({into:'try', pulse:freed})}${navBar(null, loading?['Пропустить','onbnext']:['Далее','onbnext'])}</div></div>` }
-function connectPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${connectBody(false)}</div></div></div>` }
+function hermesPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${hermesBody(false)}</div></div></div>` }
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['plugin','Плагин на сервере'],['proto','Версия'],['key','Ключ этого телефона'],['admit','Допуск']];
-function connectBody(onb){
+function hermesBody(onb){
   const P=S.pair;
   if (!P) return `<div class="h2">Ваш сервер</div><p style="color:var(--soft);margin:0 0 12px">Hermes отвечает на всё, что сложнее команд телефона.</p>
     <div class="setcard">${li(I.chat,'Ссылка из Telegram','Напишите боту /vahter_pair','viatg')}${li(I.qr,'QR с экрана компьютера','Та же команда на сервере','viaqr')}${li(I.pen,'Ввести адрес','Владелец подтвердит код','viaaddr')}</div>`;
@@ -442,7 +368,7 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='tools'?toolsPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='connect'?connectPage():chat();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick(); else if (S.screen==='sysperm') base=sysPerm();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });

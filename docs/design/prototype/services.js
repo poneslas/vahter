@@ -13,7 +13,7 @@ function startDl(skipAsk){
 /* ───────── подключение ───────── */
 async function runPair(via){
   const my=++token; S.pair={via,stage:'checks',checks:CHECKS.map(c=>({id:c[0],t:c[1],d:'',s:'wait'}))};
-  S.screen='app'; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server');
+  S.screen='app'; if(S.onboarded) S.page='hermes'; else S.onbStep=ONB.indexOf('brain');
   render();
   const map={dns:'net',tls:'tls',plugin:'plugin',expired:'admit'}; const fail=S.failNext;
   for (const c of S.pair.checks){

@@ -1,5 +1,4 @@
-/* Первый запуск — один мастер: каждый экран сначала объясняет, потом сразу настраивает (ui.js, ONB). Здесь — только сцены; движение в intro.css. */
-const WAVE = '<div class="wave">' + '<i></i>'.repeat(7) + '</div>';
+/* Сцены мастера первого запуска (в Android — ui/Intro.kt). Только разметка; движение — intro.css; шаги и навигация — onboarding.js. */
 
 function introScene(k) {
   if (k === 0) return `<div class="sc sc0"><span class="halo"></span><span class="halo b"></span><span class="logo"><i><b></b><b></b><b></b><b></b></i></span><span class="post"><i></i>Вахтёр · на месте</span></div>`;
@@ -43,26 +42,4 @@ function introScene(k) {
         <span class="off">✈ нет сети — всё равно сам</span></div>
       <div class="pb"><div class="me">Спланируй выходные в Казани</div><div class="ca"><div class="call">☎ Звоню наверх…</div>
         <div class="ai">Суббота — Кремль и Баумана, воскресенье — Свияжск на теплоходе.</div></div></div></div></div>`;
-}
-
-
-/* Свайп по шагам мастера: вправо — назад, влево — вперёд, но только если на экране уже можно «Далее».
-   На «Попробуйте голосом» не работает: у кнопки микрофона жест «влево — отмена». В приложении «Назад» системы — тоже шаг назад. */
-let onbSw = null;
-document.addEventListener('pointerdown', e => {
-  onbSw = null;
-  if (S.screen !== 'app' || S.onboarded || ONB[S.onbStep] === 'try') return;
-  if (!e.target.closest('#scr .onb') || e.target.closest('button,input,a,[data-act],[data-role],[data-side]')) return;
-  onbSw = { x: e.clientX, y: e.clientY };
-});
-document.addEventListener('pointerup', e => {
-  if (!onbSw) return; const dx = e.clientX - onbSw.x, dy = e.clientY - onbSw.y; onbSw = null;
-  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
-  if (dx > 0) return onbBack();
-  if ($('#scr .onb .nav .fbtn[data-act="onbnext"]')) { trace('Свайп влево — дальше (на этом шаге уже можно «Далее»).', 'p'); onbNext() }
-});
-function onbBack() {
-  if (S.onbStep <= 0) return;
-  S.onbStep--; if (ONB[S.onbStep] === 'try' && (S.w.model === 'none' || S.w.model === 'broken')) S.onbStep--;
-  S.keyCheck = null; trace('Свайп вправо — шаг назад. В приложении так же работает системный «Назад».', 'p'); render();
 }

@@ -8,6 +8,6 @@ chat | page=chat#day | chat | Приложение · разговор
 sheet | sheet=1#day | sheet | Лист поверх приложений
 settings | page=settings#day | settings | Настройки
 brain | page=brain&brain=deepseek#day | brain:deepseek | Мозг DeepSeek
-tools | page=tools#day | actions | Действия на телефоне
+tools | page=actions#day | actions | Действия на телефоне
 mode-gastro | page=mode&edit=m-4c1e#day | mode:m-4c1e | Режим «Гастрогид»
 mode-main | page=mode&edit=main#day | mode:main | Режим «Ассистент»

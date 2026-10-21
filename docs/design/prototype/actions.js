@@ -58,7 +58,7 @@ document.addEventListener('click', async e=>{
     case 'cm:edit': S.chatMenu=false; S.editMode=S.mode; S.modeBack='chat'; S.page='mode'; return render();
     case 'cm:journal': S.chatMenu=false; S.page='journal'; return render();
     case 'cm:restart': S.chatMenu=false; S.keepScroll=true;   // дальше — как раньше: карточка «Стереть разговор?»
-    case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restartyes','pri'],['Отмена','restartno']]}); return render();
+    case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restart_yes','pri'],['Отмена','restart_no']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'noop': return;
     case 'addtile': S.dialog={ic:'▦',title:'Добавить плитку «Вахтёр» в быстрые настройки?',opts:[['Добавить','tile_ok'],['Отмена','x','sec2']]}; trace('Плитку предлагает добавить сама система — StatusBarManager.requestAddTileService (Android 13+).','p'); return render();
@@ -79,7 +79,7 @@ document.addEventListener('click', async e=>{
     case 'notifno': S.feed=S.feed.filter(f=>f.t!=='notifask'); S.keepScroll=true; return render();
     case 'permmic': return permInApp('mic');
     case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
-    case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render();
+    case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='hermes'; else S.onbStep=ONB.indexOf('brain'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
     case 'tgsend': S.tg.push({me:true,html:'/vahter_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/vahter/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
     case 'tglink': return runPair('link');
@@ -106,8 +106,8 @@ document.addEventListener('click', async e=>{
     case 'addbrain': S.dialog={title:'Добавить мозг',text:'Любой OpenAI-совместимый API: адрес, имя модели, ключ. После проверки он появится в выборе мозга у режимов.',opts:[['Понятно','x']]}; return render();
     case 'brainpick': { const m=modeById(S.editMode); const ok=S.brains.filter(b=>!m.accepts.photo||b.caps.vision); S.dialog={title:'Мозг режима',radio:ok.map(b=>[b.id,b.title]),cur:m.brain,key:'__brain'}; return render() }
     case 'restart': { const m=modeById(S.editMode)||curMode(); const n=(S.feeds[m.id]||[]).length; if(!n) return; S.dialog={title:`Начать «${esc(m.title)}» заново?`,text:'Разговор этого режима сотрётся с телефона. Промпт и настройки останутся.',opts:[['Начать заново','restart_ok','danger'],['Отмена','x','sec2']]}; S.restartId=m.id; return render() }
-    case 'tools': S.page='tools'; return render();
-    case 'syspermback': { const R=S.permRet2; S.permRet2=null; S.screen=R?.screen||'app'; S.page=R?.page||'tools'; if(R?.sheet){ S.screen=R.sheet; openOverlay('снова') } return render() }
+    case 'actions': S.page='actions'; return render();
+    case 'syspermback': { const R=S.permRet2; S.permRet2=null; S.screen=R?.screen||'app'; S.page=R?.page||'actions'; if(R?.sheet){ S.screen=R.sheet; openOverlay('снова') } return render() }
     case 'journal': S.page='journal'; S.jopen=null; return render();
     case 'lockscope': S.dialog={title:'На заблокированном экране',radio:LOCK_SCOPE,cur:S.settings.lockScope,key:'lockScope'}; return render();
     case 'jundo': { const j=S.journal.find(x=>x.id===t.dataset.id); if(j){ j.undo=false; j.status='отменено'; trace('Отменено по-настоящему: событие удалено по event_id.','i') } S.keepScroll=true; return render() }
@@ -153,8 +153,8 @@ document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfi
   if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
 
 function cardBtn(b){
-  if (b==='restartyes'){ S.feed=[]; trace('Разговор режима стёрт — меню ⋮, долгое нажатие на название в листе или «начни заново» голосом.','p'); return render() }
-  if (b==='restartno'){ S.feed=S.feed.filter(f=>!(f.t==='card'&&f.btns.some(x=>x[1]==='restartyes'))); return render() }
+  if (b==='restart_yes'){ S.feed=[]; trace('Разговор режима стёрт — меню ⋮, долгое нажатие на название в листе или «начни заново» голосом.','p'); return render() }
+  if (b==='restart_no'){ S.feed=S.feed.filter(f=>!(f.t==='card'&&f.btns.some(x=>x[1]==='restart_yes'))); return render() }
   if (b.startsWith('permfix:')) return permFix(b.slice(8));
   if (b==='call_ok'){ const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='call_ok')); if(idx>=0) S.feed.splice(idx,1); addAct({t:'act',i:'📞',x:'Звонилка · Мама',s:'номер набран — звоните вы',btn:'',kind:'E',id:Date.now()},{tool:'call.dial',who:brainOf().title,phrase:'позвони маме',params:'contact=«Мама»',confirm:'«Позвонить» нажатием',lock:S.w.locked}); trace('Звонилка открывается поверх, лист перед этим прячется (иначе на S24 она окажется под листом).','p'); return render() }
   if (b==='unlock_any'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock_any')); if(i>=0) S.feed.splice(i,1); const me=[...S.feed].reverse().find(f=>f.t==='me'); if(me){ S.feed.splice(S.feed.lastIndexOf(me),1); return deliver(me.x,me.via) } render() }) }
@@ -162,7 +162,7 @@ function cardBtn(b){
   if (b==='unlock'){ return unlockFromSheet(()=>{ const i=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]==='unlock')); if(i>=0) S.feed.splice(i,1); return cardBtn('alarm_ok') }) }
   if (b==='brainsetup'){ S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; return render() }
   if (b==='restart'){ S.feed=[]; trace('Разговор режима начат заново.','p'); return render() }
-  if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='connect'; else S.onbStep=ONB.indexOf('server'); return render() }
+  if (b==='connect'){ S.ov=null; S.screen='app'; S.pair=null; if(S.onboarded) S.page='hermes'; else S.onbStep=ONB.indexOf('brain'); return render() }
   const idx=S.feed.findIndex(f=>f.t==='card'&&f.btns.some(x=>x[1]===b));
   if (b==='x'){ if(idx>=0){ const cal=/календарь/.test(S.feed[idx].head); S.feed.splice(idx,1); if(cal){ S.feed.push({t:'act',i:'📅',x:'Банк · не перенесено',s:'отклонено',undone:true}); trace('Отклонено — Hermes получил отказ и не переспрашивает.') } } return render() }
   if (b==='unlockmove'){ S.dialog={ic:'🔒',title:'Разблокируйте, чтобы перенести встречу',text:'После разблокировки перенесу сам.',opts:[['Разблокировать','unlock_move'],['Отмена','x','sec2']]}; return render() }
@@ -227,3 +227,23 @@ async function dlgAct(k){
 }
 function roleCheck(){ if(S.onboarded&&S.w.role!=='ours') trace(`При запуске: isRoleHeld = false — роль помощника у Gemini. Одним баннером в разговоре, не экраном с галочками.`,'e') }
 
+/* Назад и вперёд по шагам мастера (в Android — BackHandler и свайп в Onboarding.kt): вправо — назад, влево — вперёд, но только если на экране уже можно «Далее».
+   На «Попробуйте голосом» не работает: у кнопки микрофона жест «влево — отмена». В приложении «Назад» системы — тоже шаг назад. */
+let onbSw = null;
+document.addEventListener('pointerdown', e => {
+  onbSw = null;
+  if (S.screen !== 'app' || S.onboarded || ONB[S.onbStep] === 'try') return;
+  if (!e.target.closest('#scr .onb') || e.target.closest('button,input,a,[data-act],[data-role],[data-side]')) return;
+  onbSw = { x: e.clientX, y: e.clientY };
+});
+document.addEventListener('pointerup', e => {
+  if (!onbSw) return; const dx = e.clientX - onbSw.x, dy = e.clientY - onbSw.y; onbSw = null;
+  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+  if (dx > 0) return onbBack();
+  if ($('#scr .onb .nav .fbtn[data-act="onbnext"]')) { trace('Свайп влево — дальше (на этом шаге уже можно «Далее»).', 'p'); onbNext() }
+});
+function onbBack() {
+  if (S.onbStep <= 0) return;
+  S.onbStep--; if (ONB[S.onbStep] === 'try' && (S.w.model === 'none' || S.w.model === 'broken')) S.onbStep--;
+  S.keyCheck = null; trace('Свайп вправо — шаг назад. В приложении так же работает системный «Назад».', 'p'); render();
+}

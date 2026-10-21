@@ -13,12 +13,9 @@
 .ms .me{font-size:12px;padding:6px 10px;border-radius:14px 14px 3px 14px;max-width:86%;margin-left:auto}
 .ms .ai{font-size:12px;line-height:1.35;padding-left:12px;margin-top:6px}
 .ms .ai::before{top:6px;width:6px;height:6px}
-.mtabs2{display:flex;gap:4px;justify-content:center;margin-top:8px;position:relative}
-.mtabs2 span{font-size:10.5px;font-weight:500;color:var(--soft);padding:4px 9px;border-radius:999px;position:relative;z-index:1}
 
 .phone{position:absolute;inset:0 24px 0 24px;border-radius:26px;background:linear-gradient(165deg,#36506B,#1F2E44 60%,#141C2B);overflow:hidden}
 .phone::after{content:"";position:absolute;right:-30px;top:84px}
-.sidekey{position:absolute;right:18px;top:92px;width:5px;height:46px;border-radius:0 3px 3px 0;background:#2A3046}
 
 .wave{display:flex;gap:3px;align-items:center;height:22px;justify-content:center}
 .wave i{display:block;width:3px;border-radius:2px;background:var(--local);height:6px;animation:wv .5s ease-in-out infinite}
