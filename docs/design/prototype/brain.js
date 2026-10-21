@@ -83,6 +83,7 @@ async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиа�
 
 async function think(my,steps){
   maybeAskNotif();
+  if (brainOf().kind==='hermes' && !S.feed.some(f=>f.t==='steps')) trace('Ход у Hermes — задача /v1/runs на сервере: оборвалась связь или закрыли приложение — при запуске дочитаем с того же места; реплика вдогонку вливается в идущий ход (steer).','i');
   if (S.ov){ S.ov.live=`<span class="st h shim">Звоню наверх · ${brainOf().title}…</span>`; S.ov.liveQ=true }
   const st={t:'steps',id:Date.now(),run:true,cur:'Думаю…',items:[],plan:null,sec:0}; S.feed.push(st); render(); let ms=0;
   for (const s of steps){
@@ -134,32 +135,29 @@ async function route(key,my){
     if(!await stream(my,'<p>Посмотрю, что уже стоит на сервере, и соберу план.</p>',{fast:true,interim:true})) return;
     trace('Сообщение 1 — промежуточное (on_interim_message): короткое, приглушённое.','h');
     if(!await think(my,[
-      {todo:[['Узнать, что уже стоит на сервере','in_progress'],['Выбрать инструмент','pending'],['Расписать шаги','pending'],['Сделать памятку','pending']],rev:1},
       {i:'🔎',t:'Ищу в интернете',d:'<div class="src"><i style="background:#E05D44"></i>restic.readthedocs.io</div><div class="src"><i style="background:#2F9E5B"></i>wiki.archlinux.org</div><div class="src"><i style="background:#2238B8"></i>habr.com</div>',ms:'2,1 с',wait:1000},
       {i:'⌨',t:'Команда на сервере',d:'<div class="term">$ df -h /srv\nFilesystem  Size  Used Avail Use%\n/dev/sda1   200G  121G   79G  61%\n$ which restic\n/usr/bin/restic</div>',ms:'0,8 с',wait:900},
-      {todo:[['Узнать, что уже стоит на сервере','completed'],['Выбрать инструмент','completed'],['Расписать шаги','in_progress'],['Сделать памятку','pending']],rev:2},
       {i:'⚙',t:'Выполняю код',d:'execute_code · python · 38 строк → backup-plan.pdf',ms:'1,4 с',wait:900},
-      {todo:[['Узнать, что уже стоит на сервере','completed'],['Выбрать инструмент','completed'],['Расписать шаги','completed'],['Сделать памятку','completed']],rev:3},
     ])) return;
-    trace('План — это вызовы todo_list самой модели (ревизии 1→2→3), не шаги. Между вызовами план может отставать от работы — показываем как есть. Если модель не отметит пункт, после хода он останется «в работе» без анимации; досчитывать за неё не будем.','h');
+    trace('Шаги — события tool.started с именем инструмента и превью аргументов (подписи по-русски из своего словаря). План (todo_list) через API не виден — показываем только шаги.','h');
     if(!await stream(my,LONG_MD,{long:true})) return;
     trace('Сообщение 2 — финальный текст (сырой Markdown; при потоке — правки одного сообщения). В листе — первые ~240 px и «Развернуть сообщение» у этого сообщения.','h');
     if(!await sendAtt(my,[{k:'chart',title:'disk-forecast.png'}])) return;
     if(!await sendAtt(my,[{k:'file',type:'PDF',name:'backup-plan.pdf',meta:'84 КБ'}])) return;
-    trace('Дальше — вложения, вырезанные из финала: сначала картинки (send_multiple_images, даже одна), потом документы по одному (send_document). Подписей у файлов нет — показываем имя. Текста после файлов в этом ходе не будет.','h'); return }
+    trace('Файлы — строки MEDIA:/путь в тексте ответа: из ленты вырезаны, после текста скачаны с сервера (только папка vahter-out, тем же ключом телефона): картинки сеткой, документы карточками. Подписей у файлов нет — показываем имя.','h'); return }
   if (key==='logo'){
     if(!await think(my,[{i:'🎨',t:'Рисую',d:'image_generate · вариант 1',ms:'6,2 с',wait:700},{i:'🎨',t:'Рисую',d:'image_generate · вариант 2',ms:'5,8 с',wait:700},{i:'🎨',t:'Рисую',d:'image_generate · вариант 3',ms:'6,0 с',wait:700}])) return;
     if(!await stream(my,'<p>Три варианта: строгий, игривый и только знак. Какой ближе?</p>',{fast:true})) return;
     if(!await sendAtt(my,[{k:'imgs',n:3}])) return;
-    trace('image_generate сам дописывает MEDIA-теги → после текста одним send_multiple_images приходит альбом из 3 картинок. Лимита на число нет: 40 картинок пришли бы одним вызовом — сетка показывает 4 и «+36», остальное в просмотрщике.','h'); return }
+    trace('image_generate дописывает теги MEDIA: → после текста три картинки из vahter-out одной сеткой. Файл не из vahter-out телефон не достанет — карточка «остался на сервере».','h'); return }
   if (key==='logs'){
     if(!await think(my,[{i:'⌨',t:'Команда на сервере',d:'<div class="term">$ du -sh /var/log/app/*.gz | tail -1\n4.1G  total</div>',ms:'0,4 с'}])) return;
-    S.feed.push({t:'card',who:'h',head:'Hermes просит разрешения',title:'Выполнить команду на сервере?',code:'rm -rf /var/log/app/*.gz',text:'Причина: рекурсивное удаление',tmr:'Без ответа за 5 минут — не выполнится.',btns:[['Один раз','apr_once','pri'],['До конца сессии','apr_once'],['Всегда','apr_once'],['Нет','apr_no','gh']]});
-    trace('Это редкий случай. По умолчанию у Hermes approvals.mode: smart — безобидное разрешает, явно опасное запрещает вспомогательная модель, человека спрашивает только в сомнительных случаях. Hermes присылает лишь команду, причину по шаблону (англ. «recursive delete» — переводим по словарю) и варианты; заголовок-пересказ мы не выдумываем. При умном запрете вариантов только «Один раз / Нет».','h'); render(); return }
+    S.feed.push({t:'card',who:'h',head:'Hermes просит',title:'Команда на сервере',code:'rm -rf /var/log/app/*.gz',text:'recursive delete of a log directory',tmr:'Без ответа 60 с — Hermes считает отказом.',btns:[['Один раз','apr_once','pri'],['До конца сессии','apr_once'],['Всегда','apr_once'],['Нет','apr_no','gh']]});
+    trace('Событие approval.request: команда, причина по шаблону (по-английски, как прислал сервер — пересказ не выдумываем) и варианты сервера; ответ — POST /v1/runs/{id}/approval. В режиме approvals.mode: smart спрашивает только в сомнительных случаях, в manual — о каждой опасной. Не ответили за approvals.timeout — отказ.','h'); render(); return }
   if (key==='table'){
     if(!await think(my,[{i:'🔎',t:'Ищу в интернете',d:'<div class="src"><i style="background:#E05D44"></i>restoclub.ru</div>',ms:'1,2 с'}])) return;
-    S.feed.push({t:'card',who:'h',head:'Hermes уточняет',title:'На сколько человек?',btns:[['2','clar'],['4','clar'],['6','clar'],['Другое…','clar_other','gh']]});
-    trace('Уточнение — инструмент clarify (send_clarify): варианты с сервера, «Другое» рисуем сами (mark_awaiting_text), бывает мультивыбор и открытый вопрос без вариантов.','h'); render(); return }
+    if(!await stream(my,'<p>Нашёл два места рядом с офисом. На сколько человек и во сколько?</p>',{fast:true})) return;
+    trace('Уточнение через API приходит обычным текстом (кнопок clarify у API-сервера нет): отвечаете репликой, она уходит в ту же сессию.','h'); return }
 }
 const LONG_MD=`<h3>Бэкап сервера на restic — за 15 минут</h3><!--b--><p>На сервере уже стоит <code>restic</code>, свободно 79 ГБ. Предлагаю шифрованный бэкап в S3 раз в сутки: храним 7 дней, 4 недели и 6 месяцев.</p><!--b--><h4>Шаги</h4><ol><li>Создайте бакет и ключ доступа в хранилище.</li><li>Подготовьте репозиторий:</li></ol><!--b--><div class="code"><div class="ch"><span>bash</span><button>Копировать</button></div><pre>export RESTIC_REPOSITORY=s3:s3.example.ru/backup
 export RESTIC_PASSWORD_FILE=/root/.restic-pass

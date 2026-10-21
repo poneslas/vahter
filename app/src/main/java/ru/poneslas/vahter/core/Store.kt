@@ -22,6 +22,8 @@ data class Saved(
     val journal: List<JournalEntry> = emptyList(),
     /** Сессии режимов в Hermes (ключ — id режима); история этих режимов живёт на сервере. */
     val hermesSessions: Map<String, HermesSession> = emptyMap(),
+    /** Незавершённые ходы в Hermes (ключ — id режима): дочитываются при запуске, если приложение закрывали посреди ответа. */
+    val hermesRuns: Map<String, HermesRun> = emptyMap(),
 )
 
 class Store(context: Context) {

@@ -22,6 +22,7 @@ import ru.poneslas.vahter.actions.PhoneActions
 import ru.poneslas.vahter.actions.PhoneTools
 import ru.poneslas.vahter.actions.Rules
 import ru.poneslas.vahter.brain.Brain
+import ru.poneslas.vahter.brain.HermesBrain
 import ru.poneslas.vahter.brain.BrainEvent
 import ru.poneslas.vahter.brain.ChatMsg
 import ru.poneslas.vahter.brain.ErrorKind
@@ -46,12 +47,16 @@ class Conversation(
     private val brainFor: (Mode) -> Brain,
     /** Ответ пришёл — показать уведомление, если ни лист, ни приложение не на экране. */
     private val onAnswer: (Mode, String) -> Unit,
+    /** Hermes, если подключён: дочитать незавершённый ход, дописать вдогонку, остановить (Архитектура 9.0). */
+    private val hermes: () -> HermesBrain? = { null },
 ) {
     data class State(
         val saved: Saved = Saved(),
         val drafts: Map<String, String> = emptyMap(),
-        val busy: Boolean = false,
+        /** Режимы, в которых сейчас идёт ход мозга (у Hermes ходы разных режимов идут параллельно). */
+        val busyModes: Set<String> = emptySet(),
     ) {
+        val busy get() = mode in busyModes
         val modes get() = saved.modes
         val mode get() = saved.mode
         val settings get() = saved.settings
@@ -66,7 +71,8 @@ class Conversation(
 
     private var seq = System.currentTimeMillis()
     private fun nextId() = ++seq
-    private var job: Job? = null
+    /** Идущий ход каждого режима. */
+    private val jobs = mutableMapOf<String, Job>()
     private val pending = mutableMapOf<Long, CompletableDeferred<Boolean>>()
     /** Открытые просьбы Hermes подтвердить команду (id карточки → ответ серверу). */
     private val asks = mutableMapOf<Long, suspend (String) -> Unit>()
@@ -112,7 +118,11 @@ class Conversation(
     }
 
     /** «Начать заново»: стереть разговор режима с телефона; у Hermes — и забыть сессию (следующая реплика начнёт новую). */
-    fun restart(modeId: String = _state.value.mode) = edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId, hermesSessions = it.hermesSessions - modeId) }
+    fun restart(modeId: String = _state.value.mode) {
+        jobs[modeId]?.cancel()
+        _state.value.saved.hermesRuns[modeId]?.let { r -> hermes()?.let { h -> scope.launch { h.stop(r.id) } } }
+        edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId, hermesSessions = it.hermesSessions - modeId, hermesRuns = it.hermesRuns - modeId) }
+    }
 
     /** Сменить мозг режима: разговор начинается заново — историю между мозгами не переносим (Архитектура 2.2). */
     fun setBrain(modeId: String, brainId: String) {
@@ -202,29 +212,61 @@ class Conversation(
         val userMsg = ChatMsg("user", clean.ifEmpty { null }, images = images)
         appendHistory(mode.id, userMsg)
         val history = _state.value.saved.histories[mode.id].orEmpty()
+        // Hermes ещё отвечает — реплика вливается в идущий ход (как в Telegram, Архитектура 9.4); не вышло — новая задача.
+        val active = _state.value.saved.hermesRuns[mode.id]
+        val h = hermes()
+        if (h != null && mode.brain == Brains.hermes.id && active != null && jobs[mode.id]?.isActive == true && images.isEmpty()) {
+            scope.launch { if (!h.steer(active.id, clean)) startTurn(mode, clean, history) }
+            return
+        }
+        startTurn(mode, clean, history)
+    }
+
+    private fun startTurn(mode: Mode, phrase: String, history: List<ChatMsg>) {
+        val old = _state.value.saved.hermesRuns[mode.id]
+        jobs[mode.id]?.cancel()
+        if (old != null) { hermes()?.let { h -> scope.launch { h.stop(old.id) } }; edit { it.copy(hermesRuns = it.hermesRuns - mode.id) } }
+        run(mode, phrase, brainFor(mode).send(Turn(mode, history), toolHost(mode.id, phrase)))
+    }
+
+    /** Приложение запустили, а ходы Hermes не дочитаны (закрывали посреди ответа): дочитать с места, где остановились. */
+    fun resumePending() {
+        val h = hermes() ?: return
+        for ((modeId, run) in _state.value.saved.hermesRuns) {
+            if (jobs[modeId]?.isActive == true) continue
+            val mode = _state.value.modes.firstOrNull { it.id == modeId } ?: continue
+            run(mode, "", h.resume(modeId, run))
+        }
+    }
+
+    private fun toolHost(modeId: String, phrase: String): PhoneTools {
+        val who = Brains.byId(_state.value.modes.firstOrNull { it.id == modeId }?.brain ?: "deepseek").title
+        return PhoneTools(
+            context, settings = { _state.value.settings },
+            confirm = { title, detail -> confirm(modeId, title, detail) },
+            report = { a -> push(modeId, a.copy(id = nextId())) },
+            journal = { tool, params, title, status -> journal(tool, params, title, status, who, phrase) },
+            notes = { _state.value.saved.notes },
+            saveNote = { n -> edit { it.copy(notes = (it.notes + n).takeLast(500)) } },
+            deleteNote = ::deleteNote,
+            timers = { _state.value.saved.feeds.values.flatten().filterIsInstance<FeedItem.Act>().filter { it.countdown && it.state == "done" }.mapNotNull { it.at } },
+        )
+    }
+
+    /** Ход мозга: события потока → лента режима. Один на режим; у Hermes ход переживает закрытие приложения ([resumePending]). */
+    private fun run(mode: Mode, phrase: String, events: kotlinx.coroutines.flow.Flow<BrainEvent>) {
         val modeId = mode.id
-        job?.cancel()
-        job = scope.launch {
-            _state.update { it.copy(busy = true) }
+        jobs[modeId] = scope.launch {
+            _state.update { it.copy(busyModes = it.busyModes + modeId) }
             var answerId: Long? = null
             var stepsId: Long? = null
             var askId: Long? = null
             var filesId: Long? = null
+            var ended = false
             val answer = StringBuilder()
             val who = Brains.byId(mode.brain).title
-            val phrase = clean
-            val tools = PhoneTools(
-                context, settings = { _state.value.settings },
-                confirm = { title, detail -> confirm(modeId, title, detail) },
-                report = { a -> push(modeId, a.copy(id = nextId())) },
-                journal = { tool, params, title, status -> journal(tool, params, title, status, who, phrase) },
-                notes = { _state.value.saved.notes },
-                saveNote = { n -> edit { it.copy(notes = (it.notes + n).takeLast(500)) } },
-                deleteNote = ::deleteNote,
-                timers = { _state.value.saved.feeds.values.flatten().filterIsInstance<FeedItem.Act>().filter { it.countdown && it.state == "done" }.mapNotNull { it.at } },
-            )
             try {
-                brainFor(mode).send(Turn(mode, history), tools).collect { e ->
+                events.collect { e ->
                     when (e) {
                         is BrainEvent.Delta -> {
                             answer.append(e.text)
@@ -239,7 +281,7 @@ class Conversation(
                             answerId = null // следующий текст — новым сообщением после шагов
                         }
                         is BrainEvent.History -> appendHistory(modeId, e.msg)
-                        // Hermes просит подтвердить команду на сервере: карточка с его вариантами; ответ уходит на сервер, ход ждёт на потоке.
+                        // Hermes просит подтвердить команду на сервере: карточка с его вариантами; ответ уходит на сервер, ход ждёт.
                         is BrainEvent.Ask -> {
                             askId?.let { remove(modeId, it) }
                             val id = nextId()
@@ -256,21 +298,28 @@ class Conversation(
                             } }
                             answerId = null
                         }
-                        BrainEvent.MessageEnd -> Unit
-                        is BrainEvent.Error -> push(modeId, when (e.kind) {
-                            ErrorKind.NO_BRAIN -> FeedItem.Card(nextId(), tr(R.string.conv_need_brain), tr(R.string.conv_up_no_brain), tr(R.string.conv_up_no_brain_p),
-                                listOf(tr(R.string.ui_connect) to "brain"), phone = false)
-                            ErrorKind.CONTEXT -> FeedItem.Card(nextId(), tr(R.string.conv_error_head, Brains.byId(mode.brain).title), tr(R.string.conv_too_long_h),
-                                tr(R.string.conv_too_long_p), listOf(tr(R.string.ui_restart) to "restart"), phone = false)
-                            else -> FeedItem.Err(nextId(), e.text)
-                        })
+                        // Задача на сервере: запоминаем id и место, чтобы дочитать после обрыва или перезапуска.
+                        is BrainEvent.Run -> edit { st -> st.copy(hermesRuns = st.hermesRuns + (modeId to HermesRun(e.id, e.seq, st.hermesRuns[modeId]?.takeIf { it.id == e.id }?.at ?: System.currentTimeMillis()))) }
+                        BrainEvent.MessageEnd -> ended = true
+                        is BrainEvent.Error -> {
+                            ended = true
+                            push(modeId, when (e.kind) {
+                                ErrorKind.NO_BRAIN -> FeedItem.Card(nextId(), tr(R.string.conv_need_brain), tr(R.string.conv_up_no_brain), tr(R.string.conv_up_no_brain_p),
+                                    listOf(tr(R.string.ui_connect) to "brain"), phone = false)
+                                ErrorKind.CONTEXT -> FeedItem.Card(nextId(), tr(R.string.conv_error_head, Brains.byId(mode.brain).title), tr(R.string.conv_too_long_h),
+                                    tr(R.string.conv_too_long_p), listOf(tr(R.string.ui_restart) to "restart"), phone = false)
+                                else -> FeedItem.Err(nextId(), e.text)
+                            })
+                        }
                     }
                 }
+                ended = true // поток кончился сам — ход завершён
             } finally {
                 askId?.let { id -> asks.remove(id); remove(modeId, id) }
                 stepsId?.let { id -> replace(modeId, id) { (it as FeedItem.Steps).copy(running = false) } }
-                edit { st -> st.copy(feeds = st.feeds + (modeId to st.feeds[modeId].orEmpty().map { if (it is FeedItem.Ai && !it.done) it.copy(done = true, text = it.text.trimEnd()) else it })) }
-                _state.update { it.copy(busy = false) }
+                edit { st -> st.copy(feeds = st.feeds + (modeId to st.feeds[modeId].orEmpty().map { if (it is FeedItem.Ai && !it.done) it.copy(done = true, text = it.text.trimEnd()) else it }),
+                    hermesRuns = if (ended) st.hermesRuns - modeId else st.hermesRuns) }
+                _state.update { it.copy(busyModes = it.busyModes - modeId) }
                 if (answer.isNotBlank()) onAnswer(mode, answer.toString())
             }
         }

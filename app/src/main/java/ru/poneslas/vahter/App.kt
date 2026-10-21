@@ -4,6 +4,7 @@ import android.app.Application
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import ru.poneslas.vahter.brain.ApiBrain
 import ru.poneslas.vahter.brain.Brain
@@ -91,7 +92,11 @@ class App : Application() {
         secrets = Secrets(this)
         HermesBrain.debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         Notifier.init(this)
-        conversation = Conversation(this, scope, Store(this), ::brainFor) { mode, text -> Notifier.answer(this, mode, text) }
+        conversation = Conversation(this, scope, Store(this), ::brainFor, { mode, text -> Notifier.answer(this, mode, text) }, { if (hermesLink() != null) hermesBrain else null })
+        // Ходы Hermes переживают закрытие приложения: дочитать при запуске и каждый раз, когда приложение или лист снова на экране.
+        conversation.resumePending()
+        scope.launch { appVisible.collect { if (it) conversation.resumePending() } }
+        scope.launch { ru.poneslas.vahter.assistant.Sheet.visible.collect { if (it) conversation.resumePending() } }
         voice = Voice(this, scope)
         // Запись останавливаем сами: после hide() система микрофон не выключает.
         SheetEvents.onHide = { voice.cancel() }

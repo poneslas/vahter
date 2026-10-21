@@ -1,7 +1,8 @@
-# Caddy на сервере Hermes: сайт для Вахтёра (Архитектура 9.8). Файл целиком заменяет /opt/edge/edge-web/Caddyfile
+# Caddy перед Hermes: сайт для Вахтёра (Архитектура 9.0, 9.8). Заменяет /opt/edge/edge-web/caddy/Caddyfile
 # (прежний блок proxy.example.org оставлен как был). Порт 443 держит SNI-роутер (nginx stream), он отдаёт сюда
 # соединения с именем {$VAHTER_HOST}; сертификат Caddy получает сам по TLS-ALPN через тот же порт (http-проверка выключена:
 # 80 наружу закрыт). Ключ API Hermes телефон не знает: Caddy проверяет ключ телефона и подставляет свой.
+# Ключи телефонов пишет навык vahter в $HERMES_HOME/vahter/devices.caddy (примонтировано в /etc/vahter).
 {
 	https_port 9443
 }
@@ -36,12 +37,12 @@ https://{$VAHTER_HOST}:9443 {
 		}
 	}
 
-	# Ключи телефонов: по одной строке на устройство, файл генерирует vahter-invite.sh
-	import /etc/caddy/vahter-devices.caddy
+	# Ключи телефонов: по строке на устройство, файл ведёт навык vahter (перезагрузка — systemd path-юнит)
+	import /etc/vahter/devices.caddy
 
-	# Только то, что нужно приложению: модели (проверка), чат, ответ на подтверждение команды. Остальной API Hermes закрыт.
+	# Только то, что нужно приложению: модели (проверка), чат, задачи и ответы на подтверждения. Остальной API Hermes закрыт.
 	@api {
-		path /v1/models /v1/chat/completions /v1/runs/*
+		path /v1/models /v1/chat/completions /v1/runs /v1/runs/*
 	}
 	handle @api {
 		handle @device {
@@ -59,7 +60,7 @@ https://{$VAHTER_HOST}:9443 {
 		respond 401
 	}
 
-	# Файлы от Hermes для телефона: только папка vahter-out дома Hermes (/root/.hermes/vahter-out), тем же ключом телефона
+	# Файлы от Hermes для телефона: только папка vahter-out дома Hermes, тем же ключом телефона, только чтение
 	handle /vahter/files/* {
 		handle @device {
 			root * /srv

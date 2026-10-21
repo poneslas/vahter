@@ -80,7 +80,7 @@ document.addEventListener('click', async e=>{
     case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='hermes'; else S.onbStep=ONB.indexOf('brain'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
-    case 'tgsend': S.tg.push({me:true,html:'/vahter_pair'}); render(); await wait(700); S.tg.push({html:`Ссылка для телефона — 10 минут, один раз:<br><a data-act="tglink">https://hermes.example.ru/vahter/pair#k7Q2m9xD…</a>${qrSvg()}`}); trace('Плагин выдал одноразовый токен и QR картинкой. Вызвать команду может только тот, кто уже допущен к Hermes.','h'); return render();
+    case 'tgsend': S.tg.push({me:true,html:'Сделай приглашение для Вахтёра для S24 Ultra'}); render(); await wait(900); S.tg.push({html:`Готово. Ссылка для телефона «S24 Ultra»:<br><a data-act="tglink">https://vahter.example.ru/vahter/connect#hWMojT6Q…</a><br><br>Открой её на телефоне — Вахтёр подключится сам. Не открылось — скопируй ссылку в Настройки → Мозги → Hermes → «Вставить приглашение».`}); trace('Навык vahter (Архитектура 9.0): Hermes запустил скрипт, ключ телефона записан в ~/.hermes/vahter, Caddy перезагрузился сам. Ссылка — это ключ телефона: действует до отзыва («отзови телефон S24»), не одноразовая.','h'); return render();
     case 'tglink': return runPair('link');
     case 'viaqr': return runPair('paste'); // «Вставить приглашение»: ссылка из буфера
     case 'viaaddr': S.pair={via:'addr',stage:'input',checks:[]}; return render();

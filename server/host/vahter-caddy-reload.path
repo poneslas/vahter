@@ -1,0 +1,9 @@
+[Unit]
+Description=Vahter: reload Caddy when phone keys change
+
+[Path]
+PathChanged=/root/.hermes/vahter/devices.caddy
+Unit=vahter-caddy-reload.service
+
+[Install]
+WantedBy=multi-user.target

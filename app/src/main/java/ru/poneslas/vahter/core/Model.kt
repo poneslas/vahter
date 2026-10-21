@@ -135,6 +135,10 @@ data class Settings(
 @Serializable
 data class HermesSession(val id: String, val at: Long)
 
+/** Незавершённый ход режима в Hermes: задача `/v1/runs` на сервере, последнее прочитанное событие, когда начат (Архитектура 9.0). */
+@Serializable
+data class HermesRun(val id: String, val seq: Int = -1, val at: Long = 0)
+
 /** Элемент ленты разговора. */
 @Serializable
 sealed interface FeedItem {

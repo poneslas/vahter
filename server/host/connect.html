@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Вахтёр · подключение к Hermes</title>
+<style>
+  :root{--page:#DFE3DA;--paper:#F7F8F4;--surf:#FFFFFF;--ink:#0E1A36;--soft:#4A5670;--faint:#8A93A6;--line:#D3D8CE;--server:#2F4BE8;--server-d:#2238B8;--server-t:#E1E6FD;--danger:#C2412D}
+  html,body{margin:0;background:var(--page);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .card{max-width:420px;margin:0 auto;min-height:100vh;background:var(--paper);padding:28px 22px 32px;box-sizing:border-box}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .logo{width:44px;height:44px;border-radius:50%;background:conic-gradient(from 200deg,#E6A23C,#F5C35A,var(--server),#6F86FF,#E6A23C);flex:none}
+  .brand b{font-size:20px;display:block;line-height:1.1}.brand small{color:var(--soft);font-size:13px}
+  h1{font-size:26px;line-height:1.15;margin:0 0 8px;font-weight:700}
+  p{margin:8px 0;color:var(--soft)}
+  .btn{display:block;width:100%;box-sizing:border-box;margin:22px 0 8px;padding:15px 16px;border-radius:999px;background:var(--ink);color:#fff;text-align:center;text-decoration:none;font-weight:600;font-size:16px;border:0}
+  .state{font-size:13.5px;color:var(--soft);text-align:center;min-height:20px}
+  .alt{margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  .alt h2{font-size:15px;margin:0 0 6px}
+  .link{display:flex;gap:8px;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:10px 0}
+  .link code{flex:1;min-width:0;font-size:12.5px;word-break:break-all;color:var(--ink);line-height:1.35}
+  .copy{border:0;background:var(--server-t);color:var(--server-d);font-weight:600;border-radius:999px;padding:9px 13px;font-size:13.5px;white-space:nowrap}
+  .warn{color:var(--danger)}
+</style>
+<div class="card">
+  <div class="brand"><div class="logo"></div><div><b>Вахтёр</b><small>подключение к Hermes</small></div></div>
+  <h1>Пустить этот телефон к&nbsp;Hermes</h1>
+  <p>Ссылка из приглашения. В ней ключ телефона: не пересылайте её другим.</p>
+  <a class="btn" id="go" href="#">Открыть в Вахтёре</a>
+  <div class="state" id="s">Открываю приложение…</div>
+  <div class="alt">
+    <h2>Не открылось?</h2>
+    <p>Скопируйте ссылку и вставьте её в приложении: Настройки → Мозги → Hermes → <b>Вставить приглашение</b>.</p>
+    <div class="link"><code id="l">…</code><button class="copy" id="c">Скопировать</button></div>
+    <p>Нет приложения? Поставьте «Вахтёр» и откройте это приглашение снова.</p>
+  </div>
+</div>
+<script>
+(function(){
+  var t=location.hash.replace(/^#/,'');
+  var u='vahter://connect?url='+encodeURIComponent(location.origin)+'&token='+encodeURIComponent(t);
+  var s=document.getElementById('s'), go=document.getElementById('go'), l=document.getElementById('l'), c=document.getElementById('c');
+  if(!t){ s.className='state warn'; s.textContent='В ссылке нет ключа — попросите новое приглашение.'; go.style.opacity=.4; return; }
+  go.href=u; l.textContent=u;
+  function fallback(){ var r=document.createRange(); r.selectNodeContents(l); var sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); try{ document.execCommand('copy'); done(); }catch(e){} }
+  function done(){ c.textContent='Скопировано'; }
+  c.onclick=function(){ if(navigator.clipboard){ navigator.clipboard.writeText(u).then(done, fallback); } else fallback(); };
+  setTimeout(function(){ location.href=u; }, 300);
+  setTimeout(function(){ s.textContent='Если приложение не открылось — кнопка выше или ссылка ниже.'; }, 2500);
+})();
+</script>
+</html>

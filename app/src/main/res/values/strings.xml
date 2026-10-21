@@ -708,6 +708,8 @@
     <string name="hermes_err_tls">Сертификат сервера недействителен — подключение не выполнено.</string>
     <string name="hermes_err_http">Ошибка Hermes (%1$d): %2$s</string>
     <string name="hermes_err_turn">Hermes не закончил ответ: %1$s</string>
+    <string name="hermes_run_lost">Hermes не закончил ответ: сервер перезапускался, ход потерян. Спросите ещё раз.</string>
+    <string name="hermes_run_cancelled">Ход остановлен.</string>
     <string name="hermes_asks">Команда на сервере</string>
     <string name="hermes_ask_once">Один раз</string>
     <string name="hermes_ask_session">До конца сессии</string>

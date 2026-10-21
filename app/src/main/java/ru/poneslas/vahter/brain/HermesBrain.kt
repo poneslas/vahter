@@ -2,8 +2,10 @@ package ru.poneslas.vahter.brain
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -13,11 +15,13 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.core.BrainDesc
+import ru.poneslas.vahter.core.HermesRun
 import ru.poneslas.vahter.core.Modes
 import ru.poneslas.vahter.tr
 import java.io.IOException
@@ -28,17 +32,21 @@ import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.net.ssl.SSLException
 
 /** Подключение к Hermes: адрес (`https://…`) и ключ телефона. Ключ — не ключ API Hermes: сервер (Caddy) меняет его на свой (Архитектура 9.8). */
 data class HermesLink(val url: String, val token: String)
 
 /**
- * Hermes через его встроенный OpenAI-совместимый API-сервер (Архитектура 9.0). Отличия от [ApiBrain]:
- * - история режима живёт на сервере: шлём только промпт режима и новую реплику, сессию держит заголовок `X-Hermes-Session-Id`;
- * - инструменты выполняются на сервере, действий телефона у Hermes нет; его шаги приходят событиями `hermes.tool.progress`;
+ * Hermes через его встроенный API-сервер (Архитектура 9.0). Ход — задача на сервере (`POST /v1/runs`): она живёт независимо
+ * от соединения, события читаются потоком `GET /v1/runs/{id}/events` с любого места (`last_seq`), статус и итог — `GET /v1/runs/{id}`.
+ * Поэтому «задал и ушёл» работает без пуша: оборвалась связь — переподключаемся; приложение убили — при запуске дочитываем ([resume]).
+ * Отличия от [ApiBrain]:
+ * - история режима живёт на сервере: шлём промпт режима и новую реплику, сессию держит `session_id`;
+ * - инструменты выполняются на сервере, действий телефона у Hermes нет; его шаги — события `tool.started`;
  * - опасную команду сервер просит подтвердить событием `approval.request` — карточка в ленте, ответ `POST /v1/runs/{id}/approval`;
- * - закрыли поток — Hermes прерывает ход (так работает «дописал вдогонку»).
+ * - «дописал вдогонку» — `POST /v1/runs/{id}/steer`: реплика вливается в идущий ход, как в Telegram (Архитектура 9.4).
  */
 class HermesBrain(
     private val desc: BrainDesc,
@@ -54,36 +62,41 @@ class HermesBrain(
         val user = turn.history.lastOrNull { it.role == "user" } ?: return@flow
         val body = buildJsonObject {
             put("model", desc.model)
-            put("stream", true)
-            put("messages", buildJsonArray {
-                add(buildJsonObject { put("role", "system"); put("content", systemPrompt(turn)) })
-                add(chatMsgJson(user))
-            })
+            put("instructions", systemPrompt(turn))
+            put("input", buildJsonArray { add(chatMsgJson(user)) })
+            session(turn.mode.id)?.let { put("session_id", it) }
         }.toString()
-        val text = StringBuilder()
-        val media = mutableListOf<String>()
-        // Теги MEDIA:/путь — строками в тексте ответа; из ленты их убираем, файлы скачиваем после текста (Архитектура 9.0).
-        val filter = MediaFilter({ t -> text.append(t); emit(BrainEvent.Delta(t)) }, { media += it })
-        try {
-            stream(l, turn.mode.id, body) { e -> if (e is BrainEvent.Delta) filter.feed(e.text) else emit(e) }
-            filter.finish()
-            for (m in media) emit(fetch(l, m))
-        } catch (e: HermesError) {
-            emit(BrainEvent.Error(e.message ?: tr(R.string.brain_error_head), e.kind)); return@flow
-        } catch (e: SSLException) {
-            emit(BrainEvent.Error(tr(R.string.hermes_err_tls), ErrorKind.NETWORK)); return@flow
-        } catch (e: UnknownHostException) {
-            emit(BrainEvent.Error(tr(R.string.brain_up_no_net, host(l.url)), ErrorKind.NETWORK)); return@flow
-        } catch (e: SocketTimeoutException) {
-            emit(BrainEvent.Error(tr(R.string.brain_timeout, desc.title), ErrorKind.NETWORK)); return@flow
-        } catch (e: IOException) {
-            emit(BrainEvent.Error(tr(R.string.brain_stream_lost, e.message ?: tr(R.string.brain_net_error)), ErrorKind.NETWORK)); return@flow
-        }
-        if (text.isNotBlank()) emit(BrainEvent.History(ChatMsg("assistant", text.toString())))
-        emit(BrainEvent.MessageEnd)
+        val runId = try {
+            submit(l, turn.mode.id, body)
+        } catch (e: Exception) { emit(error(l, e)); return@flow }
+        emit(BrainEvent.Run(runId, -1))
+        follow(l, turn.mode.id, HermesRun(runId, -1, System.currentTimeMillis()), this)
     }.flowOn(Dispatchers.IO)
 
-    /** Промпт режима — временным системным промптом на каждый ход (`system` в запросе Hermes кладёт поверх своего, в историю не пишет). */
+    /** Дочитать ход, начатый раньше (приложение закрывали): события с места, где остановились; задачи на сервере уже нет — честная строка. */
+    fun resume(modeId: String, run: HermesRun): Flow<BrainEvent> = flow {
+        val l = link() ?: return@flow
+        follow(l, modeId, run, this)
+    }.flowOn(Dispatchers.IO)
+
+    /** «Дописал вдогонку»: реплика в идущий ход. false — ход уже закончен, нужна новая задача. */
+    suspend fun steer(runId: String, text: String): Boolean = withContext(Dispatchers.IO) {
+        val l = link() ?: return@withContext false
+        runCatching {
+            val c = open(l, "/v1/runs/$runId/steer", "POST", 20_000)
+            c.doOutput = true; c.setRequestProperty("Content-Type", "application/json")
+            c.outputStream.use { it.write(buildJsonObject { put("input", text) }.toString().toByteArray()) }
+            val ok = c.responseCode == 200; c.disconnect(); ok
+        }.getOrDefault(false)
+    }
+
+    /** «Остановить» идущий ход (и перед новой задачей, если старая ещё шла). */
+    suspend fun stop(runId: String) = withContext(Dispatchers.IO) {
+        val l = link() ?: return@withContext
+        runCatching { val c = open(l, "/v1/runs/$runId/stop", "POST", 10_000); c.doOutput = true; c.outputStream.use { it.write("{}".toByteArray()) }; c.responseCode; c.disconnect() }
+    }
+
+    /** Промпт режима — `instructions`: Hermes кладёт его временным слоем поверх своего, в историю не пишет. */
     private fun systemPrompt(turn: Turn): String {
         val now = SimpleDateFormat("EEEE, d MMMM yyyy, HH:mm", Locale("ru")).format(Date())
         val base = tr(R.string.hermes_system_1) + tr(R.string.brain_system_now, now)
@@ -94,7 +107,7 @@ class HermesBrain(
         }
     }
 
-    class HermesError(message: String, val kind: ErrorKind) : Exception(message)
+    class HermesError(message: String, val kind: ErrorKind, val code: Int = 0) : Exception(message)
 
     private fun open(l: HermesLink, path: String, method: String, timeoutMs: Int): HttpURLConnection {
         val c = URL(l.url.trimEnd('/') + path).openConnection() as HttpURLConnection
@@ -108,59 +121,125 @@ class HermesBrain(
     }
 
     private fun httpError(l: HermesLink, code: Int, err: String): HermesError = when (code) {
-        401, 403 -> HermesError(tr(R.string.hermes_err_auth), ErrorKind.AUTH)
-        404 -> HermesError(tr(R.string.hermes_err_404, host(l.url)), ErrorKind.OTHER)
-        429 -> HermesError(tr(R.string.hermes_err_busy), ErrorKind.RATE)
-        502, 503, 504 -> HermesError(tr(R.string.hermes_err_down, code), ErrorKind.NETWORK)
-        else -> HermesError(tr(R.string.hermes_err_http, code, err.take(200)), ErrorKind.OTHER)
+        401, 403 -> HermesError(tr(R.string.hermes_err_auth), ErrorKind.AUTH, code)
+        404 -> HermesError(tr(R.string.hermes_err_404, host(l.url)), ErrorKind.OTHER, code)
+        429 -> HermesError(tr(R.string.hermes_err_busy), ErrorKind.RATE, code)
+        502, 503, 504 -> HermesError(tr(R.string.hermes_err_down, code), ErrorKind.NETWORK, code)
+        else -> HermesError(tr(R.string.hermes_err_http, code, err.take(200)), ErrorKind.OTHER, code)
     }
 
-    /** Один ход: поток SSE с ответом, шагами и просьбами подтвердить. Hermes сам прерывает ход, если поток закрыли. */
-    private suspend fun stream(l: HermesLink, modeId: String, body: String, emit: suspend (BrainEvent) -> Unit) {
-        val c = open(l, "/v1/chat/completions", "POST", 600_000)
+    private fun error(l: HermesLink, e: Exception): BrainEvent.Error = when (e) {
+        is HermesError -> BrainEvent.Error(e.message ?: tr(R.string.brain_error_head), e.kind)
+        is SSLException -> BrainEvent.Error(tr(R.string.hermes_err_tls), ErrorKind.NETWORK)
+        is UnknownHostException -> BrainEvent.Error(tr(R.string.brain_up_no_net, host(l.url)), ErrorKind.NETWORK)
+        is SocketTimeoutException -> BrainEvent.Error(tr(R.string.brain_timeout, desc.title), ErrorKind.NETWORK)
+        is IOException -> BrainEvent.Error(tr(R.string.brain_stream_lost, e.message ?: tr(R.string.brain_net_error)), ErrorKind.NETWORK)
+        else -> BrainEvent.Error(e.message ?: tr(R.string.brain_error_head), ErrorKind.OTHER)
+    }
+
+    /** `POST /v1/runs` → id задачи. Idempotency-Key: повтор после обрыва не заведёт вторую задачу. */
+    private fun submit(l: HermesLink, modeId: String, body: String): String {
+        val c = open(l, "/v1/runs", "POST", 30_000)
         c.doOutput = true
         c.setRequestProperty("Content-Type", "application/json")
         c.setRequestProperty("X-Hermes-Session-Key", "vahter:$modeId")
-        session(modeId)?.let { c.setRequestProperty("X-Hermes-Session-Id", it) }
+        c.setRequestProperty("Idempotency-Key", UUID.randomUUID().toString())
         try {
             c.outputStream.use { it.write(body.toByteArray()) }
             val code = c.responseCode
+            if (code != 200 && code != 202) throw httpError(l, code, c.errorStream?.bufferedReader()?.readText().orEmpty())
+            val obj = json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject
+            return obj.str("run_id") ?: throw HermesError(tr(R.string.hermes_err_http, code, "no run_id"), ErrorKind.OTHER)
+        } finally { c.disconnect() }
+    }
+
+    /** `GET /v1/runs/{id}` → статус и итог; null — задачи на сервере нет (перезапуск, срок хранения). */
+    private fun status(l: HermesLink, runId: String): JsonObject? {
+        val c = open(l, "/v1/runs/$runId", "GET", 15_000)
+        try {
+            val code = c.responseCode
+            if (code == 404) return null
             if (code != 200) throw httpError(l, code, c.errorStream?.bufferedReader()?.readText().orEmpty())
-            c.getHeaderField("X-Hermes-Session-Id")?.takeIf { it.isNotBlank() }?.let { saveSession(modeId, it) }
-            var event = ""
+            return json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject
+        } finally { c.disconnect() }
+    }
+
+    private class Follow(var seq: Int, val text: StringBuilder = StringBuilder(), val media: MutableList<String> = mutableListOf(), var done: Boolean = false)
+
+    /**
+     * Читать события задачи с [run].seq, переподключаясь после обрывов, пока ход не завершится. Текст через [MediaFilter]
+     * (теги `MEDIA:` → файлы после текста). Конец: `run.completed` — History + MessageEnd, `run.failed` — Error, `run.cancelled` — Error.
+     */
+    private suspend fun follow(l: HermesLink, modeId: String, run: HermesRun, out: FlowCollector<BrainEvent>) {
+        val f = Follow(run.seq)
+        val filter = MediaFilter({ t -> f.text.append(t); out.emit(BrainEvent.Delta(t)) }, { f.media += it })
+        var attempt = 0
+        while (!f.done) {
+            currentCoroutineContext().ensureActive()
+            try {
+                stream(l, modeId, run.id, f, filter, out)
+                if (!f.done) {
+                    // Поток закрылся без итога: задача могла кончиться, пока нас не было, — спросим статус.
+                    val st = status(l, run.id)
+                    if (st == null) { out.emit(BrainEvent.Error(tr(R.string.hermes_run_lost), ErrorKind.OTHER)); return }
+                    val s = st.str("status")
+                    if (s == "completed" || s == "failed" || s == "cancelled") { finish(l, modeId, st, f, filter, out); return }
+                }
+            } catch (e: HermesError) {
+                if (e.code == 404) { out.emit(BrainEvent.Error(tr(R.string.hermes_run_lost), ErrorKind.OTHER)); return }
+                out.emit(error(l, e)); return
+            } catch (e: SSLException) { out.emit(error(l, e)); return
+            } catch (e: IOException) {
+                // Сеть моргнула — задача на сервере идёт дальше; подождём и продолжим с того же места.
+                if (++attempt > 6) { out.emit(error(l, e)); return }
+                delay(1000L shl (attempt - 1).coerceAtMost(4))
+            }
+        }
+    }
+
+    private suspend fun stream(l: HermesLink, modeId: String, runId: String, f: Follow, filter: MediaFilter, out: FlowCollector<BrainEvent>) {
+        val c = open(l, "/v1/runs/$runId/events?last_seq=${f.seq}", "GET", 120_000)
+        try {
+            val code = c.responseCode
+            if (code != 200) throw httpError(l, code, c.errorStream?.bufferedReader()?.readText().orEmpty())
             c.inputStream.bufferedReader().useLines { lines ->
                 for (line in lines) {
                     currentCoroutineContext().ensureActive()
-                    when {
-                        line.startsWith("event:") -> { event = line.removePrefix("event:").trim(); continue }
-                        line.isEmpty() -> { event = ""; continue }
-                        !line.startsWith("data:") -> continue
-                    }
-                    val data = line.removePrefix("data:").trim()
-                    if (data == "[DONE]") break
-                    val obj = runCatching { json.parseToJsonElement(data).jsonObject }.getOrNull() ?: continue
-                    when (event) {
-                        "hermes.tool.progress" -> if (obj.str("status") == "running") {
+                    if (!line.startsWith("data:")) continue
+                    val obj = runCatching { json.parseToJsonElement(line.removePrefix("data:").trim()).jsonObject }.getOrNull() ?: continue
+                    obj["seq"]?.jsonPrimitive?.intOrNull?.let { f.seq = it }
+                    when (obj.str("event")) {
+                        "tool.started" -> {
                             val tool = obj.str("tool").orEmpty()
-                            if (tool != "todo_list" && tool != "todo") emit(BrainEvent.Step(stepTitle(tool, obj.str("label")), phone = false))
+                            if (tool != "todo_list" && tool != "todo") out.emit(BrainEvent.Step(stepTitle(tool, obj.str("preview")), phone = false))
                         }
-                        "approval.request" -> emit(ask(l, obj))
-                        "hermes.status" -> Unit
-                        else -> {
-                            val choice = (obj["choices"] as? JsonArray)?.firstOrNull()?.jsonObject ?: continue
-                            choice["delta"]?.jsonObject?.get("content")?.jsonPrimitive?.contentOrNull?.let { if (it.isNotEmpty()) emit(BrainEvent.Delta(it)) }
-                            val finish = choice["finish_reason"]?.jsonPrimitive?.contentOrNull
-                            if (finish != null && finish != "stop") {
-                                val why = obj["error"]?.jsonObject?.str("message") ?: obj["hermes"]?.jsonObject?.str("error") ?: finish
-                                emit(BrainEvent.Error(tr(R.string.hermes_err_turn, why), ErrorKind.OTHER))
-                            }
-                        }
+                        "message.delta" -> obj.str("delta")?.let { if (it.isNotEmpty()) filter.feed(it) }
+                        "message.interim" -> if (obj["already_streamed"]?.jsonPrimitive?.contentOrNull != "true") obj.str("text")?.let { filter.feed(it.trimEnd() + "\n\n") }
+                        "approval.request" -> out.emit(ask(l, obj))
+                        "run.completed", "run.failed", "run.cancelled" -> { finish(l, modeId, obj, f, filter, out); return }
+                        else -> Unit
                     }
+                    out.emit(BrainEvent.Run(runId, f.seq))
                 }
             }
-        } finally {
-            c.disconnect()
+        } finally { c.disconnect() }
+    }
+
+    /** Итог задачи: сессию запомнить, недопоказанный текст (если поток прервался) — дописать, файлы — скачать. */
+    private suspend fun finish(l: HermesLink, modeId: String, st: JsonObject, f: Follow, filter: MediaFilter, out: FlowCollector<BrainEvent>) {
+        f.done = true
+        st.str("session_id")?.takeIf { it.isNotBlank() }?.let { saveSession(modeId, it) }
+        val status = st.str("status") ?: st.str("event")?.removePrefix("run.")
+        val output = st.str("output").orEmpty()
+        if (f.text.isEmpty() && output.isNotBlank()) filter.feed(output)
+        filter.finish()
+        for (m in f.media) out.emit(fetch(l, m))
+        when (status) {
+            "failed" -> out.emit(BrainEvent.Error(tr(R.string.hermes_err_turn, st.str("error") ?: tr(R.string.brain_error_head)), ErrorKind.OTHER))
+            "cancelled" -> if (f.text.isBlank()) out.emit(BrainEvent.Error(tr(R.string.hermes_run_cancelled), ErrorKind.OTHER))
         }
+        if (f.text.isNotBlank()) out.emit(BrainEvent.History(ChatMsg("assistant", f.text.toString())))
+        out.emit(BrainEvent.MessageEnd)
     }
 
     /** `approval.request`: команда и причина — как прислал сервер (Продукт 5: пересказ не выдумываем), варианты — его список. */
