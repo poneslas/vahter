@@ -582,7 +582,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .s2.isempty{min-height:54%}
 .s2 .glow{position:absolute;left:0;right:0;bottom:0;height:260px;z-index:-1;pointer-events:none;border-radius:0 0 inherit inherit;
   --gc:232,163,23;background:radial-gradient(130% 100% at 50% 100%,rgba(var(--gc),.30) 0%,rgba(var(--gc),.10) 45%,rgba(var(--gc),0) 75%);opacity:.55;transition:opacity .4s;animation:gbreath 4s ease-in-out infinite}
-.s2[data-st=rec] .glow{opacity:calc(.55 + .45*var(--lv,0));height:320px;animation:none;transform:scaleY(calc(.9 + .25*var(--lv,0)))}
+.s2[data-st=rec] .glow{opacity:.6;height:320px;animation:none}   /* яркость и рост — от голоса, voice.js */
 .s2[data-st=recog] .glow,.s2[data-st=think] .glow{opacity:.85;animation:gpulse 1.8s ease-in-out infinite}
 @keyframes gbreath{0%,100%{opacity:.4}50%{opacity:.65}}
 @keyframes gpulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.12)}}
@@ -604,10 +604,9 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .vmark .r2{inset:0;border:1.5px solid var(--c);opacity:.2}
 .vmark.mini .r1{border-width:1.5px}.vmark.mini .r2{border-width:1px}
 /* слушает — знак живой: ядро и кольца от громкости голоса (voice.js ставит --lv), как эквалайзер, только кругом */
-[data-st=rec] .vmark .core{animation:none;transform:scale(calc(.82 + .55*var(--lv,0)));box-shadow:0 0 calc(var(--s)*(.25 + .45*var(--lv,0))) var(--c)}
-[data-st=rec] .vmark .r1{animation:none;opacity:calc(.3 + .55*var(--lv,0));transform:scale(calc(.96 + .28*var(--lv,0)))}
-[data-st=rec] .vmark .r2{animation:none;opacity:calc(.12 + .4*var(--lv,0));transform:scale(calc(.94 + .5*var(--lv,0)))}
-[data-st=rec] .vmark.mini *{opacity:inherit;transform:none;box-shadow:none}   /* маленький в шапке не дублирует живой */
+/* слушает — знак живой: размер ядра и колец, их яркость задаёт voice.js от громкости голоса, как эквалайзер, только кругом */
+[data-st=rec] .vmark i{animation:none}
+[data-st=rec] .vmark .r1{opacity:.45}[data-st=rec] .vmark .r2{opacity:.2}   /* маленький в шапке — неподвижный, живой один */
 .vmark.mid{--s:46px}
 .live.recl{display:flex;justify-content:center;align-items:center}
 [data-st=recog] .vmark .r1,[data-st=think] .vmark .r1{border-style:dashed;opacity:.8;animation:vspin 1.6s linear infinite}

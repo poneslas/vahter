@@ -15,12 +15,23 @@ class Eq{
   }
 }
 let eqs=[]; let last=performance.now();
-/* Живой знак: пока идёт запись, громкость «голоса» (та же имитация, что у эквалайзера; в приложении — LevelMeter) кладётся
-   в --lv на экран — по ней знак и свечение листа растут и оседают. Вверх быстро, вниз плавно. */
+/* Живой знак: пока идёт запись, громкость «голоса» (та же имитация, что у эквалайзера; в приложении — LevelMeter)
+   задаёт размер ядра и колец знака и яркость свечения листа. Вверх быстро, вниз плавно. Маленький знак в шапке не трогаем. */
 const lvSim = new (class{ constructor(){ this.L=0; this.t=0; this.end=0; this.syl=0 } step(dt, on){
   const inp = on ? Eq.prototype.voice.call(this, dt) : 0; this.L += (inp-this.L)*(inp>this.L?.6:.12); return this.L } })();
 (function loop(now){ const dt=Math.min(50,now-last); last=now; eqs.forEach(e=>e.step(dt));
-  const scr=document.getElementById('scr'); if (scr){ const lv=lvSim.step(dt, !!(typeof S!=='undefined'&&S.rec&&S.rec.key!==null)); scr.style.setProperty('--lv', lv.toFixed(3)) }
+  const on = typeof S!=='undefined' && !!S.rec, L = lvSim.step(dt, on && S.rec.key!==null);
+  if (on) {
+    document.querySelectorAll('#scr [data-st=rec] .vmark:not(.mini)').forEach(v => {
+      const [r2, r1, core] = v.children;
+      core.style.transform = `scale(${(.85 + .6*L).toFixed(3)})`;
+      core.style.boxShadow = `0 0 ${(v.offsetWidth*(.3 + .5*L)).toFixed(1)}px var(--c)`;
+      r1.style.transform = `scale(${(1 + .3*L).toFixed(3)})`; r1.style.opacity = (.45 + .45*L).toFixed(3);
+      r2.style.transform = `scale(${(1 + .55*L).toFixed(3)})`; r2.style.opacity = (.2 + .4*L).toFixed(3);
+    });
+    const g = document.querySelector('#scr .s2[data-st=rec] .glow');
+    if (g) { g.style.opacity = (.55 + .45*L).toFixed(3); g.style.transform = `scaleY(${(.92 + .2*L).toFixed(3)})` }
+  }
   requestAnimationFrame(loop) })(last);
 
 
