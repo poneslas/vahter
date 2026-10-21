@@ -15,10 +15,7 @@ import ru.poneslas.vahter.core.Mode
 import ru.poneslas.vahter.core.Secrets
 import ru.poneslas.vahter.core.Store
 import ru.poneslas.vahter.notify.Notifier
-import kotlinx.coroutines.launch
-import ru.poneslas.vahter.assistant.Sheet
 import ru.poneslas.vahter.assistant.SheetEvents
-import ru.poneslas.vahter.pisar.model.ModelDownload
 import ru.poneslas.vahter.voice.Voice
 
 /**
@@ -72,12 +69,6 @@ class App : Application() {
         // Запись останавливаем сами: после hide() система микрофон не выключает.
         SheetEvents.onHide = { voice.cancel() }
         voice.warmUp()
-    }
-
-    fun voiceStatus(): String = when (val s = ModelDownload.state.value) {
-        is ModelDownload.State.Running -> tr(R.string.app_voice_loading, s.percent)
-        is ModelDownload.State.Failed -> tr(R.string.app_voice_failed)
-        else -> if (voice.installed.value) tr(R.string.app_voice_ready) else tr(R.string.app_voice_none)
     }
 
     companion object {

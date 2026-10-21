@@ -11,7 +11,7 @@ import java.nio.ByteOrder
 
 /**
  * Только отладочная сборка: прогнать WAV (16 кГц, моно, PCM16) через распознавание приложения.
- *   adb shell am broadcast -n ru.poneslas.vahter.dev/ru.poneslas.vahter.DebugAsr --es wav files/x.wav
+ *   adb shell am broadcast -n ru.poneslas.vahter.dev/DebugAsr --es wav files/x.wav
  * Результат — в logcat с тегом VahterAsr.
  */
 class DebugAsr : BroadcastReceiver() {

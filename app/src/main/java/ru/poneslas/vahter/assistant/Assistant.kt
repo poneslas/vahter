@@ -24,6 +24,13 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.flow.MutableStateFlow
 import ru.poneslas.vahter.app.MainActivity
+import ru.poneslas.vahter.App
+import ru.poneslas.vahter.core.LockScope
+import ru.poneslas.vahter.core.ReturnToAssistant
+import ru.poneslas.vahter.core.Modes
+import ru.poneslas.vahter.core.Primary
+import ru.poneslas.vahter.tr
+import ru.poneslas.vahter.R
 
 /** Сервис помощника. Живёт, пока Вахтёр выбран цифровым помощником. */
 class AssistService : VoiceInteractionService() {
@@ -180,13 +187,13 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
         super.onShow(args, showFlags)
         // Сессия сама выставляет режим клавиатуры при показе — перекрываем, иначе окно сдвигается поверх imePadding (баг №16).
         window.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
-        val app = ru.poneslas.vahter.App.instance
+        val app = App.instance
         val conv = app.conversation
         val settings = conv.state.value.settings
         val src = args?.getString("src")
         // На заблокированном экране по умолчанию ничего не открывается: сначала разблокировка (Продукт 5.7).
         val locked = context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
-        if (locked && settings.lockScope == ru.poneslas.vahter.core.LockScope.OFF) {
+        if (locked && settings.lockScope == LockScope.OFF) {
             runCatching { startAssistantActivity(Intent(context, UnlockActivity::class.java)) }
             hide()
             return
@@ -197,11 +204,11 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
         if (call && src != "unlock") {
             val idle = System.currentTimeMillis() - conv.state.value.saved.lastUse
             val back = when (settings.returnToAssistant) {
-                ru.poneslas.vahter.core.ReturnToAssistant.ALWAYS -> true
-                ru.poneslas.vahter.core.ReturnToAssistant.NEVER -> false
-                ru.poneslas.vahter.core.ReturnToAssistant.MIN30 -> idle > 30 * 60_000
+                ReturnToAssistant.ALWAYS -> true
+                ReturnToAssistant.NEVER -> false
+                ReturnToAssistant.MIN30 -> idle > 30 * 60_000
             }
-            if (back) conv.selectMode(ru.poneslas.vahter.core.Modes.MAIN)
+            if (back) conv.selectMode(Modes.MAIN)
             // После 30 минут без дела — чистый лист: показываем только новое; старое — в приложении, выше черты «Новый разговор».
             val st = conv.state.value
             if (idle > 30 * 60_000 && st.feed.size > (Sheet.from.value[st.mode] ?: 0)) Sheet.from.value = Sheet.from.value + (st.mode to st.feed.size)
@@ -214,20 +221,20 @@ class AssistSession(context: Context) : VoiceInteractionSession(context),
             // Повторный вызов при открытой камере закрывает её; фото-режим откроет камеру заново ниже.
             Sheet.camera.value = false
             // Главное действие режима при вызове: фото — сразу камера; голос — сразу слушает, если включено «Слушать сразу при вызове».
-            if (cur.primary == ru.poneslas.vahter.core.Primary.PHOTO && cur.accepts.photo &&
+            if (cur.primary == Primary.PHOTO && cur.accepts.photo &&
                 context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
             // Голос не скачан — не слушаем и не пишем об этом: строка над лентой уже говорит «Голос не скачан · Скачать».
-            else if (cur.primary == ru.poneslas.vahter.core.Primary.VOICE && settings.listenOnCall && app.voice.installed.value) Sheet.autoListen.value++
+            else if (cur.primary == Primary.VOICE && settings.listenOnCall && app.voice.installed.value) Sheet.autoListen.value++
         }
     }
 
     override fun onHide() {
         // Запись останавливаем сами: система микрофон после hide() не выключает (Архитектура 3).
         SheetEvents.onHide?.invoke()
-        ru.poneslas.vahter.App.instance.conversation.touch() // «30 минут без дела» считаем от последнего закрытия листа
+        App.instance.conversation.touch() // «30 минут без дела» считаем от последнего закрытия листа
         Sheet.camera.value = false
         Sheet.sideCue.value = false
-        if (Sheet.firstClose) { Sheet.firstClose = false; android.widget.Toast.makeText(context, ru.poneslas.vahter.tr(ru.poneslas.vahter.R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
+        if (Sheet.firstClose) { Sheet.firstClose = false; android.widget.Toast.makeText(context, tr(R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
         if (registry.currentState.isAtLeast(Lifecycle.State.CREATED)) registry.currentState = Lifecycle.State.CREATED
         Sheet.visible.value = false
         super.onHide()

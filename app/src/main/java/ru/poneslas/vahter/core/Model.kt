@@ -3,6 +3,8 @@ package ru.poneslas.vahter.core
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import kotlinx.serialization.Serializable
+import ru.poneslas.vahter.actions.Registry
+import ru.poneslas.vahter.ui.Note
 
 /**
  * Модель данных — один к одному с прототипом (docs/design/prototype/model.js) и
@@ -116,7 +118,7 @@ object Brains {
 data class Settings(
     val lockScope: LockScope = LockScope.OFF,
     val returnToAssistant: ReturnToAssistant = ReturnToAssistant.MIN30,
-    /** Только то, что пользователь менял; остальное — по умолчанию из реестра ([ru.poneslas.vahter.actions.Registry]). */
+    /** Только то, что пользователь менял; остальное — по умолчанию из реестра ([Registry]). */
     val policy: Map<String, Policy> = emptyMap(),
     val onboarded: Boolean = false,
     /** Голосовой режим при вызове помощника сразу пишет (Бэклог №13). Только вызов — не уведомление и не возврат. */

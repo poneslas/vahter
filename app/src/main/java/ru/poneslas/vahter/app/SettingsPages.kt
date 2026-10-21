@@ -1,0 +1,274 @@
+package ru.poneslas.vahter.app
+
+import ru.poneslas.vahter.pisar.model.ModelDownload
+import ru.poneslas.vahter.actions.Registry
+import ru.poneslas.vahter.core.Mode
+import ru.poneslas.vahter.core.Primary
+import ru.poneslas.vahter.actions.Phone
+import androidx.compose.foundation.layout.FlowRow
+import ru.poneslas.vahter.ui.MNote
+import androidx.compose.foundation.layout.Spacer
+import ru.poneslas.vahter.R
+import ru.poneslas.vahter.core.Modes
+import ru.poneslas.vahter.ui.Item
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import ru.poneslas.vahter.tr
+import ru.poneslas.vahter.core.ReturnToAssistant
+import ru.poneslas.vahter.App
+import ru.poneslas.vahter.ui.ItemWithSwitch
+import ru.poneslas.vahter.ui.Note
+import ru.poneslas.vahter.ui.MChip
+import androidx.compose.material3.Text
+import android.content.Intent
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import android.app.role.RoleManager
+import ru.poneslas.vahter.ui.Ink
+import ru.poneslas.vahter.ui.Divider
+import ru.poneslas.vahter.ui.Sw
+import androidx.compose.foundation.layout.Row
+import ru.poneslas.vahter.ui.Ic
+import androidx.compose.foundation.layout.Arrangement
+import ru.poneslas.vahter.core.Brains
+import androidx.compose.runtime.mutableStateOf
+import ru.poneslas.vahter.ui.Section
+import androidx.compose.ui.text.font.FontWeight
+import ru.poneslas.vahter.ui.Banner
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
+import ru.poneslas.vahter.core.Policy
+import ru.poneslas.vahter.core.LockScope
+import androidx.compose.runtime.collectAsState
+import ru.poneslas.vahter.ui.ScrollPage
+import ru.poneslas.vahter.core.BrainDesc
+import ru.poneslas.vahter.ui.SetCard
+import ru.poneslas.vahter.ui.FormPage
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
+import ru.poneslas.vahter.ui.TopBar
+import ru.poneslas.vahter.ui.Note
+import android.provider.Settings as AndroidSettings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
+/** Страницы за шестерёнкой (ui.js: settings, brainPage, actionsPage, journalPage, hermesPage). */
+
+@Composable
+fun SettingsPage(a: MainActivity) {
+    val app = App.instance
+    val state by app.conversation.state.collectAsState()
+    @Suppress("UNUSED_VARIABLE") val r = a.resumed.intValue // баг №1: перечитать после возврата из системных настроек
+    val roleHeld = a.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
+    val mic = a.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    val notif = a.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    val installed by app.voice.installed.collectAsState()
+    val dl by ModelDownload.state.collectAsState()
+    TopBar(tr(R.string.ui_settings), onBack = a::back)
+    ScrollPage {
+        Section(tr(R.string.set_call))
+        Item(tr(R.string.set_assistant_role), if (roleHeld) tr(R.string.app_name) else tr(R.string.set_assistant_role_off), warn = !roleHeld, icon = Ic.spark) {
+            a.startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
+        }
+        Item(tr(R.string.set_side_key), SideKey.describe(a), icon = Ic.btn) { SideKey.open(a) }
+        Item(tr(R.string.set_listen_on_call), tr(if (state.settings.listenOnCall) R.string.set_listen_on_call_on else R.string.set_listen_on_call_off),
+            icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
+        Item(tr(R.string.set_return), returnLabel(state.settings.returnToAssistant), icon = Ic.hist) {
+            a.choose(MainActivity.ChoiceDialog(tr(R.string.set_return), ReturnToAssistant.entries.map { it.name to returnLabel(it) }, state.settings.returnToAssistant.name) { v ->
+                app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }
+            })
+        }
+        Section(tr(R.string.set_modes))
+        state.modes.forEach { m ->
+            if (m.id == Modes.MAIN) Item(m.title, modeSummary(m), icon = Ic.mode(m.icon)) { a.go("mode:${m.id}") }
+            else ItemWithSwitch(m.title, modeSummary(m), Ic.mode(m.icon), m.enabled,
+                onToggle = { app.conversation.editMode(m.id) { it.copy(enabled = !it.enabled) } }) { a.go("mode:${m.id}") }
+        }
+        Item(tr(R.string.feed_new_mode), tr(R.string.set_modes_sub), icon = Ic.plus) { a.go("mode:" + app.conversation.addMode()) }
+        Section(tr(R.string.set_voice))
+        val pct = (dl as? ModelDownload.State.Running)?.percent
+        Item(tr(R.string.set_voice_title), when { installed -> tr(R.string.set_voice_ready); pct != null -> tr(R.string.set_voice_loading, pct); else -> tr(R.string.app_voice_none) },
+            warn = !installed && pct == null, icon = Ic.wave) { a.go("voice") }
+        val micOff = !mic && state.settings.micAsked && !a.shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)
+        Item(tr(R.string.set_mic), tr(when { mic -> R.string.set_mic_on; micOff -> R.string.set_mic_denied; else -> R.string.set_mic_ask }), warn = micOff, icon = Ic.mic) {
+            if (!mic) a.askMic()
+        }
+        Section(tr(R.string.set_brains))
+        Brains.all.forEach { b ->
+            val api = b.kind == BrainDesc.Kind.API
+            val has = app.hasKey(b.id)
+            Item(b.title, if (api) (if (has) tr(R.string.set_brain_has_key, b.model) else tr(R.string.set_brain_no_key)) else tr(R.string.set_hermes_sub),
+                warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { a.go(if (api) "brain:${b.id}" else "hermes") }
+        }
+        Section(tr(R.string.set_notif))
+        Item(tr(R.string.set_notif), if (notif) tr(R.string.set_notif_on) else tr(R.string.set_notif_off), icon = Ic.bell, end = { Sw(notif) }) {
+            if (!notif) a.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
+            else a.startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, a.packageName))
+        }
+        Section(tr(R.string.set_actions_section))
+        val REG = Registry
+        val pol = REG.all.map { REG.policy(state.settings, it.id) }
+        val blockedN = REG.all.count { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(a, it).isNotEmpty() }
+        Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
+            warn = blockedN > 0, icon = Ic.shield) { a.go("actions") }
+        Item(tr(R.string.set_journal), tr(R.string.set_journal_today, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { a.go("journal") }
+        Divider()
+        Item(tr(R.string.set_about), tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""), icon = Ic.info)
+    }
+}
+
+/** model.js, modeSummary(). */
+private fun modeSummary(m: Mode): String {
+    if (m.id == Modes.MAIN) return tr(R.string.set_mode_main_sub)
+    val ins = listOfNotNull(tr(R.string.sheet_via_photo).takeIf { m.accepts.photo }, tr(R.string.set_mode_file).takeIf { m.accepts.file })
+    return listOfNotNull(if (m.builtin) null else tr(R.string.set_mode_custom), if (m.primary == Primary.PHOTO) tr(R.string.set_mode_photo_first) else tr(R.string.sheet_via_voice),
+        ins.joinToString(", ").ifEmpty { null }).joinToString(" · ")
+}
+
+private fun returnLabel(r: ReturnToAssistant) = when (r) {
+    ReturnToAssistant.MIN30 -> tr(R.string.set_return_30m)
+    ReturnToAssistant.NEVER -> tr(R.string.set_return_never)
+    ReturnToAssistant.ALWAYS -> tr(R.string.set_return_always)
+}
+
+private fun lockLabel(s: LockScope) = when (s) {
+    LockScope.OFF -> tr(R.string.set_lock_off)
+    LockScope.SAFE -> tr(R.string.set_lock_safe)
+    LockScope.ON -> tr(R.string.set_lock_on)
+}
+
+/** brainPage(): карточка «Адрес / Модель», ключ, «Умеет», пояснение. */
+@Composable
+fun BrainPage(a: MainActivity, id: String) {
+    val app = App.instance
+    val b = Brains.byId(id)
+    val state by app.conversation.state.collectAsState()
+    TopBar(b.title, tr(R.string.set_brain_api), onBack = a::back)
+    FormPage {
+        SetCard { Item(tr(R.string.set_brain_url), b.url, icon = Ic.srv); Item(tr(R.string.set_brain_model), b.model, icon = Ic.spark) }
+        KeyEditor(b)
+        Column {
+            Text(tr(R.string.set_brain_caps), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                MChip(tr(R.string.set_cap_vision), b.vision); MChip(tr(R.string.set_cap_tools), b.tools); MChip(tr(R.string.set_cap_memory), b.memory); MChip(tr(R.string.set_cap_server), b.server)
+            }
+        }
+        val users = state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }
+        MNote(tr(R.string.set_brain_modes_note, users))
+    }
+}
+
+/** actionsPage(): баннер «нет доступа», группы с политикой справа и состоянием доступа, экран блокировки, журнал. */
+@Composable
+fun ActionsPage(a: MainActivity) {
+    val app = App.instance
+    val state by app.conversation.state.collectAsState()
+    @Suppress("UNUSED_VARIABLE") val r = a.resumed.intValue // перечитать доступы после системных окон
+    val REG = Registry
+    TopBar(tr(R.string.set_actions), tr(R.string.actions_subtitle), onBack = a::back)
+    ScrollPage {
+        val blocked = REG.all.filter { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(a, it).isNotEmpty() }
+        if (blocked.isNotEmpty()) {
+            val t = blocked.first()
+            Banner(tr(R.string.actions_blocked, t.title, REG.specialTitle(t.special!!)),
+                actions = listOf(tr(R.string.actions_fix) to { Phone.openDndAccess(a); Unit }))
+        }
+        REG.groups.forEach { g ->
+            Section(g)
+            REG.all.filter { it.group == g }.forEach { t ->
+                val p = REG.policy(state.settings, t.id)
+                val miss = REG.missing(a, t)
+                val sub = when {
+                    p == Policy.OFF || miss.isEmpty() -> null
+                    t.special != null -> tr(R.string.actions_no_access, miss.joinToString(", "))
+                    else -> tr(R.string.actions_will_ask, miss.joinToString(", "))
+                }
+                Item(t.title, sub, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger },
+                    minHeight = 52.dp) {
+                    val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to tr(R.string.actions_policy_auto))) + listOf("ASK" to tr(R.string.actions_policy_ask), "OFF" to tr(R.string.actions_policy_off))
+                    a.choose(MainActivity.ChoiceDialog(t.title, opts, p.name) { v ->
+                        app.conversation.updateSettings { it.copy(policy = it.policy + (t.id to Policy.valueOf(v))) }
+                    })
+                }
+            }
+        }
+        Section(tr(R.string.actions_lock_h))
+        Item(tr(R.string.actions_lock_sub), lockLabel(state.settings.lockScope), icon = Ic.lock) {
+            a.choose(MainActivity.ChoiceDialog(tr(R.string.actions_lock_sub), LockScope.entries.map { it.name to lockLabel(it) }, state.settings.lockScope.name) { v ->
+                app.conversation.updateSettings { it.copy(lockScope = LockScope.valueOf(v)) }
+            })
+        }
+        Item(tr(R.string.set_journal), tr(R.string.set_journal_today, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { a.go("journal") }
+        MNote(tr(R.string.actions_note),
+            Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 20.dp))
+    }
+}
+
+/** Hermes: ещё не подключается — честно говорим и описываем, что будет (бэклог; Продукт 2, 4). */
+@Composable
+fun HermesPage(a: MainActivity) {
+    TopBar("Hermes", tr(R.string.hermes_subtitle), onBack = a::back)
+    FormPage {
+        Note(tr(R.string.hermes_not_yet))
+        Text(tr(R.string.hermes_about_1) +
+            tr(R.string.hermes_about_2), color = Ink.soft)
+        Column {
+            Text(tr(R.string.hermes_will_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+            SetCard {
+                Item(tr(R.string.hermes_will_memory), tr(R.string.hermes_will_memory_sub), icon = Ic.hist)
+                Item(tr(R.string.hermes_will_search), tr(R.string.hermes_will_search_sub), icon = Ic.lens)
+                Item(tr(R.string.hermes_will_server), tr(R.string.hermes_will_server_sub), icon = Ic.srv)
+                Item(tr(R.string.hermes_will_schedule), tr(R.string.hermes_will_schedule_sub), icon = Ic.bell)
+                Item(tr(R.string.hermes_will_plan), tr(R.string.hermes_will_plan_sub), icon = Ic.list)
+                Item(tr(R.string.hermes_will_files), tr(R.string.hermes_will_files_sub), icon = Ic.doc)
+                Item(tr(R.string.hermes_will_telegram), tr(R.string.hermes_will_telegram_sub), icon = Ic.chat)
+                Item(tr(R.string.set_cap_tools), tr(R.string.hermes_will_phone), icon = Ic.shield)
+            }
+        }
+        Column {
+            Text(tr(R.string.hermes_pair_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+            SetCard {
+                Item(tr(R.string.hermes_pair_tg), tr(R.string.hermes_pair_tg_sub), icon = Ic.chat, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
+                Item(tr(R.string.hermes_pair_qr), tr(R.string.hermes_pair_qr_sub), icon = Ic.qr, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
+                Item(tr(R.string.hermes_pair_addr), tr(R.string.hermes_pair_addr_sub), icon = Ic.pen, trailing = tr(R.string.hermes_soon), trailingColor = Ink.faint)
+            }
+            MNote(tr(R.string.hermes_per_mode))
+        }
+    }
+}
+
+/** journalPage(): по дням, время · что · кто; по нажатию — фраза, действие, итог, экран. */
+@Composable
+fun JournalPage(a: MainActivity) {
+    val app = App.instance
+    val state by app.conversation.state.collectAsState()
+    var open by remember { mutableStateOf<Long?>(null) }
+    TopBar(tr(R.string.set_journal), tr(R.string.journal_subtitle), onBack = a::back)
+    ScrollPage {
+        val list = state.saved.journal.reversed()
+        if (list.isEmpty()) MNote(tr(R.string.journal_empty), Modifier.padding(horizontal = 22.dp))
+        list.groupBy { java.text.SimpleDateFormat("d MMMM, EEEE", java.util.Locale("ru")).format(java.util.Date(it.at)) }.forEach { (day, items) ->
+            Section(if (android.text.format.DateUtils.isToday(items.first().at)) tr(R.string.journal_today) else day)
+            items.forEach { j ->
+                Row(Modifier.fillMaxWidth().clickable { open = if (open == j.id) null else j.id }.padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(java.text.SimpleDateFormat("H:mm", java.util.Locale.ROOT).format(java.util.Date(j.at)), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.width(40.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(j.title, fontSize = 14.5.sp, fontWeight = FontWeight.Medium)
+                        Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == tr(R.string.conv_done)) Ink.soft else Ink.danger)
+                    }
+                }
+                if (open == j.id) Column(Modifier.padding(start = 76.dp, end = 22.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf(tr(R.string.journal_phrase) to "«${j.phrase}»", tr(R.string.journal_action) to "${j.tool} ${j.params}", tr(R.string.journal_screen) to if (j.locked) tr(R.string.journal_screen_locked) else tr(R.string.journal_screen_open)).forEach { (k, v) ->
+                        Row { Text(k, fontSize = 12.5.sp, color = Ink.faint, modifier = Modifier.width(80.dp)); Text(v, fontSize = 12.5.sp) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.actions_policy_auto); Policy.ASK -> tr(R.string.actions_policy_ask); Policy.OFF -> tr(R.string.actions_policy_off) }

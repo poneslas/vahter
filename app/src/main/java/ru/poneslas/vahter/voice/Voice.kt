@@ -13,6 +13,7 @@ import ru.poneslas.vahter.pisar.audio.AudioRecorder
 import ru.poneslas.vahter.pisar.model.ModelDownload
 import ru.poneslas.vahter.pisar.model.ModelManager
 import ru.poneslas.vahter.pisar.speech.GigaAmOnnxRecognizer
+import ru.poneslas.vahter.pisar.audio.LevelMeter
 
 /**
  * Голос — как в Гига Писаре для Android (пакет `pisar`): запись с первого касания, GigaAM v3 e2e
@@ -47,7 +48,7 @@ class Voice(private val context: Context, private val scope: CoroutineScope) {
         }
     }
 
-    /** Громкость 0..1, подстроенная под микрофон ([ru.poneslas.vahter.pisar.audio.LevelMeter]). */
+    /** Громкость 0..1, подстроенная под микрофон ([LevelMeter]). */
     val level: Float get() = recorder.level
 
     fun hasMic() = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED

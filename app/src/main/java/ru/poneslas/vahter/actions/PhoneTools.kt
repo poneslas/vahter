@@ -23,6 +23,8 @@ import ru.poneslas.vahter.core.Mode
 import ru.poneslas.vahter.core.Note
 import ru.poneslas.vahter.core.Policy
 import ru.poneslas.vahter.core.Settings
+import ru.poneslas.vahter.ui.Note
+import ru.poneslas.vahter.trp
 
 /**
  * Действия телефона для мозга (Архитектура 7, Б.1–Б.3): описание функции → «Разрешено / Спрашивать /
@@ -196,7 +198,7 @@ class PhoneTools(
             val days = (a.int("days") ?: 1).coerceIn(1, 31)
             val list = Phone.io { Phone.events(context, from, from + days * 86_400_000L) }
             val n = list.size
-            act("📅", tr(R.string.act_cal_title, if (n == 0) tr(R.string.act_cal_none) else "$n " + plural(n, tr(R.string.act_cal_event_one), tr(R.string.act_cal_event_few), tr(R.string.act_cal_event_many))),
+            act("📅", tr(R.string.act_cal_title, if (n == 0) tr(R.string.act_cal_none) else trp(R.plurals.act_cal_events, n)),
                 if (days == 1) java.text.SimpleDateFormat("EEEE, d MMMM", java.util.Locale("ru")).format(java.util.Date(from)) else tr(R.string.act_cal_days_from, days, Phone.dayHm(from).substringBeforeLast(',')), state = "info")
             buildJsonObject {
                 put("ok", true)
@@ -347,6 +349,4 @@ class PhoneTools(
         else -> err("unknown_tool", tr(R.string.act_no_such_tool))
     }
 
-    private fun plural(n: Int, one: String, few: String, many: String) =
-        if (n % 10 == 1 && n % 100 != 11) one else if (n % 10 in 2..4 && n % 100 !in 12..14) few else many
 }

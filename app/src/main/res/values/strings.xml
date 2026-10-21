@@ -77,7 +77,7 @@
     <string name="mode_edit">Изменить режим</string>
     <string name="mode_assistant_hint">Вопрос или задача</string>
     <string name="mode_assistant">Ассистент</string>
-    <string name="mode_assistant_empty">Спросите что угодно или попросите телефон: таймер, будильник.</string>
+    <string name="mode_assistant_empty">Спросите что угодно или попросите телефон: таймер, будильник, календарь.</string>
     <string name="mode_assistant_ph">Спросить или попросить</string>
     <string name="mode_translator">Переводчик</string>
     <string name="mode_translator_empty">Скажите или напишите — переведу. Можно сфотографировать надпись или меню.</string>
@@ -385,9 +385,6 @@
     <string name="act_timer_set_title">Запустить таймер · %1$s</string>
     <string name="act_cal_date_format">Дата нужна в виде ГГГГ-ММ-ДД</string>
     <string name="act_cal_none">событий нет</string>
-    <string name="act_cal_event_one">событие</string>
-    <string name="act_cal_event_few">события</string>
-    <string name="act_cal_event_many">событий</string>
     <string name="act_cal_title">Календарь · %1$s</string>
     <string name="act_cal_days_from">%1$s дн. с %2$s</string>
     <string name="act_cal_all_day">весь день</string>
@@ -672,4 +669,10 @@
     <string name="try_tips">вверх — без рук · влево — отмена</string>
     <string name="ui_skip">Пропустить</string>
     <string name="try_p_none">Голос ещё не скачан — попробуете потом в листе.</string>
+    <plurals name="act_cal_events">
+        <item quantity="one">%d событие</item>
+        <item quantity="few">%d события</item>
+        <item quantity="many">%d событий</item>
+        <item quantity="other">%d событий</item>
+    </plurals>
 </resources>

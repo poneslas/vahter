@@ -42,12 +42,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,6 +90,11 @@ import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import ru.poneslas.vahter.assistant.Sheet
+import ru.poneslas.vahter.voice.Voice
+import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /** Снятый кадр: картинка с превью + пометки + обрезка (в долях кадра). */
 class Frame(val bitmap: Bitmap, val marks: List<Attachments.Mark>, val crop: Attachments.Crop?)
@@ -184,8 +187,8 @@ fun CameraPanel(
     }
 
     DisposableEffect(full) {
-        ru.poneslas.vahter.assistant.Sheet.cameraBack = { if (tool == "crop") tool = null else if (frozen != null) live() else if (full) onCollapse() else onClose() }
-        onDispose { ru.poneslas.vahter.assistant.Sheet.cameraBack = null }
+        Sheet.cameraBack = { if (tool == "crop") tool = null else if (frozen != null) live() else if (full) onCollapse() else onClose() }
+        onDispose { Sheet.cameraBack = null }
     }
     DisposableEffect(Unit) { onDispose { if (voice.recording.value) voice.cancel() } }
 
@@ -368,7 +371,7 @@ fun CameraPanel(
                             listening = false; asking = true
                             scope.launch {
                                 val r = voice.stop(); asking = false
-                                if (r is ru.poneslas.vahter.voice.Voice.Result.Text) { question = r.text; send(r.text) }
+                                if (r is Voice.Result.Text) { question = r.text; send(r.text) }
                             }
                         }
                     }, contentAlignment = Alignment.Center) {
@@ -416,7 +419,7 @@ private fun ToolChip(label: String, icon: Int?, on: Boolean, onDark: Boolean, on
 }
 
 @Composable
-private fun Round(icon: Int, label: String, enabled: Boolean, onDark: Boolean, size: androidx.compose.ui.unit.Dp = 56.dp, onClick: () -> Unit) {
+private fun Round(icon: Int, label: String, enabled: Boolean, onDark: Boolean, size: Dp = 56.dp, onClick: () -> Unit) {
     Box(Modifier.size(size).clip(CircleShape).background(if (onDark) Color(0x2EFFFFFF) else Ink.chipBg)
         .clickable(enabled = enabled, onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(painterResource(icon), label, Modifier.size(24.dp), tint = (if (onDark) Color.White else Ink.ink).copy(alpha = if (enabled) 1f else .35f))

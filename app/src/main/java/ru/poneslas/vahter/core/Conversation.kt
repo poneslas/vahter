@@ -26,6 +26,10 @@ import ru.poneslas.vahter.brain.BrainEvent
 import ru.poneslas.vahter.brain.ChatMsg
 import ru.poneslas.vahter.brain.ErrorKind
 import ru.poneslas.vahter.brain.Turn
+import ru.poneslas.vahter.actions.Registry
+import ru.poneslas.vahter.actions.Phone
+import ru.poneslas.vahter.assistant.Sheet
+import ru.poneslas.vahter.actions.Launch
 
 /**
  * Разговор: лента и история каждого режима, текущий режим, черновики поля, настройки.
@@ -253,7 +257,7 @@ class Conversation(
         val s = _state.value.settings
         val policyId = when (m) { is Rules.Match.Timer -> "timer.set"; is Rules.Match.Alarm -> "alarm.set"; is Rules.Match.Torch -> "torch.set" }
         // «Спрашивать» и «Не разрешено» — через мозг: там карточка «Да / Отмена» и честный отказ.
-        if (ru.poneslas.vahter.actions.Registry.policy(s, policyId) != Policy.AUTO) return false
+        if (Registry.policy(s, policyId) != Policy.AUTO) return false
         val (item, note) = when (m) {
             is Rules.Match.Timer -> PhoneActions.setTimer(context, m.seconds).fold(
                 { FeedItem.Act(nextId(), "⏱", tr(R.string.conv_timer_set, m.title), tr(R.string.conv_on_phone), tr(R.string.conv_open_timers), "timers",
@@ -263,10 +267,10 @@ class Conversation(
                 val t = "%d:%02d".format(m.hour, m.minute)
                 PhoneActions.setAlarm(context, m.hour, m.minute).fold(
                     { FeedItem.Act(nextId(), "⏰", tr(R.string.conv_alarm_set, t), tr(R.string.conv_on_phone), tr(R.string.conv_open_alarms), "alarms",
-                        at = ru.poneslas.vahter.actions.Phone.nextOccurrence(m.hour, m.minute)) to tr(R.string.conv_alarm_set_long, t) },
+                        at = Phone.nextOccurrence(m.hour, m.minute)) to tr(R.string.conv_alarm_set_long, t) },
                     { FeedItem.Act(nextId(), "⏰", tr(R.string.conv_alarm_failed, t), tr(R.string.conv_clock_silent), state = "fail") to null })
             }
-            is Rules.Match.Torch -> ru.poneslas.vahter.actions.Phone.torch(context, m.on).fold(
+            is Rules.Match.Torch -> Phone.torch(context, m.on).fold(
                 { FeedItem.Act(nextId(), "🔦", if (m.on) tr(R.string.conv_torch_on) else tr(R.string.conv_torch_off), tr(R.string.conv_on_phone),
                     undo = if (m.on) tr(R.string.conv_turn_off) else null, undoAction = if (m.on) "torch:off" else null) to (if (m.on) tr(R.string.conv_torch_on_long) else tr(R.string.conv_torch_off_long)) },
                 { FeedItem.Act(nextId(), "🔦", tr(R.string.conv_torch_failed), tr(R.string.conv_torch_failed_why), state = "fail") to null })
@@ -302,7 +306,7 @@ class Conversation(
             "yes" -> pending[card.id]?.complete(true)
             "no" -> pending[card.id]?.complete(false) ?: remove(_state.value.mode, card.id)
             "restart" -> restart()
-            "brain" -> ru.poneslas.vahter.assistant.Sheet.openBrain(context)
+            "brain" -> Sheet.openBrain(context)
             else -> remove(_state.value.mode, card.id)
         }
     }
@@ -310,12 +314,12 @@ class Conversation(
     /** Кнопки строки действия: «Открыть …» ([FeedItem.Act.action]) и «Отменить / Выключить / Вернуть» ([FeedItem.Act.undoAction]). */
     fun onActButton(item: FeedItem.Act, undo: Boolean = false) {
         val a = (if (undo) item.undoAction else item.action) ?: return
-        val P = ru.poneslas.vahter.actions.Phone
+        val P = Phone
         val parts = a.split(":")
         val ok: Boolean = when (parts[0]) {
-            "timers" -> ru.poneslas.vahter.actions.Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_TIMERS)).isSuccess
-            "alarms" -> ru.poneslas.vahter.actions.Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)).isSuccess
-            "perm" -> { ru.poneslas.vahter.actions.Launch.askPermissions(context, a.removePrefix("perm:").split(",")); true }
+            "timers" -> Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_TIMERS)).isSuccess
+            "alarms" -> Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)).isSuccess
+            "perm" -> { Launch.askPermissions(context, a.removePrefix("perm:").split(",")); true }
             "dndaccess" -> P.openDndAccess(context).isSuccess
             "map" -> P.openMap(context, parts[1].toDouble(), parts[2].toDouble(), parts.drop(3).joinToString(":")).isSuccess
             "cal" -> if (parts[1] == "open") P.openEvent(context, parts[2].toLong()).isSuccess else P.deleteEvent(context, parts[2].toLong()).isSuccess

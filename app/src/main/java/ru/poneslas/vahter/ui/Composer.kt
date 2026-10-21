@@ -26,13 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.animation.core.animateFloat
@@ -64,9 +62,19 @@ import ru.poneslas.vahter.core.Primary
 import ru.poneslas.vahter.pisar.overlay.LockBadge
 import ru.poneslas.vahter.pisar.overlay.RecordingBar
 import ru.poneslas.vahter.pisar.overlay.RecordingButton
-import ru.poneslas.vahter.pisar.overlay.RecordingPill
 import ru.poneslas.vahter.voice.Voice
 import kotlin.math.roundToInt
+import ru.poneslas.vahter.core.Modes
+import ru.poneslas.vahter.core.FeedItem
+import ru.poneslas.vahter.core.Brains
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /** Последний отработанный вызов кнопкой (баг №8: после камеры строка ввода создаётся заново и не должна слушать снова). */
 private var autoSeen = 0
@@ -328,8 +336,8 @@ fun RecPill(modifier: Modifier = Modifier) {
     val phase by RecUi.phase.collectAsState()
     if (phase == RecUi.Phase.IDLE) return
     val voice = App.instance.voice
-    val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "wave")
-    val w by tr.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.LinearEasing)), label = "w")
+    val tr = rememberInfiniteTransition(label = "wave")
+    val w by tr.animateFloat(0f, 1f, infiniteRepeatable(tween(1100, easing = LinearEasing)), label = "w")
     var level by remember { mutableFloatStateOf(0f) }
     // громкость с микрофона: быстро вверх, медленно вниз (как у Писаря)
     LaunchedEffect(phase) { while (true) { val l = voice.level; level = if (l > level) l else level * .86f + l * .14f; delay(32) } }
@@ -342,28 +350,28 @@ fun RecPill(modifier: Modifier = Modifier) {
             val center = 1f - kotlin.math.abs(k - .5f) * 1.2f
             val wob = .5f + .5f * kotlin.math.sin((w + k * .7f) * 2f * Math.PI.toFloat())
             val h = if (phase == RecUi.Phase.LISTENING) 3f + 15f * (.25f * wob + .75f * level * center).toFloat().coerceIn(0f, 1f) else 3f + 8f * wob
-            Box(Modifier.size(3.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerpColor(Ink.local, Ink.server, k)))
+            Box(Modifier.size(3.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(lerp(Ink.local, Ink.server, k)))
         }
     }
 }
 
-private fun lerpColor(a: Color, b: Color, f: Float) = Color(a.red + (b.red - a.red) * f, a.green + (b.green - a.green) * f, a.blue + (b.blue - a.blue) * f, 1f)
+
 
 /** Подсказка в поле строки ввода (ui.js, composerHtml): без мозга — «Команда агенту»; Ассистент, пока ничего не спрашивали, — «Вы к кому?». */
 fun composerPlaceholder(state: Conversation.State, connected: Boolean): String? = when {
-    state.mode != ru.poneslas.vahter.core.Modes.MAIN -> null
+    state.mode != Modes.MAIN -> null
     !connected -> tr(R.string.cmp_hint_no_brain)
-    state.feed.none { it is ru.poneslas.vahter.core.FeedItem.Me } -> tr(R.string.sheet_hello)
+    state.feed.none { it is FeedItem.Me } -> tr(R.string.sheet_hello)
     else -> null
 }
 
 /** Пока мозг не начал отвечать — «Звоню наверх · DeepSeek…» (ui.js: st h shim). */
 @Composable
 fun UpLine(state: Conversation.State) {
-    if (!state.busy || state.feed.lastOrNull() is ru.poneslas.vahter.core.FeedItem.Ai) return
-    val brain = ru.poneslas.vahter.core.Brains.byId(state.current.brain).title
-    val tr2 = androidx.compose.animation.core.rememberInfiniteTransition(label = "up")
-    val a by tr2.animateFloat(.45f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900), androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
+    if (!state.busy || state.feed.lastOrNull() is FeedItem.Ai) return
+    val brain = Brains.byId(state.current.brain).title
+    val tr2 = rememberInfiniteTransition(label = "up")
+    val a by tr2.animateFloat(.45f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a")
     Text(tr(R.string.live_up, brain), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Ink.serverD,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).alpha(a))
 }

@@ -2,13 +2,9 @@ package ru.poneslas.vahter.ui
 
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -30,7 +26,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,45 +34,43 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import ru.poneslas.vahter.core.Conversation
 import ru.poneslas.vahter.core.FeedItem
-import kotlin.math.abs
-import kotlin.math.hypot
+import ru.poneslas.vahter.core.Mode
+import ru.poneslas.vahter.core.Modes
+import ru.poneslas.vahter.app.SideKey
+import ru.poneslas.vahter.media.Attachments
+import ru.poneslas.vahter.actions.Phone
+import ru.poneslas.vahter.trp
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Size
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /** Промпт режима над лентой (ui.js, promptHtml): серая полоска, две строки, карандаш → страница режима. У Ассистента промпта нет — полоски нет. */
 @Composable
-fun PromptStrip(mode: ru.poneslas.vahter.core.Mode, onEdit: (String) -> Unit, modifier: Modifier = Modifier) {
+fun PromptStrip(mode: Mode, onEdit: (String) -> Unit, modifier: Modifier = Modifier) {
     if (mode.prompt.isBlank()) return
     Row(modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.chipBg)
         .clickable { onEdit(mode.id) }.padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.Top) {
@@ -96,7 +89,7 @@ fun Feed(
     from: Int = 0,
 ) {
     // Баг №20: у каждого режима своё положение ленты; при переключении — сразу в конец, без анимации.
-    val list = remember(state.mode) { androidx.compose.foundation.lazy.LazyListState((state.feed.size - 1).coerceAtLeast(0)) }
+    val list = remember(state.mode) { LazyListState((state.feed.size - 1).coerceAtLeast(0)) }
     LaunchedEffect(state.mode) { if (state.feed.isNotEmpty()) list.scrollToItem(state.feed.size - 1, 1_000_000) }
     LaunchedEffect(state.feed.size, (state.feed.lastOrNull() as? FeedItem.Ai)?.text?.length) {
         if (state.feed.isNotEmpty()) list.animateScrollToItem(state.feed.size - 1, 1_000_000)
@@ -104,11 +97,11 @@ fun Feed(
     val pad = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)
     if (state.feed.isEmpty()) {
         Column(modifier.padding(pad), verticalArrangement = Arrangement.Bottom) {
-            if (inSheet || state.mode != ru.poneslas.vahter.core.Modes.MAIN) {
+            if (inSheet || state.mode != Modes.MAIN) {
                 Text(state.current.hint, color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em, modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp))
             } else {
-                val ctx = androidx.compose.ui.platform.LocalContext.current
-                val way = tr(if (ru.poneslas.vahter.app.SideKey.gestureNav(ctx)) R.string.feed_way_gesture else R.string.feed_way_home)
+                val ctx = LocalContext.current
+                val way = tr(if (SideKey.gestureNav(ctx)) R.string.feed_way_gesture else R.string.feed_way_home)
                 Text(tr(R.string.feed_empty, way), color = Ink.soft, fontSize = 14.5.sp, lineHeight = 1.45.em,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 24.dp))
                 if (onChip != null) FlowRow(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -140,7 +133,7 @@ fun Feed(
                     is FeedItem.Card -> CardItem(item, onCard)
                     is FeedItem.Err -> Text(item.text, color = Ink.errText, fontSize = 13.5.sp,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)).background(Ink.dangerT)
-                            .drawBehind { drawRect(Ink.danger, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }
+                            .drawBehind { drawRect(Ink.danger, size = Size(3.dp.toPx(), size.height)) }
                             .padding(start = 15.dp, end = 12.dp, top = 8.dp, bottom = 8.dp))
                 }
               }
@@ -160,10 +153,10 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         val n = item.images.size
                         item.images.take(4).forEach { path ->
-                            val bmp = remember(path) { ru.poneslas.vahter.media.Attachments.thumb(path, 400) }
-                            if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), null,
+                            val bmp = remember(path) { Attachments.thumb(path, 400) }
+                            if (bmp != null) Image(bmp.asImageBitmap(), null,
                                 Modifier.size(if (n > 1) 80.dp else 170.dp, if (n > 1) 106.dp else 128.dp).clip(RoundedCornerShape(14.dp)),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                contentScale = ContentScale.Crop)
                         }
                     }
                     if (item.status != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).clip(CircleShape).background(Color(0x8C000000))
@@ -213,7 +206,7 @@ private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) 
             append(when {
                 item.countdown && left > 0 -> tr(R.string.feed_left) + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
                 item.countdown -> tr(R.string.feed_rang)
-                left > 0 -> tr(R.string.feed_rings_in) + ru.poneslas.vahter.actions.Phone.inText(left)
+                left > 0 -> tr(R.string.feed_rings_in) + Phone.inText(left)
                 else -> tr(R.string.feed_rang)
             })
         }
@@ -248,7 +241,7 @@ private fun StepsItem(item: FeedItem.Steps) {
     var open by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.serverT)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(if (item.running) item.titles.last() else ru.poneslas.vahter.trp(R.plurals.feed_steps, item.titles.size),
+            Text(if (item.running) item.titles.last() else trp(R.plurals.feed_steps, item.titles.size),
                 fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = Ink.serverD, modifier = Modifier.weight(1f))
             Icon(painterResource(Ic.chev), null, Modifier.size(14.dp).graphicsLayer { rotationZ = if (open) 180f else 0f }, tint = Ink.serverD)
         }
@@ -333,9 +326,6 @@ private fun mdInline(s: String) = buildAnnotatedString {
         }
     }
 }
-
-private fun plural(n: Int, one: String, few: String, many: String) =
-    if (n % 10 == 1 && n % 100 != 11) one else if (n % 10 in 2..4 && n % 100 !in 12..14) few else many
 
 /** .mtabs — вкладки режимов под полем: 13/500, выбранная — тёмная «таблетка», в конце «+» 30. */
 @Composable

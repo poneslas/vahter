@@ -1,12 +1,5 @@
 package ru.poneslas.vahter.ui
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,19 +13,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,8 +30,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -50,9 +37,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -60,6 +44,18 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import ru.poneslas.vahter.R
 import kotlin.math.sin
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.graphics.lerp
 
 /**
  * Сцены мастера первого запуска (сценарий — docs/design/prototype/intro.css, те же фазы). Каждый экран мастера сначала
@@ -72,27 +68,11 @@ enum class WizScene { WELCOME, QUEUE, CHAT, KEYS, BRAIN }
 fun WizArt(k: WizScene) = Box(Modifier.widthIn(max = 340.dp).fillMaxWidth().height(if (k == WizScene.BRAIN) 290.dp else 300.dp)) {
     // Сцены — иллюстрации фиксированного размера: крупный системный шрифт внутри не больше ×1,1, иначе подписи вылезают
     // (эмулятор, ×1,3 — уже на грани). Заголовки и тексты мастера вокруг сцены растут как обычно.
-    val d = androidx.compose.ui.platform.LocalDensity.current
-    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.1f))) {
+    val d = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(d.density, d.fontScale.coerceAtMost(1.1f))) {
         when (k) { WizScene.WELCOME -> Logo(); WizScene.QUEUE -> SceneQueue(); WizScene.CHAT -> SceneChat(); WizScene.KEYS -> SceneKeys(); WizScene.BRAIN -> SceneBrain() }
     }
 }
-
-// ── время ──────────────────────────────────────────────────────────────
-
-/** 0…1 между [a] и [b], с мягким разгоном и торможением. */
-private fun ramp(t: Float, a: Float, b: Float) = FastOutSlowInEasing.transform(((t - a) / (b - a)).coerceIn(0f, 1f))
-/** Видно между [inA..inB] (появление) и [outA..outB] (исчезновение). */
-private fun window(t: Float, inA: Float, inB: Float, outA: Float = 2f, outB: Float = 2f) = ramp(t, inA, inB) * (1f - ramp(t, outA, outB))
-
-@Composable
-private fun loop(ms: Int = 6000): Float {
-    val tr = rememberInfiniteTransition(label = "intro")
-    val t by tr.animateFloat(0f, 1f, infiniteRepeatable(tween(ms, easing = LinearEasing), RepeatMode.Restart), label = "t")
-    return t
-}
-
-// ── общие кусочки: мини-лист, реплики, волна ───────────────────────────
 
 @Composable
 private fun MiniHeader(title: String, sub: String) = Column {
@@ -122,18 +102,6 @@ private fun Me(text: String, alpha: Float, modifier: Modifier = Modifier) = Box(
 private fun Ai(text: String, alpha: Float, modifier: Modifier = Modifier) = Row(modifier.padding(top = 6.dp).graphicsLayer { this.alpha = alpha; translationY = (1 - alpha) * 16f }) {
     Box(Modifier.padding(top = 5.dp, end = 6.dp).size(6.dp).clip(CircleShape).background(Ink.server))
     Text(text, fontSize = 12.sp, lineHeight = 1.35.em, color = Ink.ink)
-}
-
-@Composable
-private fun Wave(alpha: Float, color: Color = Ink.local) {
-    if (alpha <= 0f) return
-    val w = loop(900)
-    Row(Modifier.fillMaxWidth().height(22.dp).graphicsLayer { this.alpha = alpha }, horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-        listOf(0f, .11f, .28f, .05f, .33f, .17f, .22f).forEach { d ->
-            val h = 5f + 15f * (0.5f + 0.5f * sin((w + d) * 2 * Math.PI.toFloat()))
-            Box(Modifier.size(3.dp, h.dp).clip(RoundedCornerShape(2.dp)).background(color))
-        }
-    }
 }
 
 @Composable
@@ -194,8 +162,8 @@ private fun BoxScope.Logo() {
 
 /** Пунктирная рамка — талончик очереди. */
 private fun Modifier.dashed(color: Color, r: Dp) = drawBehind {
-    drawRoundRect(color, cornerRadius = androidx.compose.ui.geometry.CornerRadius(r.toPx()),
-        style = Stroke(1.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))))
+    drawRoundRect(color, cornerRadius = CornerRadius(r.toPx()),
+        style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))))
 }
 
 /** Секундомер «⏱ 0:NN»: от 0 до [n] секунд к доле петли [until]. */
@@ -237,7 +205,7 @@ private fun BoxScope.SceneQueue() {
                 Clock(t, 14, .70f, Color(0xFF6B7487))
             }
             Spacer(Modifier.height(9.dp))
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(5.dp),
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(5.dp),
                 itemVerticalAlignment = Alignment.CenterVertically) {
                 steps.forEachIndexed { i, st ->
                     val on = .3f + .7f * ramp(t, .06f + i * .14f, .09f + i * .14f)
@@ -260,7 +228,7 @@ private fun BoxScope.SceneQueue() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val press = window(t, 0f, .02f, .05f, .09f)
                 Box(Modifier.size(28.dp).graphicsLayer { scaleX = 1 - .12f * press; scaleY = 1 - .12f * press }.clip(CircleShape).background(Ink.ink), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.power), null, Modifier.size(15.dp), tint = Ink.local)
+                    Icon(painterResource(Ic.power), null, Modifier.size(15.dp), tint = Ink.local)
                 }
                 Spacer(Modifier.width(9.dp))
                 Text(stringResource(R.string.app_name), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Ink.ink)
@@ -280,7 +248,7 @@ private fun BoxScope.SceneQueue() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.graphicsLayer { alpha = .3f + .7f * ramp(t, .06f, .09f) }.clip(RoundedCornerShape(9.dp)).background(Color.White)
                     .border(1.dp, Color(0xFFEBCB86), RoundedCornerShape(9.dp)).padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.power), null, Modifier.size(12.dp), tint = Ink.ink)
+                    Icon(painterResource(Ic.power), null, Modifier.size(12.dp), tint = Ink.ink)
                     Spacer(Modifier.width(4.dp))
                     Text(stringResource(R.string.intro_hold), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Ink.ink)
                 }
@@ -316,7 +284,7 @@ private fun SceneChat() {
                 Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp)).background(Color.White).padding(horizontal = 9.dp, vertical = 8.dp)) {
                     Text(ask.take(shown), fontSize = 11.5.sp, lineHeight = 1.38.em, color = Ink.ink, overflow = TextOverflow.Clip)
                 }
-                (20 * p).toInt().let { w -> Counter(androidx.compose.ui.res.pluralStringResource(R.plurals.wiz_chat_words, w, w), Color(0xFF6B7487)) }
+                (20 * p).toInt().let { w -> Counter(pluralStringResource(R.plurals.wiz_chat_words, w, w), Color(0xFF6B7487)) }
             }
             Stopwatch((40 * p).toInt(), Color(0xFF6B7487), Color(0xFFA9B0BE))
         }
@@ -333,7 +301,7 @@ private fun SceneChat() {
                 }
                 // подпись — что ушло: фото меню, а не документ
                 Text(stringResource(R.string.wiz_menu_sent), fontSize = 10.5.sp, color = Ink.localD, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth().padding(top = 3.dp).graphicsLayer { alpha = th })
+                    textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth().padding(top = 3.dp).graphicsLayer { alpha = th })
                 Ai(stringResource(R.string.intro_s2_answer), ramp(t, .10f, .14f), Modifier.padding(top = 4.dp))
                 Spacer(Modifier.weight(1f))
                 Counter(stringResource(R.string.wiz_one_press), Ink.localD, power = true)
@@ -346,7 +314,7 @@ private fun SceneChat() {
 /** Секундомер под колонкой: крупные цифры, иконка часов приглушённая (intro.css, .sc6 .timer). */
 @Composable
 private fun Stopwatch(sec: Int, color: Color, icon: Color) = Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.stopwatch), null, Modifier.size(20.dp), tint = icon)
+    Icon(painterResource(Ic.stopwatch), null, Modifier.size(20.dp), tint = icon)
     Spacer(Modifier.width(6.dp))
     Text("0:%02d".format(sec), fontSize = 20.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold, color = color)
 }
@@ -365,7 +333,7 @@ private fun ColHead(icon: String, title: String, sub: String, color: Color) = Ro
 /** Нижняя строка колонки: «✎ 20 слов» / «⏻ 1 нажатие». ⏻ — значком: в системном шрифте его нет. */
 @Composable
 private fun Counter(left: String, color: Color, power: Boolean = false) = Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-    if (power) { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(Ic.power), null, Modifier.size(12.dp), tint = color); Spacer(Modifier.width(4.dp)) }
+    if (power) { Icon(painterResource(Ic.power), null, Modifier.size(12.dp), tint = color); Spacer(Modifier.width(4.dp)) }
     Text(left, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
@@ -401,13 +369,13 @@ private fun SceneKeys() {
                         Column(Modifier.fillMaxSize().graphicsLayer { rotationY = 180f }.clip(RoundedCornerShape(18.dp)).background(Color(0xFFFFFBEF))
                             .dashed(Color(0xFFE3C77E), 18.dp).padding(12.dp)) {
                             Text(stringResource(R.string.wiz_back).uppercase(), fontSize = 9.5.sp, letterSpacing = .06.em, color = Ink.localD, modifier = Modifier.padding(bottom = 4.dp))
-                            Text(back, fontSize = 12.sp, lineHeight = 1.35.em, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Ink.ink)
+                            Text(back, fontSize = 12.sp, lineHeight = 1.35.em, fontStyle = FontStyle.Italic, color = Ink.ink)
                         }
                     }
                 }
             }
         }
-        Text(stringResource(R.string.wiz_plus), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(stringResource(R.string.wiz_plus), fontSize = 12.5.sp, color = Ink.soft, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
     }
 }
 
@@ -425,20 +393,6 @@ private fun MenuPhoto() = Box(Modifier.size(76.dp, 56.dp).graphicsLayer { shadow
     }
 }
 
-@Composable
-private fun Thumb(menu: Boolean) = Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-    Canvas(Modifier.size(76.dp, 56.dp).clip(RoundedCornerShape(12.dp))) {
-        if (menu) {
-            drawRect(Brush.linearGradient(listOf(Color(0xFFF7F1E3), Color(0xFFE6D8B8))))
-            for (i in 0..4) drawLine(Color(0x8C8E6E3E), Offset(10.dp.toPx(), (10 + i * 9).dp.toPx()), Offset(size.width - 10.dp.toPx(), (10 + i * 9).dp.toPx()), 2.dp.toPx())
-        } else {
-            drawRect(Color(0xFFE8DCC4))
-            drawCircle(Color(0xFFA8743F), size.minDimension * .42f, Offset(size.width / 2, size.height * .58f))
-            drawCircle(Color(0xFF6B3E20), size.minDimension * .32f, Offset(size.width / 2, size.height * .58f))
-        }
-    }
-}
-
 // ── мастер, «Подключите мозг»: простое — сам на телефоне (даже без сети); сложное — пакет вверх, к «Мозгу Вахтёра»
 //    в облаке, ответ обратно. Мозг абстрактный: под именем тихо сменяется DeepSeek · OpenAI · Hermes ──
 
@@ -449,7 +403,7 @@ private fun BoxScope.SceneBrain() {
     // наверху — «Мозг Вахтёра»
     val glow = window(t, .58f, .61f, .66f, .72f)
     Row(Modifier.align(Alignment.TopCenter).width(232.dp).height(66.dp)
-        .drawBehind { drawRoundRect(Ink.server.copy(alpha = .22f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(22.dp.toPx())) }
+        .drawBehind { drawRoundRect(Ink.server.copy(alpha = .22f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), CornerRadius(22.dp.toPx())) }
         .clip(RoundedCornerShape(16.dp)).background(Ink.serverT).border(1.5.dp, Ink.server, RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(Color.White), contentAlignment = Alignment.Center) { Text("🧠", fontSize = 17.sp) }
@@ -500,8 +454,6 @@ private fun BoxScope.SceneBrain() {
     }
 }
 
-private fun lerp(a: Color, b: Color, f: Float) = Color(a.red + (b.red - a.red) * f, a.green + (b.green - a.green) * f, a.blue + (b.blue - a.blue) * f, a.alpha + (b.alpha - a.alpha) * f)
-
 // ── первый запуск, «Голос на телефоне»: речь → GigaAM на телефоне → текст; облако зачёркнуто (intro.css, .scv) ──
 
 @Composable
@@ -510,8 +462,8 @@ fun VoiceArt() = CapFont { VoiceArtBody() }
 /** Иллюстрации мастера — фиксированного размера: системный крупный шрифт внутри не больше ×1,1. */
 @Composable
 private fun CapFont(content: @Composable () -> Unit) {
-    val d = androidx.compose.ui.platform.LocalDensity.current
-    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.1f)), content = content)
+    val d = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(d.density, d.fontScale.coerceAtMost(1.1f)), content = content)
 }
 
 @Composable
@@ -537,7 +489,7 @@ private fun VoiceArtBody() {
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Ink.localT).padding(horizontal = 10.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                 val glow = window(t, .14f, .24f, .40f, .50f)
-                Box(Modifier.size(30.dp).drawBehind { drawRoundRect(Ink.local.copy(alpha = .35f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(12.dp.toPx())) }
+                Box(Modifier.size(30.dp).drawBehind { drawRoundRect(Ink.local.copy(alpha = .35f * glow), Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()), CornerRadius(12.dp.toPx())) }
                     .clip(RoundedCornerShape(8.dp)).background(Ink.ink).padding(8.dp)) {
                     Box(Modifier.fillMaxSize().clip(RoundedCornerShape(3.dp)).background(Ink.local))
                 }

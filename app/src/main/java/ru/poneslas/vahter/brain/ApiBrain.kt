@@ -14,7 +14,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -27,6 +26,8 @@ import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import ru.poneslas.vahter.core.Modes
+import ru.poneslas.vahter.media.Attachments
 
 /**
  * Прямой OpenAI-совместимый API (DeepSeek). Цикл хода — в приложении (Архитектура 2.2):
@@ -96,7 +97,7 @@ class ApiBrain(
             tr(R.string.brain_system_5) +
             tr(R.string.brain_system_now, now)
         return if (turn.mode.prompt.isBlank()) base
-        else if (turn.mode.id == ru.poneslas.vahter.core.Modes.MAIN) tr(R.string.brain_system_rules, base, turn.mode.prompt)
+        else if (turn.mode.id == Modes.MAIN) tr(R.string.brain_system_rules, base, turn.mode.prompt)
         else tr(R.string.brain_system_mode, base, turn.mode.title, turn.mode.prompt)
     }
 
@@ -128,7 +129,7 @@ class ApiBrain(
             put("content", buildJsonArray {
                 if (!m.content.isNullOrBlank()) add(buildJsonObject { put("type", "text"); put("text", m.content) })
                 for (img in m.images) add(buildJsonObject {
-                    val url = if (img.startsWith("data:")) img else ru.poneslas.vahter.media.Attachments.dataUrl(java.io.File(img))
+                    val url = if (img.startsWith("data:")) img else Attachments.dataUrl(java.io.File(img))
                     put("type", "image_url"); put("image_url", buildJsonObject { put("url", url) })
                 })
             })
@@ -226,5 +227,3 @@ class ApiBrain(
 
 @Suppress("unused")
 private fun JsonObject.str(k: String) = this[k]?.jsonPrimitive?.contentOrNull
-@Suppress("unused")
-private fun JsonObject.arr(k: String) = this[k]?.jsonArray

@@ -6,7 +6,7 @@ import android.content.Intent
 
 /**
  * Только отладочная сборка: отправить фразу в текущий режим, как с клавиатуры (кириллицу adb input не набирает).
- *   adb shell am broadcast -n ru.poneslas.vahter.dev/ru.poneslas.vahter.DebugSay --es text 'таймер на минуту'
+ *   adb shell am broadcast -n ru.poneslas.vahter.dev/DebugSay --es text 'таймер на минуту'
  */
 class DebugSay : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

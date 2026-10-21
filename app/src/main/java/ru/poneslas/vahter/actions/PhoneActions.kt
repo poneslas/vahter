@@ -33,9 +33,6 @@ object PhoneActions {
         context.startActivity(Intent(AlarmClock.ACTION_SHOW_TIMERS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
-    fun showAlarms(context: Context) = runCatching {
-        context.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
 }
 
 /** Локальные правила: короткие точные команды, без сети и без мозга (Архитектура, 5). */

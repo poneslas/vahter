@@ -2,7 +2,6 @@
 // Правки — только пакет, строки и то, что помечено «Вахтёр:».
 package ru.poneslas.vahter.pisar.overlay
 
-import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Canvas
