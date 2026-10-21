@@ -50,7 +50,7 @@ function onb(){
 /** Первый запуск, шаг «Голос»: речь → модель на телефоне → текст; облако зачёркнуто. Движение — в intro.css (.scv). */
 function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</span><i></i></div><div class="lnk"></div>
   <div class="tel"><div class="mdl"><span class="chipi"></span><span><b>GigaAM</b><small>модель Сбера, на телефоне</small></span></div>
-    <div class="say"><div class="deq">${'<b></b>'.repeat(9)}</div><div class="tx">Сколько варить гречку?</div></div></div>
+    <div class="say"><div class="deq">${vMark('v')}</div><div class="tx">Сколько варить гречку?</div></div></div>
   <div class="lock">🔒 чужих не пустит: голос остаётся здесь</div></div>` }
 /** Первый запуск: проба голоса. Герой экрана — эквалайзер Вахтёра. Пока распознавание качается, его столбики и есть полоска
  *  загрузки: готовые шевелятся, остальные — точки, поперёк — шов («рот зашит», микрофон серый, «Пропустить»). Докачалось — шов

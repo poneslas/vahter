@@ -88,12 +88,6 @@
 .sc1 .deq{display:flex;align-items:center;height:18px;animation:eqv var(--T) infinite}
 .sc1 .deq .vmark .r1,.sc1 .deq .vmark .r2{animation:vring .9s ease-out infinite}.sc1 .deq .vmark .r2{animation-delay:.3s}
 .sc1 .deq .vmark .core{animation:vbreath .45s ease-in-out infinite}
-.sc1 .deq b{display:block;width:3px;height:4px;border-radius:2px;animation:eqb .38s ease-in-out infinite alternate}
-.sc1 .deq b:nth-child(1){background:#E8A317;animation-delay:-.1s}.sc1 .deq b:nth-child(2){background:#D9A22A;animation-delay:-.25s}
-.sc1 .deq b:nth-child(3){background:#C99E3E;animation-delay:-.05s}.sc1 .deq b:nth-child(4){background:#B09A5C;animation-delay:-.3s}
-.sc1 .deq b:nth-child(5){background:#93927A;animation-delay:-.15s}.sc1 .deq b:nth-child(6){background:#78849A;animation-delay:-.35s}
-.sc1 .deq b:nth-child(7){background:#5B74B8;animation-delay:-.2s}.sc1 .deq b:nth-child(8){background:#4361D2;animation-delay:-.08s}
-.sc1 .deq b:nth-child(9){background:#2F4BE8;animation-delay:-.28s}
 @keyframes eqb{to{height:16px}}
 @keyframes eqv{0%,9%{opacity:0}11%,29%{opacity:1}31%,100%{opacity:0}}
 .sc1 .dk .tx{opacity:0;animation:dtx var(--T) infinite}
@@ -202,10 +196,11 @@
 .scv .mdl small{display:block;font-size:11px;color:var(--local-d)}
 .scv .say{flex:1;display:grid;place-items:center}
 .scv .say>*{grid-area:1/1}
-.scv .deq{display:flex;gap:4px;align-items:center;height:40px;animation:sv1 var(--T) infinite}
-.scv .deq b{display:block;width:5px;height:6px;border-radius:3px;background:var(--local);animation:eqb2 .36s ease-in-out infinite alternate}
-.scv .deq b:nth-child(odd){animation-delay:-.18s}.scv .deq b:nth-child(3n){animation-delay:-.27s;background:#C99E3E}.scv .deq b:nth-child(4n){animation-delay:-.09s;background:#7C93FF}
-@keyframes eqb2{to{height:38px}}
+/* речь — живой знак Вахтёра (слушает), как в листе; эквалайзера нет */
+.scv .deq{display:flex;align-items:center;height:56px;animation:sv1 var(--T) infinite}
+.scv .deq .vmark{--vs:52px}
+.scv .deq .vmark .r1,.scv .deq .vmark .r2{animation:vring 1s ease-out infinite}.scv .deq .vmark .r2{animation-delay:.33s}
+.scv .deq .vmark .core{animation:vbreath .5s ease-in-out infinite}
 @keyframes sv1{0%,6%{opacity:0;transform:scale(.7)}10%,38%{opacity:1;transform:none}44%,100%{opacity:0;transform:scale(.6)}}
 .scv .tx{font-size:15px;font-weight:600;color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden;width:0;animation:svt var(--T) steps(22,end) infinite}
 @keyframes svt{0%,42%{width:0;opacity:1}62%,96%{width:100%;opacity:1}100%{width:100%;opacity:0}}
