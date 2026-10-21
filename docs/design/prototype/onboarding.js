@@ -59,9 +59,9 @@ function voiceArt(){ return `<div class="sc scv"><div class="cloud"><span>☁</s
 const TEQ_N = 13;
 function teqLoading(pct){
   const on = Math.round(pct/100*TEQ_N);
-  // шов — только по ещё не готовым точкам: ожившие столбики крестики не перекрывают; крестик — на каждые две точки
-  const rest = TEQ_N-on, seam = rest ? `<span class="seam" style="left:${on?`calc(50% - ${(TEQ_N*16-7)/2}px + ${on*16-6}px)`:'-6px'}">${'<b></b>'.repeat(Math.ceil(rest/2))}</span>` : '';
-  return `<div class="teq load">${Array.from({length:TEQ_N},(_,i)=>`<i class="${i<on?'on':''}" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('')}${seam}</div>`;
+  // шов «рот зашит»: на каждом ещё не готовом месте — крестик-стежок вместо точки, через них тонкая нитка (ожившие столбики не задевает)
+  const ready=Array.from({length:on},(_,i)=>`<i class="on" style="--d:${(i*.07).toFixed(2)}s"></i>`).join('');
+  return `<div class="teq load">${ready}${on<TEQ_N?`<span class="seam">${'<b></b>'.repeat(TEQ_N-on)}</span>`:''}</div>`;
 }
 function tryStep(){
   const rec=S.rec&&S.rec.into==='try', shots=S.tryShots||[], loading=S.w.model==='loading', ready=S.w.model==='ready';
@@ -70,7 +70,7 @@ function tryStep(){
   const sec = ms => (ms/1000).toFixed(1).replace('.',',');
   const last = shots[shots.length-1], old = shots.slice(0,-1).slice(-3);
   const hero = loading ? `${teqLoading(S.modelPct)}<div class="tpct">${S.modelPct}${'\u00a0'}%</div>`
-    : `<div class="teq live ${freed?'freed':''}"><div class="eq" data-mode="${rec?'speak':'wave'}"></div>${freed?`<span class="seam pop">${'<b></b>'.repeat(7)}</span>`:''}</div>`;
+    : `<div class="teq live ${freed?'freed':''}"><div class="eq" data-mode="${rec?'speak':'wave'}"></div>${freed?`<span class="seam pop">${'<b></b>'.repeat(TEQ_N)}</span>`:''}</div>`;
   const text = loading ? '<div class="tcap">Вахтёр учит русский…</div>'
     : rec ? '<div class="tcap">Слушаю…</div>' : S.recog ? '<div class="tcap">Распознаю на телефоне…</div>'
     : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`

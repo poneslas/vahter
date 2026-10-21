@@ -385,22 +385,19 @@ private fun TryEq(loading: Boolean, pct: Int, active: Boolean, calm: Boolean, fr
             }
             val r = CornerRadius(bw / 2)
             // градиент — на каждый столбик свой (янтарь сверху → синий снизу), как в прототипе
-            if (loading && i >= on) drawRoundRect(Color(0xFFD5D9D0), Offset(x, cy - h / 2), Size(bw, h), r)
-            else drawRoundRect(Brush.verticalGradient(listOf(Ink.local, Ink.server), startY = cy - h / 2, endY = cy + h / 2), Offset(x, cy - h / 2), Size(bw, h), r)
+            if (loading && i >= on) continue   // не готово — на этом месте стежок шва, без точки
+            drawRoundRect(Brush.verticalGradient(listOf(Ink.local, Ink.server), startY = cy - h / 2, endY = cy + h / 2), Offset(x, cy - h / 2), Size(bw, h), r)
         }
-        // шов «рот зашит»: пунктир и крестики — только поверх ещё не готовых точек (ожившие столбики не перекрывает), крестик на
-        // каждые две точки; после докачки — разлетаются, тогда шов во всю ширину, как был
+        // шов «рот зашит»: на каждом ещё не готовом месте — крестик-стежок ровно вместо точки, через них тонкая нитка;
+        // ожившие столбики не задевает. После докачки стежки разлетаются со всех 13 мест.
         val k = if (loading) 0f else if (freed < 1f) freed else return@Canvas
-        val rest = if (loading) n - on else n
-        if (rest <= 0) return@Canvas
+        val first = if (loading) on else 0
+        if (first >= n) return@Canvas
         val seam = Color(0xFF8A93A6).copy(alpha = 1f - k)
-        val s0 = if (loading && on > 0) x0 + on * (bw + gap) - 6.dp.toPx() else -6.dp.toPx()
-        val s1 = size.width + 6.dp.toPx()
-        var x = s0
-        while (x < s1 && k < 1f) { drawLine(seam, Offset(x, cy), Offset(x + 7.dp.toPx(), cy), 2.dp.toPx()); x += 12.dp.toPx() }
-        val crosses = if (loading) (rest + 1) / 2 else 7
-        for (j in 0 until crosses) {
-            val cx = s0 + (s1 - s0) * (j + .5f) / crosses
+        val cxOf = { i: Int -> x0 + i * (bw + gap) + bw / 2 }
+        if (k == 0f) drawLine(seam.copy(alpha = .55f), Offset(cxOf(first) - bw / 2, cy), Offset(cxOf(n - 1) + bw / 2, cy), 1.5.dp.toPx())
+        for (j in first until n) {
+            val cx = cxOf(j)
             val dy = (if (j % 2 == 0) -40f else 40f).dp.toPx() * k; val dx = (if (j % 2 == 0) -10f else 10f).dp.toPx() * k
             val rot = (if (j % 2 == 0) -120f else 140f) * k
             rotate(rot, Offset(cx + dx, cy + dy)) {

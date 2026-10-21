@@ -17,8 +17,8 @@ android {
         minSdk = 33
         // S24 — Android 16 (SDK 36). На 37 поднимем вместе с разрешением на локальную сеть (Архитектура, 18.0).
         targetSdk = 36
-        versionCode = 26
-        versionName = "0.7.6"
+        versionCode = 27
+        versionName = "0.7.7"
         ndk { abiFilters += "arm64-v8a" } // распознавание: только arm64 — S24 и эмулятор на Apple Silicon
     }
 

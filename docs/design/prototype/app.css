@@ -662,13 +662,12 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .teq.load i{display:block;width:9px;height:9px;border-radius:5px;background:#D5D9D0;transition:background .3s}
 .teq.load i.on{background:linear-gradient(var(--local),var(--server));animation:tqb 1.1s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes tqb{0%,100%{height:12px}50%{height:34px}}
-.teq .seam{position:absolute;left:-6px;right:-6px;top:50%;height:2px;margin-top:-1px;background:repeating-linear-gradient(90deg,#8A93A6 0 7px,transparent 7px 12px);display:flex;justify-content:space-around;align-items:center;transition:left .3s}
-.teq .seam b{display:block;width:10px;height:10px;position:relative}
-.teq .seam b::before,.teq .seam b::after{content:"";position:absolute;left:4px;top:-2px;width:2px;height:14px;background:#8A93A6;border-radius:1px;transform:rotate(45deg)}
+.teq .seam{display:flex;gap:7px;align-items:center;height:14px;background:linear-gradient(rgba(138,147,166,.55),rgba(138,147,166,.55)) center/100% 1.5px no-repeat}
+.teq .seam b{display:block;width:9px;height:14px;position:relative;flex:none}
+.teq .seam b::before,.teq .seam b::after{content:"";position:absolute;left:3.5px;top:1px;width:2px;height:12px;background:#8A93A6;border-radius:1px;transform:rotate(45deg)}
 .teq .seam b::after{transform:rotate(-45deg)}
-.teq .seam.pop{animation:seampop .9s ease-in both}
+.teq .seam.pop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:none}
 .teq .seam.pop b:nth-child(odd){animation:fly1 .9s ease-in both}.teq .seam.pop b:nth-child(even){animation:fly2 .9s ease-in both}
-@keyframes seampop{0%{opacity:1}100%{opacity:0;transform:scaleX(1.25)}}
 @keyframes fly1{to{transform:translate(-10px,-40px) rotate(-120deg);opacity:0}}
 @keyframes fly2{to{transform:translate(10px,40px) rotate(140deg);opacity:0}}
 .teq.freed .eq{animation:freed .6s cubic-bezier(.2,.9,.3,1.4) both}
