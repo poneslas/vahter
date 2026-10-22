@@ -133,6 +133,8 @@ data class Settings(
     val notifyAnswers: Boolean = true,
     /** Уведомления уже спрашивали системным окном — после второго отказа ведём в настройки (как [micAsked]). */
     val notifAsked: Boolean = false,
+    /** Порядок режимов уже меняли — подсказку «Удерживайте режим…» больше не показываем. */
+    val modesReordered: Boolean = false,
 )
 
 /** Сессия режима в Hermes: id из заголовка X-Hermes-Session-Id и время последней реплики — после 30 минут тишины начинается новая (Архитектура 9.7). */

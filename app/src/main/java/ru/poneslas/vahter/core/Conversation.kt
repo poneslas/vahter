@@ -123,6 +123,12 @@ class Conversation(
 
     fun editMode(id: String, f: (Mode) -> Mode) = updateModes { list -> list.map { if (it.id == id) f(it) else it } }
 
+    /** Перестановка режимов (настройки, долгое нажатие): порядок — как во вкладках под полем; Ассистент — наравне. */
+    fun moveMode(from: Int, to: Int) = edit { s ->
+        val l = s.modes.toMutableList(); if (from !in l.indices || to !in l.indices) return@edit s
+        l.add(to, l.removeAt(from)); s.copy(modes = l, settings = s.settings.copy(modesReordered = true))
+    }
+
     fun deleteMode(id: String) = edit { s ->
         s.copy(modes = s.modes.filterNot { it.id == id }, feeds = s.feeds - id, histories = s.histories - id, hermesSessions = s.hermesSessions - id, fresh = s.fresh - id,
             mode = if (s.mode == id) Modes.MAIN else s.mode)

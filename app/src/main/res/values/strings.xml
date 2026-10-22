@@ -139,6 +139,9 @@
     <string name="set_listen_on_call_on">Запись начинается сама</string>
     <string name="set_return">Запоминать режим</string>
     <string name="set_modes">Режимы</string>
+    <string name="set_modes_order">Порядок режимов</string>
+    <string name="set_modes_drag">Перетащить «%1$s»</string>
+    <string name="set_modes_hold">Удерживайте режим, чтобы поменять порядок</string>
     <string name="set_modes_sub">Название, промпт, что принимает</string>
     <string name="set_voice">Голос</string>
     <string name="set_voice_title">Распознавание речи</string>

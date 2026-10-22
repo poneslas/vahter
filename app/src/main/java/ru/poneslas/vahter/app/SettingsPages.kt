@@ -88,8 +88,19 @@ fun SettingsPage(a: MainActivity) {
     val notif = a.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
     val installed by app.voice.installed.collectAsState()
     val dl by ModelDownload.state.collectAsState()
-    TopBar(tr(R.string.ui_settings), onBack = a::back)
+    // Перестановка режимов: долгое нажатие на режим — переключатели становятся ручками, в шапке «Готово» (ModesList).
+    var reorder by remember { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(reorder) { reorder = false }
+    TopBar(tr(if (reorder) R.string.set_modes_order else R.string.ui_settings), onBack = if (reorder) ({ reorder = false }) else a::back) {
+        if (reorder) ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_done)) { reorder = false }
+    }
     ScrollPage {
+        // Режимы — главное, первым разделом (Продукт 5.11).
+        Section(tr(R.string.set_modes))
+        ModesList(state.modes, reorder, ::modeSummary, onReorder = { reorder = true }, onMove = app.conversation::moveMode,
+            onToggle = { m -> app.conversation.editMode(m.id) { it.copy(enabled = !it.enabled) } }, onOpen = { m -> a.go("mode:${m.id}") })
+        if (!reorder) Item(tr(R.string.feed_new_mode), tr(R.string.set_modes_sub), icon = Ic.plus) { a.go("mode:" + app.conversation.addMode()) }
+        if (!reorder && !state.settings.modesReordered) MNote(tr(R.string.set_modes_hold), Modifier.padding(horizontal = 22.dp))
         Section(tr(R.string.set_call))
         Item(tr(R.string.set_assistant_role), if (roleHeld) tr(R.string.app_name) else tr(R.string.set_assistant_role_off), warn = !roleHeld, icon = Ic.spark) {
             a.startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
@@ -102,13 +113,6 @@ fun SettingsPage(a: MainActivity) {
                 app.conversation.updateSettings { it.copy(returnToAssistant = ReturnToAssistant.valueOf(v)) }
             })
         }
-        Section(tr(R.string.set_modes))
-        state.modes.forEach { m ->
-            if (m.id == Modes.MAIN) Item(m.title, modeSummary(m), icon = Ic.mode(m.icon)) { a.go("mode:${m.id}") }
-            else ItemWithSwitch(m.title, modeSummary(m), Ic.mode(m.icon), m.enabled,
-                onToggle = { app.conversation.editMode(m.id) { it.copy(enabled = !it.enabled) } }) { a.go("mode:${m.id}") }
-        }
-        Item(tr(R.string.feed_new_mode), tr(R.string.set_modes_sub), icon = Ic.plus) { a.go("mode:" + app.conversation.addMode()) }
         Section(tr(R.string.set_voice))
         val pct = (dl as? ModelDownload.State.Running)?.percent
         Item(tr(R.string.set_voice_title), when { installed -> tr(R.string.set_voice_ready); pct != null -> tr(R.string.set_voice_loading, pct); else -> tr(R.string.app_voice_none) },
