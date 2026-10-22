@@ -232,6 +232,28 @@ class Conversation(
         toBrain(mode, clean, emptyList())
     }
 
+    /**
+     * Файл для Hermes (скрепка → «Файл»): в ленте — «📎 имя», файл уходит на сервер (HermesBrain.upload), в реплике мозгу — путь
+     * и вопрос из поля, если был. DeepSeek файлы не читает — пункта у него нет.
+     */
+    fun sendFile(local: java.io.File, name: String) {
+        val mode = _state.value.current
+        val link = ru.poneslas.vahter.App.instance.hermesLink() ?: return
+        val q = _state.value.draft.trim()
+        _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
+        spoke(mode.id)
+        val meId = nextId()
+        push(mode.id, FeedItem.Me(meId, listOf("📎 $name", q).filter { it.isNotBlank() }.joinToString("\n"), tr(R.string.conv_file_sending)))
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { ru.poneslas.vahter.App.instance.hermesBrain.upload(link, local, name) }
+            local.delete()
+            r.fold({ path ->
+                replace(mode.id, meId) { (it as FeedItem.Me).copy(via = tr(R.string.conv_file_via)) }
+                toBrain(mode, tr(R.string.conv_file_for_hermes, name, path) + if (q.isNotBlank()) "\n\n$q" else "", emptyList())
+            }, { e -> replace(mode.id, meId) { (it as FeedItem.Me).copy(via = tr(R.string.conv_file_failed, e.message ?: "")) } })
+        }
+    }
+
     private fun toBrain(mode: Mode, clean: String, images: List<String>) {
         val userMsg = ChatMsg("user", clean.ifEmpty { null }, images = images)
         appendHistory(mode.id, userMsg)

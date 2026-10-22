@@ -266,6 +266,26 @@ class HermesBrain(
         }
     }
 
+    /**
+     * Файл для Hermes: API Hermes документы не принимает, поэтому — PUT в приёмник за нашим Caddy (/vahter/upload, тот же ключ
+     * телефона, server/host/vahter-upload.py); в ответ — путь внутри Hermes, его и пишем в реплике.
+     */
+    fun upload(l: HermesLink, file: java.io.File, name: String): Result<String> = runCatching {
+        val c = java.net.URL(l.url.trimEnd('/') + "/vahter/upload/" + java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20")).openConnection() as HttpURLConnection
+        c.requestMethod = "PUT"; c.connectTimeout = 15_000; c.readTimeout = 120_000; c.doOutput = true
+        c.setRequestProperty("Authorization", "Bearer ${l.token}")
+        c.setFixedLengthStreamingMode(file.length())
+        try {
+            c.outputStream.use { o -> file.inputStream().use { it.copyTo(o) } }
+            when (val code = c.responseCode) {
+                200 -> json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject.str("path") ?: error("no path")
+                413 -> error(tr(R.string.hermes_file_too_big))
+                401 -> error(tr(R.string.hermes_err_auth))
+                else -> error("HTTP $code")
+            }
+        } finally { c.disconnect() }
+    }
+
     /** `approval.request`: команда и причина — как прислал сервер (Продукт 5: пересказ не выдумываем), варианты — его список. */
     private fun ask(l: HermesLink, obj: JsonObject): BrainEvent.Ask {
         val runId = obj.str("run_id").orEmpty()

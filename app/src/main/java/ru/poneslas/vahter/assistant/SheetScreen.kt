@@ -338,6 +338,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         onNeedMic = { onNeedPerm(android.Manifest.permission.RECORD_AUDIO) },
                         onCamera = ::openCamera,
                         onGallery = { PickerActivity.launchFromSheet(host) },
+                        onFile = if (state.current.brain == ru.poneslas.vahter.core.Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(host) }) else null,
                     )
                 }
             }

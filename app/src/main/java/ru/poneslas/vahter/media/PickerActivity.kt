@@ -30,9 +30,27 @@ class PickerActivity : ComponentActivity() {
         }
     }
 
+    /** «Файл» (только Hermes): системный выбор документа, копия в кэш — и в разговор (Conversation.sendFile). */
+    private val doc = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val app = App.instance
+        app.scope.launch {
+            val got = uri?.let { u -> runCatching {
+                val name = contentResolver.query(u, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "file"
+                val out = java.io.File(java.io.File(cacheDir, "upload").apply { mkdirs() }, System.currentTimeMillis().toString())
+                contentResolver.openInputStream(u)!!.use { i -> out.outputStream().use { o -> i.copyTo(o) } }
+                out to name
+            }.getOrNull() }
+            finish()
+            got?.let { (f, n) -> app.conversation.sendFile(f, n) }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        if (savedInstanceState == null) {
+            if (intent.getBooleanExtra("file", false)) doc.launch(arrayOf("*/*"))
+            else pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
     }
 
     companion object {
@@ -42,5 +60,9 @@ class PickerActivity : ComponentActivity() {
 
         fun launchFromApp(ctx: Context) =
             ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("fromSheet", false))
+
+        /** Документ для Hermes — тот же батут поверх листа или приложения. */
+        fun launchFile(ctx: Context) =
+            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("fromSheet", false).putExtra("file", true))
     }
 }

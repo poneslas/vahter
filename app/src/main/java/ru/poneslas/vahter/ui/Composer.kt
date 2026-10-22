@@ -249,6 +249,8 @@ fun Composer(
     onNeedMic: (() -> Unit)? = null,
     onCamera: (() -> Unit)? = null,
     onGallery: (() -> Unit)? = null,
+    /** «Файл» в меню скрепки — только когда мозг режима Hermes (документы читает он, DeepSeek — нет). */
+    onFile: (() -> Unit)? = null,
     /** Подсказка в поле вместо подсказки режима: «Команда агенту» без мозга, «Вы к кому?» в пустом разговоре Ассистента. */
     placeholder: String? = null,
 ) {
@@ -282,6 +284,7 @@ fun Composer(
                         .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
                         if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_camera), tr(R.string.cmp_camera_sub)) { menu = false; onCamera() }
                         if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_gallery), tr(R.string.cmp_gallery_sub)) { menu = false; onGallery() }
+                        if (onFile != null) PickItem(Ic.doc, tr(R.string.cmp_file), tr(R.string.cmp_file_sub)) { menu = false; onFile() }
                     }
                 }
             }
@@ -289,7 +292,7 @@ fun Composer(
                 voice = voice,
                 field = {
                     // .fld: белое поле, рамка, скругление 24, мин. высота 48; слева скрепка, справа микрофон фото-режима
-                    val canAttach = state.current.accepts.photo && (onGallery != null || (onCamera != null && !photoMain))
+                    val canAttach = (state.current.accepts.photo && (onGallery != null || (onCamera != null && !photoMain))) || onFile != null
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)
                             .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(start = if (canAttach) 4.dp else 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),

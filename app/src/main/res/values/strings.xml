@@ -725,6 +725,13 @@
     <string name="voice_try_note">Та же кнопка, что в листе: удержать — сказать — отпустить; вверх — без рук; влево — отмена.</string>
     <string name="brain_step_search">Ищу: %1$s</string>
     <string name="cap_search_sub">Свежие факты — со ссылками на источники</string>
+    <string name="conv_file_sending">файл · отправляю…</string>
+    <string name="conv_file_via">файл</string>
+    <string name="conv_file_failed">не отправлено: %1$s</string>
+    <string name="conv_file_for_hermes">Файл «%1$s» лежит на сервере: %2$s — открой его своими инструментами.</string>
+    <string name="hermes_file_too_big">файл больше 20 МБ</string>
+    <string name="cmp_file">Файл</string>
+    <string name="cmp_file_sub">PDF, таблица, текст — для Hermes</string>
     <string name="conn_section">Подключение</string>
     <string name="conn_status">Статус</string>
     <string name="conn_checking">Проверяю…</string>
