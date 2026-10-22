@@ -405,7 +405,7 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: (() -
     val lensW by animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
     BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp), contentAlignment = Alignment.Center) {
         Box(Modifier.width(lensW).height(30.dp).clip(RoundedCornerShape(50)).background(Ink.ink))   // линза — на месте
-        val side = maxWidth / 2 - 40.dp
+        val side = maxWidth / 2 - 16.dp   // поле по краям: и короткая вкладка (от 32 dp) встаёт точно под линзу
         LazyRow(
             state = list, flingBehavior = fling,
             horizontalArrangement = Arrangement.spacedBy(4.dp),

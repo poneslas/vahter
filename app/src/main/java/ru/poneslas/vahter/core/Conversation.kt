@@ -93,6 +93,8 @@ class Conversation(
     private val asks = ConcurrentHashMap<Long, suspend (String) -> Boolean>()
 
     init {
+        // пустые «Новые режимы», оставшиеся с прошлого раза (приложение закрыли прямо на странице режима)
+        _state.value.modes.filter { blank(it) }.forEach { deleteMode(it.id) }
         _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) }.onFailure { Log.e("Conversation", "не сохранилось", it) } } }.launchIn(scope)
     }
 
@@ -129,11 +131,28 @@ class Conversation(
     private fun remove(modeId: String, id: Long) = edit { s -> s.copy(feeds = s.feeds + (modeId to s.feeds[modeId].orEmpty().filterNot { it.id == id })) }
     private fun appendHistory(modeId: String, msg: ChatMsg) = edit { it.copy(histories = it.histories + (modeId to (it.histories[modeId].orEmpty() + msg))) }
 
-    /** «+»: новый режим. id выдаётся один раз и не меняется при переименовании (для Hermes это ключ сессии). */
-    fun addMode(): String {
+    /** «+»: новый режим. id выдаётся один раз и не меняется при переименовании (для Hermes это ключ сессии).
+     *  select — «+» во вкладках: новый режим сразу выбран; если его бросят пустым, вернётся прежний. */
+    fun addMode(select: Boolean = false): String {
         val id = "m-" + UUID.randomUUID().toString().take(4)
-        updateModes { it + Mode(id = id, title = tr(R.string.feed_new_mode), icon = "star", placeholder = tr(R.string.mode_assistant_hint)) }
+        updateModes { it + freshMode(id) }
+        if (select) { beforeAdd = _state.value.mode; selectMode(id) }
         return id
+    }
+    private fun freshMode(id: String) = Mode(id = id, title = tr(R.string.feed_new_mode), icon = "star", placeholder = tr(R.string.mode_assistant_hint))
+    private var beforeAdd: String? = null
+    /** Новый режим так и не заполнили: всё как при создании (название пустое или «Новый режим»), разговора нет. */
+    private fun blank(m: Mode) = !m.builtin && m.copy(title = m.title.ifBlank { tr(R.string.feed_new_mode) }) == freshMode(m.id) &&
+        _state.value.saved.feeds[m.id].isNullOrEmpty()
+
+    /** Ушли со страницы режима: пустой новый режим не нужен — удалить; был выбран — вернуть прежний. */
+    fun dropIfBlank(id: String) {
+        val m = _state.value.modes.firstOrNull { it.id == id } ?: return
+        if (!blank(m)) return
+        val back = beforeAdd?.takeIf { b -> _state.value.mode == id && _state.value.modes.any { it.id == b } }
+        deleteMode(id)
+        if (back != null) edit { it.copy(mode = back) }
+        beforeAdd = null
     }
 
     fun editMode(id: String, f: (Mode) -> Mode) = updateModes { list -> list.map { if (it.id == id) f(it) else it } }

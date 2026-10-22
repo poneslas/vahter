@@ -55,7 +55,7 @@ document.addEventListener('click', async e=>{
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.modeBack=S.ov?'sheet':S.page==='chat'||!S.page?'chat':S.page==='modes'?'modes':'settings';
     if(S.ov){ S.fromSheet={screen:S.screen==='app'?'home':S.screen}; S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается. «Назад» вернёт лист.') } S.page='mode'; return render() }
   switch(a){
-    case 'modeback': { const b=S.modeBack; S.modeBack=null; if(b==='sheet'){ const r=S.fromSheet; S.fromSheet=null; S.screen=r?.screen||'home'; S.page='chat'; openOverlay('снова — назад со страницы режима'); return render() } S.page=b==='chat'?'chat':b==='modes'?'modes':'settings'; return render() }
+    case 'modeback': { dropIfBlank(S.editMode); const b=S.modeBack; S.modeBack=null; if(b==='sheet'){ const r=S.fromSheet; S.fromSheet=null; S.screen=r?.screen||'home'; S.page='chat'; openOverlay('снова — назад со страницы режима'); return render() } S.page=b==='chat'?'chat':b==='modes'?'modes':'settings'; return render() }
     case 'promptreset': { const m=modeById(S.editMode), d=BUILTIN_MODES.find(b=>b.id===m.id); m.prompt=d.prompt; trace('Промпт встроенного режима — снова из текстов приложения: обновится с новой версией и языком.','i'); return render() }
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
     case 'chatmenu': S.chatMenu=!S.chatMenu; S.keepScroll=true; return render();
@@ -95,7 +95,7 @@ document.addEventListener('click', async e=>{
     case 'settings': S.ov=null; S.screen='app'; S.onboarded=true; S.page='settings'; return render();
     case 'home': S.fromSheet=null; S.screen='home'; return render();
     case 'about': S.page='about'; return render();
-    case 'tabadd': S.modeBack='chat'; S.tabAdd=true;   // «+» во вкладках: новый режим сразу выбран; «Назад» — в разговор с ним
+    case 'tabadd': S.modeBack='chat'; S.tabAdd=true; S.beforeAdd=S.mode;   // «+» во вкладках: новый режим сразу выбран; «Назад» — в разговор с ним
     case 'addmode': { S.ov=null; S.screen='app'; S.onboarded=true; const id='m-'+Math.random().toString(16).slice(2,6); S.modes.push(mode({id,title:'Новый режим',icon:'star',hint:'',prompt:''})); if(S.tabAdd){ S.tabAdd=false; setMode(id,'«+» во вкладках — новый режим создан и сразу выбран') } S.editMode=id; S.page='mode'; trace(`Новый режим получил идентификатор ${id} один раз, при создании; переименование его не меняет — иначе Hermes решит, что это новый разговор.`,'p'); render(); $('[data-mfield=title]')?.select(); return }
     case 'delmode': { const m=modeById(S.editMode); S.dialog={title:`Удалить режим «${esc(m.title)}»?`,text:brainOf(m).kind==='api'?'Разговор этого режима сотрётся — он хранится только на телефоне.':'Разговор пропадёт с телефона. В Hermes его сессия останется.',opts:[['Удалить','delmode_ok','danger'],['Отмена','x','sec2']]}; return render() }
     case 'brainsetup': S.ov=null; S.screen='app'; S.keyCheck=null; if(S.onboarded){ S.editBrain='deepseek'; S.page='brain' } else S.onbStep=ONB.indexOf('brain'); return render();
@@ -285,6 +285,9 @@ function tabSnap(t){ if(t._snap) return; t._snap=true; let to=null; tabLens(t); 
     t.querySelectorAll('[data-pickmode]').forEach(b=>{ const br=b.getBoundingClientRect(), dd=Math.abs(br.left+br.width/2-cx); if(dd<d){ d=dd; best=b } });
     if(best && best.dataset.pickmode!==S.mode){ setMode(best.dataset.pickmode,'Вкладки как в камере: отпустили — выбран режим по центру'); S.keepScroll=true; render() } };
   t.addEventListener('scroll',()=>{ clearTimeout(to); to=setTimeout(pick,140) }, {passive:true}) }
+/** Ушли со страницы нового режима, ничего не заполнив (название пустое или «Новый режим», промпт и подпись пустые, значок ★) — удалить; был выбран — вернуть прежний. */
+function dropIfBlank(id){ const m=modeById(id); if(!m||m.builtin||m.prompt||m.hint||m.icon!=='star'||(m.title&&m.title!=='Новый режим')) return;
+  S.modes=S.modes.filter(x=>x.id!==id); if(S.mode===id) setMode(S.beforeAdd&&modeById(S.beforeAdd)?S.beforeAdd:'main','Пустой новый режим удалён — вернулись к прежнему'); S.beforeAdd=null }
 /** Порядок режимов: тянуть за ⠿; отпустили — режим встал на новое место (в приложении — перетаскивание в списке). */
 let dr=null;
 document.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-drag]'); if(!g) return; e.preventDefault(); const row=g.closest('[data-ri]'); const k=devScale();

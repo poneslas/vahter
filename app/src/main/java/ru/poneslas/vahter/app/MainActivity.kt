@@ -142,7 +142,7 @@ open class MainActivity : ComponentActivity() {
             stack.clear(); stack.add("chat"); stack.add("settings"); stack.add("hermes")
         }
         // «+» во вкладках листа: новый режим сразу выбран; «Назад» с его страницы — обратно в лист (SheetActivity.openApp)
-        if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { val c = App.instance.conversation; val id = c.addMode(); c.selectMode(id); stack.add("mode:$id") }
+        if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { stack.add("mode:" + App.instance.conversation.addMode(select = true)) }
     }
 
     fun go(page: String) { stack.add(page) }
@@ -151,8 +151,11 @@ open class MainActivity : ComponentActivity() {
     /** Страница, с которой «Назад» сворачивает обратно в лист (пришли на неё из листа). */
     protected var sheetReturn: String? by mutableStateOf(null)
     fun back() {
-        if (sheetReturn != null && stack.last() == sheetReturn) { sheetReturn = null; collapse(); return }
-        if (stack.size > 1) stack.removeAt(stack.lastIndex) else leave()
+        val page = stack.last()
+        if (sheetReturn != null && page == sheetReturn) { sheetReturn = null; collapse() }
+        else if (stack.size > 1) stack.removeAt(stack.lastIndex) else leave()
+        // ушли со страницы нового режима, ничего не заполнив, — такой режим не нужен
+        if (page.startsWith("mode:")) App.instance.conversation.dropIfBlank(page.removePrefix("mode:"))
     }
     /** «Назад» с первой страницы: приложение закрывается, лист сворачивается. */
     protected open fun leave() = finish()
