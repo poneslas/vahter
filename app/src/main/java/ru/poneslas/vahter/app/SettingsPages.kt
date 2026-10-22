@@ -1,5 +1,6 @@
 package ru.poneslas.vahter.app
 
+import androidx.compose.foundation.layout.size
 import ru.poneslas.vahter.ui.PageSection
 import ru.poneslas.vahter.ui.StatusItem
 import ru.poneslas.vahter.ui.CapItem
