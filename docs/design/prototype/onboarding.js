@@ -72,7 +72,7 @@ function tryStep(){
     : `<div class="tsun ${freed?'freed':''}" data-st="${rec?'rec':S.recog?'recog':'idle'}">${vMark()}</div><div class="tpct" style="visibility:hidden">0${'\u00a0'}%</div>`;   // строка процентов — в резерве, текст не прыгает
   const text = loading ? '<div class="tcap">Вахтёр учит русский…</div>'
     : rec ? '<div class="tcap">Слушаю…</div>' : S.recog ? '<div class="tcap">Распознаю на телефоне…</div>'
-    : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
+    : last ? `<div class="tbig">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
     : `<div class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь'}</div>`;
   const p = loading ? 'Вахтёр пока учит русский — подождите или попробуйте потом в листе.' : 'Зажмите микрофон и скажите что-нибудь — проверим, как слышно.';
   // Тот же шаблон, что у остальных шагов: сцена (знак, прошлые фразы) — в свободном месте сверху; распознанное — крупно под ней;

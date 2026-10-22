@@ -33,7 +33,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.shot){ S.camSubj=t.dataset.shot; if(S.cam) S.cam.subj=t.dataset.shot; return render() }
   if (t.dataset.say) return quickSay(t.dataset.say);
   if (t.dataset.saytext) return deliver(t.dataset.saytext,'нажатие');
-  if (t.dataset.ev) return event(t.dataset.ev);
+  if (t.dataset.ev) return worldEvent(t.dataset.ev);
   if (t.dataset.w){ let v=t.dataset.v; if(v==='true')v=true; if(v==='false')v=false; return setWorld(t.dataset.w,v) }
   if (t.dataset.fail!==undefined){ S.failNext=t.dataset.fail||null; return render() }
   if (t.dataset.open!==undefined){ if(t.dataset.open==='app'){ S.screen='app'; S.fromSheet=null; if(S.onboarded) S.page='chat'; roleCheck() } else if(t.dataset.open==='tg') S.screen='tg'; else return; return render() }
@@ -60,16 +60,14 @@ document.addEventListener('click', async e=>{
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
     case 'chatmenu': S.chatMenu=!S.chatMenu; S.keepScroll=true; return render();
     case 'cm:edit': S.chatMenu=false; S.editMode=S.mode; S.modeBack='chat'; S.page='mode'; return render();
-    case 'cm:journal': S.chatMenu=false; S.page='journal'; return render();
-    case 'cm:restart': S.chatMenu=false; S.keepScroll=true;   // дальше — как раньше: карточка «Стереть разговор?»
-    case 'restartask': S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restart_yes','pri'],['Отмена','restart_no']]}); return render();
+    case 'cm:restart': S.chatMenu=false; S.keepScroll=true;   // карточка «Стереть разговор?»
+      S.feed.push({t:'card',who:'p',head:'Начать заново',title:`Стереть разговор «${esc(curMode().title)}»?`,text:'Промпт и настройки режима останутся.',btns:[['Стереть','restart_yes','pri'],['Отмена','restart_no']]}); return render();
     case 'camfull': S.cam.full=!S.cam.full; return render();
     case 'noop': return;
     case 'addtile': S.dialog={ic:'▦',title:'Добавить плитку «Вахтёр» в быстрые настройки?',opts:[['Добавить','tile_ok'],['Отмена','x','sec2']]}; trace('Плитку предлагает добавить сама система — StatusBarManager.requestAddTileService (Android 13+).','p'); return render();
     case 'brainfromsheet': S.brainRet={screen:S.screen}; S.ov=null; S.screen='app'; S.keyCheck=null; S.editBrain='deepseek'; S.page='brain'; S.onboarded=true; trace('Из листа — на экран мозга в приложении; «Назад» вернёт лист.','p'); return render();
     case 'brainback': { const R=S.brainRet; S.brainRet=null; S.page='chat'; S.screen=R?.screen||'home'; openOverlay('снова — назад с экрана мозга'); return render() }
     case 'onbnext': return onbNext();
-    case 'onbdone': return onbDone();
     case 'btnsetup': return btnSetup();
     case 'btnlater': return btnLater();
     case 'callpage': S.page='call'; return render();
@@ -124,7 +122,7 @@ document.addEventListener('click', async e=>{
     case 'pickdone': { const sel=S.pickSel||[]; S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; const items=sel.map(cls=>({cls,marks:[],crop:null})); uploadPhoto(items.length>1?{kind:'album',items}:{kind:'photo',...items[0]},'',items.length>1?`альбом · ${items.length}`:'фото'); trace(items.length>1?`Несколько фото из галереи — одна реплика, ${items.length} картинки.`:'Фото из галереи — как со спуска камеры.','p'); return }
     case 'pickback': S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; return render();
     case 'camera': S.attachMenu=false; return openCamera(false);
-    case 'shoot': case 'camsend': return shotGo('');
+    case 'camsend': return shotGo('');
     case 'camadd': return camAdd();
     case 'camretake': { const back=S.cam.editIdx!=null; camLive(); trace(back?'Правки кадра из ленты отменены — снова живой видоискатель.':'Переснять — пометки сброшены, снова живой видоискатель.'); return render() }
     case 'camundo': { const c=S.cam; if(c.marks.length) c.marks.pop(); else c.crop=null; return render() }
@@ -157,13 +155,16 @@ document.addEventListener('click', async e=>{
     case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
     case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;
     case 'unlock': S.w.locked=false; S.screen='home'; return render();
-    case 'toast': { const T=S.toast; S.toast=null; if(T?.act==='push') openOverlay('из уведомления'); else render(); return }
+    case 'toast': { const T=S.toast; S.toast=null; clearTimeout(toastT); if(T?.act==='push') openOverlay('из уведомления'); else render(); return }
   }
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='cin'){ S.draft=e.target.value; $('[data-act=csend]')?.click() } if(e.target.id==='addr') $('[data-act=addrgo]').click() } });
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='cin'){ S.draft=e.target.value; $('[data-act=csend]')?.click() } if(e.target.id==='addr') $('[data-act=addrgo]')?.click() } });
 document.addEventListener('change',e=>{ if(e.target.dataset&&e.target.dataset.mfield){ S.keepScroll=true; render() } });
 document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfield){ const m=modeById(S.editMode); m[e.target.dataset.mfield]=e.target.value; return }
-  if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } } });
+  if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } }
+  // свой эмодзи: первая графема из поля
+  if(e.target.id==='emoin'){ const v=e.target.value.trim(); if(!v) return;
+    const g=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)][0].segment; modeById(S.editMode).icon='emoji:'+g; S.emojiPick=false; S.keepScroll=true; render() } });
 
 function cardBtn(b){
   if (b==='restart_yes'){ S.feed=[]; trace('Разговор режима стёрт — меню ⋮, долгое нажатие на название в листе или «начни заново» голосом.','p'); return render() }
@@ -285,20 +286,17 @@ function tabSnap(t){ if(t._snap) return; t._snap=true; let to=null; tabLens(t); 
   t.addEventListener('scroll',()=>{ clearTimeout(to); to=setTimeout(pick,140) }, {passive:true}) }
 /** Порядок режимов: тянуть за ⠿; отпустили — режим встал на новое место (в приложении — перетаскивание в списке). */
 let dr=null;
-document.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-drag]'); if(!g) return; e.preventDefault(); const row=g.closest('[data-ri]'); const k=$('#dev').getBoundingClientRect().width/W;
+document.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-drag]'); if(!g) return; e.preventDefault(); const row=g.closest('[data-ri]'); const k=devScale();
   dr={i:+g.dataset.drag, y:e.clientY, row, k, h:row.offsetHeight}; row.classList.add('drag'); row.setPointerCapture?.(e.pointerId) });
 document.addEventListener('pointermove', e=>{ if(!dr) return; const dy=(e.clientY-dr.y)/dr.k; dr.row.style.transform=`translateY(${dy}px)` ; dr.to=Math.max(0,Math.min(S.modes.length-1, dr.i+Math.round(dy/dr.h))) });
 document.addEventListener('pointerup', ()=>{ if(!dr) return; const {i,to}=dr; dr=null; if(to!=null&&to!==i){ const [m]=S.modes.splice(i,1); S.modes.splice(to,0,m); trace('Порядок режимов — так же и вкладки под полем.','i') } S.keepScroll=true; render() });
-/** Свой эмодзи: первая графема из поля. */
-document.addEventListener('input', e=>{ if(e.target.id!=='emoin') return; const v=e.target.value.trim(); if(!v) return;
-  const g=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)][0].segment; modeById(S.editMode).icon='emoji:'+g; S.emojiPick=false; S.keepScroll=true; render() });
 
 /** Долгое нажатие на режим в настройках — перестановка: переключатели плавно становятся ≡, в шапке «Готово», строка под пальцем
  *  сразу подхвачена (один жест: удержал — тащишь). Короткий тап — как раньше, страница режима. */
 let modeHoldT=null, modeHoldArmed=false;
 document.addEventListener('pointerdown', e=>{ const r=e.target.closest('[data-hold]'); if(!r||S.reorder||e.target.closest('.swbtn')) return; const y=e.clientY, idx=+r.dataset.hold;
   modeHoldArmed=false; modeHoldT=setTimeout(()=>{ modeHoldArmed=true; S.reorder=true; S.keepScroll=true; render(); navigator.vibrate?.(15);
-    const row=$(`#scr [data-ri="${idx}"]`); if(row){ const k=$('#dev').getBoundingClientRect().width/W; dr={i:idx, y, row, k, h:row.offsetHeight}; row.classList.add('drag') } }, 450) }, true);
+    const row=$(`#scr [data-ri="${idx}"]`); if(row){ const k=devScale(); dr={i:idx, y, row, k, h:row.offsetHeight}; row.classList.add('drag') } }, 450) }, true);
 document.addEventListener('pointermove', e=>{ if(modeHoldT&&!modeHoldArmed&&e.movementY&&Math.abs(e.movementY)>6){ clearTimeout(modeHoldT); modeHoldT=null } }, true);
 document.addEventListener('pointerup', ()=>{ clearTimeout(modeHoldT); modeHoldT=null }, true);
 document.addEventListener('click', e=>{ if(modeHoldArmed && e.target.closest('[data-hold]')){ e.stopImmediatePropagation(); e.preventDefault(); modeHoldArmed=false } }, true);
@@ -315,7 +313,7 @@ setInterval(()=>{ document.querySelectorAll('#scr .act[data-aid]').forEach(a=>{ 
 
 /** Вкладки режимов тянутся и мышью (браузер сам двигает ряд только колесом/тачпадом): сдвинули больше 6 px — это свайп, тап не срабатывает. */
 let tabDrag=null;
-document.addEventListener('pointerdown', e=>{ const t=e.target.closest('#scr .mtabs.snap'); if(!t||e.pointerType==='touch') return; tabDrag={t, x:e.clientX, left:t.scrollLeft, moved:false, k:$('#dev').getBoundingClientRect().width/W}; t.style.scrollSnapType='none' }, true);
+document.addEventListener('pointerdown', e=>{ const t=e.target.closest('#scr .mtabs.snap'); if(!t||e.pointerType==='touch') return; tabDrag={t, x:e.clientX, left:t.scrollLeft, moved:false, k:devScale()}; t.style.scrollSnapType='none' }, true);
 document.addEventListener('pointermove', e=>{ if(!tabDrag) return; const dx=(e.clientX-tabDrag.x)/tabDrag.k; if(Math.abs(dx)>6) tabDrag.moved=true; if(tabDrag.moved) tabDrag.t.scrollLeft=tabDrag.left-dx }, true);
 document.addEventListener('pointerup', ()=>{ if(!tabDrag) return; const {t,moved}=tabDrag; tabDrag=null; t.style.scrollSnapType=''; if(moved){ tabSwallow=true; t.dispatchEvent(new Event('scroll')) } }, true);
 let tabSwallow=false;

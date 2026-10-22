@@ -3,6 +3,8 @@ const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const wait = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 120) : ms));
+/** Слово к числу: 1 — one, меньше пяти — few, иначе many (21, 22… не различает; в Android — plurals). */
+const plural = (n, one, few, many) => n===1 ? one : n<5 ? few : many;
 
 const I = {
   stop:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v10H7z"/></svg>',

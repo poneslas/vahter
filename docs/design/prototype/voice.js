@@ -77,7 +77,7 @@ document.addEventListener('pointerup',e=>{ if(!sw) return; const dx=e.clientX-sw
 /* запись без рук: тап по кругу — отправить, потянуть влево — отмена */
 let pl=null;
 document.addEventListener('pointerdown',e=>{ const b=e.target.closest('[data-recsend]'); if(!b) return; e.preventDefault(); pl={x:e.clientX,t:Date.now()} });
-document.addEventListener('pointermove',e=>{ if(!pl||!S.rec) return; const k=$('#dev').getBoundingClientRect().width/W; const dx=Math.max(0,(pl.x-e.clientX)/k); S.rec.lg=dx;
+document.addEventListener('pointermove',e=>{ if(!pl||!S.rec) return; const k=devScale(); const dx=Math.max(0,(pl.x-e.clientX)/k); S.rec.lg=dx;
   const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translateX(${-Math.min(dx,70)}px)`; const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-dx/70);
   if (dx>70){ pl=null; finishRec('cancel') } });
 const lockedUp=()=>{ if(!pl) return; const moved=(S.rec&&S.rec.lg)||0; pl=null; if(!S.rec) return; if(moved<12) return finishRec('send'); S.rec.lg=0; S.keepScroll=true; render() };
@@ -85,7 +85,7 @@ document.addEventListener('pointerup',lockedUp); document.addEventListener('poin
 let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
 document.addEventListener('dragstart',e=>{ if(e.target.closest&&e.target.closest('[data-mic]')) e.preventDefault() });
-document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const k=$('#dev').getBoundingClientRect().width/W; const dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k;
+document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const k=devScale(); const dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k;
   if (!pd.axis && Math.hypot(dx,dy)>8) pd.axis = Math.abs(dy)>=Math.abs(dx) ? 'y' : 'x';   // направление выбирается один раз, как в Telegram
   S.rec.g={x:pd.axis==='x'?Math.max(0,dx):0, y:pd.axis==='y'?Math.max(0,dy):0};
   const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;

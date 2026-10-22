@@ -78,7 +78,6 @@ async function deliverModeIn(text, via, img, bubble){
       : `<p><b>Жасминовый чай</b> (茉莉花茶), 250 г, ¥38 ≈ 470 ₽.</p><ul><li>Зелёный чай с цветами жасмина — классика, пьют без сахара.</li><li>Цена обычная для супермаркета.</li><li>Заваривать 80 °C, 2–3 минуты.</li></ul>`, {fast:true});
   S.busy=false; if(S.ov) S.ov.live=''; render();
 }
-async function say(key,typed){ return deliver(PHR[key].fin, typed?'клавиатура':'голос') }   // для сценариев
 
 
 async function think(my,steps){
@@ -169,5 +168,5 @@ const qText=()=>S.w.net==='none'?'Нет связи. Передам наверх
 function flushQueue(){ let n=0; S.feed.forEach(f=>{ if(f.t==='q'){ f.t='ph'; f.x='Ушло из очереди'; n++ } }); if(n) trace(`Связь есть — очередь (${n}) ушла по порядку.`,'i') }
 
 let toastT=null;
-function showToast(title,text,act){ S.toast={title,text,act}; S.keepScroll=true; render(); clearTimeout(toastT); toastT=setTimeout(()=>{S.toast=null;S.keepScroll=true;render()},4200) }
+function showToast(title,text,act,ms=4200){ S.toast={title,text,act}; S.keepScroll=true; render(); clearTimeout(toastT); toastT=setTimeout(()=>{S.toast=null;S.keepScroll=true;render()},ms) }
 

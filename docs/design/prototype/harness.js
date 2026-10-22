@@ -1,4 +1,10 @@
 /* Обвязка демо, в Android не переносится: «мир», боковая кнопка корпуса, сценарии, знакомство, масштаб телефона. */
+/* объявления — до первого render(): его зовёт preset() ниже, а trace() (model.js) смотрит ptab */
+let ptab='sc', seenLog=0;
+/* телефон: пропорции корпуса S24 Ultra (79 × 162 мм ≈ 1 : 2,05), масштаб — по высоте окна, не больше 90 % */
+const W=400, H=820;
+/** Во сколько раз корпус телефона сейчас уменьшен: пиксели экрана → пиксели прототипа (для жестов). */
+const devScale = () => $('#dev').getBoundingClientRect().width/W;
 /* ───────── мир ───────── */
 const WORLD=[['net','Сеть',[['wifi','Wi-Fi'],['cell','Мобильная'],['none','Нет']]],['key','Ключ DeepSeek',[['none','Нет'],['ok','Есть'],['bad','Отозван']]],['server','Hermes',[['none','Не подключён'],['paired','Подключён'],['down','Не отвечает']]],['model','Модель',[['none','Нет'],['loading','Качается'],['ready','Готова'],['broken','Повреждена']]],['locked','Экран',[[false,'Открыт'],[true,'Заблокирован']]],['role','Цифровой помощник',[['gemini','Gemini'],['ours','Вахтёр']]],['profile','Профиль телефона',[['samsung','Samsung'],['unknown','Незнакомый']]],['side','Боковая кнопка',[['power','Выключение'],['bixby','Bixby'],['double','Помощник ×2'],['assistant','Помощник']]],['mic','Микрофон',[['ask','Не спрашивали'],['ok','Разрешён'],['denied','Запрещён'],['call','Идёт звонок']]]];
 function renderWorld(){
@@ -37,7 +43,7 @@ function longPress(){
   if (S.w.role!=='ours'){ S.dialog={ic:'✦',title:'Gemini',text:'Кнопка открывает цифрового помощника, а помощник — Gemini.',opts:[['Закрыть','x']]}; return render() }
   openOverlay('side');
 }
-async function event(k){
+async function worldEvent(k){
   if (k==='approve'){ if(S.pair?.stage==='code'){ trace('Владелец: hermes pairing approve vahter K7Q2M9XD','h'); return pairDone() } return }
   if (k==='ctx'){ S.feed.push({t:'card',who:'h',head:brainOf().title+' · ошибка',title:'Разговор слишком длинный',text:'Модель больше не помещает всю историю режима. Сжимать не будем — начните заново: промпт и настройки останутся.',btns:[['Начать заново','restart','pri']]}); trace('Провайдер вернул ошибку длины контекста. Сжатия нет по решению — честно предлагаем начать разговор режима заново.','e'); S.keepScroll=true; return render() }
   if (k==='push'){ if(!brainReady()) return; S.feed.push({t:'ai',x:'<p>Готово: три рецепта сырников без муки, лучший — на рисовой.</p>',done:true}); if(S.ov||(S.screen==='app'&&S.page==='chat')) return render(); if(S.w.notif!=='ok'){ trace('Ответ пришёл, уведомления выключены — увидите при открытии.','e'); return } trace(brainOf().kind==='api'?'Лист закрыли, а запрос к DeepSeek дожала фоновая работа приложения; ответ сохранён в разговор режима, уведомление показал сам телефон — без своего сервера и пуш-службы.':'Пуш без содержимого через свой ntfy → телефон забирает текст и сам показывает уведомление.','h'); return showToast(curMode().title, S.w.locked&&S.settings.lockScope!=='on' ? 'Ответ готов' : 'Готово: три рецепта сырников…','push') }
@@ -66,16 +72,15 @@ const PRESETS=[
   ['Экран заблокирован','календарь — с разблокировкой',()=>{ ready(); S.w.locked=true; S.screen='lock' },'fail','locked'],
   ['Микрофон запрещён','кнопка «Открыть настройки»',()=>{ ready(); S.w.mic='denied' },'fail','nomic'],
 ];
-function preset(i,restored){ token++; clearInterval(dlT); const p=PRESETS[i]; curPreset=i; openGroup=p[3]; save({k:'p',slug:p[4]}); history.replaceState(null,'','#'+p[4]); renderGroups(); p[2](); if(restored && (S.autoSay||S.autoEv)){ S.autoSay=null; S.autoEv=null; render(); trace(`Восстановлен сценарий «${p[0]}» — сам он не проигрывается. Нажмите его в «Сценариях», чтобы проиграть.`,'p') } if(p[0].startsWith('Режим «Гастрогид»')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Гастрогид» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
-  else if(p[0].startsWith('Режимы')) setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
-  if (S.autoEv){ const k=S.autoEv; S.autoEv=null; openOverlay('из сценария'); setTimeout(()=>event(k),350) }
+function preset(i,restored){ token++; clearInterval(dlT); const p=PRESETS[i]; curPreset=i; openGroup=p[3]; save({k:'p',slug:p[4]}); history.replaceState(null,'','#'+p[4]); renderGroups(); p[2](); if(restored && (S.autoSay||S.autoEv)){ S.autoSay=null; S.autoEv=null; render(); trace(`Восстановлен сценарий «${p[0]}» — сам он не проигрывается. Нажмите его в «Сценариях», чтобы проиграть.`,'p') } if(p[4]==='gastro') setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('«Гастрогид» — режим, добавленный вручную через «+» (идентификатор m-4c1e). Вкусы записаны в его промпте. Открывается сразу камерой: снимите меню — ответ придёт с названиями в оригинале, чтобы показать официанту.','p') },300);
+  else if(p[4]==='shop') setTimeout(()=>{ openOverlay('боковой кнопкой — последний режим'); trace('Боковая кнопка открыла последний режим — «Что это?», он сразу открывается камерой. Спуск — снимок уходит сам (2 с на «Отмена»). Зажать микрофон справа — спросить голосом, снимок уйдёт с вопросом. Режимы — вкладки под полем ввода (как режимы в приложении камеры): нажать или свайпнуть.','p') },300); if(!['lock','app'].includes(S.screen)) S.screen='home'; $('#trace').innerHTML=''; trace(`<b>${p[0]}.</b> ${p[1]}.`); render();
+  if (S.autoEv){ const k=S.autoEv; S.autoEv=null; openOverlay('из сценария'); setTimeout(()=>worldEvent(k),350) }
   if (S.autoSay){ const k=S.autoSay; S.autoSay=null; openOverlay('из сценария'); setTimeout(()=>quickSay(k),350) } }
 const GROUPS=[['day','Каждый день','обычный день, режимы, кривая команда'],['start','Первый запуск','с нуля, модель, ключ'],['fail','Сбои','сеть, блокировка, микрофон, контекст'],['brain','Hermes','серия, картинки, подтверждение, уточнение']];
 let openGroup='day', curPreset=null;
 function renderGroups(){ $('#groups').innerHTML=GROUPS.map(([g,t,d])=>`<details class="grp2" data-g="${g}" ${openGroup===g?'open':''}><summary>${t}<small>${d}</small></summary><div class="presets">${PRESETS.map((p,i)=>p[3]===g?`<button class="pre" data-preset="${i}" aria-current="${curPreset===i}"><b>${p[0]}</b><span>${p[1]}</span></button>`:'').join('')}</div></details>`).join('') }
 document.addEventListener('toggle',e=>{ const d=e.target; if(!d.matches||!d.matches('.grp2')||!d.open) return; openGroup=d.dataset.g; document.querySelectorAll('.grp2').forEach(x=>{ if(x!==d) x.open=false }) },true);
 /* вкладки панели */
-let ptab='sc', seenLog=0;
 function setPtab(t){ ptab=t; document.querySelectorAll('[data-ptab]').forEach(b=>b.matches('.ptabs button')&&b.setAttribute('aria-pressed',b.dataset.ptab===t)); document.querySelectorAll('.pt').forEach(x=>x.classList.toggle('on',x.dataset.pt.split(' ').includes(t))); if(t==='log'){ seenLog=$('#trace').children.length; $('#lognew').textContent='' } $('#lastlog').style.display=t==='log'?'none':'' }
 /* без пресета: телефон уже настроен, первый запуск — во вкладке «Сценарии» */
 function startFree(){ token++; clearInterval(dlT); ready(); S.screen='home'; S.mode='main'; curPreset=null; save({k:'free'}); render(); renderGroups(); setPtab('sc') }
@@ -83,13 +88,11 @@ function startFree(){ token++; clearInterval(dlT); ready(); S.screen='home'; S.m
 function save(v){ try{ localStorage.setItem('vahter-proto',JSON.stringify(v)) }catch{} }
 function restore(){ const h=decodeURIComponent(location.hash.slice(1)); const bySlug=PRESETS.findIndex(p=>p[4]===h); if(bySlug>=0) return {k:'p',slug:h}; try{ return JSON.parse(localStorage.getItem('vahter-proto')) }catch{ return null } }
 $('#say').innerHTML=Object.entries(PHR).filter(([k])=>k!=='pr').map(([k,v])=>`<button data-say="${k}">«${v.t}»</button>`).join('');
-$('#say').insertAdjacentHTML('beforeend','');
 $('#events').innerHTML=[['approve','Владелец подтвердил код'],['push','Ответ пришёл, пока лист закрыт'],['ctx','Разговор упёрся в предел модели'],['cron','Hermes: утренняя сводка'],['bg','Hermes: фоновая задача'],['rate','Ошибка провайдера модели'],['update','Вышла новая версия']].map(x=>`<button data-ev="${x[0]}">${x[1]}</button>`).join('');
 renderGroups();
 { const R=restore(); const i=R&&R.k==='p'?PRESETS.findIndex(p=>p[4]===R.slug):-1; if(i>=0){ preset(i,true); setPtab('sc') } else startFree() }
 
-/* телефон: пропорции корпуса S24 Ultra (79 × 162 мм ≈ 1 : 2,05), масштаб — по высоте окна, не больше 90 % */
-const W=400, H=820;
+/* телефон: масштаб корпуса */
 function fit(){
   const dev=$('#dev'), wrap=dev.parentElement, lab=wrap.querySelector('.side-l');
   const k=Math.max(0.55, Math.min(0.9, (innerHeight-64)/H));

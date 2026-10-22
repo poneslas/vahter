@@ -88,7 +88,7 @@ function itemHtml(it,inSheet){
 }
 function stepsHtml(it){
   const n=it.items.length; const pd=it.plan?it.plan.items.filter(p=>p.st==='completed').length:0;
-  const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${n===1?'шаг':n<5?'шага':'шагов'} · ${it.sec} с${it.plan?` · план ${pd} из ${it.plan.items.length}`:''}`;
+  const head = it.run ? `<span class="shim">${it.cur}</span>` : `${n} ${plural(n,'шаг','шага','шагов')} · ${it.sec} с${it.plan?` · план ${pd} из ${it.plan.items.length}`:''}`;
   return `<div class="steps ${it.open?'open':''}"><button data-act="togglesteps" data-id="${it.id}">${head}${I.chev}</button>
   ${it.plan&&(it.run||it.open)?`<div class="plan"><div class="ph2"><span>План</span><span>ревизия ${it.plan.rev}</span></div>${it.plan.items.map(p=>`<div class="pi ${p.st} ${it.run?'now':''}"><span class="b">${p.st==='completed'?'✓':''}</span><span>${p.c}</span></div>`).join('')}</div>`:''}
   <div class="sl">${it.items.map(s=>`<div class="sitem ${s.phone?'phone':''}"><div><span class="si">${s.i}</span><span>${s.t}</span><span style="margin-left:auto;color:var(--faint);font-size:11px">${s.ms||''}</span></div>${s.d?`<div class="sd">${s.d}</div>`:''}</div>`).join('')}</div></div>`;
@@ -252,7 +252,7 @@ function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter
     + (on?sect('', card(`<button class="li danger" data-act="keydel"><span class="lic">${I.del}</span><span class="lt"><b>Отключить</b><small>Ключ стирается с телефона</small></span></button>`)):'')) }
 function blockedBanner(){ const miss=[...new Set(TOOLS.filter(toolBlocked).map(x=>x.perm))]; if(!miss.length) return '';
   const n=TOOLS.filter(toolBlocked).length;
-  return `<div class="banner" style="margin:4px 16px 8px"><span class="bi">${I.warn}</span><p>${n} ${n===1?'действие не работает':n<5?'действия не работают':'действий не работают'}: нет доступа — ${miss.map(k=>SYS_PERMS[k]).join(', ')}.</p><div class="ba"><button class="tbtn" data-permfix="${miss[0]}">Исправить</button></div></div>` }
+  return `<div class="banner" style="margin:4px 16px 8px"><span class="bi">${I.warn}</span><p>${n} ${plural(n,'действие не работает','действия не работают','действий не работают')}: нет доступа — ${miss.map(k=>SYS_PERMS[k]).join(', ')}.</p><div class="ba"><button class="tbtn" data-permfix="${miss[0]}">Исправить</button></div></div>` }
 /** Системный экран разрешения приложения (Настройки → Приложения → Вахтёр → Разрешения → …). */
 function sysPerm(){ const k=S.permKind, o=(v,t)=>`<button class="it" data-sysperm="${v}"><span class="rad ${(S.w.perms[k]==='ok')===(v==='ok')?'on':''}"></span>${t}</button>`;
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="syspermback">${I.back}</button>${SYS_PERMS[k].replace(/[«»]/g,'')}</div><p style="margin:0 22px 6px;font-size:13px;color:#666">${k==='dnd'?'Настройки → Уведомления → Доступ к «Не беспокоить»':`Приложения → Вахтёр → Разрешения → ${SYS_PERMS[k]}`}</p><div class="grp">${k==='dnd'?o('ok','Вахтёр — разрешить')+o('denied','Не разрешать'):o('ok',k==='location'?'Разрешить только во время использования':'Разрешить')+o('denied','Не разрешать')}</div></div>` }
@@ -341,7 +341,6 @@ function sysPick(){ const k=S.picker; const items=k==='gallery'?[['menu','Мен
 function sysSide(){ const o=(v,t,sub)=>`<button class="it" data-side="${v}"><span class="rad ${S.w.side===v?'on':''}"></span><span>${t}${sub?`<small style="display:block;font-size:12.5px;color:#3E6FD8;margin-top:2px">${sub}</small>`:''}</span></button>`; return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="sysback">${I.back}</button>Боковая кнопка</div><p style="margin:0 22px 6px;font-size:13px;color:#666">Настройки → Дополнительные функции → Боковая кнопка</p><p style="margin:14px 24px 4px;font-size:13px;color:#3E6FD8;font-weight:600">Нажатие и удержание</p><div class="grp">${o('bixby','Bixby')}${o('assistant','Цифровой помощник',S.w.role==='ours'?'Вахтёр':'Gemini')}${o('power','Меню выключения')}</div><p style="margin:12px 24px;font-size:12.5px;color:#777">«Цифровой помощник» открывает того, кто выбран помощником в настройках Android — это отдельная настройка.</p></div>` }
 function tg(){ return `<div class="layer tg">${statusBar(false)}<div class="top"><button class="iconbtn" data-act="home" style="color:#fff">${I.back}</button><span class="av">H</span><span><b>Hermes</b><br><small style="opacity:.8">бот</small></span></div><div class="msgs" id="msgs">${S.tg.map(m=>`<div class="bub ${m.me?'me':''}">${m.html}</div>`).join('')}</div><div class="compose"><span class="in">${S.tg.length?'Сообщение':'Сделай приглашение для Вахтёра для S24'}</span><button class="cb pri" data-act="tgsend" ${S.tg.length?'disabled':''}>➤</button></div></div>` }
 function cam(){ return `<div class="layer cam">${statusBar(false)}<div class="frame"><div class="scanline"></div></div><p style="position:absolute;top:450px;width:100%;text-align:center;font-size:14px">Наведите на QR с экрана компьютера</p></div>` }
-function qrSvg(){ let s=''; for(let i=0;i<144;i++){ const r=Math.floor(i/12),c=i%12; const f=(r<3&&c<3)||(r<3&&c>8)||(r>8&&c<3); s+=`<i style="background:${f||((r*7+c*13+r*c)%3===0)?'#111':'#fff'}"></i>` } return `<div class="qr">${s}</div>` }
 
 /** Пометки поверх снимка: координаты в процентах кадра (0–100). */
 function marksSvg(marks, crop, draft){
@@ -446,14 +445,15 @@ function render(){
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
   // Страницы приложения (настройки, мозги, режим…) помнят свою прокрутку: перерисовка и возврат «Назад» — на то же место (как в приложении).
   const pg=$('#scr .appv > .scroll'); if(pg && render.page) (S.pageScroll??={})[render.page]=pg.scrollTop;
-  const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
+  // поле ввода с id, в котором стоял курсор, после перерисовки снова в фокусе и с тем же выделением: фоновая перерисовка (загрузка, проверка) не уводит фокус
+  const ae=document.activeElement, aeId=ae&&ae.id&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&ae.closest('#scr')?ae.id:null, aeSel=aeId&&[ae.selectionStart,ae.selectionEnd];
   if (S.unlocking) base += `<div class="unlk"><div class="fp">${I.lock}</div><b>Разблокируйте</b><small>Приложите палец к сканеру</small></div>`;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
   document.querySelectorAll('#scr .fieldarea').forEach(grow);
   $('#side')?.classList.toggle('pressed', !!(S.sideHeld || (S.rec&&S.rec.side&&S.ov)));   // обвязка демо: кнопка корпуса вдавлена, пока держат или пока идёт запись с неё
   document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2; tabSnap(t) });
   if (S.emojiPick) $('#emoin')?.focus();
-  if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
+  if (aeId){ const el=document.getElementById(aeId); if(el&&el!==document.activeElement){ el.focus(); try{ el.setSelectionRange(...aeSel) }catch{} } }
   if (S.ov) S.ov.pop=false;
   keepAnims();
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));

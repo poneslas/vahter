@@ -88,7 +88,6 @@
 .sc1 .deq{display:flex;align-items:center;height:18px;animation:eqv var(--T) infinite}
 .sc1 .deq .vmark .r1,.sc1 .deq .vmark .r2{animation:vring .9s ease-out infinite}.sc1 .deq .vmark .r2{animation-delay:.3s}
 .sc1 .deq .vmark .core{animation:vbreath .45s ease-in-out infinite}
-@keyframes eqb{to{height:16px}}
 @keyframes eqv{0%,9%{opacity:0}11%,29%{opacity:1}31%,100%{opacity:0}}
 .sc1 .dk .tx{opacity:0;animation:dtx var(--T) infinite}
 @keyframes dtx{0%,29%{opacity:0}31%,97%{opacity:1}100%{opacity:0}}

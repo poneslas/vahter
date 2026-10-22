@@ -72,6 +72,7 @@ docs/
 server/skill/vahter/   навык Hermes: приглашения и отзыв телефонов (SKILL.md, scripts/)
 server/host/           хост перед Hermes: Caddyfile, страница приглашения, install.sh (один раз), systemd-юнит перезагрузки Caddy
 tools/compare/         одинаковые экраны прототипа и эмулятора парами (run.sh, screens.txt)
+tools/proto-check.mjs  проверка прототипа без браузера: синтаксис, повторы имён, CSS, data-act → case
 tools/i18n/            разовый перенос русских строк из кода в strings.xml
 tools/probe/           пробник платформы (свою роль отыграл; код — образец для переноса)
 .claude/memory/        память агента для этого проекта
