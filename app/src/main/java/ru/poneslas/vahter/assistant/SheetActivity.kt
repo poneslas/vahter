@@ -195,7 +195,7 @@ class SheetActivity : MainActivity() {
     override fun finishOnboarding() {
         App.instance.conversation.updateSettings { it.copy(onboarded = true) }
         App.instance.conversation.selectMode(Modes.MAIN)
-        Sheet.firstSheet.value = true; Sheet.sideCue.value = true; Sheet.firstClose = true
+        Sheet.sideCue.value = true; Sheet.firstClose = true
         collapse()
     }
 

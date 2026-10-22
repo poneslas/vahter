@@ -191,7 +191,7 @@ open class MainActivity : ComponentActivity() {
         App.instance.conversation.updateSettings { it.copy(onboarded = true) }
         if (Sheet.service == null) return
         App.instance.conversation.selectMode(Modes.MAIN)
-        Sheet.firstSheet.value = true; Sheet.sideCue.value = true; Sheet.firstClose = true
+        Sheet.sideCue.value = true; Sheet.firstClose = true
         finish(); Sheet.show(Bundle().apply { putString("src", "app") })
     }
 

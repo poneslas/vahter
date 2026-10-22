@@ -321,11 +321,10 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 } else {
                     PromptStrip(state.current, onEditMode)
                     SheetStrip(state.mode == Modes.MAIN && !connected && brain.kind == BrainDesc.Kind.API) { host.openApp(settings = false, brain = true) }
-                    val first by Sheet.firstSheet.collectAsState()
                     if (g > 0f) Spacer(Modifier.weight(1f))
                     // Пустой лист — не меньше ~54% экрана (ui.js, .s2.isempty): сцене достаётся всё, кроме ряда, строки ввода и вкладок.
                     if (empty) Box(Modifier.fillMaxWidth().heightIn(min = with(d) { (fullPx * .54f).toDp() } - 236.dp), contentAlignment = Alignment.Center) {
-                        Scene(st, state, first && st == SheetSt.IDLE, connected, start,
+                        Scene(st, state, st == SheetSt.IDLE, connected, start,
                             onSay = { app.conversation.send(it, tr(R.string.sheet_via_tap)) }, onPrev = { expandNow() })
                     } else {
                         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
@@ -454,7 +453,8 @@ fun VMark(st: SheetSt, size: Dp, still: Boolean = false, fake: Boolean = false, 
 
 /**
  * Пустой лист — сцена (ui.js, sheetEmpty): знак по центру и одна фраза. В записи говорит знак: «Слушаю» / «Отпустите — и отправлю»,
- * потом «Распознаю на телефоне». Чипы — только в первый раз (финал мастера); после 30 минут без дела — «Прошлый разговор ›».
+ * потом «Распознаю на телефоне». Чипы-подсказки — у Ассистента всегда, пока лист пуст и запись не идёт (решение 22.10: пустой лист с одной
+ * фразой выглядел недоделанным); с первой репликой уходят вместе со сценой. После 30 минут без дела — «Прошлый разговор ›».
  */
 @Composable
 private fun Scene(st: SheetSt, state: Conversation.State, chips: Boolean, brain: Boolean, from: Int, onSay: (String) -> Unit, onPrev: () -> Unit) {
