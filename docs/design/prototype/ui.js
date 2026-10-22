@@ -184,7 +184,7 @@ function settings(){
     ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title, b.kind==='api'?(S.w.key==='ok'?`${b.model} · подключён`:S.w.key==='bad'?'Ключ не принимается':'Не подключён'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Не подключён'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
     ${li(I.plus,'Добавить мозг','Адрес, модель и ключ','addbrain')}
     <div class="lh">Уведомления</div>
-    ${li(I.bell,'Уведомления', w.notif!=='ok'?'Выключены · сообщу об ответе, если разрешите':S.settings.notifyAnswers===false?'Не сообщаю об ответах':'Сообщу, когда придёт ответ, а лист закрыт',w.notif==='ok'?'notiftoggle':'asknotif',false,`<span class="sw ${w.notif==='ok'&&S.settings.notifyAnswers!==false?'':'off'}"></span>`)}
+    ${li(I.bell,'Уведомления', w.notif!=='ok'?'Выключены · сообщу об ответе, если разрешите':S.settings.notifyAnswers===false?'Не сообщаю об ответах':'Сообщу, когда придёт ответ',w.notif==='ok'?'notiftoggle':'asknotif',false,`<span class="sw ${w.notif==='ok'&&S.settings.notifyAnswers!==false?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
     ${li(I.shield,'Действия на телефоне',TOOLS.some(toolBlocked)?`Нет доступа — ${TOOLS.filter(toolBlocked).length}`:`Разрешено ${Object.values(S.policy).filter(p=>p==='auto').length}, спрашивать ${Object.values(S.policy).filter(p=>p==='ask').length}, не разрешено ${Object.values(S.policy).filter(p=>p==='off').length}`,'actions',TOOLS.some(toolBlocked))}
     <div class="divider"></div>

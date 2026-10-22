@@ -153,7 +153,7 @@
     <string name="set_hermes_sub">Не подключён</string>
     <string name="set_hermes_on">%1$s · подключён</string>
     <string name="set_notif">Уведомления</string>
-    <string name="set_notif_on">Сообщу, когда придёт ответ, а лист закрыт</string>
+    <string name="set_notif_on">Сообщу, когда придёт ответ</string>
     <string name="set_notif_off">Не сообщаю об ответах</string>
     <string name="set_actions_section">Действия</string>
     <string name="set_actions">Действия на телефоне</string>
