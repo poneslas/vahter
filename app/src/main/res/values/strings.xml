@@ -166,7 +166,7 @@
     <string name="notif_off_p">Android больше не спрашивает. Чтобы Вахтёр сообщал об ответе, пока лист закрыт, включите уведомления в настройках.</string>
     <string name="set_about">О программе</string>
     <string name="set_about_version">Версия %1$s</string>
-    <string name="set_mode_main_sub">Основной разговор · все действия телефона</string>
+    <string name="set_mode_main_sub">голос · фото · все действия</string>
     <string name="set_mode_file">файл</string>
     <string name="set_mode_custom">Свой</string>
     <string name="set_mode_photo_first">сразу камера</string>
