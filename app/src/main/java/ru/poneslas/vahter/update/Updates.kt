@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -20,6 +22,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * Обновления как в Docsy: свой манифест `update.json` в репозитории (версия, ссылка на APK в Releases, sha256, что нового),
@@ -81,7 +84,7 @@ object Updates {
             val apk = o["apk"]!!.jsonObject
             val url = apk["url"]!!.jsonPrimitive.content
             require(url.startsWith(APK_PREFIX)) { "чужая ссылка" }
-            val lang = if (java.util.Locale.getDefault().language == "en") "en" else "ru"
+            val lang = if (Locale.getDefault().language == "en") "en" else "ru"
             val notes = o["notes"]?.jsonObject?.let { n -> (n[lang] ?: n["ru"])?.jsonPrimitive?.content }.orEmpty()
             return Release(o["version"]!!.jsonPrimitive.content, o["versionCode"]!!.jsonPrimitive.int, url,
                 apk["sha256"]!!.jsonPrimitive.content.lowercase(), apk["size"]?.jsonPrimitive?.long ?: 0, notes)
@@ -100,18 +103,22 @@ object Updates {
             val ok = runCatching {
                 val c = (URL(r.url).openConnection() as HttpURLConnection).apply { connectTimeout = 15_000; readTimeout = 30_000; instanceFollowRedirects = true }
                 val md = MessageDigest.getInstance("SHA-256")
+                // «Отменить» — рвём соединение, чтобы чтение не висело до таймаута.
+                val h = coroutineContext[Job]?.invokeOnCompletion { c.disconnect() }
                 try {
                     if (c.responseCode != 200) error("HTTP ${c.responseCode}")
                     val total = c.contentLengthLong.takeIf { it > 0 } ?: r.size
                     var got = 0L
                     c.inputStream.use { i -> out.outputStream().use { o ->
                         val buf = ByteArray(64 * 1024)
-                        while (true) { val n = i.read(buf); if (n < 0) break; o.write(buf, 0, n); md.update(buf, 0, n); got += n
-                            if (total > 0) state.value = State.Downloading(r, (got * 100 / total).toInt().coerceIn(0, 100)) }
+                        while (true) { ensureActive(); val n = i.read(buf); if (n < 0) break; o.write(buf, 0, n); md.update(buf, 0, n); got += n
+                            ensureActive(); if (total > 0) state.value = State.Downloading(r, (got * 100 / total).toInt().coerceIn(0, 100)) }
                     } }
-                } finally { c.disconnect() }
+                } finally { h?.dispose(); c.disconnect() }
                 md.digest().joinToString("") { "%02x".format(it) } == r.sha256
             }
+            // Отменили — файл в корзину, без «Не скачалось» и без установщика.
+            if (!isActive) { out.delete(); (state.value as? State.Downloading)?.let { state.value = State.Available(it.r) }; return@launch }
             when {
                 ok.isFailure -> { out.delete(); state.value = State.DownloadFailed(r, badFile = false) }
                 ok.getOrNull() == false -> { out.delete(); state.value = State.DownloadFailed(r, badFile = true) }
