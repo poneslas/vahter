@@ -1,5 +1,6 @@
 package ru.poneslas.vahter.actions
 
+import ru.poneslas.vahter.ui.Ic
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import android.Manifest
@@ -28,34 +29,34 @@ data class Tool(
     val special: String? = null,
     /** Всегда спрашивать: «Разрешено» не предлагается (сообщения). */
     val alwaysAsk: Boolean = false,
+    /** Значок строки в «Действиях на телефоне» — как у строк настроек. */
+    val icon: Int = Ic.shield,
+    /** Что входит в действие — одной строкой («Поставить и выключить»). */
+    val sub: String? = null,
 )
 
 object Registry {
     val groups = listOf(tr(R.string.reg_group_clock), tr(R.string.reg_group_calendar), tr(R.string.reg_group_phone), tr(R.string.reg_group_apps))
 
     val all = listOf(
-        Tool("alarm.set", tr(R.string.reg_alarm_set), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_set"), safe = true),
-        Tool("alarm.dismiss", tr(R.string.reg_alarm_off), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_dismiss"), safe = true),
-        Tool("alarm.next", tr(R.string.reg_alarm_next), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_next"), safe = true),
-        Tool("timer.set", tr(R.string.reg_timer_set), tr(R.string.reg_group_clock), Policy.AUTO, listOf("timer_set"), safe = true),
-        Tool("timer.stop", tr(R.string.reg_timer_off), tr(R.string.reg_group_clock), Policy.AUTO, listOf("timer_stop"), safe = true),
-        Tool("calendar.query", tr(R.string.reg_cal_query), tr(R.string.reg_group_calendar), Policy.AUTO, listOf("calendar_query"), perms = listOf(Manifest.permission.READ_CALENDAR)),
+        Tool("alarm.set", tr(R.string.reg_alarm_set), tr(R.string.reg_group_clock), Policy.AUTO, listOf("alarm_set", "alarm_dismiss", "alarm_next"), safe = true, icon = Ic.alarm, sub = tr(R.string.reg_alarm_sub)),
+        Tool("timer.set", tr(R.string.reg_timer_set), tr(R.string.reg_group_clock), Policy.AUTO, listOf("timer_set", "timer_stop"), safe = true, icon = Ic.timer, sub = tr(R.string.reg_timer_sub)),
+        Tool("calendar.query", tr(R.string.reg_cal_query), tr(R.string.reg_group_calendar), Policy.AUTO, listOf("calendar_query"), perms = listOf(Manifest.permission.READ_CALENDAR), icon = Ic.cal),
         Tool("calendar.add", tr(R.string.reg_cal_edit), tr(R.string.reg_group_calendar), Policy.ASK, listOf("calendar_add", "calendar_delete"),
-            perms = listOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)),
-        Tool("torch.set", tr(R.string.reg_torch), tr(R.string.reg_group_phone), Policy.AUTO, listOf("torch_set"), safe = true),
-        Tool("volume.set", tr(R.string.reg_volume), tr(R.string.reg_group_phone), Policy.AUTO, listOf("volume_set")),
-        Tool("dnd.set", tr(R.string.phone_screen_dnd), tr(R.string.reg_group_phone), Policy.AUTO, listOf("dnd_set"), special = "dnd"),
-        Tool("media.control", tr(R.string.reg_media), tr(R.string.reg_group_phone), Policy.AUTO, listOf("media_control")),
+            perms = listOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR), icon = Ic.cal),
+        Tool("torch.set", tr(R.string.reg_torch), tr(R.string.reg_group_phone), Policy.AUTO, listOf("torch_set"), safe = true, icon = Ic.torch),
+        Tool("volume.set", tr(R.string.reg_volume), tr(R.string.reg_group_phone), Policy.AUTO, listOf("volume_set"), icon = Ic.vol),
+        Tool("dnd.set", tr(R.string.phone_screen_dnd), tr(R.string.reg_group_phone), Policy.AUTO, listOf("dnd_set"), special = "dnd", icon = Ic.dnd),
+        Tool("media.control", tr(R.string.reg_media), tr(R.string.reg_group_phone), Policy.AUTO, listOf("media_control"), icon = Ic.music, sub = tr(R.string.reg_media_sub)),
         Tool("location.get", tr(R.string.phone_screen_location), tr(R.string.reg_group_phone), Policy.ASK, listOf("location_get"),
-            perms = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)),
+            perms = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION), icon = Ic.pin),
         Tool("place.save", tr(R.string.reg_places), tr(R.string.reg_group_phone), Policy.AUTO, listOf("place_save", "place_list", "place_delete"),
-            perms = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)),
-        Tool("note.remember", tr(R.string.reg_notes), tr(R.string.reg_group_phone), Policy.AUTO, listOf("note_add", "note_find", "note_delete")),
-        Tool("app.open", tr(R.string.reg_app_open), tr(R.string.reg_group_apps), Policy.AUTO, listOf("app_open")),
-        Tool("settings.open", tr(R.string.reg_settings_open), tr(R.string.reg_group_apps), Policy.AUTO, listOf("settings_open")),
-        Tool("call.dial", tr(R.string.reg_call), tr(R.string.reg_group_apps), Policy.ASK, listOf("call_dial"), perms = listOf(Manifest.permission.READ_CONTACTS)),
+            perms = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION), icon = Ic.pin),
+        Tool("note.remember", tr(R.string.reg_notes), tr(R.string.reg_group_phone), Policy.AUTO, listOf("note_add", "note_find", "note_delete"), icon = Ic.note),
+        Tool("app.open", tr(R.string.reg_app_open), tr(R.string.reg_group_apps), Policy.AUTO, listOf("app_open", "settings_open"), icon = Ic.apps, sub = tr(R.string.reg_app_sub)),
+        Tool("call.dial", tr(R.string.reg_call), tr(R.string.reg_group_apps), Policy.ASK, listOf("call_dial"), perms = listOf(Manifest.permission.READ_CONTACTS), icon = Ic.phone),
         Tool("message.draft", tr(R.string.reg_message), tr(R.string.reg_group_apps), Policy.ASK, listOf("message_draft"),
-            perms = listOf(Manifest.permission.READ_CONTACTS), alwaysAsk = true),
+            perms = listOf(Manifest.permission.READ_CONTACTS), alwaysAsk = true, icon = Ic.msg),
     )
 
     fun byId(id: String) = all.first { it.id == id }

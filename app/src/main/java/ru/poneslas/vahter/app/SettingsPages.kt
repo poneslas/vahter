@@ -224,13 +224,14 @@ fun ActionsPage(a: MainActivity) {
             REG.all.filter { it.group == g }.forEach { t ->
                 val p = REG.policy(state.settings, t.id)
                 val miss = REG.missing(a, t)
+                // подпись — одной строкой: что входит в действие; нет доступа — что сделать
                 val sub = when {
-                    p == Policy.OFF || miss.isEmpty() -> null
-                    t.special != null -> tr(R.string.actions_no_access, miss.joinToString(", "))
-                    else -> tr(R.string.actions_will_ask, miss.joinToString(", "))
+                    p == Policy.OFF || miss.isEmpty() -> t.sub
+                    t.special != null -> tr(R.string.actions_row_denied)
+                    else -> tr(R.string.actions_row_later)
                 }
                 Item(t.title, sub, trailing = policyWord(p), trailingColor = when (p) { Policy.AUTO -> Ink.soft; Policy.ASK -> Ink.local; Policy.OFF -> Ink.danger },
-                    minHeight = 52.dp) {
+                    icon = t.icon, minHeight = 52.dp) {
                     val opts = (if (t.alwaysAsk) emptyList() else listOf("AUTO" to tr(R.string.actions_policy_auto))) + listOf("ASK" to tr(R.string.actions_policy_ask), "OFF" to tr(R.string.actions_policy_off))
                     a.choose(MainActivity.ChoiceDialog(t.title, opts, p.name) { v ->
                         app.conversation.updateSettings { it.copy(policy = it.policy + (t.id to Policy.valueOf(v))) }
