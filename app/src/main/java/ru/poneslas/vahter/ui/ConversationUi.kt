@@ -56,6 +56,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.ImageBitmap
 import ru.poneslas.vahter.core.Conversation
 import ru.poneslas.vahter.core.FeedItem
 import ru.poneslas.vahter.core.Mode
@@ -169,10 +173,7 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         val n = item.images.size
                         item.images.take(4).forEach { path ->
-                            val bmp = remember(path) { Attachments.thumb(path, 400) }
-                            if (bmp != null) Image(bmp.asImageBitmap(), null,
-                                Modifier.size(if (n > 1) 80.dp else 170.dp, if (n > 1) 106.dp else 128.dp).clip(RoundedCornerShape(14.dp)),
-                                contentScale = ContentScale.Crop)
+                            Thumb(path, 400, Modifier.size(if (n > 1) 80.dp else 170.dp, if (n > 1) 106.dp else 128.dp).clip(RoundedCornerShape(14.dp)))
                         }
                     }
                     if (item.status != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).clip(CircleShape).background(Color(0x8C000000))
@@ -330,10 +331,7 @@ private fun FilesItem(item: FeedItem.Files) {
         if (item.images.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             val n = item.images.size
             item.images.forEach { path ->
-                val bmp = remember(path) { Attachments.thumb(path, 600) }
-                if (bmp != null) Image(bmp.asImageBitmap(), null,
-                    Modifier.size(if (n > 1) 120.dp else 240.dp, if (n > 1) 90.dp else 180.dp).clip(RoundedCornerShape(14.dp)).clickable { Launch.openFile(ctx, path) },
-                    contentScale = ContentScale.Crop)
+                Thumb(path, 600, Modifier.size(if (n > 1) 120.dp else 240.dp, if (n > 1) 90.dp else 180.dp).clip(RoundedCornerShape(14.dp)).clickable { Launch.openFile(ctx, path) })
             }
         }
         item.files.forEach { f ->
@@ -343,12 +341,25 @@ private fun FilesItem(item: FeedItem.Files) {
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(f.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val size = f.path?.let { File(it).length() }
-                    Text(f.note ?: (if (size != null) sizeText(size) else ""), fontSize = 12.sp, color = if (f.note != null) Ink.danger else Ink.soft)
+                    val size by produceState<Long?>(null, f.path) { value = f.path?.let { p -> withContext(Dispatchers.IO) { File(p).length() } } }
+                    Text(f.note ?: (size?.let(::sizeText) ?: ""), fontSize = 12.sp, color = if (f.note != null) Ink.danger else Ink.soft)
                 }
                 if (f.path != null) Text(tr(R.string.feed_open), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD)
             }
         }
+    }
+}
+
+/**
+ * Миниатюра из файла: читается не на главном потоке — пока читается, на её месте пустое место того же размера;
+ * файл не прочитался (стёрт) — ничего, как раньше.
+ */
+@Composable
+private fun Thumb(path: String, side: Int, modifier: Modifier) {
+    val bmp by produceState<Result<ImageBitmap?>?>(null, path) { value = Result.success(withContext(Dispatchers.IO) { Attachments.thumb(path, side)?.asImageBitmap() }) }
+    when (val r = bmp) {
+        null -> Spacer(modifier)
+        else -> r.getOrNull()?.let { Image(it, null, modifier, contentScale = ContentScale.Crop) }
     }
 }
 
