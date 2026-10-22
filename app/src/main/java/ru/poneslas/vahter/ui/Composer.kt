@@ -136,7 +136,7 @@ fun VoiceRow(
     val lockView = remember { LockBadge(ctx) }
 
     fun buzz() { button.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK) }
-    // Голос ещё не скачан — кнопка бледная (ui.js, .micbtn.off): видно, что говорить пока нельзя; нажатие объяснит почему.
+    // Голос ещё не скачан — кнопка бледная (app.css, .micbtn.off): видно, что говорить пока нельзя; нажатие объяснит почему.
     val installedNow by voice.installed.collectAsState()
     LaunchedEffect(installedNow) { button.dimmed = !installedNow; button.invalidate() }
     LaunchedEffect(lock) { button.gestures = lock }
