@@ -82,7 +82,7 @@ fun ColumnScope.Chat(a: MainActivity) {
         onDraft = app.conversation::setDraft,
         onSend = { t, v -> app.conversation.send(t, v) },
         onSelectMode = app.conversation::selectMode,
-        onAddMode = { a.go("mode:" + app.conversation.addMode()) },
+        onAddMode = { val id = app.conversation.addMode(); app.conversation.selectMode(id); a.go("mode:$id") },   // «+» во вкладках: новый режим сразу выбран
         onLive = { live = it },
         onNeedMic = a::askMic,
         onGallery = { PickerActivity.launch(a) },

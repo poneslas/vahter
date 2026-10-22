@@ -671,6 +671,9 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .mtabw{position:relative;display:flex;align-items:center;margin-top:-10px;padding:0 0 12px 0}
 .mtabw .mtabs{flex:1;margin:0;padding:0 0 0;scroll-snap-type:x mandatory;padding-inline:calc(50% - 44px);justify-content:flex-start;touch-action:pan-x}
 .mtabw .mtabs button{scroll-snap-align:center}
+/* «+» в конце ряда: поле справа короче на ширину «+» с зазором — долистать до него нельзя, снапа нет */
+.mtabw .mtabs{padding-inline-end:calc(50% - 44px - 40px)}
+.mtabw .mtabs .madd{scroll-snap-align:none;flex:none;margin-left:6px;width:30px;height:30px;padding:0;border-radius:50%;border:1px solid var(--line);font-size:17px;line-height:1;display:grid;place-items:center}
 
 /* проба диктовки (мастер, «Распознавание речи → Проверить»): вкладок нет — замочек прямо над кнопкой, а не на высоте вкладок */
 .tryonb .cwrap{position:relative}

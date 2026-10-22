@@ -141,7 +141,8 @@ open class MainActivity : ComponentActivity() {
             invite = HermesBrain.parseInvite(i.dataString.orEmpty())
             stack.clear(); stack.add("chat"); stack.add("settings"); stack.add("hermes")
         }
-        if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { if (stack.last() != "settings") stack.add("settings"); stack.add("mode:" + App.instance.conversation.addMode()) }
+        // «+» во вкладках листа: новый режим сразу выбран; «Назад» с его страницы — обратно в лист (SheetActivity.openApp)
+        if (i.getBooleanExtra(EXTRA_NEW_MODE, false)) { val c = App.instance.conversation; val id = c.addMode(); c.selectMode(id); stack.add("mode:$id") }
     }
 
     fun go(page: String) { stack.add(page) }

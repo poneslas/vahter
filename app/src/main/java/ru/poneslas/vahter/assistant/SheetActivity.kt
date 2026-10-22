@@ -82,7 +82,7 @@ class SheetActivity : MainActivity() {
                 onClose = ::close,
                 onExpand = { openApp(settings = false) },
                 onSettings = { openApp(settings = true) },
-                onAddMode = { openApp(settings = true, newMode = true) },
+                onAddMode = { openApp(settings = false, newMode = true) },
                 onEditMode = { id -> openApp(settings = false, editMode = id) },
                 onNeedPerm = { p -> askPermissions(listOf(p)) },
                 host = this,
@@ -148,6 +148,7 @@ class SheetActivity : MainActivity() {
                 .putExtra(EXTRA_NEW_MODE, newMode)
                 .putExtra(EXTRA_EDIT_MODE, editMode))
             if (settings && !newMode) sheetReturn = "settings"
+            if (newMode) sheetReturn = stack.last()
             if (askPerm != null) { askMicThenSheet = true; askMic() }
         }
         val kg = getSystemService(KeyguardManager::class.java)

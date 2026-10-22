@@ -317,7 +317,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 }
                 if (camera) {
                     cameraPanel(Modifier.weight(1f).padding(top = 6.dp), false)
-                    ModeTabs(state, app.conversation::selectMode)
+                    ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
                     PromptStrip(state.current, onEditMode)
                     SheetStrip(state.mode == Modes.MAIN && !connected && brain.kind == BrainDesc.Kind.API) { host.openApp(settings = false, brain = true) }

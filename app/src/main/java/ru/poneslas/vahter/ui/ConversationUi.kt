@@ -357,11 +357,15 @@ private fun sizeText(b: Long) = if (b < 1024 * 1024) tr(R.string.feed_size_kb, (
 /**
  * Вкладки режимов как в камере (ui.js, modeTabs): линза выделения стоит по центру и не двигается — меняет только ширину под
  * название; ряд едет под ней, выделенным сразу становится режим в центре; сам режим переключается, когда ряд остановился.
- * Тап — тот же выбор. «+» в ряду нет — новый режим создаётся в настройках.
+ * Тап — тот же выбор. «+» в конце ряда (onAdd) нажимается, но долистать до него нельзя: поле справа короче на его ширину,
+ * под линзу и в выбор он не попадает.
  */
+/** «+» в конце ряда вкладок. */
+private val ADD_W = 30.dp
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
+fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: (() -> Unit)? = null) {
     val tabs = state.tabs
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -387,7 +391,7 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
         snapshotFlow { list.isScrollInProgress }.collect { moving ->
             if (moving || ours) return@collect
             val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-            val near = info.visibleItemsInfo.minByOrNull { abs(it.offset + it.size / 2f - mid) } ?: return@collect
+            val near = info.visibleItemsInfo.filter { it.index < tabs.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) } ?: return@collect
             tabs.getOrNull(near.index)?.let { if (it.id != state.mode) onSelectNow(it.id) }
         }
     }
@@ -395,7 +399,7 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
     val density = LocalDensity.current
     val under by remember { derivedStateOf {
         val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-        info.visibleItemsInfo.minByOrNull { abs(it.offset + it.size / 2f - mid) }
+        info.visibleItemsInfo.filter { it.index < tabs.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) }
     } }
     val lit = under?.index ?: sel
     val lensW by animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
@@ -406,12 +410,17 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
             state = list, flingBehavior = fling,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            contentPadding = PaddingValues(horizontal = side.coerceAtLeast(16.dp)),
+            contentPadding = PaddingValues(start = side.coerceAtLeast(16.dp), end = (side - if (onAdd != null) ADD_W + 10.dp else 0.dp).coerceAtLeast(16.dp)),
         ) {
             items(tabs.size, key = { tabs[it].id }) { i ->
                 val m = tabs[i]
                 Text(m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (i == lit) Color.White else Ink.soft,
                     modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
+            if (onAdd != null) item(key = "+") {
+                Box(Modifier.padding(start = 6.dp).size(ADD_W).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClick = onAdd), contentAlignment = Alignment.Center) {
+                    Icon(painterResource(Ic.plus), tr(R.string.feed_new_mode), Modifier.size(16.dp), tint = Ink.soft)
+                }
             }
         }
     }

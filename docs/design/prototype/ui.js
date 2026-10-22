@@ -122,7 +122,7 @@ function liveHtml(){
 }
 /** Вкладки как в камере: линза выделения стоит по центру и не двигается (меняет только ширину под название); ряд едет под ней,
  *  выделенным сразу становится режим в центре; переключение режима — когда ряд остановился. */
-function modeTabs(){ const am=activeModes(); return `<div class="mtabw"><i class="mlens" aria-hidden="true"></i><div class="mtabs snap" role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}</div></div>` }   // «+» — в настройках; подталкивать к своим режимам по ситуации — потом
+function modeTabs(){ const am=activeModes(); return `<div class="mtabw"><i class="mlens" aria-hidden="true"></i><div class="mtabs snap" role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}<button class="madd" data-act="tabadd" aria-label="Новый режим">+</button></div></div>` }   // «+» в конце ряда: нажимается, но долистать до него нельзя (поле справа короче на его ширину) и под линзу он не встаёт
 /* ⋮ в шапке разговора — меню, как привычно в Android: пункты-действия без пояснений. */
 function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
   return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }
