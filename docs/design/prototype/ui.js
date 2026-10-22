@@ -169,8 +169,8 @@ function settings(){
   <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>${S.reorder?'Порядок режимов':'Настройки'}</b></div>${S.reorder?'<button class="tbtn" data-act="reorderdone">Готово</button>':''}</div>
   <div class="scroll"><div class="list">
     <div class="lh">Режимы</div>
-    ${S.modes.map((m,i)=>`<div class="lirow mrow1 ${S.reorder?'reo':''}" data-ri="${i}" data-hold="${i}">${li(mIcon(m.icon),esc(m.title),m.brain==='hermes'&&S.w.server!=='paired'?'Мозг не подключён':'',S.reorder?'':'editmode:'+m.id,m.brain==='hermes'&&S.w.server!=='paired')}${S.reorder?`<span class="grip" data-drag="${i}" aria-label="Перетащить «${esc(m.title)}»">${I.grip}</span>`:m.id==='main'?'<span class="swgap"></span>':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
-    ${S.reorder?'':`<button class="li addone" data-act="addmode"><span class="lic">${I.plus}</span><span class="lt"><b>Новый режим</b></span></button>`}
+    ${S.modes.map((m,i)=>`<div class="lirow mrow1 ${S.reorder?'reo':''}" data-ri="${i}" data-hold="${i}">${li(mIcon(m.icon),esc(m.title),m.brain==='hermes'&&S.w.server!=='paired'?'Мозг не подключён':modeSummary(m),S.reorder?'':'editmode:'+m.id,m.brain==='hermes'&&S.w.server!=='paired')}${S.reorder?`<span class="grip" data-drag="${i}" aria-label="Перетащить «${esc(m.title)}»">${I.grip}</span>`:m.id==='main'?'<span class="swgap"></span>':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
+    ${S.reorder?'':`${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}`}
     ${S.reorderedOnce||S.reorder?'':'<p class="mnote holdhint">Удерживайте режим, чтобы поменять порядок</p>'}
     <div class="lh">Помощник</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',w.role!=='ours')}
