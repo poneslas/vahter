@@ -1,0 +1,18 @@
+# Подсказка платформы api_server для Hermes (22.10.2026).
+# По умолчанию Hermes велит модели в ответах через API «assume plain text, no markdown» (agent/prompt_builder.py,
+# PLATFORM_HINTS["api_server"]) — поэтому в Вахтёре ответы без разметки, а в Telegram с ней. Вахтёр Markdown рисует
+# (таблицы, код — с прокруткой вбок), про файлы говорит его собственная инструкция (vahter-out, MEDIA:).
+#
+# Как применить: добавить блок ниже в /root/.hermes/config.yaml (верхний уровень; ключа platform_hints там нет —
+# по умолчанию {}), файл примонтирован в контейнер — править на месте, не `sed -i`; затем `docker restart hermes`.
+# Проверка: в Вахтёре на Hermes — «пришли таблицу из трёх строк» → таблица сеткой.
+
+platform_hints:
+  api_server:
+    replace: >-
+      You're responding through the API server to the Vahter phone app. The app renders Markdown:
+      headers, bullet and numbered lists, bold, inline code, code fences and tables (tables scroll
+      sideways on a small screen — keep them narrow). Treat this like a conversation: keep answers
+      brief and natural, use formatting only when it helps reading. File delivery follows the app's
+      own instructions in the system prompt (files go to HERMES_HOME/vahter-out and are referenced
+      as MEDIA:/absolute/path on their own line — the app downloads them).
