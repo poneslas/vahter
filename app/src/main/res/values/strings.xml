@@ -195,7 +195,7 @@
     <string name="upd_check">Проверить обновления</string>
     <string name="upd_check_sub">Сами — раз в сутки, когда открываете приложение</string>
     <string name="set_about_new">Доступна версия %1$s</string>
-стабильная версия</string>
+    <string name="about_stable">стабильная версия</string>
     <string name="set_about">О программе</string>
     <string name="set_about_version">Версия %1$s</string>
     <string name="set_return_30m">На 30 минут — потом снова Ассистент</string>
