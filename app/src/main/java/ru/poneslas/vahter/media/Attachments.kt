@@ -27,6 +27,16 @@ object Attachments {
     /** Копия документа для Hermes на время отправки (PickerActivity → Conversation.sendFile, после отправки стирается). */
     fun uploadDir(ctx: Context) = File(ctx.cacheDir, "upload")
 
+    /**
+     * Уборка: стираем файлы вложений, файлы от мозга и забытые копии для отправки, на которые больше ничего не ссылается
+     * ([keep] — пути из сохранённого, [ru.poneslas.vahter.core.files]): «Начать заново», удалённый режим, сменённый мозг.
+     * Свежие не трогаем — снимок или файл мог ещё не попасть в разговор (копия для отправки живёт, пока идёт отправка).
+     */
+    fun sweep(ctx: Context, keep: Set<String>, now: Long = System.currentTimeMillis()) {
+        for ((d, age) in listOf(dir(ctx) to 60_000L, brainDir(ctx) to 60_000L, uploadDir(ctx) to 3_600_000L))
+            d.listFiles()?.forEach { f -> if (f.isFile && f.absolutePath !in keep && now - f.lastModified() > age) f.delete() }
+    }
+
     /** Пометка в долях кадра 0..1. */
     sealed interface Mark {
         data class Circle(val points: List<Pair<Float, Float>>) : Mark

@@ -33,6 +33,18 @@ data class Saved(
     val hermesRuns: Map<String, HermesRun> = emptyMap(),
 )
 
+/** Файлы, на которые ссылается сохранённое: снимки и фото реплик, файлы от мозга, картинки в истории для мозга (абсолютные пути). */
+fun Saved.files(): Set<String> = buildSet {
+    feeds.values.forEach { feed -> feed.forEach { i ->
+        when (i) {
+            is FeedItem.Me -> addAll(i.images)
+            is FeedItem.Files -> { addAll(i.images); i.files.mapNotNullTo(this) { it.path } }
+            else -> {}
+        }
+    } }
+    histories.values.forEach { h -> h.forEach { addAll(it.images) } }
+}.mapTo(HashSet()) { File(it).absolutePath }
+
 class Store(context: Context) {
     private val file = File(context.filesDir, "state.json")
     private val atomic = AtomicFile(file)

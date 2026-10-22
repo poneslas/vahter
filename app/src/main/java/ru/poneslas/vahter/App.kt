@@ -5,6 +5,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import ru.poneslas.vahter.core.files
 import kotlinx.coroutines.flow.MutableStateFlow
 import ru.poneslas.vahter.brain.ApiBrain
 import ru.poneslas.vahter.brain.Brain
@@ -91,6 +99,7 @@ class App : Application() {
         }
     }
 
+    @OptIn(FlowPreview::class)
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -102,6 +111,9 @@ class App : Application() {
         conversation.resumePending()
         scope.launch { appVisible.collect { if (it) conversation.resumePending() } }
         scope.launch { Sheet.visible.collect { if (it) conversation.resumePending() } }
+        // Уборка вложений: при запуске и после каждой перемены (тише 5 с) — стёртое из разговора стирается и с телефона.
+        conversation.state.map { it.saved }.distinctUntilChanged { a, b -> a === b }.debounce(5_000)
+            .onEach { s -> withContext(Dispatchers.IO) { runCatching { Attachments.sweep(this@App, s.files()) } } }.launchIn(scope)
         voice = Voice(this, scope)
         // Запись останавливаем сами: после hide() система микрофон не выключает.
         SheetEvents.onHide = { voice.cancel() }
