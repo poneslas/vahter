@@ -752,3 +752,6 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .act .actb{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:#F1F2EE;color:var(--ink);display:grid;place-items:center}
 .act .actb .ic{width:18px;height:18px}
 .act .actsw{border-left:0;padding:0 2px 0 6px;height:32px}
+
+/* подпись режима — одна строка */
+.mrow1 .li .lt small{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block;overflow:hidden}

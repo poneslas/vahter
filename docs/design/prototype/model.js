@@ -101,7 +101,7 @@ const RETURN_OPTS=[['30m','На 30 минут — потом снова Асси
 const clone = o => JSON.parse(JSON.stringify(o));
 /** Одна строка описания режима в списке — выводится из полей, не хранится. */
 function modeSummary(m){
-  if (m.id==='main') return 'Основной разговор · все действия телефона';
+  if (m.id==='main') return 'голос · фото · все действия';   // в одну строку, в формате остальных
   const ins=[m.accepts.photo&&'фото',m.accepts.file&&'файл'].filter(Boolean);
   return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
 
