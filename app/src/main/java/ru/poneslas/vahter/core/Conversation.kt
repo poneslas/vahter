@@ -428,12 +428,31 @@ class Conversation(
     }
 
     /** Кнопки строки действия: «Открыть …» ([FeedItem.Act.action]) и «Отменить / Выключить / Вернуть» ([FeedItem.Act.undoAction]). */
+    private fun replaceAct(item: FeedItem.Act, f: (FeedItem.Act) -> FeedItem.Act) {
+        val modeId = _state.value.saved.feeds.entries.firstOrNull { e -> e.value.any { it.id == item.id } }?.key ?: return
+        replace(modeId, item.id) { f(it as FeedItem.Act) }
+    }
+
+    /** Фонарик и «Не беспокоить» из карточки — туда-обратно; надпись карточки отражает, что сейчас. */
+    private fun toggleAct(item: FeedItem.Act) {
+        if (item.icon == "🔦") {
+            val on = item.title != tr(R.string.conv_torch_on)
+            if (Phone.torch(context, on).isSuccess) replaceAct(item) { it.copy(title = tr(if (on) R.string.conv_torch_on else R.string.conv_torch_off), undo = null, undoAction = null) }
+        } else {
+            val on = item.title != tr(R.string.act_dnd_on)
+            if (Phone.dnd(context, on).isSuccess) replaceAct(item) { it.copy(title = tr(if (on) R.string.act_dnd_on else R.string.act_dnd_off), undo = null, undoAction = null) }
+        }
+    }
+
     fun onActButton(item: FeedItem.Act, undo: Boolean = false) {
         val a = (if (undo) item.undoAction else item.action) ?: return
         val P = Phone
         val parts = a.split(":")
         val ok: Boolean = when (parts[0]) {
             "timers" -> Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_TIMERS)).isSuccess
+            // карточка-переключатель (фонарик, «Не беспокоить»): живое состояние — в самой карточке
+            "toggle" -> { toggleAct(item); return }
+            "timerstop" -> { if (P.dismissTimer(context).isSuccess) replaceAct(item) { it.copy(title = tr(R.string.act_timer_off_done), subtitle = "", at = null, countdown = false, action = null) }; return }
             "alarms" -> Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)).isSuccess
             "perm" -> { Launch.askPermissions(context, a.removePrefix("perm:").split(",")); true }
             "dndaccess" -> P.openDndAccess(context).isSuccess

@@ -1,5 +1,6 @@
 package ru.poneslas.vahter.ui
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -204,17 +205,32 @@ private fun AiItem(item: FeedItem.Ai) {
  * .act — итог действия на телефоне: значок на янтарном с отметкой (✓ сделано, × не вышло), заголовок с глаголом,
  * пояснение и срок («прозвенит через …», у таймера — живой отсчёт), справа «Отменить» и «Открыть …».
  */
+/** Значок карточки — монохромный, как в настройках (ui.js, ACT_CARDS); незнакомый — как пришёл. */
+private fun actIcon(e: String): Int? = when (e) {
+    "⏰" -> Ic.alarm; "⏱" -> Ic.timer; "📅" -> Ic.cal; "🔦" -> Ic.torch; "🔊" -> Ic.vol; "🌙" -> Ic.dnd; "🎵" -> Ic.music
+    "📍" -> Ic.pin; "📝" -> Ic.note; "📱" -> Ic.apps; "⚙️" -> Ic.gear; "📞" -> Ic.phone; "💬" -> Ic.msg; "🔒" -> Ic.lock
+    else -> null
+}
+
+/**
+ * Карточка действия — маленький плагин (ui.js, actHtml): значок, итог, подробность и одна кнопка-значок справа —
+ * открыть (будильники, таймеры, событие, карта), стоп (зазвонивший таймер), переключатель (фонарик, «Не беспокоить» — живое
+ * состояние). Отмена, если она есть, — долгим нажатием на карточку («Отменить»), второй кнопкой не занимаем. Ошибка — красный
+ * значок и текстовая кнопка, что сделать («Разрешить»).
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     if (item.at != null && item.state != "undone") LaunchedEffect(item.id, item.at) {
         while (true) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(if (item.countdown) 1000 else 30_000) }
     }
+    val onPhone = tr(R.string.conv_on_phone)
     val sub = buildString {
-        append(item.subtitle)
+        append(item.subtitle.split(" · ").filter { it != onPhone }.joinToString(" · "))   // «на телефоне» — и так понятно
         item.at?.takeIf { item.state != "undone" }?.let { at ->
             val left = at - now
-            append(" · ")
+            if (isNotEmpty()) append(" · ")
             append(when {
                 item.countdown && left > 0 -> tr(R.string.feed_left) + (left / 1000).let { if (it >= 3600) "%d:%02d:%02d".format(it / 3600, it / 60 % 60, it % 60) else "%d:%02d".format(it / 60, it % 60) }
                 item.countdown -> tr(R.string.feed_rang)
@@ -223,26 +239,39 @@ private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) 
             })
         }
     }
+    val fail = item.state == "fail"
+    val live = item.state != "undone"
+    val toggle = live && !fail && (item.icon == "🔦" || item.icon == "🌙")
+    val on = item.title == tr(R.string.conv_torch_on) || item.title == tr(R.string.act_dnd_on)
+    val rang = item.countdown && item.at != null && now >= item.at && now - item.at < 15 * 60_000
+    var menu by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().alpha(if (item.state == "undone") .55f else 1f).clip(RoundedCornerShape(14.dp)).background(Ink.surf)
-        .border(1.dp, Ink.line, RoundedCornerShape(14.dp)).padding(horizontal = 11.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box {
-            Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(if (item.state == "fail") Ink.dangerT else Ink.localT), contentAlignment = Alignment.Center) {
-                Text(item.icon, fontSize = 15.sp)
-            }
-            val (mark, bg) = when (item.state) { "done" -> "✓" to Ink.ok; "fail" -> "×" to Ink.danger; else -> null to null }
-            if (mark != null && bg != null) Box(Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(15.dp).clip(CircleShape).background(bg)
-                .border(1.5.dp, Ink.surf, CircleShape), contentAlignment = Alignment.Center) {
-                Text(mark, fontSize = 9.sp, lineHeight = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
-            }
+        .border(1.dp, Ink.line, RoundedCornerShape(14.dp))
+        .combinedClickable(onClick = {}, onLongClick = { if (item.undo != null && live && !toggle) menu = true })
+        .padding(horizontal = 11.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(if (fail) Ink.dangerT else Ink.chipBg), contentAlignment = Alignment.Center) {
+            val ic = actIcon(item.icon)
+            if (ic != null) Icon(painterResource(ic), null, Modifier.size(18.dp), tint = if (fail) Ink.danger else Ink.ink)
+            else Text(item.icon, fontSize = 15.sp)
         }
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(item.title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 1.35.em,
-                color = if (item.state == "fail") Ink.danger else Ink.ink)
-            Text(sub, fontSize = 11.5.sp, color = Ink.soft, lineHeight = 1.35.em)
+                color = if (fail) Ink.danger else Ink.ink)
+            if (sub.isNotBlank()) Text(sub, fontSize = 11.5.sp, color = Ink.soft, lineHeight = 1.35.em)
         }
-        Column(horizontalAlignment = Alignment.End) {
-            item.undo?.let { u -> Text(u, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item, true) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
-            item.button?.let { b -> Text(b, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item, false) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
+        @Composable fun roundBtn(icon: Int, label: String, onClick: () -> Unit) =
+            Box(Modifier.padding(start = 8.dp).size(36.dp).clip(CircleShape).background(Ink.chipBg).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+                Icon(painterResource(icon), label, Modifier.size(18.dp), tint = Ink.ink)
+            }
+        when {
+            toggle -> Box(Modifier.padding(start = 8.dp).clickable(onClickLabel = item.title) { onAct(item.copy(action = "toggle"), false) }) { Sw(on) }
+            rang -> roundBtn(Ic.stop, tr(R.string.act_timer_stop)) { onAct(item.copy(action = "timerstop"), false) }
+            fail || item.action?.startsWith("perm") == true || item.action == "dndaccess" ->
+                item.button?.let { b -> Text(b, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item, false) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
+            item.action != null && live -> roundBtn(Ic.openext, item.button ?: tr(R.string.ui_open)) { onAct(item, false) }
+        }
+        androidx.compose.material3.DropdownMenu(menu, { menu = false }, containerColor = Ink.surf, shape = RoundedCornerShape(16.dp)) {
+            androidx.compose.material3.DropdownMenuItem(text = { Text(item.undo ?: tr(R.string.act_cancel), fontSize = 15.sp) }, onClick = { menu = false; onAct(item, true) })
         }
     }
 }

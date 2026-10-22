@@ -320,6 +320,7 @@
     <string name="reg_group_calendar">Календарь</string>
     <string name="reg_group_phone">Телефон</string>
     <string name="reg_group_apps">Приложения и связь</string>
+    <string name="act_timer_stop">Остановить таймер</string>
     <string name="reg_alarm_sub">Поставить и выключить</string>
     <string name="reg_timer_sub">Запустить и остановить</string>
     <string name="reg_media_sub">Пауза, дальше, назад</string>
