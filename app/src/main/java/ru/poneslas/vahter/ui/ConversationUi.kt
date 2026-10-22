@@ -1,5 +1,10 @@
 package ru.poneslas.vahter.ui
 
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -400,24 +405,57 @@ private fun mdInline(s: String) = buildAnnotatedString {
     }
 }
 
-/** .mtabs — вкладки режимов под полем: 13/500, выбранная — тёмная «таблетка», в конце «+» 30. */
+/**
+ * Вкладки режимов как в камере (ui.js, modeTabs): ряд листается пальцем со снапом, отпустили — выбран режим, что по центру;
+ * выбранная всегда по центру; тап — тот же выбор. «+» в ряду нет — новый режим создаётся в настройках.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: () -> Unit) {
-    LazyRow(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-        contentPadding = PaddingValues(horizontal = 16.dp),
-    ) {
-        items(state.tabs, key = { it.id }) { m ->
-            val on = m.id == state.mode
-            Text(m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (on) Color.White else Ink.soft,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Color.Transparent)
-                    .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
+fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
+    val tabs = state.tabs
+    val list = androidx.compose.foundation.lazy.rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val fling = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(list, androidx.compose.foundation.gestures.snapping.SnapPosition.Center)
+    val onSelectNow by rememberUpdatedState(onSelect)
+    var ours by remember { mutableStateOf(false) }   // прокрутку начали мы (центрирование), а не палец — выбор не трогаем
+    // сдвиг, ставящий вкладку по центру ряда
+    fun centerDelta(i: Int): Float? {
+        val info = list.layoutInfo; val it = info.visibleItemsInfo.firstOrNull { v -> v.index == i } ?: return null
+        return it.offset + it.size / 2f - (info.viewportStartOffset + info.viewportEndOffset) / 2f
+    }
+    suspend fun center(i: Int, animate: Boolean) {
+        ours = true
+        try {
+            if (centerDelta(i) == null) list.scrollToItem(i)
+            centerDelta(i)?.let { d -> if (animate) list.animateScrollBy(d) else list.scrollBy(d) }
+        } finally { ours = false }
+    }
+    val sel = tabs.indexOfFirst { it.id == state.mode }.coerceAtLeast(0)
+    LaunchedEffect(state.mode, tabs.size) { center(sel, animate = list.layoutInfo.visibleItemsInfo.isNotEmpty()) }
+    // палец отпустили и снап закончился — выбрать вкладку по центру
+    LaunchedEffect(list) {
+        snapshotFlow { list.isScrollInProgress }.collect { moving ->
+            if (moving || ours) return@collect
+            val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
+            val near = info.visibleItemsInfo.minByOrNull { kotlin.math.abs(it.offset + it.size / 2f - mid) } ?: return@collect
+            tabs.getOrNull(near.index)?.let { if (it.id != state.mode) onSelectNow(it.id) }
         }
-        item {
-            Box(Modifier.padding(start = 2.dp).size(30.dp).clip(CircleShape).border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = tr(R.string.feed_new_mode), onClick = onAdd),
-                contentAlignment = Alignment.Center) { Text("+", fontSize = 17.sp, color = Ink.soft) }
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        val side = maxWidth / 2 - 40.dp
+        LazyRow(
+            state = list, flingBehavior = fling,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            contentPadding = PaddingValues(horizontal = side.coerceAtLeast(16.dp)),
+        ) {
+            items(tabs.size, key = { tabs[it].id }) { i ->
+                val m = tabs[i]
+                val on = m.id == state.mode
+                Text(m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (on) Color.White else Ink.soft,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Color.Transparent)
+                        .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
         }
     }
 }

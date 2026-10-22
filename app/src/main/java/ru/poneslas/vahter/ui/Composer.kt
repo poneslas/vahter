@@ -317,7 +317,7 @@ fun Composer(
                 cancelKey = state.mode,
             )
         }
-        ModeTabs(state, onSelectMode, onAddMode)
+        ModeTabs(state, onSelectMode)
     }
 }
 
