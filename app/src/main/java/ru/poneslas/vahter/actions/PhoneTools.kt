@@ -28,7 +28,7 @@ import ru.poneslas.vahter.trp
 
 /**
  * Действия телефона для мозга (Архитектура 7, Б.1–Б.3): описание функции → «Разрешено / Спрашивать /
- * Не разрешено» → экран блокировки → доступы Android → исполнение → строка итога и запись в журнал.
+ * Не разрешено» → экран блокировки → доступы Android → исполнение → строка итога в ленте.
  * Мозгу всегда возвращается понятный результат, а не тишина.
  */
 class PhoneTools(
@@ -38,7 +38,7 @@ class PhoneTools(
     private val confirm: suspend (title: String, detail: String) -> Boolean,
     /** Строка итога в ленте (id назначает разговор). */
     private val report: (FeedItem.Act) -> Unit,
-    /** Запись журнала: действие, параметры, итог, статус. */
+    /** Заметки и места (note_*, place_*): прочитать, сохранить, забыть. */
     private val notes: () -> List<Note>,
     private val saveNote: (Note) -> Unit,
     private val deleteNote: (Long) -> Unit,
@@ -123,17 +123,12 @@ class PhoneTools(
     private fun JsonObject.str(k: String) = this[k]?.jsonPrimitive?.contentOrNull?.trim()?.ifEmpty { null }
     private fun JsonObject.int(k: String) = this[k]?.jsonPrimitive?.intOrNull
     private fun JsonObject.bool(k: String) = this[k]?.jsonPrimitive?.booleanOrNull
-    private fun hhmm(s: String?): Pair<Int, Int>? {
-        val m = Regex("^(\\d{1,2})[:.](\\d{2})$").find(s ?: return null) ?: return null
-        val h = m.groupValues[1].toInt(); val min = m.groupValues[2].toInt()
-        return if (h in 0..23 && min in 0..59) h to min else null
-    }
     private fun clock(sec: Int) = if (sec >= 3600) "%d:%02d:%02d".format(sec / 3600, sec / 60 % 60, sec % 60) else "%d:%02d".format(sec / 60, sec % 60)
     private val declined get() = err("declined_by_user", tr(R.string.act_user_declined))
 
     private suspend fun run(fn: String, a: JsonObject, policy: Policy): String = when (fn) {
         "alarm_set" -> {
-            val (h, m) = hhmm(a.str("time")) ?: return err("bad_time", tr(R.string.act_alarm_time_format))
+            val (h, m) = Rules.hhmm(a.str("time")) ?: return err("bad_time", tr(R.string.act_alarm_time_format))
             val label = a.str("label")?.take(40)
             val title = "%d:%02d".format(h, m)
             if (!ask(policy, tr(R.string.act_alarm_set_title, title), label ?: "")) declined
@@ -144,7 +139,7 @@ class PhoneTools(
                 { act("⏰", tr(R.string.conv_alarm_failed, title), tr(R.string.conv_clock_silent), state = "fail"); err("clock_unavailable", tr(R.string.conv_clock_silent)) })
         }
         "alarm_dismiss" -> {
-            val hm = hhmm(a.str("time")); val label = a.str("label")
+            val hm = Rules.hhmm(a.str("time")); val label = a.str("label")
             val what = hm?.let { "%d:%02d".format(it.first, it.second) } ?: label ?: tr(R.string.act_alarm_nearest)
             if (!ask(policy, tr(R.string.act_alarm_off_title, what), tr(R.string.act_alarm_off_sub))) declined
             else Phone.dismissAlarm(context, hm?.first, hm?.second, label).fold(

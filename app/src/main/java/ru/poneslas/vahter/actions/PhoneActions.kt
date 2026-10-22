@@ -51,6 +51,13 @@ object Rules {
 
     private fun number(word: String): Int? = word.toIntOrNull() ?: numbers[word]
 
+    /** «7:30», «07.30» → часы и минуты; вне 0–23 и 0–59 («25:70») — null. Одно место и для правил, и для alarm_set мозга. */
+    fun hhmm(s: String?): Pair<Int, Int>? {
+        val m = Regex("^(\\d{1,2})[:.](\\d{2})$").find(s ?: return null) ?: return null
+        val h = m.groupValues[1].toInt(); val min = m.groupValues[2].toInt()
+        return if (h in 0..23 && min in 0..59) h to min else null
+    }
+
     /** «Начни заново», «забудь разговор», «очисти чат» — стереть разговор режима (с подтверждением). */
     fun isRestart(phrase: String): Boolean {
         val w = phrase.lowercase().replace('ё', 'е').replace(Regex("[.,!?]"), " ").trim()
@@ -100,7 +107,7 @@ object Rules {
             val na = words.indexOf("на")
             if (na >= 0 && na + 1 < words.size) {
                 val t = words[na + 1]
-                Regex("^(\\d{1,2})[:.](\\d{2})$").find(t)?.let { return Match.Alarm(it.groupValues[1].toInt(), it.groupValues[2].toInt()) }
+                hhmm(t)?.let { (h, m) -> return Match.Alarm(h, m) }
                 number(t)?.takeIf { it in 0..23 }?.let { return Match.Alarm(it, 0) }
             }
         }

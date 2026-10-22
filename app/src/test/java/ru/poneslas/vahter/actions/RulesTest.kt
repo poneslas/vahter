@@ -23,4 +23,17 @@ class RulesTest {
         assertTrue(Rules.match(p[0]) is Rules.Match.Timer)
         assertEquals(null, Rules.match(p[1]))
     }
+
+    @Test fun hhmm() {
+        assertEquals(7 to 30, Rules.hhmm("7:30"))
+        assertEquals(23 to 59, Rules.hhmm("23.59"))
+        assertEquals(0 to 0, Rules.hhmm("00:00"))
+        assertEquals(null, Rules.hhmm("25:70"))
+        assertEquals(null, Rules.hhmm("24:00"))
+        assertEquals(null, Rules.hhmm("7:60"))
+        assertEquals(null, Rules.hhmm("7"))
+        assertEquals(null, Rules.hhmm(null))
+        assertEquals(Rules.Match.Alarm(7, 30), Rules.match("будильник на 7:30"))
+        assertEquals(null, Rules.match("будильник на 25:70"))
+    }
 }
