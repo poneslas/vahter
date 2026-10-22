@@ -103,7 +103,7 @@ fun VoiceRow(
     onNeedMic: () -> Unit,
     autoListen: StateFlow<Int>? = null,
     cancelKey: Any? = null,
-    /** Замочек (запись без рук) и жест отмены. Нужен только в разговоре; в полях настроек, мастере и пробе — нет: там удержал — отпустил. */
+    /** Замочек (запись без рук) и жест отмены: в разговоре и в пробах диктовки (мастер, «Распознавание речи»); в поле промпта — нет. */
     lock: Boolean = true,
 ) {
     val ctx = LocalContext.current
@@ -404,7 +404,6 @@ fun TryVoice() {
     val ctx = LocalContext.current
     Column {
         VoiceRow(
-            lock = false,   // замочек — только в разговоре
             voice = voice,
             field = {
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)

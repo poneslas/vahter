@@ -723,3 +723,9 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .mtabw .mtabs{flex:1;margin:0;padding:0 0 0;scroll-snap-type:x mandatory;padding-inline:calc(50% - 44px);justify-content:flex-start;touch-action:pan-x}
 .mtabw .mtabs button{scroll-snap-align:center}
 .mtabw .madd{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:none;font-size:17px;color:var(--soft);margin-left:6px}
+
+/* проба диктовки (мастер, «Распознавание речи → Проверить»): вкладок нет — замочек прямо над кнопкой, а не на высоте вкладок */
+.tryonb .cwrap{position:relative}
+.tryonb .lockcue{bottom:calc(100% + 8px);right:10px}
+.vtry{flex-direction:column;align-items:stretch}.vtry .ttext{min-height:64px;justify-content:center}
+.vtry.tryonb{padding-top:0}

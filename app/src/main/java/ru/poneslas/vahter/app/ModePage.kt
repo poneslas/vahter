@@ -198,7 +198,7 @@ private fun Dictate(onText: (String) -> Unit) {
     val ctx = LocalContext.current
     Column(Modifier.padding(start = 16.dp, end = 4.dp)) {
         VoiceRow(
-            lock = false,   // замочек — только в разговоре
+            lock = false,   // в поле промпта замочек не нужен: удержал — сказал — отпустил
             voice = App.instance.voice,
             field = { Text(msg ?: tr(R.string.mode_dictate_hint), fontSize = 13.sp, color = Ink.soft) },
             trailing = null,

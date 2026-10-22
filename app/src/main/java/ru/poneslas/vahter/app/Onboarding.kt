@@ -361,7 +361,6 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
     }
     Box(Modifier.padding(top = 6.dp)) {
         VoiceRow(
-            lock = false,   // замочек — только в разговоре
             voice = app.voice,
             // Поля нет: одна тихая строка жестов у кнопки.
             field = { Text(tr(R.string.try_tips), fontSize = 13.sp, color = Ink.faint, maxLines = 1, overflow = TextOverflow.Ellipsis,

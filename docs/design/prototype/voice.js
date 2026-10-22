@@ -91,10 +91,11 @@ document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold'
   const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;
   const lc=$('#scr .lockcue'); if(lc){ lc.style.setProperty('--ly',Math.min(S.rec.g.y,45)+'px'); lc.classList.toggle('near',S.rec.g.y>22) }
   const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-S.rec.g.x/70);
-  if (pd.axis==='y' && dy>45){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Круг микрофона стал «Отправить», влево — отмена.','p'); S.keepScroll=true; render() }
+  // Замочек — только в разговоре и в пробах диктовки; в поле промпта (настройки) удержал — сказал — отпустил.
+  if (pd.axis==='y' && dy>45 && S.rec.into!=='prompt'){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Круг микрофона стал «Отправить», влево — отмена.','p'); S.keepScroll=true; render() }
   else if (pd.axis==='x' && dx>70){ pd=null; finishRec('cancel') } });
 function micRelease(){ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
-  if (dt<260){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
+  if (dt<260 && S.rec.into!=='prompt'){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
   finishRec('release') }
 document.addEventListener('pointerup',micRelease); document.addEventListener('pointercancel',micRelease); window.addEventListener('blur',micRelease);
 async function quickSay(k){ // имитация «зажал — сказал — отпустил» для кнопок панели

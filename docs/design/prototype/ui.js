@@ -276,7 +276,7 @@ function hermesPage(){ const on=S.w.server==='paired'&&(!S.pair||S.pair.stage===
 function voicePage(){ const w=S.w;
   return page('Распознавание речи','','settings',
     sect('Модель', card(li(I.wave,'GigaAM v3', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ · голос не уходит наружу`:w.model==='loading'?`Качается: ${S.modelPct} %`:'Не скачана','dl',w.model!=='ready')))
-    + (w.model==='ready'?sect('Проверить', `<div class="vtry"><input class="field" placeholder="Зажмите микрофон и скажите что-нибудь" readonly><button class="dmic" data-mic data-into="prompt" aria-label="Говорить">${I.mic}</button></div>`, 'Удержали — говорите — отпустили. Текст появится в поле.'):'')) }
+    + (w.model==='ready'?sect('Проверить', `<div class="vtry tryonb"><div class="ttext">${S.rec&&S.rec.into==='try'?'<div class="tcap">Слушаю…</div>':S.recog?'<div class="tcap">Распознаю на телефоне…</div>':(S.tryShots||[]).length?`<div class="tbig">${esc(S.tryShots.at(-1).text)}</div>`:'<div class="tph">Скажите что-нибудь</div>'}</div>${composerHtml({into:'try'})}</div>`, 'Та же кнопка, что в листе: удержать — сказать — отпустить; вверх — без рук; влево — отмена.'):'')) }
 // Подключение к Hermes через его API-сервер за Caddy (Архитектура 9.0, 9.8): ссылка-приглашение с ключом телефона или адрес и ключ руками.
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['hermes','Hermes на сервере'],['key','Ключ этого телефона']];
 function hermesBody(onb){
