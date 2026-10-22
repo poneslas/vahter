@@ -719,7 +719,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .reord{padding:4px 12px}.rrow{display:flex;align-items:center;gap:14px;padding:12px 10px;background:var(--surf);border:1px solid var(--line);border-radius:14px;margin-bottom:6px;touch-action:none;transition:transform .12s}
 .rrow b{flex:1;font-weight:500;font-size:15.5px}.rrow .lic{color:var(--soft);display:grid;place-items:center}
 .rrow .grip{color:var(--faint);cursor:grab;padding:4px;touch-action:none}.rrow.drag{transition:none;box-shadow:0 10px 24px -12px rgba(14,26,54,.45);z-index:2;position:relative}
-.mtabw{position:relative;display:flex;align-items:center;margin-top:-10px;padding:0 10px 12px 0}
+.mtabw{position:relative;display:flex;align-items:center;margin-top:-10px;padding:0 0 12px 0}
 .mtabw .mtabs{flex:1;margin:0;padding:0 0 0;scroll-snap-type:x mandatory;padding-inline:calc(50% - 44px);justify-content:flex-start;touch-action:pan-x}
 .mtabw .mtabs button{scroll-snap-align:center}
 .mtabw .madd{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:none;font-size:17px;color:var(--soft);margin-left:6px}
@@ -760,3 +760,8 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 /* проба голоса по шаблону мастера: сцена сверху (свободное место), заголовок и текст — внизу над полем */
 .tryonb{padding-top:56px}
 .tryonb .art.tstage{display:flex;flex-direction:column;justify-content:center;align-items:stretch;place-items:initial;min-height:0}
+
+/* вкладки — линза по центру не двигается, меняет только ширину; выделен тот, кто под ней */
+.mtabw .mlens{position:absolute;left:50%;top:50%;height:30px;width:90px;transform:translate(-50%,-50%);border-radius:999px;background:var(--ink);transition:width .18s ease;pointer-events:none;margin-top:-6px}
+.mtabw .mtabs button,.mtabw .mtabs button[aria-pressed=true]{background:none!important;color:var(--soft);position:relative;z-index:1;transition:color .12s}
+.mtabw .mtabs button.lit{color:#fff}

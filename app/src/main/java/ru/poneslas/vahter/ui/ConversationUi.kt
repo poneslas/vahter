@@ -442,8 +442,9 @@ private fun mdInline(s: String) = buildAnnotatedString {
 }
 
 /**
- * Вкладки режимов как в камере (ui.js, modeTabs): ряд листается пальцем со снапом, отпустили — выбран режим, что по центру;
- * выбранная всегда по центру; тап — тот же выбор. «+» в ряду нет — новый режим создаётся в настройках.
+ * Вкладки режимов как в камере (ui.js, modeTabs): линза выделения стоит по центру и не двигается — меняет только ширину под
+ * название; ряд едет под ней, выделенным сразу становится режим в центре; сам режим переключается, когда ряд остановился.
+ * Тап — тот же выбор. «+» в ряду нет — новый режим создаётся в настройках.
  */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -477,7 +478,16 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
             tabs.getOrNull(near.index)?.let { if (it.id != state.mode) onSelectNow(it.id) }
         }
     }
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+    // кто сейчас под линзой и какой он ширины — каждый кадр прокрутки
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val under by remember { androidx.compose.runtime.derivedStateOf {
+        val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
+        info.visibleItemsInfo.minByOrNull { kotlin.math.abs(it.offset + it.size / 2f - mid) }
+    } }
+    val lit = under?.index ?: sel
+    val lensW by androidx.compose.animation.core.animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.width(lensW).height(30.dp).clip(RoundedCornerShape(50)).background(Ink.ink))   // линза — на месте
         val side = maxWidth / 2 - 40.dp
         LazyRow(
             state = list, flingBehavior = fling,
@@ -487,10 +497,8 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
         ) {
             items(tabs.size, key = { tabs[it].id }) { i ->
                 val m = tabs[i]
-                val on = m.id == state.mode
-                Text(m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (on) Color.White else Ink.soft,
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) Ink.ink else Color.Transparent)
-                        .clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
+                Text(m.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (i == lit) Color.White else Ink.soft,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onSelect(m.id) }.padding(horizontal = 12.dp, vertical = 6.dp))
             }
         }
     }

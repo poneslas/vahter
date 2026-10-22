@@ -120,8 +120,9 @@ function liveHtml(){
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
-/** Вкладки как в камере: листаются пальцем (и мышью в прототипе), отпустили — выбрана та, что по центру; выбранная всегда по центру. */
-function modeTabs(){ const am=activeModes(); return `<div class="mtabw"><div class="mtabs snap" role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}</div></div>` }   // «+» — в настройках; подталкивать к своим режимам по ситуации — потом
+/** Вкладки как в камере: линза выделения стоит по центру и не двигается (меняет только ширину под название); ряд едет под ней,
+ *  выделенным сразу становится режим в центре; переключение режима — когда ряд остановился. */
+function modeTabs(){ const am=activeModes(); return `<div class="mtabw"><i class="mlens" aria-hidden="true"></i><div class="mtabs snap" role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}</div></div>` }   // «+» — в настройках; подталкивать к своим режимам по ситуации — потом
 /* ⋮ в шапке разговора — меню, как привычно в Android: пункты-действия без пояснений. */
 function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
   return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }

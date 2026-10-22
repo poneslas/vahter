@@ -274,7 +274,11 @@ document.addEventListener('click', e=>{ const b=e.target.closest('[data-act=sett
   const v=$('#apikey')?.value?.trim(); if(!v||S.w.key==='ok'&&!S.keyEdit) return; if(S.keyCheck&&S.keyCheck.stage==='done') return;
   e.stopImmediatePropagation(); S.dialog={title:'Ключ не подключён',text:'Подключить — проверим и сохраним. Не сохранять — ключ не останется на телефоне.',opts:[['Подключить','keycheck_go'],['Не сохранять','keyleave','sec2']]}; render() }, true);
 /** Вкладки как в камере: прокрутили и отпустили — выбранной становится та, что по центру (scroll-snap + конец прокрутки). */
-function tabSnap(t){ if(t._snap) return; t._snap=true; let to=null;
+/** Линза: под центром — выделенный (белый текст), ширина линзы — под его название. Каждый кадр прокрутки. */
+function tabLens(t){ const w=t.closest('.mtabw'), lens=w&&w.querySelector('.mlens'); if(!lens) return; const r=t.getBoundingClientRect(), cx=r.left+r.width/2, k=r.width/t.clientWidth||1; let best=null,d=1e9;
+  t.querySelectorAll('[data-pickmode]').forEach(b=>{ const br=b.getBoundingClientRect(), dd=Math.abs(br.left+br.width/2-cx); if(dd<d){ d=dd; best=b } });
+  t.querySelectorAll('[data-pickmode]').forEach(b=>b.classList.toggle('lit',b===best)); if(best) lens.style.width=(best.getBoundingClientRect().width/k)+'px' }
+function tabSnap(t){ if(t._snap) return; t._snap=true; let to=null; tabLens(t); t.addEventListener('scroll',()=>tabLens(t),{passive:true});
   const pick=()=>{ const r=t.getBoundingClientRect(), cx=r.left+r.width/2; let best=null, d=1e9;
     t.querySelectorAll('[data-pickmode]').forEach(b=>{ const br=b.getBoundingClientRect(), dd=Math.abs(br.left+br.width/2-cx); if(dd<d){ d=dd; best=b } });
     if(best && best.dataset.pickmode!==S.mode){ setMode(best.dataset.pickmode,'Вкладки как в камере: отпустили — выбран режим по центру'); S.keepScroll=true; render() } };
