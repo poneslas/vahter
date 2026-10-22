@@ -101,11 +101,11 @@ fun SettingsPage(a: MainActivity) {
             onToggle = { m -> app.conversation.editMode(m.id) { it.copy(enabled = !it.enabled) } }, onOpen = { m -> a.go("mode:${m.id}") })
         if (!reorder) Item(tr(R.string.feed_new_mode), tr(R.string.set_modes_sub), icon = Ic.plus) { a.go("mode:" + app.conversation.addMode()) }
         if (!reorder && !state.settings.modesReordered) MNote(tr(R.string.set_modes_hold), Modifier.padding(horizontal = 22.dp))
+        // Как позвать: одна строка-статус вместо «Цифровой помощник» + «Боковая кнопка» — встраивание в систему настраивают один раз,
+        // показывать стоит, только когда что-то не так. Подробности — на странице «Как позвать Вахтёра» (CallPage).
         Section(tr(R.string.set_call))
-        Item(tr(R.string.set_assistant_role), if (roleHeld) tr(R.string.app_name) else tr(R.string.set_assistant_role_off), warn = !roleHeld, icon = Ic.spark) {
-            a.startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
-        }
-        Item(tr(R.string.set_side_key), SideKey.describe(a), icon = Ic.btn) { SideKey.open(a) }
+        val call = callStatus(a, roleHeld, state.settings.sideProbe)
+        Item(call.first, call.second, warn = call.third, icon = Ic.btn) { a.go("call") }
         Item(tr(R.string.set_listen_on_call), tr(if (state.settings.listenOnCall) R.string.set_listen_on_call_on else R.string.set_listen_on_call_off),
             icon = Ic.mic, end = { Sw(state.settings.listenOnCall) }) { app.conversation.updateSettings { it.copy(listenOnCall = !it.listenOnCall) } }
         Item(tr(R.string.set_return), returnShort(state.settings.returnToAssistant), icon = Ic.hist) {
@@ -356,3 +356,60 @@ private fun Field(value: String, hint: String, bad: Boolean = false, paste: (() 
 
 
 private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.actions_policy_auto); Policy.ASK -> tr(R.string.actions_policy_ask); Policy.OFF -> tr(R.string.actions_policy_off) }
+
+/** Строка «Как позвать Вахтёра»: заголовок, подпись, предупреждение (ui.js, callStatus). */
+private fun callStatus(a: MainActivity, role: Boolean, probe: Boolean?): Triple<String, String, Boolean> {
+    val side = SideKey.read(a)
+    return when {
+        !role -> Triple(tr(R.string.set_assistant_role), tr(R.string.call_role_busy), true)
+        side == SideKey.State.ASSISTANT -> Triple(tr(R.string.set_side_key), tr(R.string.call_ok), false)
+        side != SideKey.State.UNKNOWN -> Triple(tr(R.string.set_side_key), tr(R.string.call_busy, SideKey.now(a)), true)
+        probe == true -> Triple(tr(R.string.call_key), tr(R.string.call_ok), false)
+        probe == false -> Triple(tr(R.string.call_gesture), tr(R.string.call_gesture_sub), false)
+        else -> Triple(tr(R.string.call_key), tr(R.string.call_check), false)
+    }
+}
+
+/** «Как позвать Вахтёра» (ui.js, callPage): всё про встраивание в систему — подробно, сюда заходят редко. */
+@Composable
+fun CallPage(a: MainActivity) {
+    val app = App.instance
+    val state by app.conversation.state.collectAsState()
+    @Suppress("UNUSED_VARIABLE") val r = a.resumed.intValue   // вернулись из системных настроек — перечитать
+    val role = a.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
+    val side = SideKey.read(a)
+    val known = side != SideKey.State.UNKNOWN
+    val probe = state.settings.sideProbe
+    var tileAdded by remember { mutableStateOf(false) }
+    val sheetUp by ru.poneslas.vahter.assistant.Sheet.visible.collectAsState()
+    LaunchedEffect(sheetUp) { if (sheetUp && !known) app.conversation.updateSettings { it.copy(sideProbe = true) } }   // лист открылся, пока здесь, — кнопка работает
+    TopBar(tr(R.string.set_call), onBack = a::back)
+    FormPage {
+        Column {
+            Text(tr(R.string.call_section), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+            SetCard {
+                Item(tr(R.string.set_assistant_role), if (role) tr(R.string.app_name) else tr(R.string.sidekey_other_assistant), warn = !role, icon = Ic.spark) {
+                    a.startActivity(Intent(AndroidSettings.ACTION_VOICE_INPUT_SETTINGS))
+                }
+                if (known) Item(tr(R.string.set_side_key), if (side == SideKey.State.ASSISTANT) tr(R.string.call_ok) else SideKey.now(a), warn = side != SideKey.State.ASSISTANT, icon = Ic.btn) { SideKey.open(a) }
+                else Item(tr(R.string.set_call_way), tr(R.string.sidekey_call_any), icon = Ic.btn)
+                Item(tr(R.string.sidekey_tile), tr(if (tileAdded) R.string.sidekey_tile_done else R.string.sidekey_tile_sub), icon = Ic.list) {
+                    if (!tileAdded) ru.poneslas.vahter.assistant.VahterTile.request(a) { tileAdded = it }
+                }
+            }
+            MNote(tr(if (known) R.string.call_note_samsung else R.string.call_note_other))
+        }
+        if (!known) Column {
+            Text(tr(R.string.call_check_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
+            SetCard {
+                Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
+                    Text(tr(when (probe) { true -> R.string.call_probe_yes; false -> R.string.call_probe_no; null -> R.string.sidekey_probe }), fontSize = 15.sp, color = Ink.ink)
+                    if (probe == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+                        ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_no)) { app.conversation.updateSettings { it.copy(sideProbe = false) } }
+                        ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_yes)) { app.conversation.updateSettings { it.copy(sideProbe = true) } }
+                    } else Box(Modifier.padding(bottom = 8.dp))
+                }
+            }
+        }
+    }
+}

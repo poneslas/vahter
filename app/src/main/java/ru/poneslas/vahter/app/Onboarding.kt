@@ -111,10 +111,12 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     val hasKey = remember(keyV) { app.hasKey(Brains.deepseek.id) }
     var btnWarned by remember { mutableStateOf(false) }
     // Незнакомый телефон: проба «зажмите кнопку» — null (не пробовали), true (лист открылся), false (нет).
-    var probe by remember { mutableStateOf<Boolean?>(null) }
+    // результат пробы — в настройках: строка «Как позвать Вахтёра» знает его и после мастера
+    val probe = app.conversation.state.collectAsState().value.settings.sideProbe
+    fun setProbe(v: Boolean?) = app.conversation.updateSettings { it.copy(sideProbe = v) }
     var tileAdded by remember { mutableStateOf(false) }
     val sheetUp by Sheet.visible.collectAsState()
-    LaunchedEffect(sheetUp) { if (sheetUp && step == 2) probe = true }   // лист открылся, пока идёт проба, — значит, кнопка работает
+    LaunchedEffect(sheetUp) { if (sheetUp && step == 2) setProbe(true) }   // лист открылся, пока идёт проба, — значит, кнопка работает
     val key = rememberKeyCtl(Brains.deepseek)
     val scope = rememberCoroutineScope()
 
@@ -204,7 +206,7 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                             known && !sideOk -> Item(tr(R.string.set_side_key), SideKey.now(activity), warn = true, icon = Ic.btn) { SideKey.open(activity) }
                             known || !role || probe == true -> {}
                             probe == false -> {
-                                Item(tr(R.string.set_call), tr(R.string.sidekey_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                                Item(tr(R.string.set_call_way), tr(R.string.sidekey_call_home), icon = Ic.btn) { activity.startActivity(Intent(Settings.ACTION_SETTINGS)) }
                                 if (tileAdded) Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_done), icon = Ic.list, end = check)
                                 else Item(tr(R.string.sidekey_tile), tr(R.string.sidekey_tile_sub), icon = Ic.list) { VahterTile.request(activity) { tileAdded = it } }
                             }
@@ -215,8 +217,8 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                                     Text(tr(R.string.sidekey_probe), fontSize = 15.sp, lineHeight = 1.35.em, color = Ink.ink)
                                 }
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
-                                    TextButton(tr(R.string.ui_no)) { probe = false }
-                                    TextButton(tr(R.string.ui_yes)) { probe = true }
+                                    TextButton(tr(R.string.ui_no)) { setProbe(false) }
+                                    TextButton(tr(R.string.ui_yes)) { setProbe(true) }
                                 }
                             }
                         }

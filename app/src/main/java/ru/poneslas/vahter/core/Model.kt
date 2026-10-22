@@ -135,6 +135,8 @@ data class Settings(
     val notifAsked: Boolean = false,
     /** Порядок режимов уже меняли — подсказку «Удерживайте режим…» больше не показываем. */
     val modesReordered: Boolean = false,
+    /** Незнакомый телефон: проба «зажмите кнопку помощника» — null (не пробовали), true (лист открылся), false (нет). */
+    val sideProbe: Boolean? = null,
 )
 
 /** Сессия режима в Hermes: id из заголовка X-Hermes-Session-Id и время последней реплики — после 30 минут тишины начинается новая (Архитектура 9.7). */
