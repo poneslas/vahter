@@ -85,7 +85,9 @@ document.addEventListener('click', async e=>{
     case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded){ S.page='hermes'; if(S.w.server==='paired') brainAutoCheck() } else S.onbStep=ONB.indexOf('brain'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
     case 'tgsend': S.tg.push({me:true,html:'Сделай приглашение для Вахтёра для S24 Ultra'}); render(); await wait(900); S.tg.push({html:`Готово. Ссылка для телефона «S24 Ultra»:<br><a data-act="tglink">https://vahter.example.ru/vahter/connect#hWMojT6Q…</a><br><br>Открой её на телефоне — Вахтёр подключится сам. Не открылось — скопируй ссылку в Настройки → Мозги → Hermes → «Вставить приглашение».`}); trace('Навык vahter (Архитектура 9.0): Hermes запустил скрипт, ключ телефона записан в ~/.hermes/vahter, Caddy перезагрузился сам. Ссылка — это ключ телефона: действует до отзыва («отзови телефон S24»), не одноразовая.','h'); return render();
-    case 'tglink': return runPair('link');
+    case 'tglink': S.invite='vahter.example.ru'; S.screen='app'; S.onboarded=true; S.page='hermes'; trace('Ссылка-приглашение не подключает сама: адрес на виду, подключение — по нажатию.','i'); return render();
+    case 'invno': S.invite=null; return render();
+    case 'invyes': S.invite=null; return runPair('link');
     case 'viaqr': return runPair('paste'); // «Вставить приглашение»: ссылка из буфера
     case 'viaaddr': S.pair={via:'addr',stage:'input',checks:[]}; return render();
     case 'addrgo': { const v=($('#addr')?.value||'').trim(); if(!/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}\/?$/i.test(v)){ S.pair.err='Нужен адрес вида https://hermes.example.ru'; S.pair.addr=v; return render() } if(($('#tok')?.value||'').trim().length<10){ S.pair.err='Вставьте ключ телефона из приглашения'; S.pair.addr=v; return render() } return runPair('addr') }

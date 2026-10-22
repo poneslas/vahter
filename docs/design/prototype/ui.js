@@ -300,11 +300,15 @@ function about(){ const u=S.upd;
     + sect('', card(li(I.dl,'Проверить обновления','Сами — раз в сутки, когда открываете приложение','check')))) }
 
 /** Hermes — тот же шаблон, что DeepSeek. Не подключён — вместо «Подключения» три способа (hermesBody). */
+/** Приглашение по ссылке: не подключается само (ссылку может открыть любая страница) — адрес на виду, подключение по нажатию;
+ *  Hermes уже подключён — «Заменить». */
+function inviteCard(on){ if(!S.invite) return ''; return sect('Приглашение', card(li(I.srv,S.invite,on?'Заменит подключение к hermes.example.ru':'Сервер из ссылки — подключить?')
+  +`<div class="row2" style="display:flex;justify-content:flex-end;gap:8px;padding:4px 12px 12px"><button class="tbtn" data-act="invno">Отмена</button><button class="fbtn" data-act="invyes">${on?'Заменить':'Подключить'}</button></div>`)) }
 function hermesPage(){ const on=S.w.server==='paired'&&(!S.pair||S.pair.stage==='done'); const users=S.modes.filter(m=>m.brain==='hermes').map(m=>m.title);
-  if (!on) return page('Hermes','Свой сервер','settings', hermesBody(false));
+  if (!on) return page('Hermes','Свой сервер','settings', inviteCard(false)+hermesBody(false));
   const st = S.brainSt==='check' ? {s:'check'} : {s:'ok', text:'Подключён · отвечает за 0,6 с'};
   return page('Hermes','Свой сервер','settings',
-    sect('Подключение', card(statusRow(st)+li(I.srv,'Адрес','hermes.example.ru')+li(I.lock,'Ключ телефона','Только на этом телефоне')))
+    inviteCard(true) + sect('Подключение', card(statusRow(st)+li(I.srv,'Адрес','hermes.example.ru')+li(I.lock,'Ключ телефона','Только на этом телефоне')))
     + sect('Умеет', capsCard([[I.hist,'Память','Общая с Telegram',true],[I.lens,'Поиск в интернете','Со ссылками на источники',true],[I.srv,'Команды на сервере','Опасное — после «Да»',true],[I.cam,'Фото','Если модель на сервере видит картинки',true],[I.shield,'Действия телефона','Пока нет — их делает сам телефон',false]]))
     + sect('Режимы', card(li(I.list, users.join(', ')||'Нет', 'Мозг выбирается в режиме','settings')))
     + sect('', card(`<button class="li danger" data-act="hermesoff"><span class="lic">${I.del}</span><span class="lt"><b>Отключить</b><small>Ключ телефона стирается; на сервере его можно отозвать</small></span></button>`))) }

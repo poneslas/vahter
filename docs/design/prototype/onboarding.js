@@ -17,8 +17,8 @@ function onb(){
     <h2>Подключите мозг</h2><p>Будильник, таймер, звонок — Вахтёр делает сам, даже без сети. Сложное — звонок наверх, мозгу. Начнём с DeepSeek — нужен только ключ.</p>${keyBody(true)}
     ${navBar(done?null:['Позже','onbnext'], done?['Открыть','onbnext']:run?['Подключаю…','noop']:['Подключить','keycheck'])}</div></div>` }
   let art='',h='',p='',extra='',card=null,stat=null,primary=['Далее','onbnext'],skip=['Позже','onbnext'];
-  if (st==='welcome'){ art=introScene(0); h='Вахтёр. Всегда на месте'; p='Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
-  if (st==='voice'){ art=voiceArt(); h='Голос на телефоне'; p=`GigaAM от Сбера, ${mb(MODEL_TOTAL)} МБ один раз. Дальше голос не уходит с телефона и работает без сети.`;
+  if (st==='welcome'){ art=introScene(0); h='Ни секунды лишней'; p='Зажал кнопку — сказал — готово. Без запуска приложений, без промптов и рекламы. Мозг выбираете вы.'; skip=null; primary=['Начать','onbnext'] }
+  if (st==='voice'){ art=voiceArt(); h='Без печати'; p=`Голос распознаёт сам телефон: GigaAM от Сбера, ${mb(MODEL_TOTAL)} МБ один раз. Наружу не уходит, работает без сети.`;
     card = S.w.model!=='none' && S.w.mic!=='ok' ? li(I.mic,'Микрофон',S.w.mic==='denied'?'Запрещён — разрешите в настройках':'Нужен для голосового ввода',S.w.mic==='denied'?'sysmic':'askmic') : '';
     stat = S.w.model==='ready' ? '<span class="ok">✓ Голос скачан</span>'
       : S.w.model==='loading' ? `<div class="prog"><i style="width:${S.modelPct}%"></i></div><span>${S.w.net==='none'?'Ждёт сеть — продолжит с того же места':`Скачиваю голос — ${S.modelPct}\u00a0% · можно идти дальше`}</span>` : '';
