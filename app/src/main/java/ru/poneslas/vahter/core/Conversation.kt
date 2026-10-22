@@ -3,6 +3,7 @@ package ru.poneslas.vahter.core
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +79,7 @@ class Conversation(
     private val asks = mutableMapOf<Long, suspend (String) -> Unit>()
 
     init {
-        _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) } } }.launchIn(scope)
+        _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) }.onFailure { Log.e("Conversation", "не сохранилось", it) } } }.launchIn(scope)
     }
 
     /** Без дела дольше — новый разговор режима и (по настройке) возврат к Ассистенту. */

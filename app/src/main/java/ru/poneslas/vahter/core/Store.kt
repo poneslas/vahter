@@ -1,6 +1,8 @@
 package ru.poneslas.vahter.core
 
 import android.content.Context
+import android.util.AtomicFile
+import android.util.Log
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ru.poneslas.vahter.brain.ChatMsg
@@ -33,16 +35,32 @@ data class Saved(
 
 class Store(context: Context) {
     private val file = File(context.filesDir, "state.json")
+    private val atomic = AtomicFile(file)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    fun load(): Saved = runCatching { json.decodeFromString(Saved.serializer(), file.readText()) }.getOrElse { Saved() }.let { s ->
+    fun load(): Saved = read().let { s ->
         // Встроенные режимы не редактируются (Бэклог №14), их тексты — из ресурсов на языке телефона (№15), а не из сохранённого.
         s.copy(modes = s.modes.map { m -> Modes.builtin.firstOrNull { it.id == m.id }?.let { b -> m.copy(title = b.title, hint = b.hint, placeholder = b.placeholder, prompt = if (m.promptEdited) m.prompt else b.prompt, icon = b.icon) } ?: m })
     }
 
-    fun save(s: Saved) {
-        val tmp = File(file.path + ".tmp")
-        tmp.writeText(json.encodeToString(Saved.serializer(), s))
-        tmp.renameTo(file)
+    /** Файла нет — чистый лист. Не прочитался — копия в state.json.bad-<время> (последние три), иначе следующее сохранение затрёт всё молча. */
+    private fun read(): Saved {
+        val text = runCatching { atomic.readFully().decodeToString() }.getOrElse { return Saved() }
+        return runCatching { json.decodeFromString(Saved.serializer(), text) }.getOrElse { e ->
+            Log.e(TAG, "state.json не прочитался, копия рядом", e)
+            runCatching {
+                File(file.path + ".bad-" + System.currentTimeMillis()).writeText(text)
+                file.parentFile?.listFiles { f -> f.name.startsWith(file.name + ".bad-") }?.sortedByDescending { it.name }?.drop(3)?.forEach { it.delete() }
+            }
+            Saved()
+        }
     }
+
+    fun save(s: Saved) {
+        val out = atomic.startWrite()
+        try { out.write(json.encodeToString(Saved.serializer(), s).toByteArray()); atomic.finishWrite(out) }
+        catch (e: Exception) { atomic.failWrite(out); throw e }
+    }
+
+    private companion object { const val TAG = "Store" }
 }
