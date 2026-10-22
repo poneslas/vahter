@@ -51,6 +51,26 @@ object Ic {
     val warn = R.drawable.ic_warn
     val wave = R.drawable.ic_wave
     val x = R.drawable.ic_x
+    val grip = R.drawable.ic_grip
+    val home = R.drawable.ic_home
+    val work = R.drawable.ic_work
+    val heart = R.drawable.ic_heart
+    val car = R.drawable.ic_car
+    val music = R.drawable.ic_music
+    val code = R.drawable.ic_code
+    val alarm = R.drawable.ic_alarm
+    val timer = R.drawable.ic_timer
+    val cal = R.drawable.ic_cal
+    val torch = R.drawable.ic_torch
+    val vol = R.drawable.ic_vol
+    val dnd = R.drawable.ic_dnd
+    val pin = R.drawable.ic_pin
+    val note = R.drawable.ic_note
+    val apps = R.drawable.ic_apps
+    val phone = R.drawable.ic_phone
+    val msg = R.drawable.ic_msg
+    val stop = R.drawable.ic_stop
+    val openext = R.drawable.ic_openext
 
     /** Значок режима по имени из модели (spark, transl, lens, food…). */
     fun mode(name: String): Int = when (name) {
@@ -63,6 +83,10 @@ object Ic {
         "book" -> book
         "star" -> star
         "edit" -> edit
+        "home" -> home
+        "work" -> work
+        "heart" -> heart
+        "car" -> car
         else -> star
     }
 }
