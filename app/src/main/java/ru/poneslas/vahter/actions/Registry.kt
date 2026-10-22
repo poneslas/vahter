@@ -89,6 +89,6 @@ object Registry {
         return runtime + special
     }
 
-    /** Отказано так, что окно больше не появится — только через настройки (знаем по флагу, что уже спрашивали). */
+    /** Невыданные системные разрешения действия (без особых доступов) — карточка «Нет доступа» с кнопкой «Разрешить». */
     fun runtimeMissing(ctx: Context, t: Tool) = t.perms.filter { ctx.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
 }
