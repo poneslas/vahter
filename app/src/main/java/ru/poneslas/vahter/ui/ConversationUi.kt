@@ -1,5 +1,6 @@
 package ru.poneslas.vahter.ui
 
+import androidx.compose.ui.text.withLink
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -429,6 +430,12 @@ private fun mdInline(s: String) = buildAnnotatedString {
         when {
             s.startsWith("**", i) && s.indexOf("**", i + 2) > 0 -> { val e = s.indexOf("**", i + 2); withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(s.substring(i + 2, e)) }; i = e + 2 }
             s[i] == '`' && s.indexOf('`', i + 1) > 0 -> { val e = s.indexOf('`', i + 1); withStyle(SpanStyle(fontFamily = FontFamily.Monospace, background = Ink.chipBg)) { append(s.substring(i + 1, e)) }; i = e + 1 }
+            // [текст](ссылка) — кликабельное слово, без сырого адреса (ответы с источниками: поиск DeepSeek, Hermes)
+            s[i] == '[' && Regex("""^\[([^\]]+)]\((https?://[^)\s]+)\)""").find(s.substring(i)) != null -> {
+                val m = Regex("""^\[([^\]]+)]\((https?://[^)\s]+)\)""").find(s.substring(i))!!
+                withLink(androidx.compose.ui.text.LinkAnnotation.Url(m.groupValues[2], androidx.compose.ui.text.TextLinkStyles(SpanStyle(color = Ink.serverD, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline)))) { append(m.groupValues[1]) }
+                i += m.value.length
+            }
             else -> { append(s[i]); i++ }
         }
     }
