@@ -290,13 +290,13 @@ document.addEventListener('input', e=>{ if(e.target.id!=='emoin') return; const 
 
 /** Долгое нажатие на режим в настройках — перестановка: переключатели плавно становятся ≡, в шапке «Готово», строка под пальцем
  *  сразу подхвачена (один жест: удержал — тащишь). Короткий тап — как раньше, страница режима. */
-let holdT=null, holdArmed=false;
+let modeHoldT=null, modeHoldArmed=false;
 document.addEventListener('pointerdown', e=>{ const r=e.target.closest('[data-hold]'); if(!r||S.reorder||e.target.closest('.swbtn')) return; const y=e.clientY, idx=+r.dataset.hold;
-  holdArmed=false; holdT=setTimeout(()=>{ holdArmed=true; S.reorder=true; S.keepScroll=true; render(); navigator.vibrate?.(15);
+  modeHoldArmed=false; modeHoldT=setTimeout(()=>{ modeHoldArmed=true; S.reorder=true; S.keepScroll=true; render(); navigator.vibrate?.(15);
     const row=$(`#scr [data-ri="${idx}"]`); if(row){ const k=$('#dev').getBoundingClientRect().width/W; dr={i:idx, y, row, k, h:row.offsetHeight}; row.classList.add('drag') } }, 450) }, true);
-document.addEventListener('pointermove', e=>{ if(holdT&&!holdArmed&&e.movementY&&Math.abs(e.movementY)>6){ clearTimeout(holdT); holdT=null } }, true);
-document.addEventListener('pointerup', ()=>{ clearTimeout(holdT); holdT=null }, true);
-document.addEventListener('click', e=>{ if(holdArmed && e.target.closest('[data-hold]')){ e.stopImmediatePropagation(); e.preventDefault(); holdArmed=false } }, true);
+document.addEventListener('pointermove', e=>{ if(modeHoldT&&!modeHoldArmed&&e.movementY&&Math.abs(e.movementY)>6){ clearTimeout(modeHoldT); modeHoldT=null } }, true);
+document.addEventListener('pointerup', ()=>{ clearTimeout(modeHoldT); modeHoldT=null }, true);
+document.addEventListener('click', e=>{ if(modeHoldArmed && e.target.closest('[data-hold]')){ e.stopImmediatePropagation(); e.preventDefault(); modeHoldArmed=false } }, true);
 
 /** Долгое нажатие на карточку действия — «Отменить», если у действия есть отмена (будильник, событие). */
 let actT=null;
