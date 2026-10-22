@@ -424,17 +424,36 @@ private fun MdTable(src: String) {
     }
 }
 
-private fun mdInline(s: String) = buildAnnotatedString {
+/** Ссылка — подчёркнутое слово, как везде; без значков. */
+private val LINK = androidx.compose.ui.text.TextLinkStyles(SpanStyle(color = Ink.serverD, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline))
+/** Ссылка открывается явно: системным «Открыть» по адресу (браузер или приложение сайта). */
+private fun link(url: String) = androidx.compose.ui.text.LinkAnnotation.Clickable(url, LINK) {
+    runCatching { ru.poneslas.vahter.App.instance.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+/** [текст](адрес), [текст](<адрес>), [текст](адрес "подсказка") */
+private val MD_LINK = Regex("""^\[([^\]]+)]\(<?(https?://[^)\s>]+)>?(?:\s+"[^"]*")?\)""")
+/** <адрес> */
+private val ANGLE_LINK = Regex("""^<(https?://[^>\s]+)>""")
+/** голый адрес; хвостовые знаки препинания — не часть ссылки */
+private val BARE_LINK = Regex("""^https?://[^\s<>()\[\]]+""")
+
+/**
+ * Строчная разметка: **жирный** (внутри — та же разметка), `код`, ссылки трёх видов — DeepSeek пишет [текст](адрес), Hermes —
+ * голые адреса и <адрес>. Значок 🔗 перед ссылкой убираем: ссылка и так видна.
+ */
+private fun mdInline(s: String): androidx.compose.ui.text.AnnotatedString = buildAnnotatedString {
     var i = 0
     while (i < s.length) {
+        val rest = s.substring(i)
         when {
-            s.startsWith("**", i) && s.indexOf("**", i + 2) > 0 -> { val e = s.indexOf("**", i + 2); withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(s.substring(i + 2, e)) }; i = e + 2 }
+            rest.startsWith("🔗") && Regex("""^🔗️?\s*(\[|<|https?://)""").containsMatchIn(rest) -> { i += if (rest.length > 2 && rest[2] == '️') 3 else 2; while (i < s.length && s[i] == ' ') i++ }
+            rest.startsWith("**") && s.indexOf("**", i + 2) > 0 -> { val e = s.indexOf("**", i + 2); withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(mdInline(s.substring(i + 2, e))) }; i = e + 2 }
             s[i] == '`' && s.indexOf('`', i + 1) > 0 -> { val e = s.indexOf('`', i + 1); withStyle(SpanStyle(fontFamily = FontFamily.Monospace, background = Ink.chipBg)) { append(s.substring(i + 1, e)) }; i = e + 1 }
-            // [текст](ссылка) — кликабельное слово, без сырого адреса (ответы с источниками: поиск DeepSeek, Hermes)
-            s[i] == '[' && Regex("""^\[([^\]]+)]\((https?://[^)\s]+)\)""").find(s.substring(i)) != null -> {
-                val m = Regex("""^\[([^\]]+)]\((https?://[^)\s]+)\)""").find(s.substring(i))!!
-                withLink(androidx.compose.ui.text.LinkAnnotation.Url(m.groupValues[2], androidx.compose.ui.text.TextLinkStyles(SpanStyle(color = Ink.serverD, textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline)))) { append(m.groupValues[1]) }
-                i += m.value.length
+            s[i] == '[' && MD_LINK.find(rest) != null -> { val m = MD_LINK.find(rest)!!; withLink(link(m.groupValues[2])) { append(mdInline(m.groupValues[1])) }; i += m.value.length }
+            s[i] == '<' && ANGLE_LINK.find(rest) != null -> { val m = ANGLE_LINK.find(rest)!!; withLink(link(m.groupValues[1])) { append(m.groupValues[1]) }; i += m.value.length }
+            s[i] == 'h' && BARE_LINK.find(rest) != null -> {
+                val url = BARE_LINK.find(rest)!!.value.trimEnd('.', ',', ';', ':', '!', '?', '»', '"', '\'')
+                withLink(link(url)) { append(url) }; i += url.length
             }
             else -> { append(s[i]); i++ }
         }
