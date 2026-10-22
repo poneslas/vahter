@@ -34,6 +34,10 @@ android {
         }
     }
 
+    // Нативные библиотеки (onnxruntime, 31 МБ) — сжатыми в APK: выпуск уходит файлом через Telegram-бота, у ботов лимит 50 МБ.
+    // При установке Android их распаковывает; на работу распознавания не влияет.
+    packaging { jniLibs { useLegacyPackaging = true } }
+
     buildTypes {
         release {
             isMinifyEnabled = false   // распознавание (onnxruntime) ходит через JNI — ужимать код без правил нельзя
