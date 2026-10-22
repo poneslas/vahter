@@ -277,7 +277,7 @@ private fun KeyInline(ctl: KeyCtl, onCancel: (() -> Unit)?, onConnect: () -> Uni
     }
 }
 
-/** actionsPage(): баннер «нет доступа», группы с политикой справа и состоянием доступа, экран блокировки, журнал. */
+/** actionsPage(): баннер «нет доступа», группы с политикой справа и состоянием доступа, экран блокировки. */
 @Composable
 fun ActionsPage(a: MainActivity) {
     val app = App.instance
