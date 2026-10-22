@@ -63,6 +63,8 @@ class SheetActivity : MainActivity() {
         window.isNavigationBarContrastEnforced = false
         // Над блокировкой — только если сессия пустила (настройка «На заблокированном экране»); погас экран — лист закрыт.
         setShowWhenLocked(true)
+        // Пересоздали развёрнутым (стопка страниц — в MainActivity) — остаётся приложением, не над блокировкой.
+        if (savedInstanceState?.getBoolean(KEY_EXPANDED) == true) { expanded.value = true; setShowWhenLocked(false) }
         Sheet.activity = this
         registerReceiver(screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF), RECEIVER_NOT_EXPORTED)
         // Системный «Назад»: в камере — как ✕ камеры (заморожен кадр — переснять), иначе — закрыть лист (баг №9).
@@ -74,7 +76,7 @@ class SheetActivity : MainActivity() {
         noAnimation(open = true)
     }
 
-    override fun start() {
+    override fun start(saved: Bundle?) {
         enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT))
         fromSheet = true
         setContent {
@@ -88,6 +90,11 @@ class SheetActivity : MainActivity() {
                 host = this,
             )
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_EXPANDED, expanded.value)
     }
 
     /** Намерения листа — только вызов; страницы открывает [openApp]. */
@@ -212,4 +219,6 @@ class SheetActivity : MainActivity() {
     private val screenOff = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) { if (!expanded.value) finishNow() }
     }
+
+    private companion object { const val KEY_EXPANDED = "expanded" }
 }

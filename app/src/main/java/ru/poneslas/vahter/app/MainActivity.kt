@@ -55,13 +55,26 @@ open class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        start()
+        // Пересоздание (поворот, тёмная тема, масштаб): стопка страниц и приглашение — как были; намерение уже прочитано.
+        savedInstanceState?.let { b ->
+            b.getStringArrayList(KEY_STACK)?.takeIf { it.isNotEmpty() }?.let { stack.clear(); stack.addAll(it) }
+            sheetReturn = b.getString(KEY_RETURN)
+            invite = b.getString(KEY_INVITE_URL)?.let { u -> b.getString(KEY_INVITE_TOKEN)?.let { HermesLink(u, it) } }
+        }
+        start(savedInstanceState)
     }
 
-    /** Окно и содержимое; лист ставит своё (SheetActivity). */
-    protected open fun start() {
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putStringArrayList(KEY_STACK, ArrayList(stack))
+        outState.putString(KEY_RETURN, sheetReturn)
+        invite?.let { outState.putString(KEY_INVITE_URL, it.url); outState.putString(KEY_INVITE_TOKEN, it.token) }
+    }
+
+    /** Окно и содержимое; лист ставит своё (SheetActivity). Намерение — только при первом создании ([saved] == null). */
+    protected open fun start(saved: Bundle?) {
         enableEdgeToEdge()
-        readIntent(intent)
+        if (saved == null) readIntent(intent)
         setContent { VahterTheme { Screen() } }
     }
 
@@ -229,6 +242,10 @@ open class MainActivity : ComponentActivity() {
         /** Страница мозга текущего режима: DeepSeek — ключ, Hermes — подключение. */
         fun brainPage(): String = if (App.instance.conversation.state.value.current.brain == Brains.hermes.id) "hermes" else "brain:deepseek"
         const val EXTRA_ASK_PERM = "ask_perm"
+        private const val KEY_STACK = "stack"
+        private const val KEY_RETURN = "sheetReturn"
+        private const val KEY_INVITE_URL = "inviteUrl"
+        private const val KEY_INVITE_TOKEN = "inviteToken"
         /** Код запроса разрешений из приложения: микрофон и то, что просит лист (камера и др.). */
         const val REQ_PERMS = 11
     }
