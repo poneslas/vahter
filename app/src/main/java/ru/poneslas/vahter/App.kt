@@ -71,6 +71,8 @@ class App : Application() {
     }
 
     fun hasKey(brainId: String) = secrets.has("key:$brainId")
+    /** Сохранённый ключ мозга — для проверки при входе на страницу и «sk-…3f9a» (не показываем целиком). */
+    fun storedKey(brainId: String): String? = secrets.get("key:$brainId")
 
     fun setKey(brainId: String, key: String?) {
         secrets.put("key:$brainId", key)

@@ -1,5 +1,6 @@
 package ru.poneslas.vahter.ui
 
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import ru.poneslas.vahter.R
@@ -205,8 +206,35 @@ fun Progress(percent: Int, modifier: Modifier = Modifier) {
 fun ScrollPage(content: @Composable ColumnScope.() -> Unit) =
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp), content = content)
 
-/** .mform: страница-форма с отступами 16. */
+/** .mform / .mform.canon: страница настроек — поля 16, сверху 12, между разделами 18. */
 @Composable
 fun FormPage(content: @Composable ColumnScope.() -> Unit) =
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp), content = content)
+
+/** Раздел страницы настроек по канону (ui.js, sect): заголовок, карточка, пояснение. */
+@Composable
+fun PageSection(title: String?, note: String? = null, content: @Composable ColumnScope.() -> Unit) = Column {
+    if (title != null) Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
+    SetCard(content = content)
+    if (note != null) MNote(note, Modifier.padding(horizontal = 6.dp))
+}
+
+/** Строка «Статус» (ui.js, statusRow): точка и одна фраза — проверяется сама при входе на страницу, без плашек. [ok] null — проверяю. */
+@Composable
+fun StatusItem(ok: Boolean?, text: String) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(10.dp).clip(CircleShape).background(when (ok) { true -> Ink.ok; false -> Ink.danger; null -> Ink.local }))
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(tr(R.string.conn_status), fontSize = 16.sp, color = Ink.ink)
+            Text(text, fontSize = 13.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+/** «Умеет» — один компонент у всех мозгов (ui.js, capsCard): значок, что, коротко; чего нет — бледно. */
+@Composable
+fun CapItem(icon: Int, title: String, sub: String, on: Boolean) = Box(Modifier.alpha(if (on) 1f else .45f)) { Item(title, sub, icon = icon) }

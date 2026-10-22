@@ -1,5 +1,8 @@
 package ru.poneslas.vahter.app
 
+import ru.poneslas.vahter.ui.PageSection
+import ru.poneslas.vahter.ui.StatusItem
+import ru.poneslas.vahter.ui.CapItem
 import ru.poneslas.vahter.pisar.model.ModelDownload
 import ru.poneslas.vahter.actions.Registry
 import ru.poneslas.vahter.core.Mode
@@ -184,23 +187,78 @@ private fun lockLabel(s: LockScope) = when (s) {
 }
 
 /** brainPage(): карточка «Адрес / Модель», ключ, «Умеет», пояснение. */
+/**
+ * DeepSeek по канону (ui.js, brainPage): «Подключение» (статус проверяется сам при входе, адрес, модель, ключ), «Умеет», «Режимы»,
+ * «Отключить». Ключ — «Изменить» → поле и «Подключить» (проверить и сохранить). Ушли с непроверенным ключом — не теряем молча:
+ * «Подключить / Не сохранять».
+ */
 @Composable
 fun BrainPage(a: MainActivity, id: String) {
     val app = App.instance
     val b = Brains.byId(id)
     val state by app.conversation.state.collectAsState()
-    TopBar(b.title, tr(R.string.set_brain_api), onBack = a::back)
+    val scope = rememberCoroutineScope()
+    val keyV by app.keyVersion.collectAsState()
+    val has = remember(keyV) { app.hasKey(b.id) }
+    val ctl = rememberKeyCtl(b)
+    var editing by remember { mutableStateOf(false) }
+    var auto by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+    var autoRun by remember { mutableStateOf(false) }
+    LaunchedEffect(keyV) {
+        if (!app.hasKey(b.id)) { auto = null; return@LaunchedEffect }
+        autoRun = true
+        val r = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.apiBrain(b).check(app.storedKey(b.id).orEmpty()) }
+        auto = r.ok to r.text; autoRun = false
+    }
+    LaunchedEffect(ctl.status) { if (ctl.status?.first == true) editing = false }
+    val dirty = ctl.key.isNotBlank() && !ctl.checking
+    fun leave() {
+        if (!dirty) return a.back()
+        a.showSheet(MainActivity.PermSheet(tr(R.string.key_unsaved_h), tr(R.string.key_unsaved_p), tr(R.string.hermes_connect), icon = Ic.lock,
+            later = tr(R.string.key_unsaved_no), onLater = { ctl.key = ""; a.hideSheet(); a.back() }) { a.hideSheet(); ctl.connect(scope) })
+    }
+    androidx.activity.compose.BackHandler(dirty) { leave() }
+    TopBar(b.title, tr(R.string.set_brain_api), onBack = ::leave)
     FormPage {
-        SetCard { Item(tr(R.string.set_brain_url), b.url, icon = Ic.srv); Item(tr(R.string.set_brain_model), b.model, icon = Ic.spark) }
-        KeyEditor(b)
-        Column {
-            Text(tr(R.string.set_brain_caps), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                MChip(tr(R.string.set_cap_vision), b.vision); MChip(tr(R.string.set_cap_tools), b.tools); MChip(tr(R.string.set_cap_memory), b.memory); MChip(tr(R.string.set_cap_server), b.server)
+        PageSection(tr(R.string.conn_section)) {
+            when {
+                ctl.checking || autoRun -> StatusItem(null, tr(R.string.conn_checking))
+                !has -> StatusItem(false, tr(R.string.conn_off))
+                auto?.first == false -> StatusItem(false, tr(R.string.conn_bad, auto!!.second))
+                else -> StatusItem(true, tr(R.string.conn_ok, auto?.second.orEmpty()))
             }
+            Item(tr(R.string.set_brain_url), b.url, icon = Ic.srv)
+            Item(tr(R.string.set_brain_model), b.model, icon = Ic.spark)
+            if (has && !editing) Item(tr(R.string.key_row), tr(R.string.key_row_sub, app.storedKey(b.id).orEmpty().takeLast(4)), trailing = tr(R.string.key_change), trailingColor = Ink.serverD, icon = Ic.lock) { editing = true }
+            else KeyInline(ctl, onCancel = if (has) ({ editing = false; ctl.key = ""; ctl.status = null }) else null) { ctl.connect(scope) }
         }
-        val users = state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }
-        MNote(tr(R.string.set_brain_modes_note, users))
+        PageSection(tr(R.string.set_brain_caps)) {
+            CapItem(Ic.cam, tr(R.string.cap_photo), tr(R.string.cap_photo_sub), b.vision)
+            CapItem(Ic.shield, tr(R.string.set_cap_tools), tr(R.string.cap_tools_sub), b.tools)
+            CapItem(Ic.lens, tr(R.string.hermes_will_search), tr(R.string.cap_search_soon), false)
+            CapItem(Ic.hist, tr(R.string.hermes_will_memory), tr(R.string.cap_memory_no), false)
+        }
+        PageSection(tr(R.string.set_modes)) {
+            Item(state.modes.filter { it.brain == b.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }, tr(R.string.brain_modes_sub), icon = Ic.list)
+        }
+        if (has) PageSection(null) {
+            Item(tr(R.string.hermes_disconnect), tr(R.string.brain_off_sub), icon = Ic.del) { app.setKey(b.id, null) }
+        }
+    }
+}
+
+/** Ключ в карточке «Подключение» (ui.js, .kedit): поле, «Вставить», где взять, ошибка — строкой; «Отмена» и «Подключить». */
+@Composable
+private fun KeyInline(ctl: KeyCtl, onCancel: (() -> Unit)?, onConnect: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    val bad = ctl.status?.first == false
+    Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 12.dp)) {
+        Field(ctl.key, tr(R.string.key_ph), bad = bad, paste = { clipboard.getText()?.text?.trim()?.let { ctl.key = it } }) { ctl.key = it.trim() }
+        Text(if (bad) ctl.status!!.second else tr(R.string.key_where), fontSize = 12.5.sp, color = if (bad) Ink.danger else Ink.soft, modifier = Modifier.padding(start = 2.dp, top = 6.dp))
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+            onCancel?.let { ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_cancel), onClick = it) }
+            PrimaryButton(if (ctl.checking) tr(R.string.key_connecting) else tr(R.string.hermes_connect), enabled = ctl.canCheck, onClick = onConnect)
+        }
     }
 }
 
@@ -315,29 +373,37 @@ fun HermesPage(a: MainActivity) {
             }
             StatusLine(ctl.checking, ctl.status, tr(R.string.key_ok, "Hermes"))
         } else {
-            SetCard {
+            // тот же шаблон, что у DeepSeek: «Подключение» (статус сам при входе), «Умеет», «Режимы», «Отключить»
+            LaunchedEffect(link) { ctl.connect(scope, link, save = false) }
+            PageSection(tr(R.string.conn_section)) {
+                when (val st = ctl.status) {
+                    null -> StatusItem(null, tr(R.string.conn_checking))
+                    else -> if (ctl.checking) StatusItem(null, tr(R.string.conn_checking)) else StatusItem(st.first, tr(if (st.first) R.string.conn_ok else R.string.conn_bad, st.second))
+                }
                 Item(tr(R.string.set_brain_url), HermesBrain.host(link.url), icon = Ic.srv)
                 Item(tr(R.string.hermes_token_stored), tr(R.string.hermes_token_stored_sub), icon = Ic.lock)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                PrimaryButton(if (ctl.checking) tr(R.string.key_checking) else tr(R.string.hermes_recheck), enabled = !ctl.checking) { ctl.connect(scope, link, save = false) }
-            }
-            // Итог проверки — только StatusLine после «Проверить»; постоянная зелёная плашка читалась как разовая подсказка.
-            StatusLine(ctl.checking, ctl.status, tr(R.string.key_ok, "Hermes"))
-            val users = state.modes.filter { it.brain == Brains.hermes.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }
-            MNote(tr(R.string.hermes_modes_note, users))
-            SetCard { Item(tr(R.string.hermes_disconnect), tr(R.string.hermes_disconnect_sub), icon = Ic.del) { app.setHermes(null); ctl.status = null } }
         }
-        Column {
+        if (link != null) {
+            PageSection(tr(R.string.hermes_will_h)) {
+                CapItem(Ic.hist, tr(R.string.hermes_will_memory), tr(R.string.hermes_will_memory_sub), true)
+                CapItem(Ic.lens, tr(R.string.hermes_will_search), tr(R.string.hermes_will_search_sub), true)
+                CapItem(Ic.srv, tr(R.string.hermes_will_server), tr(R.string.hermes_will_server_sub), true)
+                CapItem(Ic.cam, tr(R.string.cap_photo), tr(R.string.cap_photo_hermes), true)
+                CapItem(Ic.shield, tr(R.string.set_cap_tools), tr(R.string.hermes_will_phone), false)
+            }
+            PageSection(tr(R.string.set_modes)) {
+                Item(state.modes.filter { it.brain == Brains.hermes.id }.joinToString(", ") { it.title }.ifEmpty { tr(R.string.set_none) }, tr(R.string.brain_modes_sub), icon = Ic.list)
+            }
+            PageSection(null) { Item(tr(R.string.hermes_disconnect), tr(R.string.hermes_disconnect_sub), icon = Ic.del) { app.setHermes(null); ctl.status = null } }
+        } else Column {
             Text(tr(R.string.hermes_will_h), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD, modifier = Modifier.padding(vertical = 4.dp))
             SetCard {
                 Item(tr(R.string.hermes_will_memory), tr(R.string.hermes_will_memory_sub), icon = Ic.hist)
                 Item(tr(R.string.hermes_will_search), tr(R.string.hermes_will_search_sub), icon = Ic.lens)
                 Item(tr(R.string.hermes_will_server), tr(R.string.hermes_will_server_sub), icon = Ic.srv)
-                Item(tr(R.string.hermes_will_telegram), tr(R.string.hermes_will_telegram_sub), icon = Ic.chat)
                 Item(tr(R.string.set_cap_tools), tr(R.string.hermes_will_phone), icon = Ic.shield)
             }
-            MNote(tr(R.string.hermes_per_mode))
         }
     }
 }
