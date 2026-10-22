@@ -158,11 +158,12 @@ function li(icon,title,sum,act,warn,trail){ return `<button class="li ${warn?'wa
 function settings(){
   const w=S.w;
   return `<div class="layer appv">${statusBar(true)}
-  <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>Настройки</b></div></div>
+  <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>${S.reorder?'Порядок режимов':'Настройки'}</b></div>${S.reorder?'<button class="tbtn" data-act="reorderdone">Готово</button>':''}</div>
   <div class="scroll"><div class="list">
     <div class="lh">Режимы</div>
-    ${(()=>{ const on=S.modes.filter(m=>m.enabled||m.id==='main'); return li(I.list,'Режимы',`${on.length} включено · ${on.map(m=>esc(m.title)).join(', ')}`,'modes') })()}
-    ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
+    ${S.modes.map((m,i)=>`<div class="lirow mrow1 ${S.reorder?'reo':''}" data-ri="${i}" data-hold="${i}">${li(mIcon(m.icon),esc(m.title),m.brain==='hermes'&&S.w.server!=='paired'?'Мозг не подключён':'',S.reorder?'':'editmode:'+m.id,m.brain==='hermes'&&S.w.server!=='paired')}${S.reorder?`<span class="grip" data-drag="${i}" aria-label="Перетащить «${esc(m.title)}»">${I.grip}</span>`:m.id==='main'?'<span class="swgap"></span>':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
+    ${S.reorder?'':`<button class="li addone" data-act="addmode"><span class="lic">${I.plus}</span><span class="lt"><b>Новый режим</b></span></button>`}
+    ${S.reorderedOnce||S.reorder?'':'<p class="mnote holdhint">Удерживайте режим, чтобы поменять порядок</p>'}
     <div class="lh">Помощник</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
@@ -249,7 +250,7 @@ function sysPerm(){ const k=S.permKind, o=(v,t)=>`<button class="it" data-sysper
   return `<div class="layer sys">${statusBar(true)}<div class="sbar"><button class="iconbtn" data-act="syspermback">${I.back}</button>${SYS_PERMS[k].replace(/[«»]/g,'')}</div><p style="margin:0 22px 6px;font-size:13px;color:#666">${k==='dnd'?'Настройки → Уведомления → Доступ к «Не беспокоить»':`Приложения → Вахтёр → Разрешения → ${SYS_PERMS[k]}`}</p><div class="grp">${k==='dnd'?o('ok','Вахтёр — разрешить')+o('denied','Не разрешать'):o('ok',k==='location'?'Разрешить только во время использования':'Разрешить')+o('denied','Не разрешать')}</div></div>` }
 function actionsPage(){
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Действия на телефоне</b><small>что выполняется сразу, а что — после вопроса</small></div></div>
-  <div class="scroll">${blockedBanner()}<div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lt"><b>${x.title}</b>${toolBlocked(x)?`<small>нет доступа: ${SYS_PERMS[x.perm]}</small>`:toolPending(x)?`<small class="pend">доступ «${SYS_PERMS[x.perm].replace(/[«»]/g,'')}» спросим при первом разе</small>`:''}</span><span class="pword ${toolBlocked(x)?'nope':S.policy[x.id]}">${toolBlocked(x)?'Нет доступа':POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
+  <div class="scroll">${blockedBanner()}<div class="list">${TOOL_GROUPS.map(g=>`<div class="lh">${g}</div>${TOOLS.filter(x=>x.group===g).map(x=>`<button class="li prow" data-tool="${x.id}"><span class="lic">${I[x.icon]||I.shield}</span><span class="lt"><b>${x.title}</b>${x.sub&&!toolBlocked(x)&&!toolPending(x)?`<small>${x.sub}</small>`:''}${toolBlocked(x)?`<small>нет доступа: ${SYS_PERMS[x.perm]}</small>`:toolPending(x)?`<small class="pend">доступ «${SYS_PERMS[x.perm].replace(/[«»]/g,'')}» спросим при первом разе</small>`:''}</span><span class="pword ${toolBlocked(x)?'nope':S.policy[x.id]}">${toolBlocked(x)?'Нет доступа':POLICY_WORD[S.policy[x.id]]}</span></button>`).join('')}`).join('')}
     <div class="lh">Экран блокировки</div>${li(I.lock,'На заблокированном экране', LOCK_SCOPE.find(o=>o[0]===S.settings.lockScope)[1],'lockscope')}
     <p class="mnote" style="padding:4px 22px 20px">«Разрешено» — выполняется сразу, в разговоре видно, что сделано. «Спрашивать» — сначала показывается и ждёт «Да». Сообщения только готовятся — отправляете вы.</p></div></div></div>` }
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];

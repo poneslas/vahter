@@ -129,7 +129,7 @@ document.addEventListener('click', async e=>{
     case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
     // 22.10: порядок режимов, свой эмодзи, ключ «Изменить / Подключить», отключение мозга, страница распознавания, свой переключатель уведомлений
-    case 'modes': S.page='modes'; return render();
+    case 'reorderdone': S.reorder=false; S.reorderedOnce=true; S.keepScroll=true; trace('Порядок режимов сохранён — так же и вкладки под полем.','i'); return render();
     case 'emojipick': S.emojiPick=!S.emojiPick; S.keepScroll=true; return render();
     case 'keyedit': S.keyEdit=true; S.keyCheck=null; S.keepScroll=true; return render();
     case 'keycanceledit': S.keyEdit=false; S.keyCheck=null; S.keepScroll=true; return render();
@@ -282,3 +282,13 @@ document.addEventListener('pointerup', ()=>{ if(!dr) return; const {i,to}=dr; dr
 /** Свой эмодзи: первая графема из поля. */
 document.addEventListener('input', e=>{ if(e.target.id!=='emoin') return; const v=e.target.value.trim(); if(!v) return;
   const g=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)][0].segment; modeById(S.editMode).icon='emoji:'+g; S.emojiPick=false; S.keepScroll=true; render() });
+
+/** Долгое нажатие на режим в настройках — перестановка: переключатели плавно становятся ≡, в шапке «Готово», строка под пальцем
+ *  сразу подхвачена (один жест: удержал — тащишь). Короткий тап — как раньше, страница режима. */
+let holdT=null, holdArmed=false;
+document.addEventListener('pointerdown', e=>{ const r=e.target.closest('[data-hold]'); if(!r||S.reorder||e.target.closest('.swbtn')) return; const y=e.clientY, idx=+r.dataset.hold;
+  holdArmed=false; holdT=setTimeout(()=>{ holdArmed=true; S.reorder=true; S.keepScroll=true; render(); navigator.vibrate?.(15);
+    const row=$(`#scr [data-ri="${idx}"]`); if(row){ const k=$('#dev').getBoundingClientRect().width/W; dr={i:idx, y, row, k, h:row.offsetHeight}; row.classList.add('drag') } }, 450) }, true);
+document.addEventListener('pointermove', e=>{ if(holdT&&!holdArmed&&e.movementY&&Math.abs(e.movementY)>6){ clearTimeout(holdT); holdT=null } }, true);
+document.addEventListener('pointerup', ()=>{ clearTimeout(holdT); holdT=null }, true);
+document.addEventListener('click', e=>{ if(holdArmed && e.target.closest('[data-hold]')){ e.stopImmediatePropagation(); e.preventDefault(); holdArmed=false } }, true);

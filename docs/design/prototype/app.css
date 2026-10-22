@@ -736,3 +736,12 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .mrow .li{padding-left:6px}
 .mrow .swgap{width:58px;flex:none}
 .mrow.drag{transition:none;box-shadow:0 10px 24px -12px rgba(14,26,54,.45);z-index:2;border-radius:14px}
+
+/* режимы в настройках: одна строка; долгое нажатие — перестановка (переключатель → ≡) */
+.mrow1{position:relative;background:var(--paper);touch-action:pan-y;user-select:none}
+.mrow1 .grip{flex:none;display:grid;place-items:center;width:58px;height:40px;color:var(--soft);cursor:grab;touch-action:none;animation:fade .18s ease both}
+.mrow1 .swgap{width:58px;flex:none}
+.mrow1.reo{background:var(--surf)}.mrow1.drag{transition:none;box-shadow:0 12px 26px -12px rgba(14,26,54,.5);z-index:2;border-radius:14px}
+.li.addone{min-height:52px}
+.holdhint{padding:2px 22px 0;margin:0}
+.prow .lic{color:var(--soft)}

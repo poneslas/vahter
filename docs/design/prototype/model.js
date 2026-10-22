@@ -65,25 +65,23 @@ const BRAINS=[
  * @property {'calendar'|'location'|'contacts'|'dnd'} [perm] системный доступ Android, без которого действие не работает
  */
 const TOOL_GROUPS=['Часы','Календарь','Телефон','Приложения и связь'];
+// 22.10: «Будильник» = поставить, выключить, узнать ближайший; «Таймер» = запустить и остановить; «Приложения и настройки» —
+// одно действие: разрешения Android на них нет, для человека это одно и то же. Календарь — два: смотреть сразу, менять — спрашивать.
 const TOOLS=[
-  ['alarm.set','Будильник','Часы','auto',{safe:true}],
-  ['alarm.dismiss','Выключение будильника','Часы','auto',{safe:true}],
-  ['timer.set','Таймер','Часы','auto',{safe:true}],
-  ['timer.stop','Остановка таймера','Часы','auto',{safe:true}],
-  ['alarm.next','Ближайший будильник','Часы','auto',{safe:true}],
-  ['calendar.query','Просмотр календаря','Календарь','auto',{perm:'calendar'}],
-  ['calendar.add','Создание и удаление событий','Календарь','ask',{perm:'calendar'}],
-  ['torch.set','Фонарик','Телефон','auto',{safe:true}],
-  ['volume.set','Громкость','Телефон','auto'],
-  ['dnd.set','Не беспокоить','Телефон','auto',{perm:'dnd'}],
-  ['media.control','Управление музыкой','Телефон','auto'],
-  ['location.get','Местоположение','Телефон','ask',{perm:'location'}],
-  ['place.save','Сохранённые места','Телефон','auto'],
-  ['note.remember','Заметки','Телефон','auto'],
-  ['app.open','Запуск приложений','Приложения и связь','auto'],
-  ['settings.open','Системные настройки','Приложения и связь','auto'],
-  ['call.dial','Звонки','Приложения и связь','ask',{perm:'contacts'}],
-  ['message.draft','Сообщения','Приложения и связь','ask',{always:true,perm:'contacts'}],
+  ['alarm.set','Будильник','Часы','auto',{safe:true,icon:'alarm',sub:'Поставить, выключить, узнать ближайший'}],
+  ['timer.set','Таймер','Часы','auto',{safe:true,icon:'timer',sub:'Запустить и остановить'}],
+  ['calendar.query','Календарь: смотреть','Календарь','auto',{perm:'calendar',icon:'cal'}],
+  ['calendar.add','Календарь: создавать и удалять','Календарь','ask',{perm:'calendar',icon:'cal'}],
+  ['torch.set','Фонарик','Телефон','auto',{safe:true,icon:'torch'}],
+  ['volume.set','Громкость','Телефон','auto',{icon:'vol'}],
+  ['dnd.set','Не беспокоить','Телефон','auto',{perm:'dnd',icon:'dnd'}],
+  ['media.control','Музыка','Телефон','auto',{icon:'music',sub:'Пауза, дальше, назад'}],
+  ['location.get','Местоположение','Телефон','ask',{perm:'location',icon:'pin'}],
+  ['place.save','Сохранённые места','Телефон','auto',{icon:'pin'}],
+  ['note.remember','Заметки','Телефон','auto',{icon:'note'}],
+  ['app.open','Приложения и настройки','Приложения и связь','auto',{icon:'apps',sub:'Открыть приложение или экран настроек'}],
+  ['call.dial','Звонки','Приложения и связь','ask',{perm:'contacts',icon:'phone'}],
+  ['message.draft','Сообщения','Приложения и связь','ask',{always:true,perm:'contacts',icon:'msg'}],
 ].map(([id,title,group,def,o])=>({id,title,group,def,...(o||{})}));
 /** Слова — как в системном диалоге разрешений Android. */
 /** Системные доступы Android, от которых зависят действия. Состояние: ok — выдан, ask — ещё не спрашивали, denied — отказано (окно больше не покажется — только настройки). */
@@ -117,7 +115,7 @@ const fresh = () => { const o = ({
   journal:[
     {id:'j3',day:'Сегодня',at:'09:05',tool:'calendar.add',title:'Встреча с Олей · пт 15:00',who:'DeepSeek',phrase:'запиши встречу с Олей в пятницу в 15',params:'title="Встреча с Олей", start=2026-10-23T15:00',confirm:'«Да» нажатием',lock:false,undo:true},
     {id:'j2',day:'Сегодня',at:'08:40',tool:'torch.set',title:'Фонарик · выключен',who:'по правилам',phrase:'выключи фонарик',params:'on=false',confirm:'сразу',lock:true,status:'отменено'},
-    {id:'j1',day:'Сегодня',at:'07:12',tool:'alarm.next',title:'Ближайший будильник · 7:00',who:'по правилам',phrase:'когда у меня будильник?',params:'—',confirm:'сразу',lock:false},
+    {id:'j1',day:'Сегодня',at:'07:12',tool:'alarm.set',title:'Ближайший будильник · 7:00',who:'по правилам',phrase:'когда у меня будильник?',params:'—',confirm:'сразу',lock:false},
     {id:'j4',day:'Вчера',at:'22:30',tool:'alarm.set',title:'Будильник · 7:00',who:'по правилам',phrase:'будильник на семь',params:'time=07:00',confirm:'сразу',lock:false},
   ],
   upd:{ state:'none', pct:0, ver:'0.4.0', next:'0.5.0' }, busy:false, rec:null, nextKey:'ask', notifAsked:false, ret:null, dismissed:null,
