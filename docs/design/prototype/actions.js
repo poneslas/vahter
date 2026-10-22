@@ -307,3 +307,11 @@ document.addEventListener('pointermove', e=>{ if(actT&&Math.abs(e.movementY)>6){
 /** Живой отсчёт таймера в карточке — меняем только строку, экран не перерисовываем (иначе мигают анимации). */
 setInterval(()=>{ document.querySelectorAll('#scr .act[data-aid]').forEach(a=>{ const it=S.feed.find(f=>String(f.id)===a.dataset.aid); const C=it&&ACT_CARDS[it.i];
   if(!C||C.k!=='timer'||it.stopped) return; const sp=a.querySelector('.asub'); if(sp) sp.textContent=C.sub(it) }) },1000);
+
+/** Вкладки режимов тянутся и мышью (браузер сам двигает ряд только колесом/тачпадом): сдвинули больше 6 px — это свайп, тап не срабатывает. */
+let tabDrag=null;
+document.addEventListener('pointerdown', e=>{ const t=e.target.closest('#scr .mtabs.snap'); if(!t||e.pointerType==='touch') return; tabDrag={t, x:e.clientX, left:t.scrollLeft, moved:false, k:$('#dev').getBoundingClientRect().width/W}; t.style.scrollSnapType='none' }, true);
+document.addEventListener('pointermove', e=>{ if(!tabDrag) return; const dx=(e.clientX-tabDrag.x)/tabDrag.k; if(Math.abs(dx)>6) tabDrag.moved=true; if(tabDrag.moved) tabDrag.t.scrollLeft=tabDrag.left-dx }, true);
+document.addEventListener('pointerup', ()=>{ if(!tabDrag) return; const {t,moved}=tabDrag; tabDrag=null; t.style.scrollSnapType=''; if(moved){ tabSwallow=true; t.dispatchEvent(new Event('scroll')) } }, true);
+let tabSwallow=false;
+document.addEventListener('click', e=>{ if(tabSwallow && e.target.closest('.mtabs')){ e.stopImmediatePropagation(); e.preventDefault() } tabSwallow=false }, true);
