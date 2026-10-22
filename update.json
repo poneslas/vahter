@@ -1,12 +1,12 @@
 {
-  "version": "1.0.4",
-  "versionCode": 45,
+  "version": "1.0.5",
+  "versionCode": 46,
   "apk": {
-    "url": "https://github.com/poneslas/vahter/releases/download/v1.0.4/vahter-1.0.4.apk",
-    "sha256": "383c16c535e6f19d118941b3e7aadfa6b6ae5a438e844e8e9ca459a57e2caf43",
-    "size": 44355595
+    "url": "https://github.com/poneslas/vahter/releases/download/v1.0.5/vahter-1.0.5.apk",
+    "sha256": "9fdbfd34ebc3b8fd5dc9caed1960e97db6418af88dd77eefaa7408427c53bdb3",
+    "size": 44354691
   },
   "notes": {
-    "ru": "Пустой «Новый режим» больше не копится\nПоворот экрана не сбрасывает страницу\nПриглашение Hermes — только по подтверждению\nСтарые фото и файлы убираются\nНадёжность: сбой мозга не роняет приложение, отмена скачивания, телеметрия onnxruntime убрана"
+    "ru": "Подсказки под «Вам чего?» — всегда на пустом листе Ассистента"
   }
 }
