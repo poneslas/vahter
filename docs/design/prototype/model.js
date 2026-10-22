@@ -68,10 +68,10 @@ const TOOL_GROUPS=['Часы','Календарь','Телефон','Прило�
 // 22.10: «Будильник» = поставить, выключить, узнать ближайший; «Таймер» = запустить и остановить; «Приложения и настройки» —
 // одно действие: разрешения Android на них нет, для человека это одно и то же. Календарь — два: смотреть сразу, менять — спрашивать.
 const TOOLS=[
-  ['alarm.set','Будильник','Часы','auto',{safe:true,icon:'alarm',sub:'Поставить, выключить, узнать ближайший'}],
+  ['alarm.set','Будильник','Часы','auto',{safe:true,icon:'alarm',sub:'Поставить и выключить'}],
   ['timer.set','Таймер','Часы','auto',{safe:true,icon:'timer',sub:'Запустить и остановить'}],
-  ['calendar.query','Календарь: смотреть','Календарь','auto',{perm:'calendar',icon:'cal'}],
-  ['calendar.add','Календарь: создавать и удалять','Календарь','ask',{perm:'calendar',icon:'cal'}],
+  ['calendar.query','Смотреть','Календарь','auto',{perm:'calendar',icon:'cal'}],
+  ['calendar.add','Создавать и удалять','Календарь','ask',{perm:'calendar',icon:'cal'}],
   ['torch.set','Фонарик','Телефон','auto',{safe:true,icon:'torch'}],
   ['volume.set','Громкость','Телефон','auto',{icon:'vol'}],
   ['dnd.set','Не беспокоить','Телефон','auto',{perm:'dnd',icon:'dnd'}],
@@ -79,7 +79,7 @@ const TOOLS=[
   ['location.get','Местоположение','Телефон','ask',{perm:'location',icon:'pin'}],
   ['place.save','Сохранённые места','Телефон','auto',{icon:'pin'}],
   ['note.remember','Заметки','Телефон','auto',{icon:'note'}],
-  ['app.open','Приложения и настройки','Приложения и связь','auto',{icon:'apps',sub:'Открыть приложение или экран настроек'}],
+  ['app.open','Приложения и настройки','Приложения и связь','auto',{icon:'apps',sub:'Открыть по названию'}],
   ['call.dial','Звонки','Приложения и связь','ask',{perm:'contacts',icon:'phone'}],
   ['message.draft','Сообщения','Приложения и связь','ask',{always:true,perm:'contacts',icon:'msg'}],
 ].map(([id,title,group,def,o])=>({id,title,group,def,...(o||{})}));
