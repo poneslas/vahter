@@ -5,12 +5,13 @@
 
 notes.md — что поменялось и на что смотреть при тестировании (Markdown-вольно, уходит как текст). Подпись к файлу у Telegram —
 до 1024 символов: короткие заметки уходят подписью, длинные — отдельным сообщением перед файлом.
-Токен бота и id чата — вне репозитория: /Users/em/Dev/.toolchains/keys/telegram-builds.env (TG_BOT_TOKEN, TG_CHAT_ID).
+Токен бота и id чата — вне репозитория: ../.toolchains/keys/telegram-builds.env рядом с папкой проекта (TG_BOT_TOKEN, TG_CHAT_ID);
+другой путь — переменной TG_ENV.
 Лимит файла у ботов — 50 МБ: выпускная сборка (assembleRelease) укладывается, отладочная — нет.
 """
 import json, os, subprocess, sys
 
-ENV = '/Users/em/Dev/.toolchains/keys/telegram-builds.env'
+ENV = os.environ.get('TG_ENV') or os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '.toolchains', 'keys', 'telegram-builds.env')
 LIMIT = 50 * 1024 * 1024
 
 

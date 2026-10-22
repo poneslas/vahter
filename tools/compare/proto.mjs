@@ -1,5 +1,5 @@
 // Снимки прототипа: node proto.mjs <страница.html> <папка> <имя=запрос>…  (Playwright из ~/Dev/.toolchains)
-import { chromium } from '/Users/em/Dev/.toolchains/npm/_npx/d71ea5ed3eabc9b3/node_modules/playwright/index.mjs';
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');   // свой путь к playwright — PLAYWRIGHT_MODULE
 const [,, page, out, ...specs] = process.argv;
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1300, height: 900 }, deviceScaleFactor: 2 });

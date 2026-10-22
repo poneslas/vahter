@@ -32,8 +32,8 @@ import java.util.Locale
  */
 object Updates {
     /** Манифест и откуда разрешено качать: публичный репозиторий Vahter (Бэклог 22.10). */
-    const val MANIFEST = "https://raw.githubusercontent.com/poneslas/Vahter/main/update.json"
-    private const val APK_PREFIX = "https://github.com/poneslas/Vahter/releases/download/"
+    const val MANIFEST = "https://raw.githubusercontent.com/poneslas/vahter/main/update.json"
+    private const val APK_PREFIX = "https://github.com/poneslas/vahter/releases/download/"
     private const val CHECK_EVERY_MS = 24 * 60 * 60_000L
 
     data class Release(val version: String, val code: Int, val url: String, val sha256: String, val size: Long, val notes: String)
