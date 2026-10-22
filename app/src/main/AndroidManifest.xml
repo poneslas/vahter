@@ -34,6 +34,8 @@
         <!-- «Открыть приложение»: список того, что есть на рабочем столе -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.DIAL" /></intent>
+        <!-- Файлы от мозга: открыть любым приложением, которое умеет этот тип -->
+        <intent><action android:name="android.intent.action.VIEW" /><data android:mimeType="*/*" /></intent>
         <intent><action android:name="android.intent.action.SENDTO" /><data android:scheme="smsto" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="geo" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:host="com.android.calendar" /></intent>
