@@ -559,6 +559,7 @@
     <string name="intro_free">без очереди</string>
     <string name="intro_ticket">№%1$d</string>
     <string name="intro_question">🎙 вопрос</string>
+    <string name="intro_menu">МЕНЮ</string>
     <string name="intro_hold">Зажать</string>
     <string name="intro_my_mode">мой режим</string>
     <string name="intro_s2_answer">Возьмите судака на гриле и морс — 1200 ₽. Не остро и без орехов — как вы любите.</string>

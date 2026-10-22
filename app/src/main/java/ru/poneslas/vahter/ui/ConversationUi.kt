@@ -352,7 +352,7 @@ private fun FilesItem(item: FeedItem.Files) {
     }
 }
 
-private fun sizeText(b: Long) = if (b < 1024 * 1024) tr(R.string.feed_size_kb, (b + 1023) / 1024) else tr(R.string.feed_size_mb, "%.1f".format(b / 1048576.0).replace('.', ','))
+private fun sizeText(b: Long) = if (b < 1024 * 1024) tr(R.string.feed_size_kb, (b + 1023) / 1024) else tr(R.string.feed_size_mb, comma1(b / 1048576.0))
 
 /**
  * Вкладки режимов как в камере (ui.js, modeTabs): линза выделения стоит по центру и не двигается — меняет только ширину под

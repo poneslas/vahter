@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import ru.poneslas.vahter.ui.Ink
 import androidx.compose.foundation.layout.Row
 import ru.poneslas.vahter.ui.Ic
+import ru.poneslas.vahter.ui.comma1
 import androidx.compose.foundation.layout.Arrangement
 import ru.poneslas.vahter.core.Brains
 import androidx.compose.runtime.mutableStateOf
@@ -359,7 +360,7 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
                 proc -> Text(tr(R.string.try_recog), fontSize = 15.sp, color = Ink.soft, textAlign = center)
                 last != null -> {
                     Text(last.text, fontSize = 25.sp, lineHeight = 1.25.em, fontWeight = FontWeight.Medium, color = Ink.ink, textAlign = center)
-                    Text(tr(R.string.try_fast, "%.1f".format(last.ms / 1000f).replace('.', ',')), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
+                    Text(tr(R.string.try_fast, comma1((last.ms / 1000f).toDouble())), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Ink.localD,
                         modifier = Modifier.clip(RoundedCornerShape(50)).background(Ink.localT).padding(horizontal = 11.dp, vertical = 4.dp))
                 }
                 why != null -> Text(why, fontSize = 16.sp, lineHeight = 1.35.em, color = Ink.soft, textAlign = center)

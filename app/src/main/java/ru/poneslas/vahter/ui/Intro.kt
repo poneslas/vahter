@@ -379,7 +379,7 @@ private fun MenuPhoto() = Box(Modifier.size(76.dp, 56.dp).graphicsLayer { shadow
     Box(Modifier.offset(14.dp, 6.dp).size(44.dp, 52.dp).graphicsLayer { rotationZ = -8f; shadowElevation = 6f; shape = RoundedCornerShape(3.dp) }
         .background(Color(0xFFF4EBD6)).padding(horizontal = 7.dp, vertical = 4.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text("МЕНЮ", fontSize = 6.5.sp, lineHeight = 7.sp, letterSpacing = .12.em, fontWeight = FontWeight.Bold, color = Color(0xFF5B4630))
+            Text(stringResource(R.string.intro_menu), fontSize = 6.5.sp, lineHeight = 7.sp, letterSpacing = .12.em, fontWeight = FontWeight.Bold, color = Color(0xFF5B4630))
             Spacer(Modifier.height(4.dp))
             repeat(5) { i -> Box(Modifier.padding(top = 3.dp).fillMaxWidth(if (i % 2 == 0) 1f else .75f).height(1.dp).background(Color(0xFFB08A57))) }
         }

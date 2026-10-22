@@ -166,9 +166,8 @@ fun SettingsPage(a: MainActivity) {
             }
         }
         Section(tr(R.string.set_actions_section))
-        val REG = Registry
-        val pol = REG.all.map { REG.policy(state.settings, it.id) }
-        val blockedN = REG.all.count { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(a, it).isNotEmpty() }
+        val pol = Registry.all.map { Registry.policy(state.settings, it.id) }
+        val blockedN = Registry.all.count { Registry.policy(state.settings, it.id) != Policy.OFF && it.special != null && Registry.missing(a, it).isNotEmpty() }
         Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
             warn = blockedN > 0, icon = Ic.shield) { a.go("actions") }
         Divider()
@@ -284,20 +283,19 @@ fun ActionsPage(a: MainActivity) {
     val app = App.instance
     val state by app.conversation.state.collectAsState()
     @Suppress("UNUSED_VARIABLE") val r = a.resumed.intValue // перечитать доступы после системных окон
-    val REG = Registry
     TopBar(tr(R.string.set_actions), tr(R.string.actions_subtitle), onBack = a::back)
     ScrollPage {
-        val blocked = REG.all.filter { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(a, it).isNotEmpty() }
+        val blocked = Registry.all.filter { Registry.policy(state.settings, it.id) != Policy.OFF && it.special != null && Registry.missing(a, it).isNotEmpty() }
         if (blocked.isNotEmpty()) {
             val t = blocked.first()
-            Banner(tr(R.string.actions_blocked, t.title, REG.specialTitle(t.special!!)),
+            Banner(tr(R.string.actions_blocked, t.title, Registry.specialTitle(t.special!!)),
                 actions = listOf(tr(R.string.actions_fix) to { Phone.openDndAccess(a); Unit }))
         }
-        REG.groups.forEach { g ->
+        Registry.groups.forEach { g ->
             Section(g)
-            REG.all.filter { it.group == g }.forEach { t ->
-                val p = REG.policy(state.settings, t.id)
-                val miss = REG.missing(a, t)
+            Registry.all.filter { it.group == g }.forEach { t ->
+                val p = Registry.policy(state.settings, t.id)
+                val miss = Registry.missing(a, t)
                 // подпись — одной строкой: что входит в действие; нет доступа — что сделать
                 val sub = when {
                     p == Policy.OFF || miss.isEmpty() -> t.sub
@@ -503,7 +501,6 @@ fun AboutPage(a: MainActivity) {
     val ver = a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""
     val up by Updates.state.collectAsState()
     LaunchedEffect(Unit) { Updates.checkNow(a) }
-    val U = Updates
     TopBar(tr(R.string.set_about), onBack = a::back)
     FormPage {
         Column(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -519,22 +516,22 @@ fun AboutPage(a: MainActivity) {
         when (val st = up) {
             is Updates.State.Available -> PageSection(tr(R.string.upd_available, st.r.version)) {
                 if (st.r.notes.isNotBlank()) Text(st.r.notes, fontSize = 14.sp, color = Ink.ink, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
-                Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_now)) { U.download(a) } }
+                Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_now)) { Updates.download(a) } }
             }
             is Updates.State.Downloading -> PageSection(tr(R.string.upd_downloading, st.r.version, st.pct)) {
                 Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
                     Progress(st.pct)
-                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton(tr(R.string.ui_cancel)) { U.cancel() } }
+                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton(tr(R.string.ui_cancel)) { Updates.cancel() } }
                 }
             }
             is Updates.State.ReadyToInstall -> PageSection(tr(R.string.upd_available, st.r.version), if (st.needsPermission) tr(R.string.upd_need_perm) else null) {
-                Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_install)) { U.install(a) } }
+                Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_install)) { Updates.install(a) } }
             }
             is Updates.State.DownloadFailed -> PageSection(tr(R.string.upd_available, st.r.version), tr(if (st.badFile) R.string.upd_bad_file else R.string.upd_net_fail)) {
-                Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_retry)) { U.download(a) } }
+                Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_retry)) { Updates.download(a) } }
             }
             else -> {}
         }
-        PageSection(null) { Item(tr(R.string.upd_check), tr(R.string.upd_check_sub), icon = Ic.dl) { U.checkNow(a) } }
+        PageSection(null) { Item(tr(R.string.upd_check), tr(R.string.upd_check_sub), icon = Ic.dl) { Updates.checkNow(a) } }
     }
 }

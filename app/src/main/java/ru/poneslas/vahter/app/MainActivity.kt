@@ -96,13 +96,13 @@ open class MainActivity : ComponentActivity() {
 
     private fun requestMic() {
         App.instance.conversation.updateSettings { it.copy(micAsked = true) }
-        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_MIC)
+        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_PERMS)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray, deviceId: Int) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
         resumed.intValue++   // ответ на системное окно (микрофон, уведомления) — перечитать состояние строк
-        if (requestCode == REQ_MIC && askMicThenSheet) {
+        if (requestCode == REQ_PERMS && askMicThenSheet) {
             // камеру просили из листа и разрешили — лист вернётся уже с камерой
             val cam = permissions.indexOf(Manifest.permission.CAMERA)
             if (cam >= 0 && grantResults.getOrNull(cam) == PackageManager.PERMISSION_GRANTED) Sheet.cameraAfterShow = true
@@ -122,7 +122,7 @@ open class MainActivity : ComponentActivity() {
         sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
-        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
+        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_PERMS) }
         route(i)
     }
 
@@ -225,6 +225,7 @@ open class MainActivity : ComponentActivity() {
         /** Страница мозга текущего режима: DeepSeek — ключ, Hermes — подключение. */
         fun brainPage(): String = if (App.instance.conversation.state.value.current.brain == Brains.hermes.id) "hermes" else "brain:deepseek"
         const val EXTRA_ASK_PERM = "ask_perm"
-        const val REQ_MIC = 11
+        /** Код запроса разрешений из приложения: микрофон и то, что просит лист (камера и др.). */
+        const val REQ_PERMS = 11
     }
 }
