@@ -38,10 +38,8 @@ object Ic {
     val plus = R.drawable.ic_plus
     val more = R.drawable.ic_more
     val power = R.drawable.ic_power
-    val qr = R.drawable.ic_qr
     val send = R.drawable.ic_send
     val shield = R.drawable.ic_shield
-    val shot = R.drawable.ic_shot
     val spark = R.drawable.ic_spark
     val srv = R.drawable.ic_srv
     val star = R.drawable.ic_star
@@ -57,7 +55,6 @@ object Ic {
     val heart = R.drawable.ic_heart
     val car = R.drawable.ic_car
     val music = R.drawable.ic_music
-    val code = R.drawable.ic_code
     val alarm = R.drawable.ic_alarm
     val timer = R.drawable.ic_timer
     val cal = R.drawable.ic_cal

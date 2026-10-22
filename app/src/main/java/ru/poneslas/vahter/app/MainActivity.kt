@@ -111,18 +111,7 @@ open class MainActivity : ComponentActivity() {
     override fun onResume() { App.instance.conversation.freshen(); ru.poneslas.vahter.update.Updates.onAppResume(this); super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
-    /** Пришли из листа: лист закрываем, когда приложение нарисовало первый кадр, — подмена незаметна (Архитектура 3.1). */
-    private fun hideSheetAfterFirstFrame() {
-        val v = window.decorView
-        val l = object : android.view.ViewTreeObserver.OnDrawListener {
-            override fun onDraw() { v.post { v.viewTreeObserver.removeOnDrawListener(this); Sheet.close() } }
-        }
-        v.viewTreeObserver.addOnDrawListener(l)
-    }
-
     protected open fun readIntent(i: Intent) {
-        fromSheet = i.getBooleanExtra(EXTRA_FROM_SHEET, false)
-        if (fromSheet) hideSheetAfterFirstFrame()
         sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
@@ -221,7 +210,6 @@ open class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        const val EXTRA_FROM_SHEET = "from_sheet"
         const val EXTRA_SETTINGS = "settings"
         const val EXTRA_PAGE = "page"
         const val EXTRA_EDIT_MODE = "editMode"

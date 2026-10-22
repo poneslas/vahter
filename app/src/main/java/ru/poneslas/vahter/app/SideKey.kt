@@ -42,13 +42,6 @@ object SideKey {
         }
     }
 
-    fun describe(ctx: Context) = when (read(ctx)) {
-        State.ASSISTANT -> tr(R.string.sidekey_hold_assistant)
-        State.DOUBLE -> tr(R.string.sidekey_double)
-        State.OTHER -> tr(R.string.sidekey_other)
-        State.UNKNOWN -> tr(R.string.sidekey_unknown)
-    }
-
     fun open(ctx: Context) {
         val pm = ctx.packageManager
         val re = Regex("side.?key|function.?key|side.?button|power.?key", RegexOption.IGNORE_CASE)

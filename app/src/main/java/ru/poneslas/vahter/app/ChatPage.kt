@@ -84,7 +84,7 @@ fun ColumnScope.Chat(a: MainActivity) {
         onAddMode = { a.go("mode:" + app.conversation.addMode()) },
         onLive = { live = it },
         onNeedMic = a::askMic,
-        onGallery = { PickerActivity.launchFromApp(a) },
+        onGallery = { PickerActivity.launch(a) },
         onFile = if (state.current.brain == ru.poneslas.vahter.core.Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(a) }) else null,
     )
     Spacer(Modifier.navigationBarsPadding())

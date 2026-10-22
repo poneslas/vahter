@@ -5,14 +5,13 @@ import ru.poneslas.vahter.tr
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 import ru.poneslas.vahter.App
-import ru.poneslas.vahter.assistant.SheetActivity
-import ru.poneslas.vahter.assistant.Sheet
 
 /**
  * Скрепка → «Галерея»: прозрачный батут открывает системный Photo Picker (до 10 фото, разрешение на все фото не нужно).
@@ -25,8 +24,6 @@ class PickerActivity : ComponentActivity() {
             val files = uris.mapNotNull { runCatching { Attachments.fromUri(applicationContext, it) }.getOrNull() }
             finish()
             if (files.isNotEmpty()) app.conversation.attach(files.map { it.path }, if (files.size > 1) tr(R.string.sheet_via_album, files.size) else tr(R.string.sheet_via_photo))
-            delay(150)
-            if (intent.getBooleanExtra("fromSheet", true)) Sheet.show(Bundle().apply { putString("src", "picker") })
         }
     }
 
@@ -35,8 +32,8 @@ class PickerActivity : ComponentActivity() {
         val app = App.instance
         app.scope.launch {
             val got = uri?.let { u -> runCatching {
-                val name = contentResolver.query(u, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "file"
-                val out = java.io.File(java.io.File(cacheDir, "upload").apply { mkdirs() }, System.currentTimeMillis().toString())
+                val name = contentResolver.query(u, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "file"
+                val out = File(File(cacheDir, "upload").apply { mkdirs() }, System.currentTimeMillis().toString())
                 contentResolver.openInputStream(u)!!.use { i -> out.outputStream().use { o -> i.copyTo(o) } }
                 out to name
             }.getOrNull() }
@@ -54,15 +51,12 @@ class PickerActivity : ComponentActivity() {
     }
 
     companion object {
-        /** Выбор фото поверх листа: батут — в задаче листа, лист под ним остаётся и сам получает вложения. */
-        fun launchFromSheet(sheet: SheetActivity) =
-            sheet.startActivity(Intent(sheet, PickerActivity::class.java).putExtra("fromSheet", false))
-
-        fun launchFromApp(ctx: Context) =
-            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("fromSheet", false))
+        /** Выбор фото поверх листа или приложения: батут — в их задаче, экран под ним остаётся и сам получает вложения. */
+        fun launch(ctx: Context) =
+            ctx.startActivity(Intent(ctx, PickerActivity::class.java))
 
         /** Документ для Hermes — тот же батут поверх листа или приложения. */
         fun launchFile(ctx: Context) =
-            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("fromSheet", false).putExtra("file", true))
+            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("file", true))
     }
 }

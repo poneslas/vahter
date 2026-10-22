@@ -26,7 +26,6 @@ object Ink {
     val localT = Color(0xFFFBEFD2)
     val server = Color(0xFF2F4BE8)
     val serverD = Color(0xFF2238B8)
-    val serverT = Color(0xFFE1E6FD)
     val danger = Color(0xFFC2412D)
     val dangerT = Color(0xFFF8E1DC)
     val ok = Color(0xFF2E7D4F)

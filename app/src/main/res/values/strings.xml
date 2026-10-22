@@ -306,10 +306,6 @@
     <string name="wiz_voice_mic_sub">Нужен для голосового ввода</string>
     <string name="ui_open">Открыть</string>
     <string name="wiz_notif_sub">Сообщить об ответе, если лист закрыт раньше</string>
-    <string name="sidekey_hold_assistant">Нажатие и удержание — цифровой помощник</string>
-    <string name="sidekey_double">Помощник — на двойном нажатии. Для удержания: Нажатие и удержание → Цифровой помощник</string>
-    <string name="sidekey_other">Удержание открывает Bixby или меню выключения</string>
-    <string name="sidekey_unknown">Проверка кнопки зависит от телефона</string>
     <string name="phone_untitled">(без названия)</string>
     <string name="phone_stream_media">музыки и видео</string>
     <string name="phone_stream_call">звонка</string>

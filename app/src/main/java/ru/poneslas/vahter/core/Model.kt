@@ -4,7 +4,6 @@ import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import kotlinx.serialization.Serializable
 import ru.poneslas.vahter.actions.Registry
-import ru.poneslas.vahter.ui.Note
 
 /**
  * Модель данных — один к одному с прототипом (docs/design/prototype/model.js) и
