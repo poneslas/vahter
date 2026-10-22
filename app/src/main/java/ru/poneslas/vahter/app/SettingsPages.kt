@@ -159,7 +159,7 @@ fun SettingsPage(a: MainActivity) {
         Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
             warn = blockedN > 0, icon = Ic.shield) { a.go("actions") }
         Divider()
-        Item(tr(R.string.set_about), tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""), icon = Ic.info)
+        Item(tr(R.string.set_about), tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""), icon = Ic.info) { a.go("about") }
     }
 }
 
@@ -477,6 +477,20 @@ fun CallPage(a: MainActivity) {
                     } else Box(Modifier.padding(bottom = 8.dp))
                 }
             }
+        }
+    }
+}
+
+/** «О программе» (ui.js, about): значок, версия. Проверка обновлений — отдельным шагом (как в Docsy, Бэклог). */
+@Composable
+fun AboutPage(a: MainActivity) {
+    val ver = a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""
+    TopBar(tr(R.string.set_about), onBack = a::back)
+    FormPage {
+        Column(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            ru.poneslas.vahter.ui.OursIcon(64.dp, 20.dp)
+            Text(ver, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = Ink.ink, modifier = Modifier.padding(top = 10.dp))
+            Text(tr(R.string.about_stable), fontSize = 13.sp, color = Ink.soft)
         }
     }
 }

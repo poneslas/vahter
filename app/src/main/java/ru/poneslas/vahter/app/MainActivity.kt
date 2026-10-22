@@ -210,6 +210,7 @@ open class MainActivity : ComponentActivity() {
                         page == "hermes" -> HermesPage(this@MainActivity)
                         page == "voice" -> VoicePage(onBack = ::back)
                         page == "call" -> CallPage(this@MainActivity)
+                        page == "about" -> AboutPage(this@MainActivity)
                         page.startsWith("mode:") -> ModePage(this@MainActivity, page.removePrefix("mode:"))
                     } }
                 }
