@@ -1,5 +1,7 @@
 # Вахтёр — ни секунды лишней
 
+![Вахтёр: лист поверх любого экрана — «Вам чего?», будильник, погода и таймер одним разговором, совет по фото меню](docs/images/hero.png)
+
 **Зажал кнопку — сказал — готово.** Голосовой ассистент для Android вместо системного помощника: без запуска приложений, без промптов, без рекламы. Мозг выбираете вы.
 
 > **Vahter** is an Android assistant built around one idea: no wasted seconds. Hold the side button, speak, done. Speech is recognized on the phone (GigaAM), simple commands run locally without network, everything else goes to the brain you choose — DeepSeek via API or your own [Hermes Agent](https://github.com/NousResearch/hermes-agent) server. No trackers. The interface is Russian for now. MIT license.
