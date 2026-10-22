@@ -21,7 +21,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import ru.poneslas.vahter.App
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.core.BrainDesc
 import ru.poneslas.vahter.core.HermesRun
@@ -58,6 +57,8 @@ class HermesBrain(
     /** Сессия режима в Hermes: сохранённый id или null — новая. После 30 минут тишины — новая (Архитектура 9.7). */
     private val session: (modeId: String) -> String?,
     private val saveSession: (modeId: String, id: String) -> Unit,
+    /** Куда класть файлы от мозга ([fetch]); чистит их [ru.poneslas.vahter.media.Attachments.sweep]. */
+    private val files: File,
 ) : Brain {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -329,8 +330,7 @@ class HermesBrain(
         val name = path.substringAfterLast('/')
         val image = name.substringAfterLast('.', "").lowercase() in setOf("png", "jpg", "jpeg", "gif", "webp")
         if (!path.contains("/vahter-out/")) return BrainEvent.Attachment(name, null, image, tr(R.string.hermes_file_server_only, path))
-        val dir = File(App.instance.cacheDir, "hermes").apply { mkdirs() }
-        val out = File(dir, "${System.currentTimeMillis()}_$name")
+        val out = File(files.apply { mkdirs() }, "${System.currentTimeMillis()}_$name")
         return runCatching {
             val c = open(l, "/vahter/files/" + Uri.encode(name), "GET", 120_000)
             try {

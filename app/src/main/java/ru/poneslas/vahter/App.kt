@@ -22,6 +22,7 @@ import ru.poneslas.vahter.assistant.SheetEvents
 import ru.poneslas.vahter.voice.Voice
 import android.content.pm.ApplicationInfo
 import ru.poneslas.vahter.assistant.Sheet
+import ru.poneslas.vahter.media.Attachments
 
 /**
  * Строка интерфейса из ресурсов (мультиязычность, Бэклог №15). Работает и в Compose, и вне его —
@@ -55,7 +56,7 @@ class App : Application() {
 
     /** Hermes: адрес — в настройках, ключ телефона — в Keystore; сессии режимов — в разговоре (Архитектура 9.0). */
     val hermesBrain: HermesBrain by lazy {
-        HermesBrain(Brains.hermes, ::hermesLink, { id -> conversation.hermesSession(id) }, { id, sid -> conversation.setHermesSession(id, sid) })
+        HermesBrain(Brains.hermes, ::hermesLink, { id -> conversation.hermesSession(id) }, { id, sid -> conversation.setHermesSession(id, sid) }, Attachments.brainDir(this))
     }
 
     fun hermesLink(): HermesLink? {

@@ -22,6 +22,10 @@ import kotlin.math.sin
  */
 object Attachments {
     fun dir(ctx: Context) = File(ctx.filesDir, "attachments").apply { mkdirs() }
+    /** Файлы от мозга (Hermes, FeedItem.Files) — в кэше приложения. */
+    fun brainDir(ctx: Context) = File(ctx.cacheDir, "hermes")
+    /** Копия документа для Hermes на время отправки (PickerActivity → Conversation.sendFile, после отправки стирается). */
+    fun uploadDir(ctx: Context) = File(ctx.cacheDir, "upload")
 
     /** Пометка в долях кадра 0..1. */
     sealed interface Mark {

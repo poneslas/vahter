@@ -33,7 +33,7 @@ class PickerActivity : ComponentActivity() {
         app.scope.launch {
             val got = uri?.let { u -> runCatching {
                 val name = contentResolver.query(u, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "file"
-                val out = File(File(cacheDir, "upload").apply { mkdirs() }, System.currentTimeMillis().toString())
+                val out = File(Attachments.uploadDir(applicationContext).apply { mkdirs() }, System.currentTimeMillis().toString())
                 contentResolver.openInputStream(u)!!.use { i -> out.outputStream().use { o -> i.copyTo(o) } }
                 out to name
             }.getOrNull() }
