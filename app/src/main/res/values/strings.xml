@@ -181,7 +181,21 @@
     <string name="set_notif_system">Выключены в настройках телефона</string>
     <string name="notif_off_h">Уведомления запрещены</string>
     <string name="notif_off_p">Android больше не спрашивает. Чтобы Вахтёр сообщал об ответе, пока лист закрыт, включите уведомления в настройках.</string>
-    <string name="about_stable">стабильная версия</string>
+    <string name="upd_checking">Проверяю…</string>
+    <string name="upd_latest">Это последняя версия</string>
+    <string name="upd_failed">Не удалось проверить: нет связи</string>
+    <string name="upd_available">Есть версия %1$s</string>
+    <string name="upd_now">Обновить</string>
+    <string name="upd_downloading">Скачиваю %1$s · %2$d %%</string>
+    <string name="upd_install">Установить</string>
+    <string name="upd_need_perm">Разрешите установку из Вахтёра — потом продолжу сам</string>
+    <string name="upd_bad_file">Файл скачался с ошибкой — скачаю заново</string>
+    <string name="upd_net_fail">Не скачалось — нет связи</string>
+    <string name="upd_retry">Повторить</string>
+    <string name="upd_check">Проверить обновления</string>
+    <string name="upd_check_sub">Сами — раз в сутки, когда открываете приложение</string>
+    <string name="set_about_new">Доступна версия %1$s</string>
+стабильная версия</string>
     <string name="set_about">О программе</string>
     <string name="set_about_version">Версия %1$s</string>
     <string name="set_return_30m">На 30 минут — потом снова Ассистент</string>

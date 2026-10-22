@@ -159,7 +159,10 @@ fun SettingsPage(a: MainActivity) {
         Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
             warn = blockedN > 0, icon = Ic.shield) { a.go("actions") }
         Divider()
-        Item(tr(R.string.set_about), tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""), icon = Ic.info) { a.go("about") }
+        val upd by ru.poneslas.vahter.update.Updates.state.collectAsState()
+        val newVer = (upd as? ru.poneslas.vahter.update.Updates.State.Available)?.r?.version
+        Item(tr(R.string.set_about), if (newVer != null) tr(R.string.set_about_new, newVer) else tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""),
+            icon = Ic.info, end = if (newVer != null) ({ androidx.compose.foundation.layout.Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Ink.local)) }) else null) { a.go("about") }
     }
 }
 
@@ -481,16 +484,44 @@ fun CallPage(a: MainActivity) {
     }
 }
 
-/** «О программе» (ui.js, about): значок, версия. Проверка обновлений — отдельным шагом (как в Docsy, Бэклог). */
+/** «О программе» (ui.js, about): значок, версия, обновление — как в Docsy (update/Updates): проверка при входе, «Обновить», процент, установка. */
 @Composable
 fun AboutPage(a: MainActivity) {
     val ver = a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""
+    val up by ru.poneslas.vahter.update.Updates.state.collectAsState()
+    LaunchedEffect(Unit) { ru.poneslas.vahter.update.Updates.checkNow(a) }
+    val U = ru.poneslas.vahter.update.Updates
     TopBar(tr(R.string.set_about), onBack = a::back)
     FormPage {
         Column(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             ru.poneslas.vahter.ui.OursIcon(64.dp, 20.dp)
             Text(ver, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = Ink.ink, modifier = Modifier.padding(top = 10.dp))
-            Text(tr(R.string.about_stable), fontSize = 13.sp, color = Ink.soft)
+            Text(when (up) {
+                is ru.poneslas.vahter.update.Updates.State.Checking -> tr(R.string.upd_checking)
+                is ru.poneslas.vahter.update.Updates.State.UpToDate -> tr(R.string.upd_latest)
+                is ru.poneslas.vahter.update.Updates.State.CheckFailed -> tr(R.string.upd_failed)
+                else -> tr(R.string.about_stable)
+            }, fontSize = 13.sp, color = Ink.soft)
         }
+        when (val st = up) {
+            is ru.poneslas.vahter.update.Updates.State.Available -> PageSection(tr(R.string.upd_available, st.r.version)) {
+                if (st.r.notes.isNotBlank()) Text(st.r.notes, fontSize = 14.sp, color = Ink.ink, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
+                Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_now)) { U.download(a) } }
+            }
+            is ru.poneslas.vahter.update.Updates.State.Downloading -> PageSection(tr(R.string.upd_downloading, st.r.version, st.pct)) {
+                Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+                    ru.poneslas.vahter.ui.Progress(st.pct)
+                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_cancel)) { U.cancel() } }
+                }
+            }
+            is ru.poneslas.vahter.update.Updates.State.ReadyToInstall -> PageSection(tr(R.string.upd_available, st.r.version), if (st.needsPermission) tr(R.string.upd_need_perm) else null) {
+                Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_install)) { U.install(a) } }
+            }
+            is ru.poneslas.vahter.update.Updates.State.DownloadFailed -> PageSection(tr(R.string.upd_available, st.r.version), tr(if (st.badFile) R.string.upd_bad_file else R.string.upd_net_fail)) {
+                Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_retry)) { U.download(a) } }
+            }
+            else -> {}
+        }
+        PageSection(null) { Item(tr(R.string.upd_check), tr(R.string.upd_check_sub), icon = Ic.dl) { U.checkNow(a) } }
     }
 }

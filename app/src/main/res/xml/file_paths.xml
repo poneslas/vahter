@@ -2,4 +2,6 @@
 <!-- Файлы от Hermes: cacheDir/hermes (Архитектура 13) -->
 <paths>
     <cache-path name="hermes" path="hermes/" />
+    <!-- скачанное обновление (update/Updates) -->
+    <cache-path name="updates" path="updates/" />
 </paths>

@@ -108,7 +108,7 @@ open class MainActivity : ComponentActivity() {
 
     /** Приложение на экране (для уведомлений и дочитывания хода); у листа — только развёрнутого. */
     protected open val appShown get() = true
-    override fun onResume() { App.instance.conversation.freshen(); super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
+    override fun onResume() { App.instance.conversation.freshen(); ru.poneslas.vahter.update.Updates.onAppResume(this); super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
     /** Пришли из листа: лист закрываем, когда приложение нарисовало первый кадр, — подмена незаметна (Архитектура 3.1). */
