@@ -172,10 +172,9 @@ function settings(){
     ${S.modes.map((m,i)=>`<div class="lirow mrow1 ${S.reorder?'reo':''}" data-ri="${i}" data-hold="${i}">${li(mIcon(m.icon),esc(m.title),m.brain==='hermes'&&S.w.server!=='paired'?'Мозг не подключён':modeSummary(m),S.reorder?'':'editmode:'+m.id,m.brain==='hermes'&&S.w.server!=='paired')}${S.reorder?`<span class="grip" data-drag="${i}" aria-label="Перетащить «${esc(m.title)}»">${I.grip}</span>`:m.id==='main'?'<span class="swgap"></span>':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
     ${S.reorder?'':`${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}`}
     ${S.reorderedOnce||S.reorder?'':'<p class="mnote holdhint">Удерживайте режим, чтобы поменять порядок</p>'}
-    <div class="lh">Помощник</div>
-    ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',w.role!=='ours')}
-    ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
-    <div class="lirow">${li(I.mic,'Слушать сразу при вызове',S.settings.listenOnCall===false?'Запись по нажатию':'Запись начинается сама')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
+    <div class="lh">Как позвать Вахтёра</div>
+    ${callRow()}
+    <div class="lirow">${li(I.mic,'Слушать сразу',S.settings.listenOnCall===false?'Запись по нажатию':'Запись начинается сама')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
     ${li(I.hist,'Запоминать режим', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[2],'returnpick')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`GigaAM · на телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','voice',w.model==='none'||w.model==='broken')}
@@ -269,6 +268,28 @@ function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
 function modesPage(){
   const rows=S.modes.map((m,i)=>`<div class="lirow mrow" data-ri="${i}"><span class="grip" data-drag="${i}" aria-label="Перетащить «${esc(m.title)}»">${I.grip}</span>${li(mIcon(m.icon),esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'<span class="swgap"></span>':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('');
   return page('Режимы','','settings', sect('', card(rows)+card(li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')), 'Порядок — как во вкладках под полем. Перетащите за ≡.')) }
+/**
+ * «Как позвать Вахтёра» — одна строка-статус вместо «Цифровой помощник» + «Боковая кнопка»: это встраивание в систему, его настраивают
+ * один раз (мастер), а показывать стоит, только когда что-то не так. Тап — страница с подробностями (callPage).
+ */
+function callStatus(){ const w=S.w, role=w.role==='ours', known=w.profile!=='unknown';
+  const now={bixby:'Bixby',power:'меню выключения',double:'двойное нажатие'}[w.side];
+  if (!role) return {ic:I.spark, t:'Цифровой помощник', s:'Сейчас Gemini — пост занят', warn:true};
+  if (known) return S.sideOk ? {ic:I.btn, t:'Боковая кнопка', s:'Зажали — Вахтёр уже тут'} : {ic:I.btn, t:'Боковая кнопка', s:`Сейчас ${now} — пост занят`, warn:true};
+  if (S.sideProbe==='yes') return {ic:I.btn, t:'Кнопка помощника', s:'Зажали — Вахтёр уже тут'};
+  if (S.sideProbe==='no') return {ic:I.btn, t:'Жест или «Домой»', s:'Жест из угла или долгое «Домой»'};
+  return {ic:I.btn, t:'Кнопка помощника', s:'Проверим? Зажмите кнопку'} }
+function callRow(){ const c=callStatus(); return li(c.ic,c.t,c.s,'callpage',c.warn) }
+/** Страница «Как позвать Вахтёра»: всё про встраивание в систему — подробно, ей можно: заходят редко. */
+function callPage(){ const w=S.w, role=w.role==='ours', known=w.profile!=='unknown';
+  const now={bixby:'Сейчас Bixby',power:'Сейчас меню выключения',double:'Сейчас — двойное нажатие',assistant:'Зажатие — Вахтёр'}[w.side];
+  const way = known ? li(I.btn,'Боковая кнопка',now,'sysside',!S.sideOk)
+    : li(I.btn,'Вызов','Кнопка или жест — зависит от телефона');
+  const probe = known ? '' : sect('Проверить', card(`<div class="sprobe"><span>${I.btn}</span><p>${S.sideProbe==='yes'?'Открылся — Вахтёр на посту.':S.sideProbe==='no'?'Не открылся — тогда жест из угла, долгое «Домой» или плитка в шторке.':'Зажмите кнопку помощника. Открылся лист?'}</p>${S.sideProbe?'':'<div class="ba"><button class="tbtn" data-act="sideno">Нет</button><button class="tbtn" data-act="sideyes">Да</button></div>'}</div>`));
+  return page('Как позвать Вахтёра','','settings',
+    sect('Помощник телефона', card(li(I.spark,'Цифровой помощник', role?'Вахтёр':'Сейчас Gemini','sysrole',!role)+way+li(I.list,'Плитка в шторке',S.tileAdded?'Добавлена':'Вахтёр — из быстрых настроек',S.tileAdded?'':'addtile')),
+      known?'Кнопку Samsung настраивают в «Дополнительных функциях»: зажатие — «Цифровой помощник».':'Как вызывается помощник, зависит от телефона: кнопка, жест из угла или долгое «Домой».')
+    + probe) }
 function about(){ const u=S.upd;
   const st = u.state==='available' ? `<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`
     : u.state==='dl' ? `<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>` : '';
@@ -418,7 +439,7 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='voice'?voicePage():S.page==='modes'?modesPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='voice'?voicePage():S.page==='modes'?modesPage():S.page==='call'?callPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick(); else if (S.screen==='sysperm') base=sysPerm();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });

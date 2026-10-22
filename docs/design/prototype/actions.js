@@ -72,6 +72,7 @@ document.addEventListener('click', async e=>{
     case 'onbdone': return onbDone();
     case 'btnsetup': return btnSetup();
     case 'btnlater': return btnLater();
+    case 'callpage': S.page='call'; return render();
     case 'sysrole': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysrole'; return render();
     case 'sysside': S.ret={screen:S.screen,page:S.page}; S.ov=null; S.screen='sysside'; return render();
     case 'sysmic': S.ret={screen:S.screen,page:S.page,ov:S.ov}; S.ov=null; S.screen='sysmic'; trace('Android больше не покажет окно разрешения после двух отказов — ведём прямо в системный экран разрешений приложения (ACTION_APPLICATION_DETAILS_SETTINGS).','p'); return render();
