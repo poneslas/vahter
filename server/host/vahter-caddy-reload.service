@@ -3,4 +3,4 @@ Description=Vahter: reload Caddy (phone keys changed)
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/docker exec edge-web caddy reload --config /etc/caddy/Caddyfile
+ExecStart=/usr/bin/docker exec @WEB_CONTAINER@ caddy reload --config /etc/caddy/Caddyfile

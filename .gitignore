@@ -19,3 +19,6 @@ reference/
 # sherpa-onnx AAR качается сборкой (sha256 закреплён)
 app/libs/
 out/
+
+# настоящие пути и имена сервера — только локально
+server/host/site.env

@@ -1,5 +1,5 @@
-# Caddy перед Hermes: сайт для Вахтёра (Архитектура 9.0, 9.8). Заменяет /opt/edge/edge-web/caddy/Caddyfile
-# (прежний блок proxy.example.org оставлен как был). Порт 443 держит SNI-роутер (nginx stream), он отдаёт сюда
+# Caddy перед Hermes: сайт для Вахтёра (Архитектура 9.0, 9.8). Кладётся вместо $WEB/caddy/Caddyfile (site.env)
+# (прежний сайт сервера — {$PROXY_HOST}, оставлен как был). Порт 443 держит SNI-роутер (nginx stream), он отдаёт сюда
 # соединения с именем {$VAHTER_HOST}; сертификат Caddy получает сам по TLS-ALPN через тот же порт (http-проверка выключена:
 # 80 наружу закрыт). Ключ API Hermes телефон не знает: Caddy проверяет ключ телефона и подставляет свой.
 # Ключи телефонов пишет навык vahter в $HERMES_HOME/vahter/devices.caddy (примонтировано в /etc/vahter).
@@ -7,9 +7,9 @@
 	https_port 9443
 }
 
-https://proxy.example.org:9443 {
+https://{$PROXY_HOST}:9443 {
 	bind 127.0.0.1
-	tls /etc/letsencrypt/live/proxy.example.org/fullchain.pem /etc/letsencrypt/live/proxy.example.org/privkey.pem
+	tls /etc/letsencrypt/live/{$PROXY_HOST}/fullchain.pem /etc/letsencrypt/live/{$PROXY_HOST}/privkey.pem
 	respond 403
 }
 
