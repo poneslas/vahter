@@ -22,7 +22,9 @@ const mb = b => (b/1048576).toFixed(0);
  * @property {'ru'}    asr         язык распознавания (сейчас только русский — GigaAM)
  * @property {'off'}   tts         озвучка ответа (v1.1)
  */
-const MODE_ICONS=['spark','transl','lens','food','cart','flight','book','star','edit'];
+// Два ряда по шесть на типичном экране: 11 значков + последняя ячейка — свой эмодзи (ui.js, iconGrid).
+const MODE_ICONS=['spark','transl','lens','food','cart','flight','book','home','work','heart','car'];
+const EMOJI_QUICK=['🍕','💊','🐶','🌱','🎓','⚽','🧾','✈️'];
 const mode = o => ({hint:'', placeholder:'Вопрос или задача', prompt:'', accepts:{voice:true,photo:false,file:false}, primary:'voice', brain:'deepseek', tools:false, builtin:false, enabled:true, asr:'ru', tts:'off', ...o});
 const BUILTIN_MODES=[
   mode({id:'main', title:'Ассистент', icon:'spark', hint:'Спросите что угодно или попросите телефон: таймер, будильник, календарь.', placeholder:'Вам чего?', accepts:{voice:true,photo:true,file:true}, tools:true, builtin:true}),

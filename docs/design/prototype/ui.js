@@ -112,7 +112,8 @@ function liveHtml(){
   if (S.ov&&S.ov.live) return `<div class="live ${S.ov.liveQ?'q':''}">${S.ov.live}</div>`;
   return '';
 }
-function modeTabs(){ const am=activeModes(); return `<div class="mtabs" data-swipe role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}<button class="madd" data-act="addmode" aria-label="Новый режим">+</button></div>` }
+/** Вкладки как в камере: листаются пальцем, отпустили — та, что по центру, выбрана сама; выбранная всегда по центру. «+» — отдельно справа. */
+function modeTabs(){ const am=activeModes(); return `<div class="mtabw"><div class="mtabs snap" role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}</div><button class="madd" data-act="addmode" aria-label="Новый режим">+</button></div>` }
 /* ⋮ в шапке разговора — меню, как привычно в Android: пункты-действия без пояснений. */
 function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
   return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }
@@ -164,17 +165,17 @@ function settings(){
     ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
     <div class="lirow">${li(I.mic,'Слушать сразу при вызове',S.settings.listenOnCall===false?'Запись по нажатию':'Запись начинается сама')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
     ${li(I.hist,'Запоминать режим', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[2],'returnpick')}
-    <div class="lh">Режимы</div>
-    ${S.modes.map(m=>`<div class="lirow">${li(I[m.icon],esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
-    ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
+    <div class="lhrow"><div class="lh">Режимы</div><button class="tbtn" data-act="reorder">${S.reorder?'Готово':'Порядок'}</button></div>
+    ${S.reorder ? `<div class="reord">${S.modes.map((m,i)=>`<div class="rrow" data-ri="${i}"><span class="lic">${mIcon(m.icon)}</span><b>${esc(m.title)}</b><span class="grip" data-drag="${i}" aria-label="Перетащить">${I.grip}</span></div>`).join('')}</div><p class="mnote" style="padding:4px 22px 0">Порядок — как во вкладках под полем. Перетащите за ⠿.</p>` : S.modes.map(m=>`<div class="lirow">${li(mIcon(m.icon),esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
+    ${S.reorder?'':li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
-    ${li(I.wave,'Распознавание речи', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','dl',w.model==='none'||w.model==='broken')}
-    ${li(I.mic,'Микрофон', w.mic==='ok'?'Только пока открыт лист':w.mic==='denied'?'Запрещён':'Спросит при первой записи','askmic',w.mic==='denied')}
+    ${li(I.wave,'Распознавание речи', w.model==='ready'?`GigaAM · на телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','voice',w.model==='none'||w.model==='broken')}
+    ${w.mic==='ok'?'':li(I.mic,'Микрофон', w.mic==='denied'?'Запрещён':'Спросит при первой записи','askmic',w.mic==='denied')}
     <div class="lh">Мозги</div>
-    ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title, b.kind==='api'?(S.w.key==='ok'?`${b.model} · ключ есть`:S.w.key==='bad'?'Ключ не принимается':'Нет ключа'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Свой сервер: память, поиск, Telegram'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
+    ${S.brains.map(b=>li(b.kind==='api'?I.spark:I.srv, b.title, b.kind==='api'?(S.w.key==='ok'?`${b.model} · подключён`:S.w.key==='bad'?'Ключ не принимается':'Не подключён'):(S.w.server==='paired'?'hermes.example.ru · подключён':'Не подключён'), b.kind==='api'?'brainpage:'+b.id:'connect', b.kind==='api'&&S.w.key!=='ok')).join('')}
     ${li(I.plus,'Добавить мозг','Адрес, модель и ключ','addbrain')}
     <div class="lh">Уведомления</div>
-    ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
+    ${li(I.bell,'Уведомления', w.notif!=='ok'?'Выключены · сообщу об ответе, если разрешите':S.settings.notifyAnswers===false?'Не сообщаю об ответах':'Сообщу, когда придёт ответ, а лист закрыт',w.notif==='ok'?'notiftoggle':'asknotif',false,`<span class="sw ${w.notif==='ok'&&S.settings.notifyAnswers!==false?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
     ${li(I.shield,'Действия на телефоне',TOOLS.some(toolBlocked)?`Нет доступа — ${TOOLS.filter(toolBlocked).length}`:`Разрешено ${Object.values(S.policy).filter(p=>p==='auto').length}, спрашивать ${Object.values(S.policy).filter(p=>p==='ask').length}, не разрешено ${Object.values(S.policy).filter(p=>p==='off').length}`,'actions',TOOLS.some(toolBlocked))}
     <div class="divider"></div>
@@ -185,11 +186,11 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
   const tog=(k,t,ic,lock)=>(lock||m.builtin)?`<span class="mchip" aria-pressed="true" style="cursor:default">${ic}${t}</span>`:`<button class="mchip" data-maccept="${k}" aria-pressed="${A[k]}">${ic}${t}</button>`;
   const field=(k,label,ph)=>`<label class="fl"><span>${label}</span><input class="fin" data-mfield="${k}" value="${esc(m[k])}" placeholder="${ph}"></label>`;
   const sw=(on,k,t,s,ic)=>`<div class="lirow">${li(ic,t,s)}<button class="swbtn" data-mbool="${k}" role="switch" aria-checked="${on}"><span class="sw ${on?'':'off'}"></span></button></div>`;
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="modeback" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${I[m.icon]}${esc(m.title)}</b><small>${m.builtin?'встроенный режим':'свой режим · id '+m.id+', не меняется'}</small></div></div>
+  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="modeback" aria-label="Назад">${I.back}</button><div class="t"><b style="display:flex;align-items:center;gap:8px">${mIcon(m.icon)}${esc(m.title)}</b><small>${m.builtin?'Встроенный режим':'Свой режим'}</small></div></div>
   <div class="scroll"><div class="mform">
     ${m.builtin&&!main?'<div class="note">Встроенный режим: промпт можно изменить, сам режим — включить или выключить в «Настройках». Чтобы настроить всё по-своему — создайте свой режим «+».</div>':''}
     ${main||m.builtin?'':`<div class="mrow">${field('title','Название','Как назвать вкладку')}</div>
-    <div><div class="lh">Значок</div><div class="icons">${MODE_ICONS.map(k=>`<button class="icb" data-micon="${k}" aria-pressed="${m.icon===k}" aria-label="${k}">${I[k]}</button>`).join('')}</div></div>`}
+    <div><div class="lh">Значок</div>${iconGrid(m)}</div>`}
     <div><div class="lh">${main?'Свои правила':'Что делать'}</div>${main?'<p class="mnote" style="margin:0 0 6px">Добавляются к основным инструкциям: действия телефона работают как прежде.</p>':''}${`<textarea class="fieldarea ${S.rec&&S.rec.into==='prompt'?'dictating':''}" data-prompt="${m.id}" rows="1" placeholder="${main?'Например: отвечай коротко, на «ты»; я живу в Казани':'Например: переводи всё на китайский и добавляй пиньинь'}" ${S.rec&&S.rec.into==='prompt'?'readonly':''}>${esc(S.rec&&S.rec.into==='prompt'&&recText()?(m.prompt.trim()+' '+recText()).trim():m.prompt)}</textarea>
       <div class="dict">${S.rec&&S.rec.into==='prompt'
         ? (S.rec.mode==='locked'
@@ -204,6 +205,10 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>vahter:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
     ${m.builtin?'':`<button class="danger" data-act="delmode">${I.del}Удалить режим</button>`}
   </div></div></div>` }
+/** Значки режима — два ряда по 6; последняя ячейка — свой эмодзи: пунктир и «+», выбранный эмодзи встаёт в неё. */
+function iconGrid(m){ const emo=m.icon&&m.icon.startsWith('emoji:');
+  return `<div class="icons grid6">${MODE_ICONS.map(k=>`<button class="icb" data-micon="${k}" aria-pressed="${m.icon===k}" aria-label="${k}">${I[k]}</button>`).join('')}<button class="icb emocell ${emo?'':'empty'}" data-act="emojipick" aria-pressed="${emo}" aria-label="Свой эмодзи">${emo?`<span class="emo">${m.icon.slice(6)}</span>`:'<span class="emo">☺</span><i>+</i>'}</button></div>
+  ${S.emojiPick?`<div class="emopop"><input class="field" id="emoin" placeholder="Эмодзи с клавиатуры" autocomplete="off"><div class="emoq">${EMOJI_QUICK.map(e=>`<button data-act="emo:${e}">${e}</button>`).join('')}</div></div>`:''}` }
 /** Ключ DeepSeek. Проверки (формат, связь, ключ, модель, фото) идут внутри — на экране одна строка: «Подключаю…», итог или что не так. */
 function keyBody(onb){ const K=S.keyCheck;
   const res = !K ? '' : K.stage==='run' ? '<div class="kres run"><span class="spin"></span>Подключаю…</div>'
@@ -213,14 +218,29 @@ function keyBody(onb){ const K=S.keyCheck;
     <div class="kfld"><input class="field" id="apikey" value="${S.w.key==='ok'||K?'sk-••••••••••••••••3f9a':''}" placeholder="Ключ API · sk-…" autocomplete="off" spellcheck="false"><button class="intool" data-act="keypaste" aria-label="Вставить">${I.paste}</button></div>
     ${onb?'<p class="klbl">Где взять ключ? <b>platform.deepseek.com</b> → API keys. Хранится в защищённом хранилище телефона.</p>':'<div style="display:flex;justify-content:flex-end;margin:8px 0 12px"><button class="fbtn" data-act="keycheck">Проверить</button></div>'}
     ${onb?`<div class="kslot">${res}</div>`:res}${onb?`<div class="khm">${I.info}<span>Другие модели — в настройках</span></div>`:''}` }   // в мастере место под итог занято заранее — ничего не подскакивает
-function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title);
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="${S.brainRet?'brainback':'settings'}" aria-label="Назад">${I.back}</button><div class="t"><b>${b.title}</b><small>OpenAI-совместимый API</small></div></div>
-  <div class="scroll"><div class="mform">
-    <div class="setcard">${li(I.srv,'Адрес',b.url)}${li(I.spark,'Модель',b.model)}</div>
-    ${keyBody(false)}
-    <div><div class="lh">Умеет</div><div class="chips">${[['vision','Фото'],['tools','Действия телефона'],['memory','Память'],['server','Сервер, поиск']].map(([k,t])=>`<span class="mchip" aria-pressed="${b.caps[k]}" style="cursor:default">${t}</span>`).join('')}</div></div>
-    <p class="mnote">Режимы на этом мозге: ${users.join(', ')||'нет'}. История каждого хранится на телефоне и целиком уходит с каждой репликой; одинаковое начало разговора провайдер берёт из кэша — дешевле и быстрее.</p>
-  </div></div></div>` }
+/* ── Канон страниц настроек: шапка (назад, заголовок, подзаголовок) → поля 16 → разделы «заголовок + карточка». ── */
+function page(title, sub, back, body){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="${back}" aria-label="Назад">${I.back}</button><div class="t"><b>${title}</b>${sub?`<small>${sub}</small>`:''}</div></div><div class="scroll"><div class="mform canon">${body}</div></div></div>` }
+function sect(title, inner, note){ return `<div class="sect">${title?`<div class="lh">${title}</div>`:''}${inner}${note?`<p class="mnote">${note}</p>`:''}</div>` }
+function card(rows){ return `<div class="setcard">${rows}</div>` }
+/** Строка «Статус»: проверяется сама при входе на страницу; точка и одна фраза, без плашек. */
+function statusRow(st){ const t={check:'Проверяю…',ok:st.text||'Подключён',bad:st.text||'Не отвечает',off:'Не подключён'}[st.s];
+  return `<button class="li" data-act="${st.act||''}"><span class="lic"><span class="stdot ${st.s}"></span></span><span class="lt"><b>Статус</b><small>${t}</small></span></button>` }
+/** «Умеет» — один компонент у всех мозгов: значок, что, коротко. «Нет» — бледно. */
+function capsCard(list){ return card(list.map(([ic,t,s,on])=>`<div class="li cap ${on?'':'off'}"><span class="lic">${ic}</span><span class="lt"><b>${t}</b><small>${s}</small></span></div>`).join('')) }
+
+/** DeepSeek: «Подключение» (статус сам, адрес, модель, ключ) → «Умеет» → «Режимы» → «Отключить». Ключ — «Подключить»: проверить и сохранить. */
+function brainPage(){ const b=brainById(S.editBrain); const users=S.modes.filter(m=>m.brain===b.id).map(m=>m.title); const on=S.w.key==='ok'; const K=S.keyCheck;
+  const st = K&&K.stage==='run' ? {s:'check'} : !on ? {s:'off'} : S.brainSt==='check' ? {s:'check'} : {s:'ok', text:'Подключён · отвечает за 0,4 с'};
+  const keyRow = S.keyEdit||!on
+    ? `<div class="kedit"><div class="kfld"><input class="field" id="apikey" value="" placeholder="Ключ API · sk-…" autocomplete="off" spellcheck="false"><button class="intool" data-act="keypaste" aria-label="Вставить">${I.paste}</button></div>
+       ${K&&K.stage==='bad'?`<p class="kerr">${K.err}</p>`:'<p class="mnote" style="margin:6px 2px 0">Где взять: platform.deepseek.com → API keys.</p>'}
+       <div class="kacts">${on?'<button class="tbtn" data-act="keycanceledit">Отмена</button>':''}<button class="fbtn" data-act="keycheck">${K&&K.stage==='run'?'Подключаю…':'Подключить'}</button></div></div>`
+    : li(I.lock,'Ключ','sk-…3f9a · только на этом телефоне','keyedit',false,'<span class="lact">Изменить</span>');
+  return page(b.title, 'OpenAI-совместимый API', S.brainRet?'brainback':'settings',
+    sect('Подключение', card(statusRow(st)+li(I.srv,'Адрес',b.url)+li(I.spark,'Модель',b.model)+keyRow))
+    + sect('Умеет', capsCard([[I.cam,'Фото','Понимает снимки',true],[I.shield,'Действия телефона','Будильник, таймер, календарь',true],[I.lens,'Поиск в интернете','Скоро',false],[I.hist,'Память между днями','Нет — только разговор режима',false]]))
+    + sect('Режимы', card(li(I.list, users.join(', ')||'Нет', 'Мозг выбирается в режиме','settings')))
+    + (on?sect('', card(`<button class="li danger" data-act="keydel"><span class="lic">${I.del}</span><span class="lt"><b>Отключить</b><small>Ключ стирается с телефона</small></span></button>`)):'')) }
 function blockedBanner(){ const miss=[...new Set(TOOLS.filter(toolBlocked).map(x=>x.perm))]; if(!miss.length) return '';
   const n=TOOLS.filter(toolBlocked).length;
   return `<div class="banner" style="margin:4px 16px 8px"><span class="bi">${I.warn}</span><p>${n} ${n===1?'действие не работает':n<5?'действия не работают':'действий не работают'}: нет доступа — ${miss.map(k=>SYS_PERMS[k]).join(', ')}.</p><div class="ba"><button class="tbtn" data-permfix="${miss[0]}">Исправить</button></div></div>` }
@@ -235,22 +255,28 @@ function actionsPage(){
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Журнал действий</b><small>только на телефоне</small></div></div>
   <div class="scroll"><div class="list">${days.map(d=>`<div class="lh">${d}</div>${S.journal.filter(j=>j.day===d).map(j=>`<button class="jrow" data-jid="${j.id}" aria-expanded="${S.jopen===j.id}"><span class="jt">${j.at}</span><span class="jm"><b>${esc(j.title)}</b><small>${j.who}${j.status?' · '+j.status:''}</small></span></button>${S.jopen===j.id?`<div class="jd"><div><span>Фраза</span>«${esc(j.phrase)}»</div><div><span>Действие</span><code>${j.tool}</code> ${esc(j.params)}</div><div><span>Подтверждение</span>${j.confirm}</div><div><span>Экран</span>${j.lock?'заблокирован':'открыт'}</div>${j.undo?`<button class="tbtn" data-act="jundo" data-id="${j.id}">Отменить</button>`:''}</div>`:''}`).join('')}`).join('')}</div></div></div>` }
-function about(){
-  const u=S.upd;
-  return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>О программе</b></div></div>
-  <div class="scroll"><div style="padding:0 16px">
-    <div style="text-align:center;padding:10px 0 14px">${oursIcon('width:64px;height:64px;border-radius:20px;margin:0 auto')}<div style="font-family:var(--display);font-size:24px;margin-top:10px">${u.ver}</div><div style="color:var(--soft);font-size:13px">стабильная версия</div></div>
-    ${u.state==='available'?`<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`:''}
-    ${u.state==='dl'?`<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>`:''}
-    ${u.state==='checking'?'<div class="mnote">Проверяю…</div>':''}${u.state==='latest'?'<div class="note ok">Это последняя версия</div>':''}${u.state==='fail'?'<div class="note bad">Не удалось проверить: нет связи</div>':''}
-  </div>
-  <div class="list">
-    ${li(I.dl,'Проверить обновления','Автоматически раз в 6 часов','check')}
-    ${li(I.wave,'Модели распознавания', S.w.model==='ready'?'Русский · 225 МБ':'Не скачаны','dl')}
-  </div></div></div>`;
-}
+function about(){ const u=S.upd;
+  const st = u.state==='available' ? `<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`
+    : u.state==='dl' ? `<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>` : '';
+  return page('О программе','','settings',
+    `<div class="abouthead">${oursIcon('width:64px;height:64px;border-radius:20px')}<b>${u.ver}</b><small>${u.state==='checking'?'Проверяю…':u.state==='latest'?'Это последняя версия':u.state==='fail'?'Не удалось проверить: нет связи':'стабильная версия'}</small></div>`
+    + (st?sect('Обновление', st):'')
+    + sect('', card(li(I.dl,'Проверить обновления','Сами — раз в сутки, когда открываете приложение','check')))) }
 
-function hermesPage(){ return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Подключение</b></div></div><div class="scroll"><div style="padding:0 18px 20px">${hermesBody(false)}</div></div></div>` }
+/** Hermes — тот же шаблон, что DeepSeek. Не подключён — вместо «Подключения» три способа (hermesBody). */
+function hermesPage(){ const on=S.w.server==='paired'&&(!S.pair||S.pair.stage==='done'); const users=S.modes.filter(m=>m.brain==='hermes').map(m=>m.title);
+  if (!on) return page('Hermes','Свой сервер','settings', hermesBody(false));
+  const st = S.brainSt==='check' ? {s:'check'} : {s:'ok', text:'Подключён · отвечает за 0,6 с'};
+  return page('Hermes','Свой сервер','settings',
+    sect('Подключение', card(statusRow(st)+li(I.srv,'Адрес','hermes.example.ru')+li(I.lock,'Ключ телефона','Только на этом телефоне')))
+    + sect('Умеет', capsCard([[I.hist,'Память','Общая с Telegram',true],[I.lens,'Поиск в интернете','Со ссылками на источники',true],[I.srv,'Команды на сервере','Опасное — после «Да»',true],[I.cam,'Фото','Если модель на сервере видит картинки',true],[I.shield,'Действия телефона','Пока нет — их делает сам телефон',false]]))
+    + sect('Режимы', card(li(I.list, users.join(', ')||'Нет', 'Мозг выбирается в режиме','settings')))
+    + sect('', card(`<button class="li danger" data-act="hermesoff"><span class="lic">${I.del}</span><span class="lt"><b>Отключить</b><small>Ключ телефона стирается; на сервере его можно отозвать</small></span></button>`))) }
+/** Распознавание речи — по канону: «Модель» (что, где, сколько) → «Проверить» (поле с микрофоном, без замочка). */
+function voicePage(){ const w=S.w;
+  return page('Распознавание речи','','settings',
+    sect('Модель', card(li(I.wave,'GigaAM v3', w.model==='ready'?`На телефоне · ${mb(MODEL_TOTAL)} МБ · голос не уходит наружу`:w.model==='loading'?`Качается: ${S.modelPct} %`:'Не скачана','dl',w.model!=='ready')))
+    + (w.model==='ready'?sect('Проверить', `<div class="vtry"><input class="field" placeholder="Зажмите микрофон и скажите что-нибудь" readonly><button class="dmic" data-mic data-into="prompt" aria-label="Говорить">${I.mic}</button></div>`, 'Удержали — говорите — отпустили. Текст появится в поле.'):'')) }
 // Подключение к Hermes через его API-сервер за Caddy (Архитектура 9.0, 9.8): ссылка-приглашение с ключом телефона или адрес и ключ руками.
 const CHECKS=[['addr','Адрес'],['net','Соединение'],['tls','Сертификат'],['hermes','Hermes на сервере'],['key','Ключ этого телефона']];
 function hermesBody(onb){
@@ -371,7 +397,7 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='voice'?voicePage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick(); else if (S.screen==='sysperm') base=sysPerm();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
@@ -380,7 +406,8 @@ function render(){
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
   document.querySelectorAll('#scr .fieldarea').forEach(grow);
   $('#side')?.classList.toggle('pressed', !!(S.sideHeld || (S.rec&&S.rec.side&&S.ov)));   // обвязка демо: кнопка корпуса вдавлена, пока держат или пока идёт запись с неё
-  document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2 });
+  document.querySelectorAll('#scr .mtabs').forEach(t=>{ const b=t.querySelector('[aria-pressed=true]'); if(b) t.scrollLeft=b.offsetLeft-(t.clientWidth-b.offsetWidth)/2; tabSnap(t) });
+  if (S.emojiPick) $('#emoin')?.focus();
   if (aeId==='cin'){ const el=$('#cin'); if(el){ el.focus(); try{ el.setSelectionRange(aePos,aePos) }catch{} } }
   if (S.ov) S.ov.pop=false;
   keepAnims();

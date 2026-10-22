@@ -693,3 +693,33 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 @keyframes freed{from{transform:scaleY(.2)}to{transform:none}}
 .micbtn.pulse{animation:micpulse 1.2s ease-out 1}
 @keyframes micpulse{0%{box-shadow:0 0 0 0 rgba(232,163,23,.65)}100%{box-shadow:0 0 0 22px rgba(232,163,23,0)}}
+
+/* ═══ 22.10: канон настроек, мозги одним шаблоном, значки + эмодзи, порядок режимов, вкладки как в камере ═══ */
+.mform.canon{padding:16px 16px 28px;gap:18px}
+.mform.canon .sect{display:flex;flex-direction:column;gap:6px}
+.mform.canon .sect>.lh{padding:0 6px}
+.mform.canon .sect>.mnote{margin:2px 6px 0}
+.mform.canon .setcard{margin:0}
+.stdot{width:10px;height:10px;border-radius:50%;display:block;background:var(--faint)}
+.stdot.ok{background:var(--ok)}.stdot.bad{background:var(--danger)}.stdot.check{background:var(--local);animation:vbreath .9s ease-in-out infinite}
+.li .lact{font-size:13px;font-weight:600;color:var(--server-d)}
+.li.cap.off .lt b,.li.cap.off .lic{opacity:.45}
+.li.danger .lt b,.li.danger .lic{color:var(--danger)}
+.kedit{padding:8px 14px 12px}.kedit .kacts{display:flex;justify-content:flex-end;gap:6px;margin-top:10px}.kedit .kerr{color:var(--danger);font-size:12.5px;margin:6px 2px 0}
+.vtry{display:flex;gap:10px;align-items:center}.vtry .field{flex:1}
+.abouthead{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 4px}.abouthead b{font-family:var(--display);font-size:24px;font-weight:500;margin-top:8px}.abouthead small{color:var(--soft);font-size:13px}
+.icons.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.icons.grid6 .icb{width:auto;height:auto;aspect-ratio:1}
+.emo{font-size:22px;line-height:1}
+.icb.emocell.empty{border-style:dashed;border-width:1.5px;color:var(--faint);position:relative}
+.icb.emocell.empty i{position:absolute;right:5px;bottom:2px;font-style:normal;font-size:14px;font-weight:700;color:var(--soft)}
+.emopop{margin-top:8px;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:10px}
+.emoq{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:8px}.emoq button{border:0;background:#F1F2EE;border-radius:10px;font-size:20px;padding:6px 0}
+.lhrow{display:flex;align-items:center;justify-content:space-between;padding-right:12px}.lhrow .tbtn{padding:4px 10px;margin-top:10px}
+.reord{padding:4px 12px}.rrow{display:flex;align-items:center;gap:14px;padding:12px 10px;background:var(--surf);border:1px solid var(--line);border-radius:14px;margin-bottom:6px;touch-action:none;transition:transform .12s}
+.rrow b{flex:1;font-weight:500;font-size:15.5px}.rrow .lic{color:var(--soft);display:grid;place-items:center}
+.rrow .grip{color:var(--faint);cursor:grab;padding:4px;touch-action:none}.rrow.drag{transition:none;box-shadow:0 10px 24px -12px rgba(14,26,54,.45);z-index:2;position:relative}
+.mtabw{position:relative;display:flex;align-items:center;margin-top:-10px;padding:0 10px 12px 0}
+.mtabw .mtabs{flex:1;margin:0;padding:0 0 0;scroll-snap-type:x mandatory;padding-inline:calc(50% - 44px);justify-content:flex-start;touch-action:pan-x}
+.mtabw .mtabs button{scroll-snap-align:center}
+.mtabw .madd{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:none;font-size:17px;color:var(--soft);margin-left:6px}

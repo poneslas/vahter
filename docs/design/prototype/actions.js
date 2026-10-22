@@ -45,7 +45,8 @@ document.addEventListener('click', async e=>{
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
-  if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.page='brain'; return render() }
+  if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.keyEdit=false; S.page='brain'; brainAutoCheck(); return render() }
+  if (a && a.startsWith('emo:')){ modeById(S.editMode).icon='emoji:'+a.slice(4); S.emojiPick=false; S.keepScroll=true; return render() }
   // «Назад» со страницы режима — туда, откуда пришли: лист, разговор или список режимов в настройках.
   if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.modeBack=S.ov?'sheet':S.page==='chat'||!S.page?'chat':'settings';
     if(S.ov){ S.fromSheet={screen:S.screen==='app'?'home':S.screen}; S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается. «Назад» вернёт лист.') } S.page='mode'; return render() }
@@ -78,7 +79,7 @@ document.addEventListener('click', async e=>{
     case 'notifno': S.feed=S.feed.filter(f=>f.t!=='notifask'); S.keepScroll=true; return render();
     case 'permmic': return permInApp('mic');
     case 'asknotif': if (S.ov) return permInApp('notif'); S.dialog={ic:'🔔',title:'Разрешить приложению «Вахтёр» отправлять уведомления?',opts:[['Разрешить','notif_ok'],['Не разрешать','x','sec2']]}; return render();
-    case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded) S.page='hermes'; else S.onbStep=ONB.indexOf('brain'); return render();
+    case 'connect': S.ov=null; S.screen='app'; if(S.w.server!=='paired') S.pair=null; if(S.onboarded){ S.page='hermes'; if(S.w.server==='paired') brainAutoCheck() } else S.onbStep=ONB.indexOf('brain'); return render();
     case 'viatg': S.pair=null; S.screen='tg'; S.tg=[]; return render();
     case 'tgsend': S.tg.push({me:true,html:'Сделай приглашение для Вахтёра для S24 Ultra'}); render(); await wait(900); S.tg.push({html:`Готово. Ссылка для телефона «S24 Ultra»:<br><a data-act="tglink">https://vahter.example.ru/vahter/connect#hWMojT6Q…</a><br><br>Открой её на телефоне — Вахтёр подключится сам. Не открылось — скопируй ссылку в Настройки → Мозги → Hermes → «Вставить приглашение».`}); trace('Навык vahter (Архитектура 9.0): Hermes запустил скрипт, ключ телефона записан в ~/.hermes/vahter, Caddy перезагрузился сам. Ссылка — это ключ телефона: действует до отзыва («отзови телефон S24»), не одноразовая.','h'); return render();
     case 'tglink': return runPair('link');
@@ -127,6 +128,15 @@ document.addEventListener('click', async e=>{
     case 'camcancel': S.screen=S.camRet.screen; S.ov=S.camRet.ov; S.cam=null; if(S.rec){ recTok++; S.rec=null } return render();
     case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
+    // 22.10: порядок режимов, свой эмодзи, ключ «Изменить / Подключить», отключение мозга, страница распознавания, свой переключатель уведомлений
+    case 'reorder': S.reorder=!S.reorder; S.keepScroll=true; if(!S.reorder) trace('Порядок режимов сохранён — так же и вкладки под полем.','i'); return render();
+    case 'emojipick': S.emojiPick=!S.emojiPick; S.keepScroll=true; return render();
+    case 'keyedit': S.keyEdit=true; S.keyCheck=null; S.keepScroll=true; return render();
+    case 'keycanceledit': S.keyEdit=false; S.keyCheck=null; S.keepScroll=true; return render();
+    case 'keydel': S.dialog={title:'Отключить DeepSeek?',text:'Ключ сотрётся с телефона. Режимы на этом мозге будут отвечать «Мозг не подключён».',opts:[['Отключить','keydel_ok','danger'],['Отмена','x','sec2']]}; return render();
+    case 'hermesoff': S.dialog={title:'Отключить Hermes?',text:'Ключ телефона сотрётся. На сервере его можно отозвать: vahter-revoke.sh.',opts:[['Отключить','hermesoff_ok','danger'],['Отмена','x','sec2']]}; return render();
+    case 'voice': S.ov=null; S.screen='app'; S.page='voice'; return render();
+    case 'notiftoggle': S.settings.notifyAnswers=S.settings.notifyAnswers===false; S.keepScroll=true; trace(S.settings.notifyAnswers?'Сообщаю об ответах снова.':'Своя настройка: об ответах не сообщаю. Разрешение Android остаётся — из приложения его не отозвать.','i'); return render();
     case 'check': S.upd.state='checking'; render(); await wait(800); S.upd.state=S.w.net==='none'?'fail':S.upd.ver==='0.4.0'?'available':'latest'; return render();
     case 'upd': S.upd.state='dl'; S.upd.pct=0; while(S.upd.state==='dl'&&S.upd.pct<100){ await wait(120); S.upd.pct=Math.min(100,S.upd.pct+8); render() } if(S.upd.state!=='dl') return; S.upd.ver=S.upd.next; S.upd.state='none'; trace('Поставлено через PackageInstaller без окна (приложение обновляет само себя). Роль помощника на месте.','i'); showToast('Обновлено до 0.5.0','Что нового — в «О программе»'); return render();
     case 'updcancel': S.upd.state='available'; return render();
@@ -214,6 +224,10 @@ async function dlgAct(k){
   if (k==='mic_ok'){ S.w.mic='ok'; if(permBack()){ S.pendingSide=false; return } if(S.ov) openOverlay(S.pendingSide?'side':'снова'); S.pendingSide=false; return render() }
   if (k==='mic_no'){ S.micNo=(S.micNo||0)+1; S.w.mic=S.micNo>=2?'denied':'ask'; trace(S.micNo>=2?'Второй отказ: Android больше не покажет окно — дальше только наше объяснение и переход в настройки.':'Первый отказ: спросить можно ещё раз, но сначала объясняем зачем (shouldShowRequestPermissionRationale).','p'); if(permBack()) return; if(S.ov) openOverlay('снова'); return render() }
   if (k==='notif_no'){ if(permBack()) return; return render() }
+  if (k==='keydel_ok'){ S.w.key='none'; S.keyEdit=false; trace('Ключ стёрт из Keystore — DeepSeek отключён.','i'); return render() }
+  if (k==='hermesoff_ok'){ S.w.server='none'; S.pair=null; trace('Ключ телефона стёрт; на сервере его отзывает vahter-revoke.sh.','h'); return render() }
+  if (k==='keycheck_go'){ return $('[data-act=keycheck]')?.click() }
+  if (k==='keyleave'){ S.keyEdit=false; S.keyCheck=null; S.page='settings'; return render() }
   if (k==='restart_ok'){ S.feeds[S.restartId]=[]; trace('Разговор режима стёрт с телефона — следующая реплика уйдёт мозгу без истории.','p'); return render() }
   if (k==='brainsetup') { S.dialog=null; return }
   if (k==='delmode_ok'){ const id=S.editMode, m=modeById(id); S.modes=S.modes.filter(x=>x.id!==id); delete S.feeds[id]; delete S.drafts[id]; if(S.mode===id) S.mode='main'; S.page='settings'; trace(`Режим «${esc(m.title)}» удалён с телефона. Сессия ${id} в Hermes осталась — удалять её телефон не умеет и не должен.`,'p'); return render() }
@@ -245,3 +259,26 @@ function onbBack() {
   S.onbStep--; if (ONB[S.onbStep] === 'try' && (S.w.model === 'none' || S.w.model === 'broken')) S.onbStep--;
   S.keyCheck = null; trace('Свайп вправо — шаг назад. В приложении так же работает системный «Назад».', 'p'); render();
 }
+
+/* ── 22.10 ── */
+/** Статус мозга проверяется сам при входе на страницу (точка «Проверяю…» → «Подключён · 0,4 с»). */
+async function brainAutoCheck(){ S.brainSt='check'; render(); await wait(700); S.brainSt='ok'; if(S.page==='brain'||S.page==='hermes') { S.keepScroll=true; render() } }
+/** Ушли со страницы DeepSeek с введённым, но не подключённым ключом — не теряем молча. */
+document.addEventListener('click', e=>{ const b=e.target.closest('[data-act=settings],[data-act=brainback]'); if(!b||S.page!=='brain') return;
+  const v=$('#apikey')?.value?.trim(); if(!v||S.w.key==='ok'&&!S.keyEdit) return; if(S.keyCheck&&S.keyCheck.stage==='done') return;
+  e.stopImmediatePropagation(); S.dialog={title:'Ключ не подключён',text:'Подключить — проверим и сохраним. Не сохранять — ключ не останется на телефоне.',opts:[['Подключить','keycheck_go'],['Не сохранять','keyleave','sec2']]}; render() }, true);
+/** Вкладки как в камере: прокрутили и отпустили — выбранной становится та, что по центру (scroll-snap + конец прокрутки). */
+function tabSnap(t){ if(t._snap) return; t._snap=true; let to=null;
+  const pick=()=>{ const r=t.getBoundingClientRect(), cx=r.left+r.width/2; let best=null, d=1e9;
+    t.querySelectorAll('[data-pickmode]').forEach(b=>{ const br=b.getBoundingClientRect(), dd=Math.abs(br.left+br.width/2-cx); if(dd<d){ d=dd; best=b } });
+    if(best && best.dataset.pickmode!==S.mode){ setMode(best.dataset.pickmode,'Вкладки как в камере: отпустили — выбран режим по центру'); S.keepScroll=true; render() } };
+  t.addEventListener('scroll',()=>{ clearTimeout(to); to=setTimeout(pick,140) }, {passive:true}) }
+/** Порядок режимов: тянуть за ⠿; отпустили — режим встал на новое место (в приложении — перетаскивание в списке). */
+let dr=null;
+document.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-drag]'); if(!g) return; e.preventDefault(); const row=g.closest('.rrow'); const k=$('#dev').getBoundingClientRect().width/W;
+  dr={i:+g.dataset.drag, y:e.clientY, row, k, h:row.offsetHeight+6}; row.classList.add('drag'); row.setPointerCapture?.(e.pointerId) });
+document.addEventListener('pointermove', e=>{ if(!dr) return; const dy=(e.clientY-dr.y)/dr.k; dr.row.style.transform=`translateY(${dy}px)` ; dr.to=Math.max(0,Math.min(S.modes.length-1, dr.i+Math.round(dy/dr.h))) });
+document.addEventListener('pointerup', ()=>{ if(!dr) return; const {i,to}=dr; dr=null; if(to!=null&&to!==i){ const [m]=S.modes.splice(i,1); S.modes.splice(to,0,m) } S.keepScroll=true; render() });
+/** Свой эмодзи: первая графема из поля. */
+document.addEventListener('input', e=>{ if(e.target.id!=='emoin') return; const v=e.target.value.trim(); if(!v) return;
+  const g=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)][0].segment; modeById(S.editMode).icon='emoji:'+g; S.emojiPick=false; S.keepScroll=true; render() });
