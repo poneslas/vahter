@@ -97,7 +97,7 @@ fun ModesList(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.weight(1f)) {
-                        Item(m.title, summary(m).ifBlank { null }, icon = Ic.mode(m.icon), onClick = if (reorder) null else ({ onOpen(m) }))
+                        Item(m.title, summary(m).ifBlank { null }, icon = Ic.mode(m.icon), emoji = Ic.emoji(m.icon), onClick = if (reorder) null else ({ onOpen(m) }))
                     }
                     when {
                         reorder -> Box(

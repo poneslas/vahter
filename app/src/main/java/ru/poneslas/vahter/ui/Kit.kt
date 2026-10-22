@@ -44,12 +44,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 
 /** .topbar: [назад] заголовок 19 / подзаголовок 12 с точкой связи, справа — действия. */
 @Composable
-fun TopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?, dot: Color? = null, backIcon: Int = Ic.back, titleIcon: Int? = null, actions: @Composable () -> Unit = {}) {
+fun TopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?, dot: Color? = null, backIcon: Int = Ic.back, titleIcon: Int? = null, titleEmoji: String? = null, actions: @Composable () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 52.dp).padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) IconBtn(backIcon, tr(R.string.ui_back), onClick = onBack)
         Column(Modifier.weight(1f).padding(start = if (onBack != null) 6.dp else 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (titleIcon != null) { Icon(painterResource(titleIcon), null, Modifier.size(20.dp), tint = Ink.ink); Spacer(Modifier.width(8.dp)) }
+                if (titleEmoji != null) { Text(titleEmoji, fontSize = 19.sp); Spacer(Modifier.width(8.dp)) }
+                else if (titleIcon != null) { Icon(painterResource(titleIcon), null, Modifier.size(20.dp), tint = Ink.ink); Spacer(Modifier.width(8.dp)) }
                 Text(title, fontSize = 19.sp, lineHeight = 1.2.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (subtitle != null) Row(verticalAlignment = Alignment.CenterVertically) {
@@ -79,13 +80,19 @@ fun Section(title: String) =
 @Composable
 fun Item(
     title: String, subtitle: String? = null, warn: Boolean = false, trailing: String? = null, trailingColor: Color = Ink.soft,
-    icon: Int? = null, end: (@Composable () -> Unit)? = null, modifier: Modifier = Modifier, minHeight: Dp = 64.dp, onClick: (() -> Unit)? = null,
+    icon: Int? = null, end: (@Composable () -> Unit)? = null, modifier: Modifier = Modifier, minHeight: Dp = 64.dp,
+    /** Свой эмодзи вместо значка (значок режима «emoji:…»). */
+    emoji: String? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier.fillMaxWidth().heightIn(min = minHeight).let { if (onClick != null) it.clickable(onClick = onClick) else it }.padding(horizontal = 22.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null || warn) {
+        if (emoji != null && !warn) {
+            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 18.sp) }
+            Spacer(Modifier.width(16.dp))
+        } else if (icon != null || warn) {
             Icon(painterResource(if (warn) Ic.warn else icon!!), null, Modifier.size(24.dp).padding(2.dp), tint = if (warn) Ink.danger else Ink.soft)
             Spacer(Modifier.width(16.dp))
         }

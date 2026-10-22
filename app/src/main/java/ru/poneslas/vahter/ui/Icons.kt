@@ -72,6 +72,9 @@ object Ic {
     val stop = R.drawable.ic_stop
     val openext = R.drawable.ic_openext
 
+    /** Свой эмодзи режима («emoji:🍕») или null, если значок — из набора. */
+    fun emoji(name: String): String? = name.removePrefix("emoji:").takeIf { name.startsWith("emoji:") }
+
     /** Значок режима по имени из модели (spark, transl, lens, food…). */
     fun mode(name: String): Int = when (name) {
         "spark" -> spark

@@ -1,5 +1,7 @@
 package ru.poneslas.vahter.app
 
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.draw.drawBehind
 import ru.poneslas.vahter.ui.VoiceRow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.Dp
@@ -71,22 +73,14 @@ fun ModePage(a: MainActivity, id: String) {
     // Встроенные режимы только включаются и выключаются (Бэклог №14): остальное — для просмотра.
     val ro = m.builtin
     val ed: ((Mode) -> Mode) -> Unit = { f -> conv.editMode(m.id, f) }
-    TopBar(m.title, if (m.builtin) tr(R.string.mode_builtin) else tr(R.string.mode_custom_id), onBack = a::back, titleIcon = Ic.mode(m.icon))
+    TopBar(m.title, if (m.builtin) tr(R.string.mode_builtin) else tr(R.string.mode_custom_id), onBack = a::back, titleIcon = Ic.mode(m.icon), titleEmoji = Ic.emoji(m.icon))
     FormPage {
         if (ro) Note(tr(R.string.mode_builtin_note))
         if (!ro) {
             Field(tr(R.string.mode_title), m.title, tr(R.string.mode_title_hint)) { v -> ed { it.copy(title = v) } }
             Column {
                 Lh(tr(R.string.mode_icon))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    MODE_ICONS.forEach { k ->
-                        val on = m.icon == k
-                        Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(if (on) Ink.ink else Color.White).border(1.dp, if (on) Ink.ink else Ink.line, RoundedCornerShape(12.dp))
-                            .clickable { ed { it.copy(icon = k) } }, contentAlignment = Alignment.Center) {
-                            Icon(painterResource(Ic.mode(k)), k, Modifier.size(20.dp), tint = if (on) Color.White else Ink.soft)
-                        }
-                    }
-                }
+                IconGrid(m.icon) { k -> ed { it.copy(icon = k) } }
             }
         }
         Column {
@@ -162,7 +156,56 @@ fun ModePage(a: MainActivity, id: String) {
     }
 }
 
-val MODE_ICONS = listOf("spark", "transl", "lens", "food", "cart", "flight", "book", "star", "edit")
+/** Два ряда по шесть на типичном экране: 11 значков + последняя ячейка — свой эмодзи (ui.js, MODE_ICONS, iconGrid). */
+val MODE_ICONS = listOf("spark", "transl", "lens", "food", "cart", "flight", "book", "home", "work", "heart", "car")
+private val EMOJI_QUICK = listOf("🍕", "💊", "🐶", "🌱", "🎓", "⚽", "🧾", "✈️")
+
+/** Сетка значков режима: шесть в ряд; последняя ячейка — свой эмодзи (пунктир и «+»; выбран — встаёт в неё). */
+@Composable
+private fun IconGrid(current: String, onPick: (String) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    val emo = Ic.emoji(current)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        (MODE_ICONS.map { it as String? } + listOf(null)).chunked(6).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { k ->
+                    val on = if (k == null) emo != null else current == k
+                    Box(Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(12.dp)).background(if (on) Ink.ink else Color.White)
+                        .then(if (k == null && emo == null) Modifier.dashedBorder() else Modifier.border(1.dp, if (on) Ink.ink else Ink.line, RoundedCornerShape(12.dp)))
+                        .clickable { if (k == null) picking = !picking else onPick(k) }, contentAlignment = Alignment.Center) {
+                        when {
+                            k != null -> Icon(painterResource(Ic.mode(k)), k, Modifier.size(22.dp), tint = if (on) Color.White else Ink.soft)
+                            emo != null -> Text(emo, fontSize = 22.sp)
+                            else -> Text("☺+", fontSize = 15.sp, color = Ink.faint)
+                        }
+                    }
+                }
+            }
+        }
+        if (picking) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp)).padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            var text by remember { mutableStateOf("") }
+            androidx.compose.material3.OutlinedTextField(text, { v ->
+                text = v
+                // первая графема — эмодзи, даже если из нескольких символов (флаги, семьи)
+                val it = java.text.BreakIterator.getCharacterInstance().apply { setText(v.trim()) }
+                val end = it.next(); if (v.isNotBlank() && end > 0) { onPick("emoji:" + v.trim().substring(0, end)); picking = false }
+            }, Modifier.fillMaxWidth(), placeholder = { Text(tr(R.string.mode_emoji_hint)) }, singleLine = true)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                EMOJI_QUICK.forEach { e ->
+                    Box(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F2EE)).clickable { onPick("emoji:$e"); picking = false }.padding(vertical = 6.dp),
+                        contentAlignment = Alignment.Center) { Text(e, fontSize = 20.sp) }
+                }
+            }
+        }
+    }
+}
+
+/** Пунктирная рамка ячейки «свой эмодзи». */
+private fun Modifier.dashedBorder() = drawBehind {
+    drawRoundRect(Ink.faint, cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))))
+}
 
 /** .mform .lh */
 @Composable

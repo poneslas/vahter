@@ -265,6 +265,7 @@
     <string name="mode_prompt_hint">Например: переводи всё на китайский и добавляй пиньинь</string>
     <string name="mode_empty_note">Видно в настройках и в пустом листе под названием режима.</string>
     <string name="set_mode_no_purpose">Добавьте «Для чего» — будет видно здесь</string>
+    <string name="mode_emoji_hint">Эмодзи с клавиатуры</string>
     <string name="mode_empty_label">Для чего — одной строкой</string>
     <string name="mode_empty_hint">Например: выберу блюдо по меню</string>
     <string name="mode_ph_label">Подсказка в поле ввода</string>
