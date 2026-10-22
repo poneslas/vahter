@@ -1,5 +1,11 @@
 package ru.poneslas.vahter.app
 
+import ru.poneslas.vahter.ui.PageSection
+import ru.poneslas.vahter.ui.FormPage
+import ru.poneslas.vahter.ui.Item
+import ru.poneslas.vahter.ui.Ic
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
 import ru.poneslas.vahter.ui.TryVoice
 import androidx.compose.ui.platform.LocalContext
 import ru.poneslas.vahter.ui.PrimaryButton
@@ -32,9 +38,20 @@ import androidx.compose.runtime.getValue
 @Composable
 fun VoicePage(onBack: () -> Unit) {
     val app = App.instance
-    TopBar(tr(R.string.set_voice_title), tr(R.string.voice_subtitle), onBack = onBack)
-    // отступ сверху — как у остальных страниц (раздел начинается не вплотную к шапке); у мастера свой
-    ScrollPage { androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp)); VoiceBlock() }
+    // По канону (ui.js, voicePage): «Модель» (что, где, сколько) → «Проверить» (та же кнопка, что в листе, с замочком).
+    val installed by app.voice.installed.collectAsState()
+    val dl by ModelDownload.state.collectAsState()
+    TopBar(tr(R.string.set_voice_title), onBack = onBack)
+    FormPage {
+        PageSection(tr(R.string.voice_model_h)) {
+            val pct = (dl as? ModelDownload.State.Running)?.percent
+            Item(tr(R.string.voice_model_name), when { installed -> tr(R.string.voice_model_ready); pct != null -> tr(R.string.set_voice_loading, pct); else -> tr(R.string.app_voice_none) },
+                warn = !installed && pct == null, icon = Ic.wave)
+        }
+        if (installed) PageSection(tr(R.string.voice_try_h), tr(R.string.voice_try_note)) {
+            Box(Modifier.padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)) { TryVoice() }
+        } else Box(Modifier.padding(horizontal = 6.dp)) { VoiceBlock() }
+    }
 }
 
 /** Скачивание голоса — как шаг «Модель» у Гига Писаря для Android: одна полоса, «Попробуйте здесь» в конце. */
