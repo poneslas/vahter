@@ -88,6 +88,10 @@ data class BrainDesc(
     val server: Boolean = false,
     /** Наш лимит картинок в реплике; у DeepSeek API принимает не меньше (замер 18.10). */
     val maxImages: Int = 10,
+    /** Модель, если основную сервер не узнал (DeepSeek переименовывает модели; 22.10 «deepseek-chat» выведен в пользу «deepseek-flash»). */
+    val fallbackModel: String = "",
+    /** Поиск в интернете через API провайдера (DeepSeek: /v1/tools/search тем же ключом). */
+    val search: Boolean = false,
 ) {
     enum class Kind { API, HERMES }
 }
@@ -95,8 +99,8 @@ data class BrainDesc(
 object Brains {
     val deepseek = BrainDesc(
         id = "deepseek", kind = BrainDesc.Kind.API, title = "DeepSeek",
-        url = "https://api.deepseek.com", model = "deepseek-chat",
-        vision = true, tools = true,
+        url = "https://api.deepseek.com", model = "deepseek-flash", fallbackModel = "deepseek-chat",
+        vision = true, tools = true, search = true,
     )
     /** Hermes через его встроенный OpenAI-совместимый API: инструменты выполняются на сервере, действий телефона у него нет (Архитектура 9.0). */
     val hermes = BrainDesc(

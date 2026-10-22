@@ -40,19 +40,27 @@ class ApiBrain(
     private val maxToolRounds: Int = 3,
 ) : Brain {
     private val json = Json { ignoreUnknownKeys = true }
+    /** Модель сейчас: основная или запасная, если основную сервер не узнал (сохраняется до перезапуска). */
+    @Volatile private var model = desc.model
+    private class ModelGone : Exception()
+    private fun modelGone(code: Int, err: String) = (code == 400 || code == 404) && err.contains("model", true) && desc.fallbackModel.isNotEmpty() && model != desc.fallbackModel
 
     override fun send(turn: Turn, tools: ToolHost): Flow<BrainEvent> = flow {
         val key = apiKey() ?: run {
             emit(BrainEvent.Error(tr(R.string.brain_no_key), ErrorKind.NO_BRAIN)); return@flow
         }
         val history = turn.history.toMutableList()
-        val specs = tools.specs(turn.mode)
+        // Поиск в интернете — функция самого мозга (не телефона): выполняет приложение через API провайдера.
+        val specs = tools.specs(turn.mode) + if (desc.search) listOf(SEARCH_SPEC) else emptyList()
+        val question = turn.history.lastOrNull { it.role == "user" }?.content.orEmpty()
         var round = 0
         while (true) {
             currentCoroutineContext().ensureActive()
             val body = requestBody(turn, history, specs)
             val result = try {
                 stream(key, body) { delta -> emit(BrainEvent.Delta(delta)) }
+            } catch (e: ModelGone) {
+                model = desc.fallbackModel; continue
             } catch (e: ApiError) {
                 emit(BrainEvent.Error(e.message ?: tr(R.string.brain_error_head), e.kind)); return@flow
             } catch (e: UnknownHostException) {
@@ -68,8 +76,10 @@ class ApiBrain(
             if (result.toolCalls.isEmpty() || round >= maxToolRounds) break
             round++
             for (call in result.toolCalls) {
-                emit(BrainEvent.Step(stepTitle(call.name), phone = true))
-                val out = tools.call(call.name, call.arguments)
+                val web = call.name == SEARCH_FN
+                val query = if (web) runCatching { json.parseToJsonElement(call.arguments).jsonObject["query"]?.jsonPrimitive?.contentOrNull }.getOrNull().orEmpty() else ""
+                emit(BrainEvent.Step(if (web) tr(R.string.brain_step_search, query) else stepTitle(call.name), phone = !web))
+                val out = if (web) search(key, query, question) else tools.call(call.name, call.arguments)
                 val toolMsg = ChatMsg("tool", out, toolCallId = call.id)
                 history += toolMsg
                 emit(BrainEvent.History(toolMsg))
@@ -107,7 +117,7 @@ class ApiBrain(
             for (m in history) add(chatMsgJson(m))
         }
         return buildJsonObject {
-            put("model", desc.model)
+            put("model", model)
             put("stream", true)
             put("messages", messages)
             if (specs.isNotEmpty()) put("tools", buildJsonArray {
@@ -140,6 +150,7 @@ class ApiBrain(
             val code = c.responseCode
             if (code != 200) {
                 val err = c.errorStream?.bufferedReader()?.readText().orEmpty()
+                if (modelGone(code, err)) throw ModelGone()
                 throw when {
                     code == 401 -> ApiError(tr(R.string.brain_key_rejected), ErrorKind.AUTH)
                     code == 402 -> ApiError(tr(R.string.brain_no_balance, desc.title), ErrorKind.BALANCE)
@@ -179,28 +190,55 @@ class ApiBrain(
         }
     }
 
-    /** Проверка ключа пробным запросом (первый запуск, шаг «Мозг»). */
-    fun check(key: String): Result2 = runCatching {
+    /**
+     * Поиск в интернете (DeepSeek Search API, /v1/tools/search): модели отдаём заголовок, ссылку и выжимку «для моделей» (summary),
+     * не больше 5 результатов. Не вышло — честная ошибка, модель ответит без поиска.
+     */
+    private fun search(key: String, query: String, question: String): String = runCatching {
+        val c = URL(desc.url.trimEnd('/') + "/v1/tools/search").openConnection() as HttpURLConnection
+        c.requestMethod = "POST"; c.connectTimeout = 10_000; c.readTimeout = 30_000; c.doOutput = true
+        c.setRequestProperty("Authorization", "Bearer $key"); c.setRequestProperty("Content-Type", "application/json")
+        try {
+            c.outputStream.use { it.write(buildJsonObject { put("query", query.take(128)); put("count", 5); if (question.isNotBlank()) put("ori_question", question.take(128)) }.toString().toByteArray()) }
+            if (c.responseCode != 200) return@runCatching """{"ok":false,"message":"search HTTP ${c.responseCode}"}"""
+            val res = json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject["results"] as? JsonArray ?: JsonArray(emptyList())
+            buildJsonObject {
+                put("ok", true)
+                put("results", buildJsonArray {
+                    for (r in res.take(5)) { val o = r.jsonObject; add(buildJsonObject {
+                        put("title", o["title"]?.jsonPrimitive?.contentOrNull.orEmpty()); put("url", o["url"]?.jsonPrimitive?.contentOrNull.orEmpty())
+                        put("summary", (o["summary"] ?: o["snippet"])?.jsonPrimitive?.contentOrNull.orEmpty().take(900))
+                    }) }
+                })
+            }.toString()
+        } finally { c.disconnect() }
+    }.getOrElse { """{"ok":false,"message":"search failed: ${it.message?.replace("\"", "'")}"}""" }
+
+    /** Проверка ключа пробным запросом (первый запуск, шаг «Мозг»). Основную модель не узнали — пробуем запасную. */
+    fun check(key: String): Result2 = check(key, model).let { r -> if (r.second && desc.fallbackModel.isNotEmpty() && model != desc.fallbackModel) { model = desc.fallbackModel; check(key, model).first } else r.first }
+
+    private fun check(key: String, m: String): Pair<Result2, Boolean> = runCatching {
         val c = URL(desc.url.trimEnd('/') + "/chat/completions").openConnection() as HttpURLConnection
         c.requestMethod = "POST"; c.connectTimeout = 10_000; c.readTimeout = 30_000; c.doOutput = true
         c.setRequestProperty("Authorization", "Bearer $key"); c.setRequestProperty("Content-Type", "application/json")
         val t0 = System.currentTimeMillis()
         c.outputStream.use {
             it.write(buildJsonObject {
-                put("model", desc.model); put("max_tokens", 1)
+                put("model", m); put("max_tokens", 1)
                 put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", tr(R.string.brain_check_prompt)) }) })
             }.toString().toByteArray())
         }
         val code = c.responseCode
         val ms = System.currentTimeMillis() - t0
+        val err = if (code != 200) c.errorStream?.bufferedReader()?.readText().orEmpty() else ""
         c.disconnect()
         when (code) {
-            200 -> Result2(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ',')))
-            401 -> Result2(false, tr(R.string.brain_check_key_rejected))
-            402 -> Result2(false, tr(R.string.brain_check_no_balance))
-            else -> Result2(false, tr(R.string.brain_check_http_error, code))
+            200 -> Result2(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ','))) to false
+            401 -> Result2(false, tr(R.string.brain_check_key_rejected)) to false
+            402 -> Result2(false, tr(R.string.brain_check_no_balance)) to false
+            else -> Result2(false, tr(R.string.brain_check_http_error, code)) to modelGone(code, err)
         }
-    }.getOrElse { Result2(false, tr(R.string.brain_no_net, desc.url.removePrefix("https://"))) }
+    }.getOrElse { Result2(false, tr(R.string.brain_no_net, desc.url.removePrefix("https://"))) to false }
 
     data class Result2(val ok: Boolean, val text: String)
 }
@@ -225,3 +263,9 @@ internal fun chatMsgJson(m: ChatMsg): JsonObject = buildJsonObject {
     })
     if (m.toolCallId != null) put("tool_call_id", m.toolCallId)
 }
+
+private const val SEARCH_FN = "web_search"
+/** Поиск в интернете — для свежих фактов (новости, цены, расписания, погода); ответ — со ссылками на источники. */
+private val SEARCH_SPEC = ToolSpec(SEARCH_FN,
+    "Search the web for fresh facts (news, prices, schedules, weather, anything after your training). Returns titles, urls and summaries. Cite sources as Markdown links.",
+    """{"type":"object","properties":{"query":{"type":"string","description":"Search query, up to 128 chars; operators site:, after:, lang: allowed"}},"required":["query"]}""")

@@ -239,7 +239,7 @@ fun BrainPage(a: MainActivity, id: String) {
         PageSection(tr(R.string.set_brain_caps)) {
             CapItem(Ic.cam, tr(R.string.cap_photo), tr(R.string.cap_photo_sub), b.vision)
             CapItem(Ic.shield, tr(R.string.set_cap_tools), tr(R.string.cap_tools_sub), b.tools)
-            CapItem(Ic.lens, tr(R.string.hermes_will_search), tr(R.string.cap_search_soon), false)
+            CapItem(Ic.lens, tr(R.string.hermes_will_search), tr(if (b.search) R.string.cap_search_sub else R.string.cap_search_soon), b.search)
             CapItem(Ic.hist, tr(R.string.hermes_will_memory), tr(R.string.cap_memory_no), false)
         }
         PageSection(tr(R.string.set_modes)) {
