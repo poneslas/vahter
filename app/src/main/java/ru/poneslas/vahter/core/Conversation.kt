@@ -90,7 +90,7 @@ class Conversation(
     /** Карточки «Да / Отмена» действий телефона: заводятся из IO (PhoneTools), отвечаются с главного потока. */
     private val pending = ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
     /** Открытые просьбы Hermes подтвердить команду (id карточки → ответ серверу). */
-    private val asks = ConcurrentHashMap<Long, suspend (String) -> Unit>()
+    private val asks = ConcurrentHashMap<Long, suspend (String) -> Boolean>()
 
     init {
         _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) }.onFailure { Log.e("Conversation", "не сохранилось", it) } } }.launchIn(scope)
@@ -464,7 +464,12 @@ class Conversation(
                 val respond = asks.remove(card.id)
                 val modeId = _state.value.saved.feeds.entries.firstOrNull { e -> e.value.any { it.id == card.id } }?.key ?: _state.value.mode
                 remove(modeId, card.id)
-                if (respond != null) scope.launch { respond(action.removePrefix("ask:")) }
+                if (respond != null) scope.launch {
+                    // Ответ не дошёл до сервера — карточка обратно (можно нажать ещё раз) и честная строка, а не тишина до таймаута.
+                    if (!respond(action.removePrefix("ask:")) && jobs[modeId]?.isActive == true) {
+                        asks[card.id] = respond; push(modeId, card); push(modeId, FeedItem.Err(nextId(), tr(R.string.hermes_ask_failed)))
+                    }
+                }
             } else remove(_state.value.mode, card.id)
         }
     }

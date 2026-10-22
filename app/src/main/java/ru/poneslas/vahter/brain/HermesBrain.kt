@@ -1,6 +1,8 @@
 package ru.poneslas.vahter.brain
 
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -19,11 +21,13 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import ru.poneslas.vahter.App
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.core.BrainDesc
 import ru.poneslas.vahter.core.HermesRun
 import ru.poneslas.vahter.core.Modes
 import ru.poneslas.vahter.tr
+import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
@@ -68,7 +72,7 @@ class HermesBrain(
         }.toString()
         val runId = try {
             submit(l, turn.mode.id, body)
-        } catch (e: Exception) { emit(error(l, e)); return@flow }
+        } catch (e: Exception) { emit(toEvent(l, e)); return@flow }
         emit(BrainEvent.Run(runId, -1))
         follow(l, turn.mode.id, HermesRun(runId, -1, System.currentTimeMillis()), this)
     }.flowOn(Dispatchers.IO)
@@ -128,7 +132,7 @@ class HermesBrain(
         else -> HermesError(tr(R.string.hermes_err_http, code, err.take(200)), ErrorKind.OTHER, code)
     }
 
-    private fun error(l: HermesLink, e: Exception): BrainEvent.Error = when (e) {
+    private fun toEvent(l: HermesLink, e: Exception): BrainEvent.Error = when (e) {
         is HermesError -> BrainEvent.Error(e.message ?: tr(R.string.brain_error_head), e.kind)
         is SSLException -> BrainEvent.Error(tr(R.string.hermes_err_tls), ErrorKind.NETWORK)
         is UnknownHostException -> BrainEvent.Error(tr(R.string.brain_up_no_net, host(l.url)), ErrorKind.NETWORK)
@@ -148,7 +152,7 @@ class HermesBrain(
             c.outputStream.use { it.write(body.toByteArray()) }
             val code = c.responseCode
             if (code != 200 && code != 202) throw httpError(l, code, c.errorStream?.bufferedReader()?.readText().orEmpty())
-            val obj = json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject
+            val obj = parse(code, c.inputStream.bufferedReader().readText())
             return obj.str("run_id") ?: throw HermesError(tr(R.string.hermes_err_http, code, "no run_id"), ErrorKind.OTHER)
         } finally { c.disconnect() }
     }
@@ -160,9 +164,13 @@ class HermesBrain(
             val code = c.responseCode
             if (code == 404) return null
             if (code != 200) throw httpError(l, code, c.errorStream?.bufferedReader()?.readText().orEmpty())
-            return json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject
+            return parse(code, c.inputStream.bufferedReader().readText())
         } finally { c.disconnect() }
     }
+
+    /** Ответ 200, а не JSON (страница-заглушка прокси и т. п.) — обычная ошибка Hermes, а не падение хода. */
+    private fun parse(code: Int, body: String): JsonObject = runCatching { json.parseToJsonElement(body).jsonObject }
+        .getOrElse { throw HermesError(tr(R.string.hermes_err_http, code, body.take(200)), ErrorKind.OTHER) }
 
     private class Follow(var seq: Int, val text: StringBuilder = StringBuilder(), val media: MutableList<String> = mutableListOf(), var done: Boolean = false)
 
@@ -187,11 +195,11 @@ class HermesBrain(
                 }
             } catch (e: HermesError) {
                 if (e.code == 404) { out.emit(BrainEvent.Error(tr(R.string.hermes_run_lost), ErrorKind.OTHER)); return }
-                out.emit(error(l, e)); return
-            } catch (e: SSLException) { out.emit(error(l, e)); return
+                out.emit(toEvent(l, e)); return
+            } catch (e: SSLException) { out.emit(toEvent(l, e)); return
             } catch (e: IOException) {
                 // Сеть моргнула — задача на сервере идёт дальше; подождём и продолжим с того же места.
-                if (++attempt > 6) { out.emit(error(l, e)); return }
+                if (++attempt > 6) { out.emit(toEvent(l, e)); return }
                 delay(1000L shl (attempt - 1).coerceAtMost(4))
             }
         }
@@ -199,6 +207,8 @@ class HermesBrain(
 
     private suspend fun stream(l: HermesLink, modeId: String, runId: String, f: Follow, filter: MediaFilter, out: FlowCollector<BrainEvent>) {
         val c = open(l, "/v1/runs/$runId/events?last_seq=${f.seq}", "GET", 120_000)
+        // «Остановить» — рвём соединение: блокирующее чтение иначе ждёт сервер до таймаута.
+        val h = currentCoroutineContext()[Job]?.invokeOnCompletion { c.disconnect() }
         try {
             val code = c.responseCode
             if (code != 200) throw httpError(l, code, c.errorStream?.bufferedReader()?.readText().orEmpty())
@@ -222,7 +232,7 @@ class HermesBrain(
                     out.emit(BrainEvent.Run(runId, f.seq))
                 }
             }
-        } finally { c.disconnect() }
+        } finally { h?.dispose(); c.disconnect() }
     }
 
     /** Итог задачи: сессию запомнить, недопоказанный текст (если поток прервался) — дописать, файлы — скачать. */
@@ -270,8 +280,8 @@ class HermesBrain(
      * Файл для Hermes: API Hermes документы не принимает, поэтому — PUT в приёмник за нашим Caddy (/vahter/upload, тот же ключ
      * телефона, server/host/vahter-upload.py); в ответ — путь внутри Hermes, его и пишем в реплике.
      */
-    fun upload(l: HermesLink, file: java.io.File, name: String): Result<String> = runCatching {
-        val c = java.net.URL(l.url.trimEnd('/') + "/vahter/upload/" + java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20")).openConnection() as HttpURLConnection
+    fun upload(l: HermesLink, file: File, name: String): Result<String> = runCatching {
+        val c = URL(l.url.trimEnd('/') + "/vahter/upload/" + Uri.encode(name)).openConnection() as HttpURLConnection
         c.requestMethod = "PUT"; c.connectTimeout = 15_000; c.readTimeout = 120_000; c.doOutput = true
         c.setRequestProperty("Authorization", "Bearer ${l.token}")
         c.setFixedLengthStreamingMode(file.length())
@@ -300,10 +310,12 @@ class HermesBrain(
             withContext(Dispatchers.IO) {
                 runCatching {
                     val c = open(l, "/v1/runs/$runId/approval", "POST", 30_000)
-                    c.doOutput = true; c.setRequestProperty("Content-Type", "application/json")
-                    c.outputStream.use { it.write(buildJsonObject { put("choice", choice); if (requestId != null) put("request_id", requestId) }.toString().toByteArray()) }
-                    c.responseCode; c.disconnect()
-                }
+                    try {
+                        c.doOutput = true; c.setRequestProperty("Content-Type", "application/json")
+                        c.outputStream.use { it.write(buildJsonObject { put("choice", choice); if (requestId != null) put("request_id", requestId) }.toString().toByteArray()) }
+                        c.responseCode in 200..299
+                    } finally { c.disconnect() }
+                }.getOrDefault(false)
             }
         }
     }
@@ -317,10 +329,10 @@ class HermesBrain(
         val name = path.substringAfterLast('/')
         val image = name.substringAfterLast('.', "").lowercase() in setOf("png", "jpg", "jpeg", "gif", "webp")
         if (!path.contains("/vahter-out/")) return BrainEvent.Attachment(name, null, image, tr(R.string.hermes_file_server_only, path))
-        val dir = java.io.File(ru.poneslas.vahter.App.instance.cacheDir, "hermes").apply { mkdirs() }
-        val out = java.io.File(dir, "${System.currentTimeMillis()}_$name")
+        val dir = File(App.instance.cacheDir, "hermes").apply { mkdirs() }
+        val out = File(dir, "${System.currentTimeMillis()}_$name")
         return runCatching {
-            val c = open(l, "/vahter/files/" + java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20"), "GET", 120_000)
+            val c = open(l, "/vahter/files/" + Uri.encode(name), "GET", 120_000)
             try {
                 if (c.responseCode != 200) throw HermesError("${c.responseCode}", ErrorKind.OTHER)
                 c.inputStream.use { i -> out.outputStream().use { o -> i.copyTo(o) } }
@@ -352,10 +364,12 @@ class HermesBrain(
         return runCatching {
             val c = open(l, "/v1/models", "GET", 15_000)
             val t0 = System.currentTimeMillis()
-            val code = c.responseCode
+            val code: Int; val ok: Boolean
+            try {
+                code = c.responseCode
+                ok = code == 200 && c.inputStream.bufferedReader().readText().contains("hermes-agent")
+            } finally { c.disconnect() }
             val ms = System.currentTimeMillis() - t0
-            val ok = code == 200 && c.inputStream.bufferedReader().readText().contains("hermes-agent")
-            c.disconnect()
             when {
                 ok -> CheckResult(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ',')))
                 code == 401 || code == 403 -> CheckResult(false, tr(R.string.hermes_check_auth))
@@ -380,7 +394,7 @@ class HermesBrain(
         fun parseInvite(text: String): HermesLink? {
             val t = text.trim()
             runCatching {
-                val u = android.net.Uri.parse(t)
+                val u = Uri.parse(t)
                 if (u.scheme == "vahter" && u.host == "connect") {
                     val url = u.getQueryParameter("url")?.trim()?.trimEnd('/'); val tok = u.getQueryParameter("token")?.trim()
                     if (!url.isNullOrBlank() && !tok.isNullOrBlank()) return HermesLink(url, tok)

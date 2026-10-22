@@ -55,9 +55,10 @@ sealed interface BrainEvent {
     data class Error(val text: String, val kind: ErrorKind = ErrorKind.OTHER, val dropAnswer: Boolean = false) : BrainEvent
     /**
      * Мозг просит подтвердить команду на сервере (Hermes, `approval.request`): карточка с вариантами сервера
-     * («Один раз / До конца сессии / Всегда / Нет»), ответ — [respond] с выбранным вариантом. Ход ждёт ответа на открытом потоке.
+     * («Один раз / До конца сессии / Всегда / Нет»), ответ — [respond] с выбранным вариантом (false — до сервера не дошёл).
+     * Ход ждёт ответа на открытом потоке.
      */
-    data class Ask(val title: String, val text: String, val choices: List<Pair<String, String>>, val respond: suspend (String) -> Unit) : BrainEvent
+    data class Ask(val title: String, val text: String, val choices: List<Pair<String, String>>, val respond: suspend (String) -> Boolean) : BrainEvent
     /** Файл от мозга (Hermes, тег `MEDIA:`): скачан в [path]; не доставлен — [path] = null и [note] почему (остался на сервере). */
     data class Attachment(val name: String, val path: String?, val image: Boolean, val note: String? = null) : BrainEvent
     /** Ход идёт задачей на сервере (Hermes `/v1/runs`): id и последнее прочитанное событие — чтобы дочитать после обрыва или перезапуска. */

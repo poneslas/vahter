@@ -781,6 +781,7 @@
     <string name="hermes_ask_session">До конца сессии</string>
     <string name="hermes_ask_always">Всегда</string>
     <string name="hermes_ask_deny">Нет</string>
+    <string name="hermes_ask_failed">Ответ не дошёл до Hermes — нажмите ещё раз.</string>
     <string name="hermes_step_search">Ищу в интернете</string>
     <string name="hermes_step_read_page">Читаю страницу</string>
     <string name="hermes_step_terminal">Команда на сервере</string>
