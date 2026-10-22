@@ -27,14 +27,14 @@ const MODE_ICONS=['spark','transl','lens','food','cart','flight','book','home','
 const EMOJI_QUICK=['🍕','💊','🐶','🌱','🎓','⚽','🧾','✈️'];
 const mode = o => ({hint:'', placeholder:'Вопрос или задача', prompt:'', accepts:{voice:true,photo:false,file:false}, primary:'voice', brain:'deepseek', tools:false, builtin:false, enabled:true, asr:'ru', tts:'off', ...o});
 const BUILTIN_MODES=[
-  mode({id:'main', title:'Ассистент', icon:'spark', hint:'Спросите что угодно или попросите телефон: таймер, будильник, календарь.', placeholder:'Вам чего?', accepts:{voice:true,photo:true,file:true}, tools:true, builtin:true}),
-  mode({id:'translate', title:'Переводчик', icon:'transl', builtin:true, hint:'Скажите или напишите — переведу. Можно сфотографировать надпись или меню.', placeholder:'Что перевести?', accepts:{voice:true,photo:true,file:false},
+  mode({id:'main', title:'Ассистент', icon:'spark', hint:'Будильник, звонок, вопрос — всё сюда', placeholder:'Вам чего?', accepts:{voice:true,photo:true,file:true}, tools:true, builtin:true}),
+  mode({id:'translate', title:'Переводчик', icon:'transl', builtin:true, hint:'Переведу речь, вывеску, меню', placeholder:'Что перевести?', accepts:{voice:true,photo:true,file:false},
     prompt:'Переводи с русского на китайский с пиньинем, с других языков — на русский. Коротко, без вступлений. Не сохраняй это в память.'}),
-  mode({id:'whatsthis', title:'Что это?', icon:'lens', builtin:true, primary:'photo', hint:'Сфотографируйте товар, вывеску или меню — коротко объясню, что это.', placeholder:'Вопрос к фото', accepts:{voice:true,photo:true,file:false},
+  mode({id:'whatsthis', title:'Что это?', icon:'lens', builtin:true, primary:'photo', hint:'Сфотографируйте — объясню, что это', placeholder:'Вопрос к фото', accepts:{voice:true,photo:true,file:false},
     prompt:'Пользователь в поездке. По фото коротко скажи: что это, для чего, нормальная ли цена, на что обратить внимание. Переведи надписи. Не сохраняй это в память.'}),
 ];
 /** Пример своего режима — как если бы его создали через «+». */
-const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', primary:'photo', hint:'Сфотографируйте меню — выберу под ваши вкусы.', placeholder:'Вопрос к меню', accepts:{voice:true,photo:true,file:false},
+const SAMPLE_CUSTOM=mode({id:'m-4c1e', title:'Гастрогид', icon:'food', primary:'photo', hint:'Выберу блюдо по меню под ваши вкусы', placeholder:'Вопрос к меню', accepts:{voice:true,photo:true,file:false},
   prompt:'Я пришлю фото меню (может быть несколько кадров). Выбери мне 1–2 блюда и напиток под мои вкусы: не острое, без свинины, люблю рыбу и овощи. Если меню не на русском — пиши названия в оригинале и по-русски, чтобы я мог показать официанту. Коротко. Не сохраняй это в память.'});
 /**
  * Мозг — кто отвечает. Два вида, абстракции общие с первого дня: прямой API любого OpenAI-совместимого провайдера
@@ -101,9 +101,8 @@ const RETURN_OPTS=[['30m','На 30 минут — потом снова Асси
 const clone = o => JSON.parse(JSON.stringify(o));
 /** Одна строка описания режима в списке — выводится из полей, не хранится. */
 function modeSummary(m){
-  if (m.id==='main') return 'голос · фото · все действия';   // в одну строку, в формате остальных
-  const ins=[m.accepts.photo&&'фото',m.accepts.file&&'файл'].filter(Boolean);
-  return [m.builtin?'':'Свой', m.primary==='photo'?'сразу камера':'голос', ins.length?ins.join(', '):''].filter(Boolean).join(' · ') }
+  // Подпись режима — «для чего» (поле hint): та же строка, что под названием в пустом листе. Про голос и фото здесь не пишем.
+  return m.hint||(m.builtin?'':'Добавьте «Для чего» — будет видно здесь') }
 
 const fresh = () => { const o = ({
   w:{ net:'wifi', key:'none', server:'none', side:'assistant', profile:'samsung', perms:{camera:'ok',calendar:'ok',location:'ask',contacts:'ok',dnd:'ask'}, model:'none', locked:false, role:'gemini', mic:'ask', notif:'ask' },
