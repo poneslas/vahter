@@ -149,7 +149,7 @@ open class MainActivity : ComponentActivity() {
         i.getStringExtra(EXTRA_EDIT_MODE)?.let { id -> stack.clear(); stack.add("chat"); stack.add("mode:$id"); sheetReturn = "mode:$id" }
         // Строка «Мозг не подключён · Подключить» или карточка «Наверх не дозвониться» в листе → экран мозга; «Назад» — снова лист.
         if (i.getBooleanExtra(EXTRA_BRAIN, false)) { val p = brainPage(); stack.clear(); stack.add("chat"); stack.add(p); sheetReturn = p }
-        // Ссылка-приглашение Hermes (vahter://connect?url=…&token=…): страница Hermes подключается сама.
+        // Ссылка-приглашение Hermes (vahter://connect?url=…&token=…): страница Hermes показывает адрес и подключает по нажатию.
         if (i.action == Intent.ACTION_VIEW && i.data?.scheme == "vahter") {
             invite = HermesBrain.parseInvite(i.dataString.orEmpty())
             stack.clear(); stack.add("chat"); stack.add("settings"); stack.add("hermes")
@@ -159,7 +159,7 @@ open class MainActivity : ComponentActivity() {
     }
 
     fun go(page: String) { stack.add(page) }
-    /** Приглашение из ссылки — страница Hermes забирает его один раз. */
+    /** Приглашение из ссылки — висит на странице Hermes, пока не нажали «Подключить» или «Отмена». */
     var invite by mutableStateOf<HermesLink?>(null)
     /** Страница, с которой «Назад» сворачивает обратно в лист (пришли на неё из листа). */
     protected var sheetReturn: String? by mutableStateOf(null)

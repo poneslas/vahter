@@ -723,6 +723,10 @@
     <string name="brain_modes_sub">Мозг выбирается в режиме</string>
     <string name="brain_off_sub">Ключ стирается с телефона</string>
     <string name="hermes_connect">Подключить</string>
+    <string name="hermes_invite_h">Приглашение</string>
+    <string name="hermes_invite_sub">Сервер из ссылки — подключить?</string>
+    <string name="hermes_invite_replace">Заменит подключение к %1$s</string>
+    <string name="hermes_replace">Заменить</string>
     <string name="hermes_disconnect">Отключить</string>
     <string name="hermes_disconnect_sub">Ключ телефона стирается; на сервере его можно отозвать</string>
     <string name="hermes_no_link">Hermes не подключён. Подключите его: Настройки → Мозги → Hermes.</string>

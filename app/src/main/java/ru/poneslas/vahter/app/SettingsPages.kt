@@ -331,14 +331,14 @@ class HermesCtl {
     var status by mutableStateOf<Pair<Boolean, String>?>(null)
     val canConnect get() = !checking && url.length > 8 && token.length > 10
 
-    fun connect(scope: CoroutineScope, link: HermesLink, save: Boolean) {
+    fun connect(scope: CoroutineScope, link: HermesLink, save: Boolean, then: () -> Unit = {}) {
         val app = App.instance
         checking = true; status = null
         scope.launch {
             val r = withContext(Dispatchers.IO) { app.hermesBrain.check(link) }
             checking = false
             status = r.ok to r.text
-            if (r.ok && save) { app.setHermes(link); token = ""; url = ""; manual = false }
+            if (r.ok && save) { app.setHermes(link); token = ""; url = ""; manual = false; then() }
         }
     }
 }
@@ -356,10 +356,11 @@ fun HermesPage(a: MainActivity) {
     val keyV by app.keyVersion.collectAsState()
     val link = remember(keyV, state.settings.hermesUrl) { app.hermesLink() }
     val ctl = remember { HermesCtl() }
-    // Пришли по ссылке-приглашению — подключаемся сразу, ничего вводить не нужно.
-    LaunchedEffect(a.invite) { a.invite?.let { inv -> a.invite = null; ctl.connect(scope, inv, save = true) } }
     TopBar("Hermes", tr(if (link != null) R.string.hermes_subtitle_on else R.string.hermes_subtitle), onBack = a::back)
     FormPage {
+        // Ссылку vahter://connect может открыть любая страница в браузере: приглашение только показываем — адрес виден,
+        // подключаем (или заменяем текущее подключение) лишь по нажатию.
+        a.invite?.let { inv -> InviteOffer(inv, link) { a.invite = null } }
         if (link == null) {
             H2(tr(R.string.hermes_h))
             Text(tr(R.string.hermes_about_1) + tr(R.string.hermes_about_2), color = Ink.soft)
@@ -417,6 +418,24 @@ fun HermesPage(a: MainActivity) {
                 Item(tr(R.string.hermes_will_search), tr(R.string.hermes_will_search_sub), icon = Ic.lens)
                 Item(tr(R.string.hermes_will_server), tr(R.string.hermes_will_server_sub), icon = Ic.srv)
                 Item(tr(R.string.set_cap_tools), tr(R.string.hermes_will_phone), icon = Ic.shield)
+            }
+        }
+    }
+}
+
+/** Приглашение из ссылки: адрес сервера, что будет с текущим подключением; «Отмена» и «Подключить» / «Заменить». */
+@Composable
+private fun InviteOffer(inv: HermesLink, current: HermesLink?, done: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val ctl = remember(inv) { HermesCtl() }
+    val replaces = current != null && current != inv
+    PageSection(tr(R.string.hermes_invite_h)) {
+        Item(HermesBrain.host(inv.url), if (replaces) tr(R.string.hermes_invite_replace, HermesBrain.host(current!!.url)) else tr(R.string.hermes_invite_sub), icon = Ic.srv)
+        Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 12.dp)) {
+            StatusLine(ctl.checking, ctl.status?.takeIf { !it.first }, "")
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(tr(R.string.ui_cancel), onClick = done)
+                PrimaryButton(tr(if (replaces) R.string.hermes_replace else R.string.hermes_connect), enabled = !ctl.checking) { ctl.connect(scope, inv, save = true, then = done) }
             }
         }
     }
