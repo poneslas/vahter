@@ -471,7 +471,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 
 /* 0.4: итог действия — отметка на значке (как в приложении) */
 .act .ai2{position:relative}
-.act:not(.undone) .ai2::after{content:"✓";position:absolute;right:-4px;bottom:-4px;width:15px;height:15px;border-radius:50%;background:var(--ok);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;border:1.5px solid var(--surf)}
+.act:not(.undone) .ai2::after{display:none;content:"✓";position:absolute;right:-4px;bottom:-4px;width:15px;height:15px;border-radius:50%;background:var(--ok);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;border:1.5px solid var(--surf)}
 /* 0.4: шапка листа крупнее — режим 16, статус 13.5; края — 16 */
 .hdr{font-size:13.5px;padding:0 8px 0 16px}
 .hdr b{font-size:16px!important}
@@ -745,3 +745,10 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .li.addone{min-height:52px}
 .holdhint{padding:2px 22px 0;margin:0}
 .prow .lic{color:var(--soft)}
+
+/* карточки действий — монохромные значки, как в настройках; одна кнопка-значок справа */
+.act .ai2{background:#F1F2EE;color:var(--ink)}.act .ai2 .ic{width:18px;height:18px}
+.act .tx b{white-space:normal}
+.act .actb{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:#F1F2EE;color:var(--ink);display:grid;place-items:center}
+.act .actb .ic{width:18px;height:18px}
+.act .actsw{border-left:0;padding:0 2px 0 6px;height:32px}

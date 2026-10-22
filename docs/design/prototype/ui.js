@@ -50,6 +50,14 @@ function feedHtml(inSheet){
   const f=sheetFrom(), sep=!inSheet&&f>0&&f<S.feed.length;
   return `<div class="feed">${items.map((it,i)=>(sep&&i===f?`<div class="newconv"><span>Новый разговор · из листа</span></div>`:'')+itemHtml(it,inSheet)).join('')}</div>`;
 }
+/** Карточка действия по её описанию (model.js, ACT_CARDS): значок, итог, подробность, одна кнопка-значок. */
+function actHtml(it){ const C=ACT_CARDS[it.i]||{}; const title=C.title?C.title(it):it.x;
+  const sub=C.sub?C.sub(it):(it.s||'').replace(/^на телефоне( · )?/,'').replace(/^[^·]*→ телефон( · )?/,'');
+  let btn='';
+  if (!it.undone && C.btn==='open') btn=`<button class="actb" data-actbtn="${it.id}" aria-label="${C.label}">${I.openext}</button>`;
+  if (!it.undone && C.btn==='stop' && !it.stopped) btn=`<button class="actb" data-actbtn="${it.id}" aria-label="${C.label}">${I.stop}</button>`;
+  if (!it.undone && C.btn==='toggle') btn=`<button class="swbtn actsw" data-actbtn="${it.id}" role="switch" aria-checked="${it.on!==false}" aria-label="${C.label}"><span class="sw ${it.on===false?'off':''}"></span></button>`;
+  return `<div class="act ${it.undone?'undone':''}" data-aid="${it.id}"><span class="ai2">${I[C.icon]||it.i}</span><span class="tx"><b>${title}</b>${sub?`<span class="asub">${sub}</span>`:''}</span>${btn}</div>` }
 function itemHtml(it,inSheet){
   if (it.t==='notifask') return `<div class="nask">${I.bell}<span>Сообщить, если закроете лист до ответа?</span><button class="tbtn" data-act="asknotif">Разрешить</button><button class="iconbtn" data-act="notifno" aria-label="Не нужно">${I.x}</button></div>`;
   if (it.t==='me' && it.img && it.up && it.up.st!=='sent'){ const u=it.up;
@@ -74,7 +82,7 @@ function itemHtml(it,inSheet){
   if (it.t==='steps') return stepsHtml(it);
   if (it.t==='q') return `<div class="queued">${it.x}<span>${it.s}</span></div>`;
   if (it.t==='chips') return `<div class="chips">${it.c.map(c=>`<button class="chip" data-chip="${c}">${c}</button>`).join('')}</div>`;
-  if (it.t==='act') return `<div class="act ${it.undone?'undone':''}"><span class="ai2">${it.i}</span><span class="tx"><b>${it.x}</b><span>${it.s}</span></span>${it.btn&&!it.undone?`<button class="ln" data-undo="${it.id}" data-kind="${it.kind}">${it.btn}</button>`:''}</div>`;
+  if (it.t==='act') return actHtml(it);
   if (it.t==='card') return `<div class="card"><div class="who ${it.who}">${it.head}</div><div class="bd"><div class="tt">${it.title}</div>${it.kv?`<dl class="kv">${it.kv.map(k=>`<dt>${k[0]}</dt><dd>${k[1]}</dd>`).join('')}</dl>`:''}${it.text?`<p style="margin:6px 0 2px;font-size:13px;color:var(--soft)">${it.text}</p>`:''}${it.code?`<pre>${it.code}</pre>`:''}${it.tmr?`<div class="tmr">${it.tmr}</div>`:''}</div><div class="btns">${it.btns.map(b=>`<button class="cb ${b[2]||''}" data-cardbtn="${b[1]}">${b[0]}</button>`).join('')}</div></div>`;
   return '';
 }

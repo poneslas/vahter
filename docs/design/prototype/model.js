@@ -127,6 +127,22 @@ const modeById = id => S.modes.find(m=>m.id===id);
 const toolById = id => TOOLS.find(t=>t.id===id);
 /** Можно ли на заблокированном телефоне без разблокировки. */
 const lockOk = id => S.settings.lockScope!=='off' && !!toolById(id).safe;
+/**
+ * Карточка действия — маленький плагин (22.10): действие само описывает, что показать после выполнения. Итог — одна строка,
+ * подробность — серым, справа одна кнопка-значок (монохромный, как в настройках): open — открыть приложение, stop — остановить,
+ * toggle — переключатель с живым состоянием. Отмена (если она есть) — долгим нажатием на карточку, второй кнопкой не занимаем.
+ * Ключ — по значку из старых вызовов addAct (⏰ ⏱ 🔦 🌙 📅 📞), чтобы не переписывать сценарии.
+ */
+const ACT_CARDS={
+  '⏰':{k:'alarm', icon:'alarm', btn:'open', label:'Открыть будильники', undo:true,
+        title:it=>it.x.replace('Будильник поставлен · ','Будильник на ')},
+  '⏱':{k:'timer', icon:'timer', btn:'stop', label:'Остановить таймер',
+        title:it=>it.stopped?'Таймер остановлен':'Таймер '+it.x.replace(/^.*·\s*/,''), sub:it=>{ if(it.stopped) return ''; const left=Math.max(0,300-Math.floor((Date.now()-it.id)/1000)); return left?`осталось ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`:'сработал' }},
+  '🔦':{k:'torch', icon:'torch', btn:'toggle', label:'Фонарик', title:it=>it.on===false?'Фонарик выключен':'Фонарик включён', sub:()=>''},
+  '🌙':{k:'dnd', icon:'dnd', btn:'toggle', label:'Не беспокоить', title:it=>it.on===false?'Не беспокоить выключено':'Не беспокоить включено', sub:()=>''},
+  '📅':{k:'cal', icon:'cal', btn:'open', label:'Открыть в календаре', undo:true},
+  '📞':{k:'call', icon:'phone'},
+};
 /** Строка итога в разговоре + запись в журнал действий. */
 function addAct(item, j){ S.feed.push(item); const d=new Date(); S.journal.unshift({id:'j'+Date.now(),day:'Сегодня',at:d.toTimeString().slice(0,5),title:item.x,status:item.undone?'отклонено':'',...j}) }
 const brainById = id => S.brains.find(b=>b.id===id);

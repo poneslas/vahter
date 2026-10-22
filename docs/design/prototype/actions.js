@@ -3,7 +3,7 @@
 // Меню ⋮ закрывается нажатием мимо него.
 document.addEventListener('click', e=>{ if(S.chatMenu && !e.target.closest('.cmenu,[data-act=chatmenu]')){ S.chatMenu=false; S.keepScroll=true; render() } }, true);
 document.addEventListener('click', async e=>{
-  const t=e.target.closest('[data-perm],[data-permfix],[data-sysperm],[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
+  const t=e.target.closest('[data-perm],[data-permfix],[data-sysperm],[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-actbtn],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab) return setPtab(t.dataset.ptab)
   if (t.dataset.preset!==undefined) return preset(+t.dataset.preset);
   if (t.dataset.pickmode){ if(sw===false){ sw=null; return } setMode(t.dataset.pickmode,'Вкладка режима'); S.keepScroll=true; return render() }
@@ -42,6 +42,10 @@ document.addEventListener('click', async e=>{
   if (t.dataset.side){ S.w.side=t.dataset.side; S.dismissed=null; return render() }
   if (t.dataset.chip){ S.feed=S.feed.filter(f=>f.t!=='chips'); S.feed.push({t:'me',x:'На '+t.dataset.chip,via:'нажатие'}); addAct({t:'act',i:'⏰',x:'Будильник поставлен · '+t.dataset.chip,s:'на телефоне · прозвенит через 21 ч',btn:'Открыть будильники',kind:'D',id:Date.now()},{tool:'alarm.set',who:'по правилам',phrase:'поставь будильник → '+t.dataset.chip,params:'time='+t.dataset.chip,confirm:'выбор варианта',lock:S.w.locked}); trace('Будильник — интентом «Часов» (разрешение SET_ALARM). Отмена только через «Часы».','p'); return render() }
   if (t.dataset.cardbtn) return cardBtn(t.dataset.cardbtn);
+  if (t.dataset.actbtn){ const it=S.feed.find(f=>String(f.id)===t.dataset.actbtn); const C=ACT_CARDS[it.i]||{}; S.keepScroll=true;
+    if (C.btn==='toggle'){ it.on=it.on===false; trace(`${C.label}: ${it.on?'включено':'выключено'} — прямо из карточки, состояние живое.`,'p'); return render() }
+    if (C.btn==='stop'){ it.stopped=true; trace('Таймер остановлен из карточки.','p'); return render() }
+    trace(`Открываю: ${C.label.toLowerCase()}.`,'p'); return render() }
   if (t.dataset.undo){ const it=S.feed.find(f=>String(f.id)===t.dataset.undo); if(t.dataset.kind==='B'){ it.undone=true; it.s+=' · отменено'; trace('Знаем id события — отмена настоящая.','i') } else trace('Открываю «Часы» — их таймер сами отменить не можем.','e'); S.keepScroll=true; return render() }
   if (t.dataset.dlg!==undefined){ const o=S.dialog.opts[+t.dataset.dlg]; S.dialog=null; return dlgAct(o[1]) }
   const a=t.dataset.act;
@@ -213,6 +217,7 @@ function btnLater(){
   if (btnDone()||S.btnWarned) return onbNext();
   S.btnWarned=true; S.dialog={ours:true,ic:'⏻',title:'Кнопка пока откроет '+(S.w.side==='bixby'?'Bixby':S.w.role==='ours'?'не Вахтёра':'Gemini'),text:'Без этого Вахтёра можно будет открыть только из приложения. Настроить можно и потом: шестерёнка → «Вызов».',opts:[['Настроить','btnsetup'],['Всё равно позже','btnskip','sec2']]}; return render() }
 async function dlgAct(k){
+  if (k&&k.startsWith('actundo:')){ const it=S.feed.find(f=>String(f.id)===k.slice(8)); if(it){ it.undone=true; it.s=(it.s||'')+' · отменено' } S.keepScroll=true; trace('Отменено по-настоящему: знаем id события.','i'); return render() }
   if (k==='btnsetup') return btnSetup();
   if (k==='btnskip') return onbNext();
   if (k==='tile_ok'){ S.tileAdded=true; trace('Плитка добавлена: шторка → «Вахтёр» открывает лист.','p'); return render() }
@@ -292,3 +297,13 @@ document.addEventListener('pointerdown', e=>{ const r=e.target.closest('[data-ho
 document.addEventListener('pointermove', e=>{ if(holdT&&!holdArmed&&e.movementY&&Math.abs(e.movementY)>6){ clearTimeout(holdT); holdT=null } }, true);
 document.addEventListener('pointerup', ()=>{ clearTimeout(holdT); holdT=null }, true);
 document.addEventListener('click', e=>{ if(holdArmed && e.target.closest('[data-hold]')){ e.stopImmediatePropagation(); e.preventDefault(); holdArmed=false } }, true);
+
+/** Долгое нажатие на карточку действия — «Отменить», если у действия есть отмена (будильник, событие). */
+let actT=null;
+document.addEventListener('pointerdown', e=>{ const a=e.target.closest('.act[data-aid]'); if(!a||e.target.closest('[data-actbtn]')) return; const it=S.feed.find(f=>String(f.id)===a.dataset.aid); const C=it&&ACT_CARDS[it.i];
+  if(!C||!C.undo||it.undone) return; actT=setTimeout(()=>{ navigator.vibrate?.(15); S.dialog={title:'Отменить?',text:(C.title?C.title(it):it.x),opts:[['Отменить','actundo:'+it.id,'danger'],['Оставить','x','sec2']]}; render() },500) }, true);
+document.addEventListener('pointerup', ()=>{ clearTimeout(actT) }, true);
+document.addEventListener('pointermove', e=>{ if(actT&&Math.abs(e.movementY)>6){ clearTimeout(actT); actT=null } }, true);
+/** Живой отсчёт таймера в карточке — меняем только строку, экран не перерисовываем (иначе мигают анимации). */
+setInterval(()=>{ document.querySelectorAll('#scr .act[data-aid]').forEach(a=>{ const it=S.feed.find(f=>String(f.id)===a.dataset.aid); const C=it&&ACT_CARDS[it.i];
+  if(!C||C.k!=='timer'||it.stopped) return; const sp=a.querySelector('.asub'); if(sp) sp.textContent=C.sub(it) }) },1000);
