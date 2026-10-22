@@ -5,6 +5,7 @@ import ru.poneslas.vahter.tr
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -32,6 +33,8 @@ import ru.poneslas.vahter.actions.Registry
 import ru.poneslas.vahter.actions.Phone
 import ru.poneslas.vahter.assistant.Sheet
 import ru.poneslas.vahter.actions.Launch
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /** После стольких минут тишины следующая реплика режима на Hermes начинает новую сессию (Архитектура 9.7). */
 private const val HERMES_IDLE_MS = 30 * 60 * 1000L
@@ -70,13 +73,15 @@ class Conversation(
     private val _state = MutableStateFlow(State(saved = store.load()))
     val state: StateFlow<State> = _state.asStateFlow()
 
-    private var seq = System.currentTimeMillis()
-    private fun nextId() = ++seq
+    /** id элементов ленты: зовут и с главного потока, и из действий мозга (IO) — повтор id роняет ленту («Key was already used»). */
+    private val seq = AtomicLong(System.currentTimeMillis())
+    private fun nextId() = seq.incrementAndGet()
     /** Идущий ход каждого режима. */
     private val jobs = mutableMapOf<String, Job>()
-    private val pending = mutableMapOf<Long, CompletableDeferred<Boolean>>()
+    /** Карточки «Да / Отмена» действий телефона: заводятся из IO (PhoneTools), отвечаются с главного потока. */
+    private val pending = ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
     /** Открытые просьбы Hermes подтвердить команду (id карточки → ответ серверу). */
-    private val asks = mutableMapOf<Long, suspend (String) -> Unit>()
+    private val asks = ConcurrentHashMap<Long, suspend (String) -> Unit>()
 
     init {
         _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) }.onFailure { Log.e("Conversation", "не сохранилось", it) } } }.launchIn(scope)
@@ -365,6 +370,12 @@ class Conversation(
                     }
                 }
                 ended = true // поток кончился сам — ход завершён
+            } catch (e: CancellationException) { throw e
+            } catch (e: Exception) {
+                // Сбой внутри мозга (не сеть: разбор ответа, пропавшее вложение…) — красная строка в ленте, а не падение приложения.
+                Log.e("Conversation", "ход мозга упал", e)
+                ended = true
+                push(modeId, FeedItem.Err(nextId(), tr(R.string.act_failed, e.message ?: e.javaClass.simpleName)))
             } finally {
                 askId?.let { id -> asks.remove(id); remove(modeId, id) }
                 stepsId?.let { id -> replace(modeId, id) { (it as FeedItem.Steps).copy(running = false) } }
