@@ -383,7 +383,14 @@ function toast(){ const T=S.toast; if(!T) return ''; return `<button class="toas
 /* Перерисовка пересоздаёт весь экран — без этого анимации появления (уведомление, окно, меню, сцены приветствия)
    проигрывались бы заново на каждом render(): уведомление «выпрыгивало» по нескольку раз, пока идёт ответ.
    Элемент с тем же ключом продолжает анимацию с того места, где был, а не с начала. */
-const ANIM_KEYS=[['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.tsun.freed',()=>S.modelReadyAt],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
+/* Фоновые перерисовки (загрузка модели и т. п.) ждут, пока палец не отпущен: иначе кнопка под пальцем пересоздаётся
+   между нажатием и отпусканием и клик теряется («Далее» срабатывало со второго раза). */
+let pressing=false, pendRender=false;
+document.addEventListener('pointerdown',()=>{ pressing=true },true);
+const unpress=()=>{ pressing=false; if(pendRender){ pendRender=false; setTimeout(()=>{ S.keepScroll=true; render() },0) } };
+document.addEventListener('pointerup',unpress,true); document.addEventListener('pointercancel',unpress,true);
+function softRender(){ if(pressing){ pendRender=true; return } S.keepScroll=true; render() }
+const ANIM_KEYS=[['.kres',()=>S.keyCheck&&S.keyCheck.stage],['.toast',()=>S.toast&&S.toast.title+S.toast.text],['.scrim',()=>S.dialog&&S.dialog.title],['.mpicker',()=>S.attachMenu],['.cmenu',()=>S.chatMenu],['.sc-pop',()=>S.shortcuts],['.onb .art',()=>S.onbStep],['.scv',()=>'voice'],['.tsun.freed',()=>S.modelReadyAt],['.s2 .glow',()=>sheetSt()],['.s2 .vmark',()=>sheetSt()],['.s2 .shead .vmark',()=>sheetSt()],['.s2.grow',()=>'grow'],['.s2.shrink',()=>'shrink']];
 const animBorn=new Map();
 function keepAnims(){
   const now=performance.now(), live=new Set();
