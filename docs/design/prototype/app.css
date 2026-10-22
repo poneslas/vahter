@@ -537,7 +537,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .recbar .rdot{width:9px;height:9px;background:#E53935}
 .recbar .tm{font-size:15px;color:#1A1C19;font-weight:500}
 .recbar .slide{flex:1;margin:0;text-align:center;font-size:14px;color:#7B8276}
-.lockcue{width:44px;height:76px;border:0;border-radius:22px;background:#fff;color:#5C6358;box-shadow:0 1.5px 0 rgba(0,0,0,.13);padding:12px 0 10px;right:20px}
+.lockcue{width:44px;height:76px;border:0;border-radius:22px;background:#fff;color:#5C6358;box-shadow:0 1.5px 0 rgba(0,0,0,.13);padding:12px 0 10px;right:16px}   /* по центру кнопки: поле 12 + (52 − 44) / 2 */
 .lockcue .ic{width:18px;height:18px}
 .lockcue.near{color:#5C6358}
 .lockcue.shut{height:44px;width:44px;border-radius:50%;justify-content:center;color:#2E6B30;padding:0}
@@ -726,6 +726,6 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 
 /* проба диктовки (мастер, «Распознавание речи → Проверить»): вкладок нет — замочек прямо над кнопкой, а не на высоте вкладок */
 .tryonb .cwrap{position:relative}
-.tryonb .lockcue{bottom:calc(100% + 8px);right:10px}
+.tryonb .lockcue{bottom:calc(100% + 8px);right:4px}   /* по центру кнопки: (52 − 44) / 2, у пробы правого поля нет */
 .vtry{flex-direction:column;align-items:stretch}.vtry .ttext{min-height:64px;justify-content:center}
 .vtry.tryonb{padding-top:0}
