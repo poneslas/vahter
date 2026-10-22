@@ -1,0 +1,14 @@
+# Приёмник файлов от телефона для Hermes (vahter-upload.py): только 127.0.0.1:8650, снаружи — через Caddy с ключом телефона.
+# Установка: /usr/local/lib/vahter/vahter-upload.py, этот файл — /etc/systemd/system/; systemctl enable --now vahter-upload
+[Unit]
+Description=Vahter: upload files from phone to Hermes (vahter-in)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/lib/vahter/vahter-upload.py
+Environment=VAHTER_IN=/root/.hermes/vahter-in VAHTER_IN_SEEN_AS=/opt/data/vahter-in HERMES_UID=10000 PORT=8650
+Restart=on-failure
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

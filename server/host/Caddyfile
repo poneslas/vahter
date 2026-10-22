@@ -71,6 +71,15 @@ https://{$VAHTER_HOST}:9443 {
 		respond 401
 	}
 
+	# Файлы от телефона для Hermes: API Hermes документы не принимает — телефон кладёт файл в vahter-in (vahter-upload.py,
+	# только 127.0.0.1), в реплике — путь. Тот же ключ телефона; лимит тела — выше (25 МБ), приёмник режет на 20.
+	handle /vahter/upload/* {
+		handle @device {
+			reverse_proxy 127.0.0.1:8650
+		}
+		respond 401
+	}
+
 	# Страница приглашения: ключ в #фрагменте, на сервер не уходит; открывает vahter://connect?url=…&token=…
 	handle /vahter/connect {
 		root * /etc/caddy
