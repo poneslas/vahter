@@ -536,7 +536,7 @@
     <!-- Приветствие (ui/Intro.kt; сцены — как docs/design/prototype/intro.css) -->
     <string name="intro_0_h">Вахтёр. Всегда на месте</string>
     <string name="intro_0_p">Зажал кнопку — сказал — сделано. Как Алиса или Gemini, только быстрее, без рекламы и с мозгом, который выбираете вы.</string>
-    <string name="intro_1_h">Своих — без очереди</string>
+    <string name="intro_1_h">Зажал — и спрашивай</string>
     <string name="intro_3_h">Привычки знает наизусть</string>
     <string-array name="intro_steps">
         <item>Разблокировать</item><item>Найти приложение</item><item>Открыть</item><item>Новый чат</item>
