@@ -3,6 +3,7 @@ package ru.poneslas.vahter.brain
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import ru.poneslas.vahter.core.BrainDesc
+import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
@@ -56,7 +58,10 @@ class ApiBrain(
         var round = 0
         while (true) {
             currentCoroutineContext().ensureActive()
-            val body = requestBody(turn, history, specs)
+            // Не собралось (пропало вложение и т. п.) — честная красная строка, а не падение хода.
+            val body = try { requestBody(turn, history, specs) } catch (e: Exception) {
+                emit(BrainEvent.Error(tr(R.string.act_failed, e.message ?: e.javaClass.simpleName))); return@flow
+            }
             val result = try {
                 stream(key, body) { delta -> emit(BrainEvent.Delta(delta)) }
             } catch (e: ModelGone) {
@@ -145,6 +150,8 @@ class ApiBrain(
         c.setRequestProperty("Authorization", "Bearer $key")
         c.setRequestProperty("Content-Type", "application/json")
         c.setRequestProperty("Accept", "text/event-stream")
+        // «Остановить» — рвём соединение: блокирующее чтение иначе ждёт сервер до таймаута.
+        val h = currentCoroutineContext()[Job]?.invokeOnCompletion { c.disconnect() }
         try {
             c.outputStream.use { it.write(body.toByteArray()) }
             val code = c.responseCode
@@ -186,6 +193,7 @@ class ApiBrain(
             }
             return Result(text.toString(), calls.values.map { ToolCallMsg(it.first, it.second, it.third.toString().ifBlank { "{}" }) })
         } finally {
+            h?.dispose()
             c.disconnect()
         }
     }
@@ -194,13 +202,14 @@ class ApiBrain(
      * Поиск в интернете (DeepSeek Search API, /v1/tools/search): модели отдаём заголовок, ссылку и выжимку «для моделей» (summary),
      * не больше 5 результатов. Не вышло — честная ошибка, модель ответит без поиска.
      */
-    private fun search(key: String, query: String, question: String): String = runCatching {
+    private suspend fun search(key: String, query: String, question: String): String = runCatching {
         val c = URL(desc.url.trimEnd('/') + "/v1/tools/search").openConnection() as HttpURLConnection
         c.requestMethod = "POST"; c.connectTimeout = 10_000; c.readTimeout = 30_000; c.doOutput = true
         c.setRequestProperty("Authorization", "Bearer $key"); c.setRequestProperty("Content-Type", "application/json")
+        val h = currentCoroutineContext()[Job]?.invokeOnCompletion { c.disconnect() }
         try {
             c.outputStream.use { it.write(buildJsonObject { put("query", query.take(128)); put("count", 5); if (question.isNotBlank()) put("ori_question", question.take(128)) }.toString().toByteArray()) }
-            if (c.responseCode != 200) return@runCatching """{"ok":false,"message":"search HTTP ${c.responseCode}"}"""
+            if (c.responseCode != 200) return@runCatching failed("search HTTP ${c.responseCode}")
             val res = json.parseToJsonElement(c.inputStream.bufferedReader().readText()).jsonObject["results"] as? JsonArray ?: JsonArray(emptyList())
             buildJsonObject {
                 put("ok", true)
@@ -211,36 +220,38 @@ class ApiBrain(
                     }) }
                 })
             }.toString()
-        } finally { c.disconnect() }
-    }.getOrElse { """{"ok":false,"message":"search failed: ${it.message?.replace("\"", "'")}"}""" }
+        } finally { h?.dispose(); c.disconnect() }
+    }.getOrElse { failed("search failed: ${it.message}") }
+
+    private fun failed(message: String) = buildJsonObject { put("ok", false); put("message", message) }.toString()
 
     /** Проверка ключа пробным запросом (первый запуск, шаг «Мозг»). Основную модель не узнали — пробуем запасную. */
-    fun check(key: String): Result2 = check(key, model).let { r -> if (r.second && desc.fallbackModel.isNotEmpty() && model != desc.fallbackModel) { model = desc.fallbackModel; check(key, model).first } else r.first }
+    fun check(key: String): CheckResult = check(key, model).let { r -> if (r.second && desc.fallbackModel.isNotEmpty() && model != desc.fallbackModel) { model = desc.fallbackModel; check(key, model).first } else r.first }
 
-    private fun check(key: String, m: String): Pair<Result2, Boolean> = runCatching {
+    private fun check(key: String, m: String): Pair<CheckResult, Boolean> = runCatching {
         val c = URL(desc.url.trimEnd('/') + "/chat/completions").openConnection() as HttpURLConnection
         c.requestMethod = "POST"; c.connectTimeout = 10_000; c.readTimeout = 30_000; c.doOutput = true
         c.setRequestProperty("Authorization", "Bearer $key"); c.setRequestProperty("Content-Type", "application/json")
         val t0 = System.currentTimeMillis()
-        c.outputStream.use {
-            it.write(buildJsonObject {
-                put("model", m); put("max_tokens", 1)
-                put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", tr(R.string.brain_check_prompt)) }) })
-            }.toString().toByteArray())
-        }
-        val code = c.responseCode
+        val code: Int; val err: String
+        try {
+            c.outputStream.use {
+                it.write(buildJsonObject {
+                    put("model", m); put("max_tokens", 1)
+                    put("messages", buildJsonArray { add(buildJsonObject { put("role", "user"); put("content", tr(R.string.brain_check_prompt)) }) })
+                }.toString().toByteArray())
+            }
+            code = c.responseCode
+            err = if (code != 200) c.errorStream?.bufferedReader()?.readText().orEmpty() else ""
+        } finally { c.disconnect() }
         val ms = System.currentTimeMillis() - t0
-        val err = if (code != 200) c.errorStream?.bufferedReader()?.readText().orEmpty() else ""
-        c.disconnect()
         when (code) {
-            200 -> Result2(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ','))) to false
-            401 -> Result2(false, tr(R.string.brain_check_key_rejected)) to false
-            402 -> Result2(false, tr(R.string.brain_check_no_balance)) to false
-            else -> Result2(false, tr(R.string.brain_check_http_error, code)) to modelGone(code, err)
+            200 -> CheckResult(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ','))) to false
+            401 -> CheckResult(false, tr(R.string.brain_check_key_rejected)) to false
+            402 -> CheckResult(false, tr(R.string.brain_check_no_balance)) to false
+            else -> CheckResult(false, tr(R.string.brain_check_http_error, code)) to modelGone(code, err)
         }
-    }.getOrElse { Result2(false, tr(R.string.brain_no_net, desc.url.removePrefix("https://"))) to false }
-
-    data class Result2(val ok: Boolean, val text: String)
+    }.getOrElse { CheckResult(false, tr(R.string.brain_no_net, desc.url.removePrefix("https://"))) to false }
 }
 
 /** Сообщение истории в формате OpenAI chat: картинки — `image_url` с data-URL (общее для [ApiBrain] и [HermesBrain]). */
@@ -250,7 +261,7 @@ internal fun chatMsgJson(m: ChatMsg): JsonObject = buildJsonObject {
         put("content", buildJsonArray {
             if (!m.content.isNullOrBlank()) add(buildJsonObject { put("type", "text"); put("text", m.content) })
             for (img in m.images) add(buildJsonObject {
-                val url = if (img.startsWith("data:")) img else Attachments.dataUrl(java.io.File(img))
+                val url = if (img.startsWith("data:")) img else Attachments.dataUrl(File(img))
                 put("type", "image_url"); put("image_url", buildJsonObject { put("url", url) })
             })
         })

@@ -64,6 +64,9 @@ sealed interface BrainEvent {
     data class Run(val id: String, val seq: Int) : BrainEvent
 }
 
+/** Итог проверки подключения (ключ DeepSeek, адрес Hermes): получилось ли и строка для экрана. */
+data class CheckResult(val ok: Boolean, val text: String)
+
 enum class ErrorKind { AUTH, BALANCE, RATE, CONTEXT, NETWORK, NO_BRAIN, OTHER }
 
 /** Мозг не подключён: в ленте — карточка «Наверх не дозвониться» с «Подключить» (Продукт 5.13). Команды телефона работают и без него. */

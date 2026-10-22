@@ -347,8 +347,8 @@ class HermesBrain(
     }
 
     /** Проверка подключения: `GET /v1/models` ключом телефона — отвечает Hermes и за сколько (страница «Hermes», ссылка-приглашение). */
-    fun check(l: HermesLink): ApiBrain.Result2 {
-        if (!l.url.startsWith("https://") && !(debuggable && l.url.startsWith("http://"))) return ApiBrain.Result2(false, tr(R.string.hermes_check_https))
+    fun check(l: HermesLink): CheckResult {
+        if (!l.url.startsWith("https://") && !(debuggable && l.url.startsWith("http://"))) return CheckResult(false, tr(R.string.hermes_check_https))
         return runCatching {
             val c = open(l, "/v1/models", "GET", 15_000)
             val t0 = System.currentTimeMillis()
@@ -357,13 +357,13 @@ class HermesBrain(
             val ok = code == 200 && c.inputStream.bufferedReader().readText().contains("hermes-agent")
             c.disconnect()
             when {
-                ok -> ApiBrain.Result2(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ',')))
-                code == 401 || code == 403 -> ApiBrain.Result2(false, tr(R.string.hermes_check_auth))
-                code == 404 || code == 200 -> ApiBrain.Result2(false, tr(R.string.hermes_check_404))
-                else -> ApiBrain.Result2(false, tr(R.string.hermes_check_http, code))
+                ok -> CheckResult(true, tr(R.string.brain_check_ok, "%.1f".format(ms / 1000.0).replace('.', ',')))
+                code == 401 || code == 403 -> CheckResult(false, tr(R.string.hermes_check_auth))
+                code == 404 || code == 200 -> CheckResult(false, tr(R.string.hermes_check_404))
+                else -> CheckResult(false, tr(R.string.hermes_check_http, code))
             }
         }.getOrElse { e ->
-            ApiBrain.Result2(false, if (e is SSLException) tr(R.string.hermes_check_tls) else tr(R.string.hermes_check_net))
+            CheckResult(false, if (e is SSLException) tr(R.string.hermes_check_tls) else tr(R.string.hermes_check_net))
         }
     }
 
