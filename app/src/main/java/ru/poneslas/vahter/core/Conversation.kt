@@ -10,6 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,11 +35,18 @@ import ru.poneslas.vahter.actions.Registry
 import ru.poneslas.vahter.actions.Phone
 import ru.poneslas.vahter.assistant.Sheet
 import ru.poneslas.vahter.actions.Launch
+import ru.poneslas.vahter.App
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.provider.AlarmClock
+import java.io.File
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-/** После стольких минут тишины следующая реплика режима на Hermes начинает новую сессию (Архитектура 9.7). */
-private const val HERMES_IDLE_MS = 30 * 60 * 1000L
+/** 30 минут без дела: новый разговор режима, возврат к Ассистенту, а у Hermes — новая сессия (Архитектура 9.7). */
+private const val IDLE = 30 * 60_000L
 
 /**
  * Разговор: лента и история каждого режима, текущий режим, черновики поля, настройки.
@@ -88,7 +97,7 @@ class Conversation(
     }
 
     /** Без дела дольше — новый разговор режима и (по настройке) возврат к Ассистенту. */
-    val IDLE_MS = 30 * 60_000L
+    val IDLE_MS = IDLE
 
     private fun edit(f: (Saved) -> Saved) = _state.update { it.copy(saved = f(it.saved)) }
 
@@ -122,7 +131,7 @@ class Conversation(
 
     /** «+»: новый режим. id выдаётся один раз и не меняется при переименовании (для Hermes это ключ сессии). */
     fun addMode(): String {
-        val id = "m-" + java.util.UUID.randomUUID().toString().take(4)
+        val id = "m-" + UUID.randomUUID().toString().take(4)
         updateModes { it + Mode(id = id, title = tr(R.string.feed_new_mode), icon = "star", placeholder = tr(R.string.mode_assistant_hint)) }
         return id
     }
@@ -164,7 +173,7 @@ class Conversation(
     /** Сессия режима в Hermes — id из заголовка; после 30 минут тишины — новая (Архитектура 9.7). */
     fun hermesSession(modeId: String): String? {
         val s = _state.value.saved.hermesSessions[modeId] ?: return null
-        return if (System.currentTimeMillis() - s.at > HERMES_IDLE_MS) null else s.id
+        return if (System.currentTimeMillis() - s.at > IDLE) null else s.id
     }
     fun setHermesSession(modeId: String, id: String) = edit { it.copy(hermesSessions = it.hermesSessions + (modeId to HermesSession(id, System.currentTimeMillis()))) }
     fun clearHermesSessions() = edit { it.copy(hermesSessions = emptyMap()) }
@@ -184,12 +193,12 @@ class Conversation(
         spoke(mode.id)
         push(mode.id, FeedItem.Me(meId, "", via, paths, status = tr(R.string.conv_preparing)))
         scope.launch {
-            kotlinx.coroutines.delay(2000)
+            delay(2000)
             while (pendingAttach === p) {
                 val draft = _state.value.drafts[p.modeId].orEmpty()
                 if (draft.isBlank()) { commit(p, ""); break }
                 replace(p.modeId, p.meId) { (it as FeedItem.Me).copy(status = tr(R.string.conv_awaits_question)) }
-                kotlinx.coroutines.delay(300)
+                delay(300)
             }
         }
     }
@@ -242,16 +251,16 @@ class Conversation(
      * Файл для Hermes (скрепка → «Файл»): в ленте — «📎 имя», файл уходит на сервер (HermesBrain.upload), в реплике мозгу — путь
      * и вопрос из поля, если был. DeepSeek файлы не читает — пункта у него нет.
      */
-    fun sendFile(local: java.io.File, name: String) {
+    fun sendFile(local: File, name: String) {
         val mode = _state.value.current
-        val link = ru.poneslas.vahter.App.instance.hermesLink() ?: return
+        val link = App.instance.hermesLink() ?: return
         val q = _state.value.draft.trim()
         _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
         spoke(mode.id)
         val meId = nextId()
         push(mode.id, FeedItem.Me(meId, listOf("📎 $name", q).filter { it.isNotBlank() }.joinToString("\n"), tr(R.string.conv_file_sending)))
         scope.launch {
-            val r = withContext(Dispatchers.IO) { ru.poneslas.vahter.App.instance.hermesBrain.upload(link, local, name) }
+            val r = withContext(Dispatchers.IO) { App.instance.hermesBrain.upload(link, local, name) }
             local.delete()
             r.fold({ path ->
                 replace(mode.id, meId) { (it as FeedItem.Me).copy(via = tr(R.string.conv_file_via)) }
@@ -292,7 +301,6 @@ class Conversation(
     }
 
     private fun toolHost(modeId: String, phrase: String): PhoneTools {
-        val who = Brains.byId(_state.value.modes.firstOrNull { it.id == modeId }?.brain ?: "deepseek").title
         return PhoneTools(
             context, settings = { _state.value.settings },
             confirm = { title, detail -> confirm(modeId, title, detail) },
@@ -305,7 +313,7 @@ class Conversation(
     }
 
     /** Ход мозга: события потока → лента режима. Один на режим; у Hermes ход переживает закрытие приложения ([resumePending]). */
-    private fun run(mode: Mode, phrase: String, events: kotlinx.coroutines.flow.Flow<BrainEvent>) {
+    private fun run(mode: Mode, phrase: String, events: Flow<BrainEvent>) {
         val modeId = mode.id
         jobs[modeId] = scope.launch {
             _state.update { it.copy(busyModes = it.busyModes + modeId) }
@@ -389,9 +397,9 @@ class Conversation(
 
     /** Точные короткие команды — без мозга и без сети (Архитектура 5). */
     private fun online(): Boolean {
-        val cm = context.getSystemService(android.net.ConnectivityManager::class.java)
+        val cm = context.getSystemService(ConnectivityManager::class.java)
         val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
-        return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
     /** Без сети: каждую часть составной фразы — локальным правилом; непонятые — одной честной строкой. */
@@ -483,11 +491,11 @@ class Conversation(
         val P = Phone
         val parts = a.split(":")
         val ok: Boolean = when (parts[0]) {
-            "timers" -> Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_TIMERS)).isSuccess
+            "timers" -> Launch.activity(context, Intent(AlarmClock.ACTION_SHOW_TIMERS)).isSuccess
             // карточка-переключатель (фонарик, «Не беспокоить»): живое состояние — в самой карточке
             "toggle" -> { toggleAct(item); return }
             "timerstop" -> { if (P.dismissTimer(context).isSuccess) replaceAct(item) { it.copy(title = tr(R.string.act_timer_off_done), subtitle = "", at = null, countdown = false, action = null) }; return }
-            "alarms" -> Launch.activity(context, android.content.Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)).isSuccess
+            "alarms" -> Launch.activity(context, Intent(AlarmClock.ACTION_SHOW_ALARMS)).isSuccess
             "perm" -> { Launch.askPermissions(context, a.removePrefix("perm:").split(",")); true }
             "dndaccess" -> P.openDndAccess(context).isSuccess
             "map" -> P.openMap(context, parts[1].toDouble(), parts[2].toDouble(), parts.drop(3).joinToString(":")).isSuccess
