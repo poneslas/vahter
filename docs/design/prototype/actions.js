@@ -48,10 +48,10 @@ document.addEventListener('click', async e=>{
   if (a && a.startsWith('brainpage:')){ S.editBrain=a.split(':')[1]; S.keyCheck=null; S.keyEdit=false; S.page='brain'; brainAutoCheck(); return render() }
   if (a && a.startsWith('emo:')){ modeById(S.editMode).icon='emoji:'+a.slice(4); S.emojiPick=false; S.keepScroll=true; return render() }
   // «Назад» со страницы режима — туда, откуда пришли: лист, разговор или список режимов в настройках.
-  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.modeBack=S.ov?'sheet':S.page==='chat'||!S.page?'chat':'settings';
+  if (a && a.startsWith('editmode:')){ S.editMode=a.split(':')[1]; S.modeBack=S.ov?'sheet':S.page==='chat'||!S.page?'chat':S.page==='modes'?'modes':'settings';
     if(S.ov){ S.fromSheet={screen:S.screen==='app'?'home':S.screen}; S.ov=null; S.screen='app'; S.onboarded=true; trace('Полоска промпта → страница режима в приложении, лист закрывается. «Назад» вернёт лист.') } S.page='mode'; return render() }
   switch(a){
-    case 'modeback': { const b=S.modeBack; S.modeBack=null; if(b==='sheet'){ const r=S.fromSheet; S.fromSheet=null; S.screen=r?.screen||'home'; S.page='chat'; openOverlay('снова — назад со страницы режима'); return render() } S.page=b==='chat'?'chat':'settings'; return render() }
+    case 'modeback': { const b=S.modeBack; S.modeBack=null; if(b==='sheet'){ const r=S.fromSheet; S.fromSheet=null; S.screen=r?.screen||'home'; S.page='chat'; openOverlay('снова — назад со страницы режима'); return render() } S.page=b==='chat'?'chat':b==='modes'?'modes':'settings'; return render() }
     case 'promptreset': { const m=modeById(S.editMode), d=BUILTIN_MODES.find(b=>b.id===m.id); m.prompt=d.prompt; trace('Промпт встроенного режима — снова из текстов приложения: обновится с новой версией и языком.','i'); return render() }
     case 'listentoggle': S.settings.listenOnCall = S.settings.listenOnCall===false; return render();
     case 'chatmenu': S.chatMenu=!S.chatMenu; S.keepScroll=true; return render();
@@ -129,7 +129,7 @@ document.addEventListener('click', async e=>{
     case 'speaksoon': trace('Озвучка — v1.1. Для переводчика она первая в очереди.','p'); return;
     case 'back': S.page='chat'; return render();
     // 22.10: порядок режимов, свой эмодзи, ключ «Изменить / Подключить», отключение мозга, страница распознавания, свой переключатель уведомлений
-    case 'reorder': S.reorder=!S.reorder; S.keepScroll=true; if(!S.reorder) trace('Порядок режимов сохранён — так же и вкладки под полем.','i'); return render();
+    case 'modes': S.page='modes'; return render();
     case 'emojipick': S.emojiPick=!S.emojiPick; S.keepScroll=true; return render();
     case 'keyedit': S.keyEdit=true; S.keyCheck=null; S.keepScroll=true; return render();
     case 'keycanceledit': S.keyEdit=false; S.keyCheck=null; S.keepScroll=true; return render();
@@ -275,10 +275,10 @@ function tabSnap(t){ if(t._snap) return; t._snap=true; let to=null;
   t.addEventListener('scroll',()=>{ clearTimeout(to); to=setTimeout(pick,140) }, {passive:true}) }
 /** Порядок режимов: тянуть за ⠿; отпустили — режим встал на новое место (в приложении — перетаскивание в списке). */
 let dr=null;
-document.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-drag]'); if(!g) return; e.preventDefault(); const row=g.closest('.rrow'); const k=$('#dev').getBoundingClientRect().width/W;
-  dr={i:+g.dataset.drag, y:e.clientY, row, k, h:row.offsetHeight+6}; row.classList.add('drag'); row.setPointerCapture?.(e.pointerId) });
+document.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-drag]'); if(!g) return; e.preventDefault(); const row=g.closest('[data-ri]'); const k=$('#dev').getBoundingClientRect().width/W;
+  dr={i:+g.dataset.drag, y:e.clientY, row, k, h:row.offsetHeight}; row.classList.add('drag'); row.setPointerCapture?.(e.pointerId) });
 document.addEventListener('pointermove', e=>{ if(!dr) return; const dy=(e.clientY-dr.y)/dr.k; dr.row.style.transform=`translateY(${dy}px)` ; dr.to=Math.max(0,Math.min(S.modes.length-1, dr.i+Math.round(dy/dr.h))) });
-document.addEventListener('pointerup', ()=>{ if(!dr) return; const {i,to}=dr; dr=null; if(to!=null&&to!==i){ const [m]=S.modes.splice(i,1); S.modes.splice(to,0,m) } S.keepScroll=true; render() });
+document.addEventListener('pointerup', ()=>{ if(!dr) return; const {i,to}=dr; dr=null; if(to!=null&&to!==i){ const [m]=S.modes.splice(i,1); S.modes.splice(to,0,m); trace('Порядок режимов — так же и вкладки под полем.','i') } S.keepScroll=true; render() });
 /** Свой эмодзи: первая графема из поля. */
 document.addEventListener('input', e=>{ if(e.target.id!=='emoin') return; const v=e.target.value.trim(); if(!v) return;
   const g=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)][0].segment; modeById(S.editMode).icon='emoji:'+g; S.emojiPick=false; S.keepScroll=true; render() });

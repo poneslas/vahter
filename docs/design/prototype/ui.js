@@ -160,14 +160,14 @@ function settings(){
   return `<div class="layer appv">${statusBar(true)}
   <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Назад">${I.back}</button><div class="t"><b>Настройки</b></div></div>
   <div class="scroll"><div class="list">
-    <div class="lh">Вызов</div>
+    <div class="lh">Режимы</div>
+    ${(()=>{ const on=S.modes.filter(m=>m.enabled||m.id==='main'); return li(I.list,'Режимы',`${on.length} включено · ${on.map(m=>esc(m.title)).join(', ')}`,'modes') })()}
+    ${li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
+    <div class="lh">Помощник</div>
     ${li(I.spark,'Цифровой помощник', w.role==='ours'?'Вахтёр':'Сейчас Gemini','sysrole',w.role!=='ours')}
     ${li(I.btn,'Боковая кнопка', S.w.profile==='unknown' ? 'Проверка кнопки зависит от телефона' : {power:'Зажатие — меню выключения',bixby:'Зажатие — Bixby',double:'Помощник — на двойном нажатии',assistant:'Зажатие — цифровой помощник'}[S.w.side],'sysside',S.w.side!=='assistant')}
     <div class="lirow">${li(I.mic,'Слушать сразу при вызове',S.settings.listenOnCall===false?'Запись по нажатию':'Запись начинается сама')}<button class="swbtn" data-act="listentoggle" role="switch" aria-checked="${S.settings.listenOnCall!==false}"><span class="sw ${S.settings.listenOnCall===false?'off':''}"></span></button></div>
     ${li(I.hist,'Запоминать режим', RETURN_OPTS.find(o=>o[0]===S.settings.returnToAssistant)[2],'returnpick')}
-    <div class="lhrow"><div class="lh">Режимы</div><button class="tbtn" data-act="reorder">${S.reorder?'Готово':'Порядок'}</button></div>
-    ${S.reorder ? `<div class="reord">${S.modes.map((m,i)=>`<div class="rrow" data-ri="${i}"><span class="lic">${mIcon(m.icon)}</span><b>${esc(m.title)}</b><span class="grip" data-drag="${i}" aria-label="Перетащить">${I.grip}</span></div>`).join('')}</div><p class="mnote" style="padding:4px 22px 0">Порядок — как во вкладках под полем. Перетащите за ⠿.</p>` : S.modes.map(m=>`<div class="lirow">${li(mIcon(m.icon),esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('')}
-    ${S.reorder?'':li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')}
     <div class="lh">Голос</div>
     ${li(I.wave,'Распознавание речи', w.model==='ready'?`GigaAM · на телефоне · ${mb(MODEL_TOTAL)} МБ`:w.model==='loading'?`Качается: ${S.modelPct} %`:w.model==='broken'?'Файл повреждён':'Не скачано · '+mb(MODEL_TOTAL)+' МБ','voice',w.model==='none'||w.model==='broken')}
     ${w.mic==='ok'?'':li(I.mic,'Микрофон', w.mic==='denied'?'Запрещён':'Спросит при первой записи','askmic',w.mic==='denied')}
@@ -255,6 +255,11 @@ function actionsPage(){
 function journalPage(){ const days=[...new Set(S.journal.map(j=>j.day))];
   return `<div class="layer appv">${statusBar(true)}<div class="topbar"><button class="iconbtn" data-act="settings" aria-label="Назад">${I.back}</button><div class="t"><b>Журнал действий</b><small>только на телефоне</small></div></div>
   <div class="scroll"><div class="list">${days.map(d=>`<div class="lh">${d}</div>${S.journal.filter(j=>j.day===d).map(j=>`<button class="jrow" data-jid="${j.id}" aria-expanded="${S.jopen===j.id}"><span class="jt">${j.at}</span><span class="jm"><b>${esc(j.title)}</b><small>${j.who}${j.status?' · '+j.status:''}</small></span></button>${S.jopen===j.id?`<div class="jd"><div><span>Фраза</span>«${esc(j.phrase)}»</div><div><span>Действие</span><code>${j.tool}</code> ${esc(j.params)}</div><div><span>Подтверждение</span>${j.confirm}</div><div><span>Экран</span>${j.lock?'заблокирован':'открыт'}</div>${j.undo?`<button class="tbtn" data-act="jundo" data-id="${j.id}">Отменить</button>`:''}</div>`:''}`).join('')}`).join('')}</div></div></div>` }
+/** Режимы — своя страница: ручка ≡ слева (тянуть в любой момент, отдельного режима «Порядок» нет — как языки в настройках
+ *  Android), значок, название, переключатель справа; тап по строке — страница режима. Порядок = порядок вкладок. */
+function modesPage(){
+  const rows=S.modes.map((m,i)=>`<div class="lirow mrow" data-ri="${i}"><span class="grip" data-drag="${i}" aria-label="Перетащить «${esc(m.title)}»">${I.grip}</span>${li(mIcon(m.icon),esc(m.title),modeSummary(m),'editmode:'+m.id)}${m.id==='main'?'<span class="swgap"></span>':`<button class="swbtn" data-menable="${m.id}" role="switch" aria-checked="${m.enabled}" aria-label="${esc(m.title)}"><span class="sw ${m.enabled?'':'off'}"></span></button>`}</div>`).join('');
+  return page('Режимы','','settings', sect('', card(rows)+card(li(I.plus,'Новый режим','Название, промпт, что принимает','addmode')), 'Порядок — как во вкладках под полем. Перетащите за ≡.')) }
 function about(){ const u=S.upd;
   const st = u.state==='available' ? `<div class="card"><div class="who p">Есть версия ${u.next}</div><div class="bd"><ul style="margin:0;padding-left:18px"><li>Уведомление, когда Hermes ответил</li><li>Таблицы и код в ответах</li><li>Лист открывается быстрее</li></ul></div><div class="btns"><button class="cb pri" data-act="upd">Обновить</button><button class="cb gh">Позже</button></div></div>`
     : u.state==='dl' ? `<div class="card"><div class="who p">Скачиваю ${u.next}</div><div class="bd"><div class="prog"><i style="width:${u.pct}%"></i></div><div style="font-size:12px;color:var(--soft);margin:6px 0">${u.pct} %</div></div><div class="btns"><button class="cb" data-act="updcancel">Отменить</button></div></div>` : '';
@@ -404,7 +409,7 @@ function render(){
   let base='';
   if (S.screen==='lock') base=lock();
   else if (S.screen==='home') base=home();
-  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='voice'?voicePage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
+  else if (S.screen==='app') base = !S.onboarded ? onb() : S.page==='settings'?settings():S.page==='mode'?modePage():S.page==='brain'?brainPage():S.page==='actions'?actionsPage():S.page==='voice'?voicePage():S.page==='modes'?modesPage():S.page==='journal'?journalPage():S.page==='about'?about():S.page==='hermes'?hermesPage():chat();
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick(); else if (S.screen==='sysperm') base=sysPerm();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
