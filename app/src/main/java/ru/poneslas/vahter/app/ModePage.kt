@@ -102,6 +102,7 @@ fun ModePage(a: MainActivity, id: String) {
         }
         if (!ro) {
             Field(tr(R.string.mode_empty_label), m.hint, tr(R.string.mode_empty_hint)) { v -> ed { it.copy(hint = v) } }
+            MNote(tr(R.string.mode_empty_note))
             Field(tr(R.string.mode_ph_label), m.placeholder, tr(R.string.mode_whatsthis_ph)) { v -> ed { it.copy(placeholder = v) } }
         }
         Column {

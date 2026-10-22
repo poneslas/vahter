@@ -157,12 +157,8 @@ fun SettingsPage(a: MainActivity) {
 }
 
 /** model.js, modeSummary(). */
-private fun modeSummary(m: Mode): String {
-    if (m.id == Modes.MAIN) return tr(R.string.set_mode_main_sub)
-    val ins = listOfNotNull(tr(R.string.sheet_via_photo).takeIf { m.accepts.photo }, tr(R.string.set_mode_file).takeIf { m.accepts.file })
-    return listOfNotNull(if (m.builtin) null else tr(R.string.set_mode_custom), if (m.primary == Primary.PHOTO) tr(R.string.set_mode_photo_first) else tr(R.string.sheet_via_voice),
-        ins.joinToString(", ").ifEmpty { null }).joinToString(" · ")
-}
+/** Подпись режима — «для чего» (поле hint): та же строка, что под названием в пустом листе. Про голос и фото здесь не пишем (Продукт 5.17). */
+private fun modeSummary(m: Mode): String = m.hint.ifBlank { if (m.builtin) "" else tr(R.string.set_mode_no_purpose) }
 
 private fun returnLabel(r: ReturnToAssistant) = when (r) {
     ReturnToAssistant.MIN30 -> tr(R.string.set_return_30m)
