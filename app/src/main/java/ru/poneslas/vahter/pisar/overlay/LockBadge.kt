@@ -26,9 +26,25 @@ class LockBadge(
 
     var locked = false
         set(value) {
+            val was = field
             field = value
+            // Вахтёр: замок не «перещёлкивается» мгновенно — таблетка оседает в кружок, дужка защёлкивается, цвет зеленеет.
+            anim?.cancel()
+            if (value && !was) {
+                morph = 0f
+                anim = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = 220
+                    interpolator = android.view.animation.DecelerateInterpolator()
+                    addUpdateListener { morph = it.animatedValue as Float; invalidate() }
+                    start()
+                }
+            } else morph = if (value) 1f else 0f
             invalidate()
         }
+
+    /** Вахтёр: 0 — открытая таблетка, 1 — закрытый кружок. */
+    private var morph = 0f
+    private var anim: android.animation.ValueAnimator? = null
 
     /** Below the button (no room above): the arrow points down and the lock is at the bottom. */
     var pointsDown = false
@@ -64,17 +80,21 @@ class LockBadge(
         val pad = SHADOW_DP * density
         val w = width.toFloat()
         val cx = w / 2f
-        val color = if (locked) 0xFF2E6B30.toInt() else 0xFF5C6358.toInt()
+        val color = if (locked) android.animation.ArgbEvaluator().evaluate(morph, 0xFF5C6358.toInt(), 0xFF2E6B30.toInt()) as Int else 0xFF5C6358.toInt()
         icon.color = color
         stroke.color = color
 
         if (locked) {
-            // A round badge at the end nearest the button.
+            // A round badge at the end nearest the button. Вахтёр: таблетка сжимается к кнопке, дужка опускается — защёлкнулся.
             val r = (w - 2 * pad) / 2f
-            val cy = if (pointsDown) pad + r else height - pad - r
-            canvas.drawCircle(cx, cy + 1.5f * density, r, shadow)
-            canvas.drawCircle(cx, cy, r, fill)
-            drawLock(canvas, cx, cy, open = false)
+            val full = RectF(pad, pad, w - pad, height - pad)
+            val end = if (pointsDown) RectF(pad, pad, w - pad, pad + 2 * r) else RectF(pad, height - pad - 2 * r, w - pad, height - pad)
+            val box = RectF(full.left, full.top + (end.top - full.top) * morph, full.right, full.bottom + (end.bottom - full.bottom) * morph)
+            canvas.drawRoundRect(RectF(box.left, box.top + 1.5f * density, box.right, box.bottom + 1.5f * density), r, r, shadow)
+            canvas.drawRoundRect(box, r, r, fill)
+            val cyOpen = if (pointsDown) full.bottom - 24 * density else full.top + 24 * density
+            val cyEnd = end.centerY()
+            drawLock(canvas, cx, cyOpen + (cyEnd - cyOpen) * morph, open = false, lift = 4 * density * (1f - morph))
             return
         }
 
@@ -101,12 +121,12 @@ class LockBadge(
         cx: Float,
         cy: Float,
         open: Boolean,
+        lift: Float = if (open) 4 * density else 0f,
     ) {
         val d = density
         val body = RectF(cx - 7 * d, cy - 2 * d, cx + 7 * d, cy + 9 * d)
         canvas.drawRoundRect(body, 2.5f * d, 2.5f * d, icon)
         stroke.strokeWidth = 2.4f * d
-        val lift = if (open) 4 * d else 0f
         val arc = RectF(cx - 4.5f * d, cy - 10 * d - lift, cx + 4.5f * d, cy - 1 * d - lift)
         canvas.drawArc(arc, 180f, 180f, false, stroke)
         // Left leg always; the right one only when closed (the open shackle swings free).

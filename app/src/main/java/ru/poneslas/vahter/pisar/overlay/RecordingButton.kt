@@ -250,6 +250,8 @@ class RecordingButton(
                     return false
                 }
 
+                // Вахтёр: кнопка внутри прокручиваемой страницы — прокрутка не забирает удержание (иначе запись рвалась).
+                parent?.requestDisallowInterceptTouchEvent(true)
                 downRawX = event.rawX
                 downRawY = event.rawY
                 lastRawX = event.rawX

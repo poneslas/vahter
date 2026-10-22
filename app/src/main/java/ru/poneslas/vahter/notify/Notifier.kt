@@ -25,6 +25,12 @@ import ru.poneslas.vahter.core.Mode
 object Notifier {
     private const val CHANNEL = "answers"
 
+    /** Уведомления на деле показываются: приложение не выключено в системе и канал ответов не выключен. */
+    fun enabled(ctx: Context): Boolean {
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        return nm.areNotificationsEnabled() && (nm.getNotificationChannel(CHANNEL)?.importance ?: NotificationManager.IMPORTANCE_HIGH) != NotificationManager.IMPORTANCE_NONE
+    }
+
     fun init(ctx: Context) {
         ctx.getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, tr(R.string.ntf_channel), NotificationManager.IMPORTANCE_HIGH).apply {
@@ -35,6 +41,7 @@ object Notifier {
 
     fun answer(ctx: Context, mode: Mode, text: String) {
         if (Sheet.visible.value || App.instance.appVisible.value) return
+        if (!App.instance.conversation.state.value.settings.notifyAnswers) return
         val nm = ctx.getSystemService(NotificationManager::class.java)
         if (!nm.areNotificationsEnabled()) return
         val locked = ctx.getSystemService(KeyguardManager::class.java).isKeyguardLocked

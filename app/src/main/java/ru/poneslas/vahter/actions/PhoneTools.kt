@@ -39,7 +39,6 @@ class PhoneTools(
     /** Строка итога в ленте (id назначает разговор). */
     private val report: (FeedItem.Act) -> Unit,
     /** Запись журнала: действие, параметры, итог, статус. */
-    private val journal: (tool: String, params: String, title: String, status: String) -> Unit,
     private val notes: () -> List<Note>,
     private val saveNote: (Note) -> Unit,
     private val deleteNote: (Long) -> Unit,
@@ -104,29 +103,20 @@ class PhoneTools(
         val s = settings()
         val policy = Registry.policy(s, t.id)
         if (policy == Policy.OFF) {
-            journal(t.id, argumentsJson, t.title, tr(R.string.act_policy_off))
             return err("disabled_by_user", tr(R.string.act_policy_off_long, t.title))
         }
         val locked = context.getSystemService(KeyguardManager::class.java).isKeyguardLocked
         val lockOk = !locked || when (s.lockScope) { LockScope.OFF -> false; LockScope.SAFE -> t.safe; LockScope.ON -> t.perms.isEmpty() && t.id != "note.remember" }
         if (!lockOk) {
-            journal(t.id, argumentsJson, t.title, tr(R.string.act_locked))
             return err("locked", tr(R.string.act_locked_long))
         }
         val missingRuntime = Registry.runtimeMissing(context, t)
         if (missingRuntime.isNotEmpty()) {
             val titles = missingRuntime.map { Registry.permTitle(it) }.distinct().joinToString(", ")
             act("🔒", tr(R.string.act_no_access, titles), tr(R.string.act_needed_for, t.title), tr(R.string.act_allow), "perm:" + missingRuntime.joinToString(","), state = "fail")
-            journal(t.id, argumentsJson, t.title, tr(R.string.actions_no_access, titles))
             return err("no_permission", tr(R.string.act_no_access_long, titles))
         }
-        val r = runCatching { run(name, a, policy) }.getOrElse { e -> err("failed", tr(R.string.act_failed, e.message ?: e.javaClass.simpleName)) }
-        journal(t.id, argumentsJson, t.title, when {
-            r.contains("\"uncertain\":true") -> tr(R.string.act_unknown_result)
-            r.contains("\"ok\":true") -> tr(R.string.conv_done)
-            else -> Regex("\"message\":\"([^\"]*)").find(r)?.groupValues?.get(1)?.substringBefore(". ")?.substringBefore(" — ")?.take(80) ?: tr(R.string.conv_not_done)
-        })
-        return r
+        return runCatching { run(name, a, policy) }.getOrElse { e -> err("failed", tr(R.string.act_failed, e.message ?: e.javaClass.simpleName)) }
     }
 
     private suspend fun ask(policy: Policy, title: String, detail: String) = policy != Policy.ASK || confirm(title, detail)

@@ -33,7 +33,8 @@ import androidx.compose.runtime.getValue
 fun VoicePage(onBack: () -> Unit) {
     val app = App.instance
     TopBar(tr(R.string.set_voice_title), tr(R.string.voice_subtitle), onBack = onBack)
-    ScrollPage { VoiceBlock() }
+    // отступ сверху — как у остальных страниц (раздел начинается не вплотную к шапке); у мастера свой
+    ScrollPage { androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp)); VoiceBlock() }
 }
 
 /** Скачивание голоса — как шаг «Модель» у Гига Писаря для Android: одна полоса, «Попробуйте здесь» в конце. */

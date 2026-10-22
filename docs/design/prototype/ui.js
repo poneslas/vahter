@@ -115,7 +115,7 @@ function liveHtml(){
 function modeTabs(){ const am=activeModes(); return `<div class="mtabs" data-swipe role="tablist" aria-label="Режимы">${am.map(m=>`<button role="tab" data-pickmode="${m.id}" aria-pressed="${S.mode===m.id}">${m.title}</button>`).join('')}<button class="madd" data-act="addmode" aria-label="Новый режим">+</button></div>` }
 /* ⋮ в шапке разговора — меню, как привычно в Android: пункты-действия без пояснений. */
 function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
-  return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:journal">Журнал действий</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }
+  return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }
 function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accepts, photoMain=m.primary==='photo';
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
   return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
@@ -177,7 +177,6 @@ function settings(){
     ${li(I.bell,'Уведомления', w.notif==='ok'?'Когда пришёл ответ, а лист закрыт':'Выключены','asknotif',false,`<span class="sw ${w.notif==='ok'?'':'off'}"></span>`)}
     <div class="lh">Действия</div>
     ${li(I.shield,'Действия на телефоне',TOOLS.some(toolBlocked)?`Нет доступа — ${TOOLS.filter(toolBlocked).length}`:`Разрешено ${Object.values(S.policy).filter(p=>p==='auto').length}, спрашивать ${Object.values(S.policy).filter(p=>p==='ask').length}, не разрешено ${Object.values(S.policy).filter(p=>p==='off').length}`,'actions',TOOLS.some(toolBlocked))}
-    ${li(I.list,'Журнал действий',`Сегодня — ${S.journal.filter(j=>j.day==='Сегодня').length}`,'journal')}
     <div class="divider"></div>
     ${li(I.info,'О программе', S.upd.state==='available'?`Доступна версия ${S.upd.next}`:`Версия ${S.upd.ver}`,'about',false, S.upd.state==='available'?'<span class="ldot loc"></span>':'')}
   </div></div></div>`;

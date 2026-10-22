@@ -80,7 +80,6 @@ object Sheet {
     /** Один раз — подсказка «Так открывается по боковой кнопке». */
     val sideCue = MutableStateFlow(false)
     /** Чистый лист после 30 минут без дела (Продукт 5.1): режим → с какого места ленты показывать. Ничего не стирается — в приложении вся лента. */
-    val from = MutableStateFlow<Map<String, Int>>(emptyMap())
     /** Свернули из приложения: лист появляется во весь экран и садится на свою высоту. */
     @Volatile var shrinkOnShow = false
     /** При первом закрытии листа после мастера — «Вахтёр на месте». */
@@ -137,12 +136,11 @@ class AssistSession(context: Context) : VoiceInteractionSession(context) {
             val back = when (settings.returnToAssistant) {
                 ReturnToAssistant.ALWAYS -> true
                 ReturnToAssistant.NEVER -> false
-                ReturnToAssistant.MIN30 -> idle > 30 * 60_000
+                ReturnToAssistant.MIN30 -> idle > conv.IDLE_MS
             }
+            // Чистый лист после 30 минут без дела — у всех режимов (Conversation.freshen; та же проверка — при каждом показе листа и приложения).
+            conv.freshen()
             if (back) conv.selectMode(Modes.MAIN)
-            // После 30 минут без дела — чистый лист: показываем только новое; старое — в приложении, выше черты «Новый разговор».
-            val st = conv.state.value
-            if (idle > 30 * 60_000 && st.feed.size > (Sheet.from.value[st.mode] ?: 0)) Sheet.from.value = Sheet.from.value + (st.mode to st.feed.size)
         }
         // Вызов кнопкой (не из уведомления и не из приложения): голосовой режим сразу слушает без рук.
         val cur = conv.state.value.current

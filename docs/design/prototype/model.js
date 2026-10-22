@@ -25,7 +25,7 @@ const mb = b => (b/1048576).toFixed(0);
 const MODE_ICONS=['spark','transl','lens','food','cart','flight','book','star','edit'];
 const mode = o => ({hint:'', placeholder:'Вопрос или задача', prompt:'', accepts:{voice:true,photo:false,file:false}, primary:'voice', brain:'deepseek', tools:false, builtin:false, enabled:true, asr:'ru', tts:'off', ...o});
 const BUILTIN_MODES=[
-  mode({id:'main', title:'Ассистент', icon:'spark', hint:'Спросите что угодно или попросите телефон: таймер, будильник, календарь.', placeholder:'Спросить или попросить', accepts:{voice:true,photo:true,file:true}, tools:true, builtin:true}),
+  mode({id:'main', title:'Ассистент', icon:'spark', hint:'Спросите что угодно или попросите телефон: таймер, будильник, календарь.', placeholder:'Вам чего?', accepts:{voice:true,photo:true,file:true}, tools:true, builtin:true}),
   mode({id:'translate', title:'Переводчик', icon:'transl', builtin:true, hint:'Скажите или напишите — переведу. Можно сфотографировать надпись или меню.', placeholder:'Что перевести?', accepts:{voice:true,photo:true,file:false},
     prompt:'Переводи с русского на китайский с пиньинем, с других языков — на русский. Коротко, без вступлений. Не сохраняй это в память.'}),
   mode({id:'whatsthis', title:'Что это?', icon:'lens', builtin:true, primary:'photo', hint:'Сфотографируйте товар, вывеску или меню — коротко объясню, что это.', placeholder:'Вопрос к фото', accepts:{voice:true,photo:true,file:false},

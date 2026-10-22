@@ -76,7 +76,7 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
-/** Страницы за шестерёнкой (ui.js: settings, brainPage, actionsPage, journalPage, hermesPage). */
+/** Страницы за шестерёнкой (ui.js: settings, brainPage, actionsPage, hermesPage). */
 
 @Composable
 fun SettingsPage(a: MainActivity) {
@@ -113,10 +113,9 @@ fun SettingsPage(a: MainActivity) {
         val pct = (dl as? ModelDownload.State.Running)?.percent
         Item(tr(R.string.set_voice_title), when { installed -> tr(R.string.set_voice_ready); pct != null -> tr(R.string.set_voice_loading, pct); else -> tr(R.string.app_voice_none) },
             warn = !installed && pct == null, icon = Ic.wave) { a.go("voice") }
+        // Микрофон — строкой, только пока доступа нет (с доступом строке нечего делать).
         val micOff = !mic && state.settings.micAsked && !a.shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)
-        Item(tr(R.string.set_mic), tr(when { mic -> R.string.set_mic_on; micOff -> R.string.set_mic_denied; else -> R.string.set_mic_ask }), warn = micOff, icon = Ic.mic) {
-            if (!mic) a.askMic()
-        }
+        if (!mic) Item(tr(R.string.set_mic), tr(if (micOff) R.string.set_mic_denied else R.string.set_mic_ask), warn = micOff, icon = Ic.mic) { a.askMic() }
         Section(tr(R.string.set_brains))
         Brains.all.forEach { b ->
             val api = b.kind == BrainDesc.Kind.API
@@ -127,9 +126,24 @@ fun SettingsPage(a: MainActivity) {
                 warn = api && !has, icon = if (api) Ic.spark else Ic.srv) { a.go(if (api) "brain:${b.id}" else "hermes") }
         }
         Section(tr(R.string.set_notif))
-        Item(tr(R.string.set_notif), if (notif) tr(R.string.set_notif_on) else tr(R.string.set_notif_off), icon = Ic.bell, end = { Sw(notif) }) {
-            if (!notif) a.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
-            else a.startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, a.packageName))
+        // Уведомления: нет разрешения — спросить; Android больше не спрашивает — наше окно → настройки; выключены в системе
+        // (разрешение есть, но приложение или канал выключены) — в настройки; всё включено — переключатель — своя настройка «сообщать».
+        val sysOn = notif && ru.poneslas.vahter.notify.Notifier.enabled(a)
+        val notifOff = !notif && state.settings.notifAsked && !a.shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)
+        val on = sysOn && state.settings.notifyAnswers
+        Item(tr(R.string.set_notif), tr(when {
+            !notif && notifOff -> R.string.set_notif_denied
+            !notif -> R.string.set_notif_ask
+            !sysOn -> R.string.set_notif_system
+            on -> R.string.set_notif_on
+            else -> R.string.set_notif_off
+        }), warn = notifOff, icon = Ic.bell, end = { Sw(on) }) {
+            when {
+                !notif && notifOff -> a.showSheet(MainActivity.PermSheet(tr(R.string.notif_off_h), tr(R.string.notif_off_p), tr(R.string.mic_off_go), icon = Ic.bell) { a.notifSettings() })
+                !notif -> { app.conversation.updateSettings { it.copy(notifAsked = true, notifyAnswers = true) }; a.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2) }
+                !sysOn -> a.notifSettings()
+                else -> app.conversation.updateSettings { it.copy(notifyAnswers = !it.notifyAnswers) }
+            }
         }
         Section(tr(R.string.set_actions_section))
         val REG = Registry
@@ -137,7 +151,6 @@ fun SettingsPage(a: MainActivity) {
         val blockedN = REG.all.count { REG.policy(state.settings, it.id) != Policy.OFF && it.special != null && REG.missing(a, it).isNotEmpty() }
         Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
             warn = blockedN > 0, icon = Ic.shield) { a.go("actions") }
-        Item(tr(R.string.set_journal), tr(R.string.set_journal_today, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { a.go("journal") }
         Divider()
         Item(tr(R.string.set_about), tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""), icon = Ic.info)
     }
@@ -231,7 +244,6 @@ fun ActionsPage(a: MainActivity) {
                 app.conversation.updateSettings { it.copy(lockScope = LockScope.valueOf(v)) }
             })
         }
-        Item(tr(R.string.set_journal), tr(R.string.set_journal_today, state.saved.journal.count { android.text.format.DateUtils.isToday(it.at) }), icon = Ic.list) { a.go("journal") }
         MNote(tr(R.string.actions_note),
             Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 20.dp))
     }
@@ -342,35 +354,5 @@ private fun Field(value: String, hint: String, bad: Boolean = false, paste: (() 
     }
 }
 
-/** journalPage(): по дням, время · что · кто; по нажатию — фраза, действие, итог, экран. */
-@Composable
-fun JournalPage(a: MainActivity) {
-    val app = App.instance
-    val state by app.conversation.state.collectAsState()
-    var open by remember { mutableStateOf<Long?>(null) }
-    TopBar(tr(R.string.set_journal), tr(R.string.journal_subtitle), onBack = a::back)
-    ScrollPage {
-        val list = state.saved.journal.reversed()
-        if (list.isEmpty()) MNote(tr(R.string.journal_empty), Modifier.padding(horizontal = 22.dp))
-        list.groupBy { java.text.SimpleDateFormat("d MMMM, EEEE", java.util.Locale("ru")).format(java.util.Date(it.at)) }.forEach { (day, items) ->
-            Section(if (android.text.format.DateUtils.isToday(items.first().at)) tr(R.string.journal_today) else day)
-            items.forEach { j ->
-                Row(Modifier.fillMaxWidth().clickable { open = if (open == j.id) null else j.id }.padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(java.text.SimpleDateFormat("H:mm", java.util.Locale.ROOT).format(java.util.Date(j.at)), fontSize = 13.sp, color = Ink.soft, modifier = Modifier.width(40.dp))
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(j.title, fontSize = 14.5.sp, fontWeight = FontWeight.Medium)
-                        Text("${j.who} · ${j.status}", fontSize = 12.5.sp, color = if (j.status == tr(R.string.conv_done)) Ink.soft else Ink.danger)
-                    }
-                }
-                if (open == j.id) Column(Modifier.padding(start = 76.dp, end = 22.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf(tr(R.string.journal_phrase) to "«${j.phrase}»", tr(R.string.journal_action) to "${j.tool} ${j.params}", tr(R.string.journal_screen) to if (j.locked) tr(R.string.journal_screen_locked) else tr(R.string.journal_screen_open)).forEach { (k, v) ->
-                        Row { Text(k, fontSize = 12.5.sp, color = Ink.faint, modifier = Modifier.width(80.dp)); Text(v, fontSize = 12.5.sp) }
-                    }
-                }
-            }
-        }
-    }
-}
 
 private fun policyWord(p: Policy) = when (p) { Policy.AUTO -> tr(R.string.actions_policy_auto); Policy.ASK -> tr(R.string.actions_policy_ask); Policy.OFF -> tr(R.string.actions_policy_off) }

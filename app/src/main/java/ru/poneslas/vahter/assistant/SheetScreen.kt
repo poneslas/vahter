@@ -157,8 +157,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         val brain = Brains.byId(state.current.brain)
         val keyV by app.keyVersion.collectAsState()
         val connected = remember(keyV, brain.id) { app.hasKey(brain.id) }
-        val from by Sheet.from.collectAsState()
-        val start = (from[state.mode] ?: 0).coerceAtMost(state.feed.size)
+        val start = (state.saved.fresh[state.mode] ?: 0).coerceAtMost(state.feed.size)
         val empty = state.feed.size <= start
         val phase by RecUi.phase.collectAsState()
         val st = when {

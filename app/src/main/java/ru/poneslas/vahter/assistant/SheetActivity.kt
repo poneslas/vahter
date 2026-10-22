@@ -101,7 +101,7 @@ class SheetActivity : MainActivity() {
         window.decorView.post { Sheet.session?.hide() }
     }
 
-    override fun onStart() { super.onStart(); Sheet.visible.value = true }
+    override fun onStart() { App.instance.conversation.freshen(); super.onStart(); Sheet.visible.value = true }
 
     override fun onStop() {
         super.onStop()

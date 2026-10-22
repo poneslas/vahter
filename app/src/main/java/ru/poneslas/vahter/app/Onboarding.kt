@@ -251,7 +251,7 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
                 KeyEditor(Brains.deepseek, onboarding = true, ctl = key)
                 val notif = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                 if (hasKey && !notif) SetCard(Modifier.padding(top = 8.dp)) {
-                    Item(tr(R.string.set_notif), tr(R.string.wiz_notif_sub), icon = Ic.bell) { activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
+                    Item(tr(R.string.set_notif), tr(R.string.wiz_notif_sub), icon = Ic.bell) { app.conversation.updateSettings { it.copy(notifAsked = true) }; activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
                 }
                 if (hasKey) { skip = null; primary = tr(R.string.ui_open) to onDone }
                 else primary = (if (key.checking) tr(R.string.key_connecting) else tr(R.string.ui_connect)) to { key.connect(scope) }
@@ -361,6 +361,7 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
     }
     Box(Modifier.padding(top = 6.dp)) {
         VoiceRow(
+            lock = false,   // замочек — только в разговоре
             voice = app.voice,
             // Поля нет: одна тихая строка жестов у кнопки.
             field = { Text(tr(R.string.try_tips), fontSize = 13.sp, color = Ink.faint, maxLines = 1, overflow = TextOverflow.Ellipsis,

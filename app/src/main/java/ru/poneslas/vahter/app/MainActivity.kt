@@ -94,6 +94,7 @@ open class MainActivity : ComponentActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray, deviceId: Int) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+        resumed.intValue++   // ответ на системное окно (микрофон, уведомления) — перечитать состояние строк
         if (requestCode == REQ_MIC && askMicThenSheet) {
             // камеру просили из листа и разрешили — лист вернётся уже с камерой
             val cam = permissions.indexOf(android.Manifest.permission.CAMERA)
@@ -107,7 +108,7 @@ open class MainActivity : ComponentActivity() {
 
     /** Приложение на экране (для уведомлений и дочитывания хода); у листа — только развёрнутого. */
     protected open val appShown get() = true
-    override fun onResume() { super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
+    override fun onResume() { App.instance.conversation.freshen(); super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
     /** Пришли из листа: лист закрываем, когда приложение нарисовало первый кадр, — подмена незаметна (Архитектура 3.1). */
@@ -160,6 +161,8 @@ open class MainActivity : ComponentActivity() {
     protected open fun leave() = finish()
     fun choose(d: ChoiceDialog) { dialog = d }
     fun hideSheet() { permSheet = null }
+    /** Системные настройки уведомлений приложения. */
+    fun notifSettings() = startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, packageName))
     /** Свернули в лист — открытые окна выбора и разрешений не оставлять. */
     protected fun dialogsOff() { dialog = null; permSheet = null }
 
@@ -194,16 +197,20 @@ open class MainActivity : ComponentActivity() {
                         if (page.startsWith("onb:")) { app.conversation.updateSettings { it.copy(onboarded = true) }; back() } else finishOnboarding()
                     }
                 } else {
-                    when {
+                    // Каждая страница стопки помнит своё состояние (прокрутку): «Назад» в настройки — туда же, где был, а не в начало.
+                    // Ушла из стопки — забываем, чтобы при новом заходе страница открылась сначала.
+                    val holder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+                    val kept = androidx.compose.runtime.remember { mutableSetOf<String>() }
+                    androidx.compose.runtime.SideEffect { (kept - stack.toSet()).forEach { holder.removeState(it); kept.remove(it) }; kept += stack }
+                    holder.SaveableStateProvider(page) { when {
                         page == "chat" -> Chat(this@MainActivity)
                         page == "settings" -> SettingsPage(this@MainActivity)
                         page.startsWith("brain:") -> BrainPage(this@MainActivity, page.removePrefix("brain:"))
                         page == "actions" -> ActionsPage(this@MainActivity)
-                        page == "journal" -> JournalPage(this@MainActivity)
                         page == "hermes" -> HermesPage(this@MainActivity)
                         page == "voice" -> VoicePage(onBack = ::back)
                         page.startsWith("mode:") -> ModePage(this@MainActivity, page.removePrefix("mode:"))
-                    }
+                    } }
                 }
             }
             dialog?.let { d -> Choice(d) { dialog = null } }

@@ -71,7 +71,7 @@ fun ModePage(a: MainActivity, id: String) {
     // Встроенные режимы только включаются и выключаются (Бэклог №14): остальное — для просмотра.
     val ro = m.builtin
     val ed: ((Mode) -> Mode) -> Unit = { f -> conv.editMode(m.id, f) }
-    TopBar(m.title, if (m.builtin) tr(R.string.mode_builtin) else tr(R.string.mode_custom_id, m.id), onBack = a::back, titleIcon = Ic.mode(m.icon))
+    TopBar(m.title, if (m.builtin) tr(R.string.mode_builtin) else tr(R.string.mode_custom_id), onBack = a::back, titleIcon = Ic.mode(m.icon))
     FormPage {
         if (ro) Note(tr(R.string.mode_builtin_note))
         if (!ro) {
@@ -198,6 +198,7 @@ private fun Dictate(onText: (String) -> Unit) {
     val ctx = LocalContext.current
     Column(Modifier.padding(start = 16.dp, end = 4.dp)) {
         VoiceRow(
+            lock = false,   // замочек — только в разговоре
             voice = App.instance.voice,
             field = { Text(msg ?: tr(R.string.mode_dictate_hint), fontSize = 13.sp, color = Ink.soft) },
             trailing = null,

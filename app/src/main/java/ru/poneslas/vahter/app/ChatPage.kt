@@ -52,7 +52,7 @@ fun ColumnScope.Chat(a: MainActivity) {
     TopBar(state.current.title, tr(R.string.set_link_status, brain.title, tr(if (connected) R.string.set_link_on else R.string.set_link_off)),
         onBack = if (a.fromSheet) ({ a.collapse() }) else null, backIcon = Ic.down, dot = if (connected) Ink.local else Ink.faint) {
         IconBtn(Ic.gear, tr(R.string.ui_settings)) { a.go("settings") }
-        // ⋮ — меню разговора (ui.js, chatMenu): изменить режим, журнал действий, начать заново (неактивно, пока разговор пуст).
+        // ⋮ — меню разговора (ui.js, chatMenu): изменить режим, начать заново (неактивно, пока разговор пуст).
         Box {
             var menu by remember { mutableStateOf(false) }
             IconBtn(Ic.more, tr(R.string.restart_more)) { menu = true }
@@ -63,7 +63,6 @@ fun ColumnScope.Chat(a: MainActivity) {
                     leadingIcon = { Icon(painterResource(icon), null, Modifier.size(20.dp), tint = if (enabled) Ink.soft else Ink.faint) },
                     enabled = enabled, onClick = { menu = false; onClick() })
                 row(Ic.edit, tr(R.string.mode_edit)) { a.go("mode:${state.mode}") }
-                row(Ic.list, tr(R.string.set_journal)) { a.go("journal") }
                 row(Ic.hist, tr(R.string.ui_restart), enabled = state.feed.isNotEmpty()) { app.conversation.askRestart() }
             }
         }
@@ -73,7 +72,7 @@ fun ColumnScope.Chat(a: MainActivity) {
     PromptStrip(state.current, onEdit = { a.go("mode:$it") })
     Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
         modifier = Modifier.weight(1f).fillMaxWidth(), inSheet = false, onChip = { app.conversation.send(it, tr(R.string.cmp_via_keyboard)) },
-        from = Sheet.from.collectAsState().value[state.mode] ?: 0)
+        from = state.saved.fresh[state.mode] ?: 0)
     UpLine(state)
     LiveLine(live)
     Composer(

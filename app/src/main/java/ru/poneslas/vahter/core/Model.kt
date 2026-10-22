@@ -129,6 +129,10 @@ data class Settings(
     val micAsked: Boolean = false,
     /** Адрес сервера Hermes (https://…); ключ телефона — в Keystore ([Secrets], «key:hermes»). Пусто — Hermes не подключён. */
     val hermesUrl: String = "",
+    /** Сообщать об ответе, пока лист закрыт (своя настройка: разрешение Android из приложения не отозвать). */
+    val notifyAnswers: Boolean = true,
+    /** Уведомления уже спрашивали системным окном — после второго отказа ведём в настройки (как [micAsked]). */
+    val notifAsked: Boolean = false,
 )
 
 /** Сессия режима в Hermes: id из заголовка X-Hermes-Session-Id и время последней реплики — после 30 минут тишины начинается новая (Архитектура 9.7). */

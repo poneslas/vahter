@@ -103,6 +103,8 @@ fun VoiceRow(
     onNeedMic: () -> Unit,
     autoListen: StateFlow<Int>? = null,
     cancelKey: Any? = null,
+    /** Замочек (запись без рук) и жест отмены. Нужен только в разговоре; в полях настроек, мастере и пробе — нет: там удержал — отпустил. */
+    lock: Boolean = true,
 ) {
     val ctx = LocalContext.current
     val density = LocalDensity.current
@@ -117,12 +119,13 @@ fun VoiceRow(
 
     val button = remember { RecordingButton(ctx).apply { visibility = android.view.View.VISIBLE; alpha = 1f; scaleX = 1f; scaleY = 1f; movable = false; sizeScale = SCALE; inwardSign = -1f; lockSign = -1f; level = { voice.level } } }
     val bar = remember { RecordingBar(ctx).apply { side = -1 } }
-    val lock = remember { LockBadge(ctx) }
+    val lockView = remember { LockBadge(ctx) }
 
     fun buzz() { button.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK) }
     // Голос ещё не скачан — кнопка бледная (ui.js, .micbtn.off): видно, что говорить пока нельзя; нажатие объяснит почему.
     val installedNow by voice.installed.collectAsState()
     LaunchedEffect(installedNow) { button.dimmed = !installedNow; button.invalidate() }
+    LaunchedEffect(lock) { button.gestures = lock }
 
     fun ready(): Boolean {
         if (!voice.hasMic()) { onNeedMicNow(); return false }
@@ -133,7 +136,7 @@ fun VoiceRow(
     fun showChrome(handsFree: Boolean) {
         chrome = true; inward = 0f; rise = 0f
         bar.restart(); bar.handsFree = handsFree
-        lock.locked = handsFree; lock.progress = 0f; lock.pointsDown = false
+        lockView.locked = handsFree; lockView.progress = 0f; lockView.pointsDown = false
         button.barSide = -1
         RecUi.phase.value = RecUi.Phase.LISTENING
         buzz()
@@ -177,13 +180,18 @@ fun VoiceRow(
             }
         }
         button.onRecordingStop = { finish(send = true) }
-        button.onLock = { bar.handsFree = true; lock.locked = true; lock.progress = 0f; inward = 0f; rise = 0f; buzz() }
+        // Защёлкнулся: замок анимирует сам (LockBadge), кнопка плавно опускается на место, отдача — «подтверждение».
+        button.onLock = {
+            bar.handsFree = true; lockView.locked = true; lockView.progress = 0f; inward = 0f
+            scope.launch { androidx.compose.animation.core.animate(rise, 0f, animationSpec = androidx.compose.animation.core.tween(200)) { v, _ -> rise = v } }
+            button.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }
         button.onCancel = { finish(send = false) }
         bar.onCancel = { finish(send = false) }
         button.onSwipe = { i, up ->
             inward = i
             rise = minOf(up, 24 * density.density)
-            lock.progress = up / (80 * density.density * SCALE)
+            lockView.progress = up / (80 * density.density * SCALE)
             bar.cancelProgress = i / (110 * density.density * SCALE)
             button.barSide = if (rise != 0f) 0 else -1
         }
@@ -215,7 +223,7 @@ fun VoiceRow(
             val lw = (LockBadge.WIDTH_DP + 2 * LockBadge.SHADOW_DP).dp
             val lh = (LockBadge.HEIGHT_DP + 2 * LockBadge.SHADOW_DP).dp
             val gap = (43 * SCALE + 14).dp
-            AndroidView({ lock }, Modifier.align(Alignment.CenterEnd).size(lw, lh)
+            if (lock) AndroidView({ lockView }, Modifier.align(Alignment.CenterEnd).size(lw, lh)
                 .offset { IntOffset(-((btnPx - lw.toPx()) / 2).roundToInt(), -(gap.toPx() + lh.toPx() / 2).roundToInt()) })
         }
         if (trailing != null && !chrome) Box(Modifier.align(Alignment.CenterEnd).size(btn), contentAlignment = Alignment.Center) { trailing() }
@@ -245,6 +253,7 @@ fun Composer(
     placeholder: String? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
+    var menuGone by remember { mutableStateOf(0L) }   // тап по скрепке, закрывший меню «мимо», не должен открыть его снова
     val scope = rememberCoroutineScope()
     val photoMain = state.current.primary == Primary.PHOTO && state.current.accepts.photo && onCamera != null
     val hasText = state.draft.isNotBlank()
@@ -257,14 +266,25 @@ fun Composer(
     fun flash(text: String) { scope.launch { onLive(text); delay(2800); onLive(null) } }
 
     Column {   // прозрачная: в листе под строкой ввода видно свечение (ui.js, .s2 .composer)
-        // .mpicker: меню скрепки над полем
-        if (menu) Column(Modifier.padding(start = 16.dp, bottom = 4.dp).widthIn(min = 230.dp)
-            .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
-            .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
-            if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_camera), tr(R.string.cmp_camera_sub)) { menu = false; onCamera() }
-            if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_gallery), tr(R.string.cmp_gallery_sub)) { menu = false; onGallery() }
-        }
+        // .mpicker: меню скрепки — всплывает поверх ленты над полем (ленту не сдвигает), по содержимому; закрывается тапом мимо,
+        // сменой режима и если скрепки больше нет.
+        LaunchedEffect(state.mode) { menu = false }
         Box(Modifier.padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)) {
+            if (menu) {
+                val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 6.dp.roundToPx() }
+                androidx.compose.ui.window.Popup(popupPositionProvider = object : androidx.compose.ui.window.PopupPositionProvider {
+                    override fun calculatePosition(anchorBounds: androidx.compose.ui.unit.IntRect, windowSize: androidx.compose.ui.unit.IntSize,
+                        layoutDirection: androidx.compose.ui.unit.LayoutDirection, popupContentSize: androidx.compose.ui.unit.IntSize) =
+                        androidx.compose.ui.unit.IntOffset(anchorBounds.left, anchorBounds.top - popupContentSize.height - gap)
+                }, onDismissRequest = { menu = false; menuGone = android.os.SystemClock.uptimeMillis() }, properties = androidx.compose.ui.window.PopupProperties(focusable = true)) {
+                    Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).widthIn(min = 230.dp, max = 320.dp)
+                        .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
+                        .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
+                        if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_camera), tr(R.string.cmp_camera_sub)) { menu = false; onCamera() }
+                        if (onGallery != null) PickItem(Ic.image, tr(R.string.cmp_gallery), tr(R.string.cmp_gallery_sub)) { menu = false; onGallery() }
+                    }
+                }
+            }
             VoiceRow(
                 voice = voice,
                 field = {
@@ -275,7 +295,8 @@ fun Composer(
                             .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(start = if (canAttach) 4.dp else 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_attach)) { menu = !menu }
+                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_attach)) { if (android.os.SystemClock.uptimeMillis() - menuGone > 300) menu = !menu }
+                        LaunchedEffect(canAttach) { if (!canAttach) menu = false }
                         Box(Modifier.weight(1f)) {
                             if (state.draft.isEmpty()) Text(placeholder ?: state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
                             BasicTextField(state.draft, onDraft, textStyle = BaseText.copy(fontSize = 14.5.sp),
@@ -383,6 +404,7 @@ fun TryVoice() {
     val ctx = LocalContext.current
     Column {
         VoiceRow(
+            lock = false,   // замочек — только в разговоре
             voice = voice,
             field = {
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).background(Ink.surf)

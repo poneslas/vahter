@@ -238,7 +238,7 @@ object Phone {
         "bluetooth" to ("Bluetooth" to Settings.ACTION_BLUETOOTH_SETTINGS),
         "mobile" to (tr(R.string.phone_screen_mobile) to Settings.ACTION_NETWORK_OPERATOR_SETTINGS),
         "airplane" to (tr(R.string.phone_screen_airplane) to Settings.ACTION_AIRPLANE_MODE_SETTINGS),
-        "display" to (tr(R.string.journal_screen) to Settings.ACTION_DISPLAY_SETTINGS),
+        "display" to (tr(R.string.phone_screen) to Settings.ACTION_DISPLAY_SETTINGS),
         "sound" to (tr(R.string.phone_screen_sound) to Settings.ACTION_SOUND_SETTINGS),
         "battery" to (tr(R.string.phone_screen_battery) to Intent.ACTION_POWER_USAGE_SUMMARY),
         "location" to (tr(R.string.phone_screen_location) to Settings.ACTION_LOCATION_SOURCE_SETTINGS),

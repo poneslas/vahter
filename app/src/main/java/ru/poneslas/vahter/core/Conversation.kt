@@ -81,13 +81,31 @@ class Conversation(
         _state.drop(1).debounce(400).onEach { s -> withContext(Dispatchers.IO) { runCatching { store.save(s.saved) } } }.launchIn(scope)
     }
 
+    /** Без дела дольше — новый разговор режима и (по настройке) возврат к Ассистенту. */
+    val IDLE_MS = 30 * 60_000L
+
     private fun edit(f: (Saved) -> Saved) = _state.update { it.copy(saved = f(it.saved)) }
 
-    fun selectMode(id: String) = edit { it.copy(mode = id, lastUse = System.currentTimeMillis()) }
+    fun selectMode(id: String) { freshen(); edit { it.copy(mode = id, lastUse = System.currentTimeMillis()) } }
     fun setDraft(text: String) = _state.update { it.copy(drafts = it.drafts + (it.mode to text)) }
     fun updateSettings(f: (Settings) -> Settings) = edit { it.copy(settings = f(it.settings)) }
     fun updateModes(f: (List<Mode>) -> List<Mode>) = edit { it.copy(modes = f(it.modes)) }
     fun touch() = edit { it.copy(lastUse = System.currentTimeMillis()) }
+    /** В режиме что-то сказали или прислали — от этого считается «30 минут без дела» для его истории (просмотр не считается). */
+    private fun spoke(modeId: String) { freshen(); edit { it.copy(lastUse = System.currentTimeMillis(), modeUse = it.modeUse + (modeId to System.currentTimeMillis())) } }
+
+    /**
+     * «30 минут без дела» — чистый лист (Продукт 5.17): у каждого режима, где с последнего использования прошло больше 30 минут,
+     * старое уходит под «Прошлый разговор». Зовётся при каждом показе листа и приложения и при выборе режима — не только
+     * при вызове кнопкой (раньше проверка жила в onShow сессии и открытие из уведомления или приложения её пропускало).
+     */
+    fun freshen(now: Long = System.currentTimeMillis()) = edit { s ->
+        val upd = s.feeds.mapNotNull { (id, feed) ->
+            val last = s.modeUse[id] ?: 0L   // до 0.9.4 отметок не было — старая переписка один раз уходит под «Прошлый разговор»
+            if (now - last > IDLE_MS && feed.size > (s.fresh[id] ?: 0)) id to feed.size else null
+        }
+        if (upd.isEmpty()) s else s.copy(fresh = s.fresh + upd)
+    }
 
     private fun push(modeId: String, item: FeedItem) = edit { it.copy(feeds = it.feeds + (modeId to (it.feeds[modeId].orEmpty() + item))) }
     private fun replace(modeId: String, id: Long, f: (FeedItem) -> FeedItem) = edit { s ->
@@ -106,7 +124,7 @@ class Conversation(
     fun editMode(id: String, f: (Mode) -> Mode) = updateModes { list -> list.map { if (it.id == id) f(it) else it } }
 
     fun deleteMode(id: String) = edit { s ->
-        s.copy(modes = s.modes.filterNot { it.id == id }, feeds = s.feeds - id, histories = s.histories - id, hermesSessions = s.hermesSessions - id,
+        s.copy(modes = s.modes.filterNot { it.id == id }, feeds = s.feeds - id, histories = s.histories - id, hermesSessions = s.hermesSessions - id, fresh = s.fresh - id,
             mode = if (s.mode == id) Modes.MAIN else s.mode)
     }
 
@@ -121,7 +139,7 @@ class Conversation(
     fun restart(modeId: String = _state.value.mode) {
         jobs[modeId]?.cancel()
         _state.value.saved.hermesRuns[modeId]?.let { r -> hermes()?.let { h -> scope.launch { h.stop(r.id) } } }
-        edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId, hermesSessions = it.hermesSessions - modeId, hermesRuns = it.hermesRuns - modeId) }
+        edit { it.copy(feeds = it.feeds - modeId, histories = it.histories - modeId, hermesSessions = it.hermesSessions - modeId, hermesRuns = it.hermesRuns - modeId, fresh = it.fresh - modeId) }
     }
 
     /** Сменить мозг режима: разговор начинается заново — историю между мозгами не переносим (Архитектура 2.2). */
@@ -151,7 +169,7 @@ class Conversation(
         val meId = nextId()
         val p = Pending(mode.id, meId, paths, via)
         pendingAttach = p
-        touch()
+        spoke(mode.id)
         push(mode.id, FeedItem.Me(meId, "", via, paths, status = tr(R.string.conv_preparing)))
         scope.launch {
             kotlinx.coroutines.delay(2000)
@@ -195,7 +213,7 @@ class Conversation(
         }
         if (clean.isEmpty()) return
         _state.update { it.copy(drafts = it.drafts + (mode.id to "")) }
-        touch()
+        spoke(mode.id)
         push(mode.id, FeedItem.Me(nextId(), clean, via))
         // «Начни заново» голосом или текстом — подтверждение, мозгу не уходит.
         if (Rules.isRestart(clean)) { askRestart(mode.id); return }
@@ -245,7 +263,6 @@ class Conversation(
             context, settings = { _state.value.settings },
             confirm = { title, detail -> confirm(modeId, title, detail) },
             report = { a -> push(modeId, a.copy(id = nextId())) },
-            journal = { tool, params, title, status -> journal(tool, params, title, status, who, phrase) },
             notes = { _state.value.saved.notes },
             saveNote = { n -> edit { it.copy(notes = (it.notes + n).takeLast(500)) } },
             deleteNote = ::deleteNote,
@@ -370,18 +387,12 @@ class Conversation(
                 { FeedItem.Act(nextId(), "🔦", tr(R.string.conv_torch_failed), tr(R.string.conv_torch_failed_why), state = "fail") to null })
         }
         push(mode.id, item)
-        journal(policyId, text, (item as FeedItem.Act).title, if (note != null) tr(R.string.conv_done) else tr(R.string.conv_not_done), tr(R.string.conv_rule_head), text)
         // Мозг узнаёт о локальном действии из истории — «а перенеси его на 8» сработает.
         if (note != null) { appendHistory(mode.id, ChatMsg("user", text)); appendHistory(mode.id, ChatMsg("assistant", note)) }
         return true
     }
 
     private fun deleteNote(id: Long) = edit { it.copy(notes = it.notes.filterNot { n -> n.id == id }) }
-
-    private fun journal(tool: String, params: String, title: String, status: String, who: String, phrase: String) {
-        val locked = context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
-        edit { it.copy(journal = (it.journal + JournalEntry(nextId(), System.currentTimeMillis(), title, who, phrase, tool, params, status, locked)).takeLast(300)) }
-    }
 
     /** Карточка «Поставить / Отмена» и ожидание ответа. */
     private suspend fun confirm(modeId: String, title: String, detail: String): Boolean {
