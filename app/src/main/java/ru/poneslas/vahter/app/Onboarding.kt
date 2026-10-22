@@ -325,9 +325,7 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
     }
     val rec = phase == RecUi.Phase.LISTENING
     val proc = phase == RecUi.Phase.PROCESSING
-    Text(tr(R.string.try_h), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 26.dp, bottom = 8.dp))
-    Text(when { loading -> tr(R.string.try_p_loading); !installed -> tr(R.string.try_p_none); else -> tr(R.string.try_p_ready) }, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 8.dp))
-    // сцена без подложки: прошлые фразы — сверху, бледно; эквалайзер; фраза крупно
+    // Шаблон мастера: сцена (знак, прошлые фразы, распознанное) — в свободном месте сверху; заголовок и текст — внизу, над полем
     Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         val old = if (rec || proc || loading) emptyList() else shots.dropLast(1).takeLast(3)
         if (old.isNotEmpty()) {
@@ -361,6 +359,8 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
             }
         }
     }
+    Text(tr(R.string.try_h), fontSize = 24.sp, lineHeight = 1.15.em, fontWeight = FontWeight.SemiBold, color = Ink.ink, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
+    Text(when { loading -> tr(R.string.try_p_loading); !installed -> tr(R.string.try_p_none); else -> tr(R.string.try_p_ready) }, fontSize = 15.sp, color = Ink.soft, modifier = Modifier.padding(bottom = 8.dp))
     Box(Modifier.padding(top = 6.dp)) {
         VoiceRow(
             voice = app.voice,

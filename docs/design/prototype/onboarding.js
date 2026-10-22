@@ -75,7 +75,10 @@ function tryStep(){
     : last ? `<div class="tbig" data-k="${shots.length}">${esc(last.text)}</div><span class="tfast">⚡ Распознано на телефоне за ${sec(last.ms)}${'\u00a0'}с</span>`
     : `<div class="${why?'twhy':'tph'}">${why||'Скажите что-нибудь'}</div>`;
   const p = loading ? 'Вахтёр пока учит русский — подождите или попробуйте потом в листе.' : 'Зажмите микрофон и скажите что-нибудь — проверим, как слышно.';
-  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb"><h2>Попробуйте голосом</h2><p>${p}</p>
-    <div class="tstage">${old.length&&!rec&&!S.recog&&!loading?`<div class="told">${old.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div>`:''}
+  // Тот же шаблон, что у остальных шагов: сцена (знак, прошлые фразы) — в свободном месте сверху; распознанное — крупно под ней;
+  // заголовок и текст — внизу над полем, на той же высоте, что на соседних шагах.
+  return `<div class="layer appv">${statusBar(true)}<div class="onb tryonb">
+    <div class="art tstage">${old.length&&!rec&&!S.recog&&!loading?`<div class="told">${old.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div>`:''}
       <div class="thero">${hero}</div><div class="ttext">${text}</div></div>
+    <h2>Попробуйте голосом</h2><p>${p}</p>
     ${composerHtml({into:'try', pulse:freed})}${navBar(null, loading?['Пропустить','onbnext']:['Далее','onbnext'])}</div></div>` }

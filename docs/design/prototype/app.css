@@ -756,3 +756,7 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 /* подпись режима — одна строка */
 .mrow1 .li .lt small{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block;overflow:hidden}
 .prow .lt small.psub{color:var(--soft)}   /* что входит в действие — серым, как подписи настроек */
+
+/* проба голоса по шаблону мастера: сцена сверху (свободное место), заголовок и текст — внизу над полем */
+.tryonb{padding-top:56px}
+.tryonb .art.tstage{display:flex;flex-direction:column;justify-content:center;align-items:stretch;place-items:initial;min-height:0}
