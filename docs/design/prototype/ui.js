@@ -422,6 +422,8 @@ function render(){
   else if (S.screen==='tg') base=tg(); else if (S.screen==='cam') base=cam(); else if (S.screen==='cam2') base=cam2();
   else if (S.screen==='sysrole') base=sysRole(); else if (S.screen==='sysside') base=sysSide(); else if (S.screen==='sysmic') base=sysMic(); else if (S.screen==='syspick') base=sysPick(); else if (S.screen==='sysperm') base=sysPerm();
   const prev={}; ['#scroll','#oscroll'].forEach(s=>{ const el=$(s); if(el) prev[s]=el.scrollTop });
+  // Страницы приложения (настройки, мозги, режим…) помнят свою прокрутку: перерисовка и возврат «Назад» — на то же место (как в приложении).
+  const pg=$('#scr .appv > .scroll'); if(pg && render.page) (S.pageScroll??={})[render.page]=pg.scrollTop;
   const ae=document.activeElement, aeId=ae&&ae.id, aePos=ae&&ae.selectionStart;
   if (S.unlocking) base += `<div class="unlk"><div class="fp">${I.lock}</div><b>Разблокируйте</b><small>Приложите палец к сканеру</small></div>`;
   $('#scr').innerHTML = base + (S.screen==='cam2'?'':overlay()) + (S.screen==='home'?shortcutsPop():'') + dialog() + toast();
@@ -434,6 +436,8 @@ function render(){
   keepAnims();
   eqs=[...document.querySelectorAll('#scr .eq')].map(e=>new Eq(e));
   ['#scroll','#oscroll','#msgs'].forEach(s=>{ const el=$(s); if(!el) return; if(S.keepScroll && prev[s]!=null) el.scrollTop=prev[s]; else el.scrollTop=el.scrollHeight });
+  render.page = S.screen==='app' && S.page!=='chat' && S.onboarded ? S.page+(S.page==='mode'?':'+S.editMode:'') : null;   // ленту разговора ведёт своя логика
+  { const pg=$('#scr .appv > .scroll'); const y=render.page&&S.pageScroll?.[render.page]; if(pg&&y) pg.scrollTop=y }
   S.keepScroll=false;
   if (S.scrollToMsg){ const id=S.scrollToMsg; S.scrollToMsg=null; requestAnimationFrame(()=>{ const el=$('#scroll'); const tgt=el&&el.querySelector(`.ai[data-msg="${id}"]`); if(tgt){ const k=el.getBoundingClientRect().height/el.offsetHeight||1; el.scrollTop += (tgt.getBoundingClientRect().top - el.getBoundingClientRect().top)/k - 8 } }) }
   renderWorld();
