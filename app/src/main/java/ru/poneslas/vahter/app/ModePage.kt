@@ -61,6 +61,12 @@ import ru.poneslas.vahter.ui.Note
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import android.app.Activity
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import java.text.BreakIterator
 
 /** Страница режима (ui.js, modePage): название, значок, промпт с диктовкой, подсказки, что принимает, главное, действия, мозг. */
 @Composable
@@ -185,10 +191,10 @@ private fun IconGrid(current: String, onPick: (String) -> Unit) {
         if (picking) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(16.dp)).padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             var text by remember { mutableStateOf("") }
-            androidx.compose.material3.OutlinedTextField(text, { v ->
+            OutlinedTextField(text, { v ->
                 text = v
                 // первая графема — эмодзи, даже если из нескольких символов (флаги, семьи)
-                val it = java.text.BreakIterator.getCharacterInstance().apply { setText(v.trim()) }
+                val it = BreakIterator.getCharacterInstance().apply { setText(v.trim()) }
                 val end = it.next(); if (v.isNotBlank() && end > 0) { onPick("emoji:" + v.trim().substring(0, end)); picking = false }
             }, Modifier.fillMaxWidth(), placeholder = { Text(tr(R.string.mode_emoji_hint)) }, singleLine = true)
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -203,8 +209,8 @@ private fun IconGrid(current: String, onPick: (String) -> Unit) {
 
 /** Пунктирная рамка ячейки «свой эмодзи». */
 private fun Modifier.dashedBorder() = drawBehind {
-    drawRoundRect(Ink.faint, cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
-        style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))))
+    drawRoundRect(Ink.faint, cornerRadius = CornerRadius(12.dp.toPx()),
+        style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))))
 }
 
 /** .mform .lh */
@@ -248,7 +254,7 @@ private fun Dictate(onText: (String) -> Unit) {
             trailing = null,
             onText = { msg = null; onText(it) },
             onMessage = { msg = it },
-            onNeedMic = { (ctx as? android.app.Activity)?.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) },
+            onNeedMic = { (ctx as? Activity)?.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) },
         )
     }
 }

@@ -20,6 +20,8 @@ import ru.poneslas.vahter.core.Store
 import ru.poneslas.vahter.notify.Notifier
 import ru.poneslas.vahter.assistant.SheetEvents
 import ru.poneslas.vahter.voice.Voice
+import android.content.pm.ApplicationInfo
+import ru.poneslas.vahter.assistant.Sheet
 
 /**
  * Строка интерфейса из ресурсов (мультиязычность, Бэклог №15). Работает и в Compose, и вне его —
@@ -92,13 +94,13 @@ class App : Application() {
         super.onCreate()
         instance = this
         secrets = Secrets(this)
-        HermesBrain.debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        HermesBrain.debuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         Notifier.init(this)
         conversation = Conversation(this, scope, Store(this), ::brainFor, { mode, text -> Notifier.answer(this, mode, text) }, { if (hermesLink() != null) hermesBrain else null })
         // Ходы Hermes переживают закрытие приложения: дочитать при запуске и каждый раз, когда приложение или лист снова на экране.
         conversation.resumePending()
         scope.launch { appVisible.collect { if (it) conversation.resumePending() } }
-        scope.launch { ru.poneslas.vahter.assistant.Sheet.visible.collect { if (it) conversation.resumePending() } }
+        scope.launch { Sheet.visible.collect { if (it) conversation.resumePending() } }
         voice = Voice(this, scope)
         // Запись останавливаем сами: после hide() система микрофон не выключает.
         SheetEvents.onHide = { voice.cancel() }

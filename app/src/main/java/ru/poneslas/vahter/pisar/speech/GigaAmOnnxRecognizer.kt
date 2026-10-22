@@ -17,6 +17,8 @@ import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.sin
+import kotlin.math.exp
+import kotlin.math.log10
 
 class GigaAmOnnxRecognizer(
     context: Context,
@@ -512,14 +514,14 @@ class GigaAmOnnxRecognizer(
 
             fun hzToMel(hz: Double): Double =
                 2595.0 *
-                    kotlin.math.log10(
+                    log10(
                         1.0 + hz / 700.0,
                     )
 
             fun melToHz(mel: Double): Double =
                 700.0 *
                     (
-                        kotlin.math.exp(
+                        exp(
                             (mel / 2595.0) * ln(10.0),
                         ) - 1.0
                     )

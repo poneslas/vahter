@@ -79,6 +79,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.shape.CircleShape
+import kotlinx.coroutines.CoroutineScope
+import ru.poneslas.vahter.assistant.Sheet
+import ru.poneslas.vahter.assistant.VahterTile
+import ru.poneslas.vahter.notify.Notifier
+import ru.poneslas.vahter.ui.OursIcon
+import ru.poneslas.vahter.ui.Progress
+import ru.poneslas.vahter.ui.TextButton
+import ru.poneslas.vahter.update.Updates
 
 /** Страницы за шестерёнкой (ui.js: settings, brainPage, actionsPage, hermesPage). */
 
@@ -88,15 +100,15 @@ fun SettingsPage(a: MainActivity) {
     val state by app.conversation.state.collectAsState()
     @Suppress("UNUSED_VARIABLE") val r = a.resumed.intValue // баг №1: перечитать после возврата из системных настроек
     val roleHeld = a.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT)
-    val mic = a.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    val notif = a.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    val mic = a.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    val notif = a.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     val installed by app.voice.installed.collectAsState()
     val dl by ModelDownload.state.collectAsState()
     // Перестановка режимов: долгое нажатие на режим — переключатели становятся ручками, в шапке «Готово» (ModesList).
     var reorder by remember { mutableStateOf(false) }
-    androidx.activity.compose.BackHandler(reorder) { reorder = false }
+    BackHandler(reorder) { reorder = false }
     TopBar(tr(if (reorder) R.string.set_modes_order else R.string.ui_settings), onBack = if (reorder) ({ reorder = false }) else a::back) {
-        if (reorder) ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_done)) { reorder = false }
+        if (reorder) TextButton(tr(R.string.ui_done)) { reorder = false }
     }
     ScrollPage {
         // Режимы — главное, первым разделом (Продукт 5.11).
@@ -122,7 +134,7 @@ fun SettingsPage(a: MainActivity) {
         Item(tr(R.string.set_voice_title), when { installed -> tr(R.string.set_voice_ready); pct != null -> tr(R.string.set_voice_loading, pct); else -> tr(R.string.app_voice_none) },
             warn = !installed && pct == null, icon = Ic.wave) { a.go("voice") }
         // Микрофон — строкой, только пока доступа нет (с доступом строке нечего делать).
-        val micOff = !mic && state.settings.micAsked && !a.shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)
+        val micOff = !mic && state.settings.micAsked && !a.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
         if (!mic) Item(tr(R.string.set_mic), tr(if (micOff) R.string.set_mic_denied else R.string.set_mic_ask), warn = micOff, icon = Ic.mic) { a.askMic() }
         Section(tr(R.string.set_brains))
         Brains.all.forEach { b ->
@@ -136,8 +148,8 @@ fun SettingsPage(a: MainActivity) {
         Section(tr(R.string.set_notif))
         // Уведомления: нет разрешения — спросить; Android больше не спрашивает — наше окно → настройки; выключены в системе
         // (разрешение есть, но приложение или канал выключены) — в настройки; всё включено — переключатель — своя настройка «сообщать».
-        val sysOn = notif && ru.poneslas.vahter.notify.Notifier.enabled(a)
-        val notifOff = !notif && state.settings.notifAsked && !a.shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)
+        val sysOn = notif && Notifier.enabled(a)
+        val notifOff = !notif && state.settings.notifAsked && !a.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
         val on = sysOn && state.settings.notifyAnswers
         Item(tr(R.string.set_notif), tr(when {
             !notif && notifOff -> R.string.set_notif_denied
@@ -148,7 +160,7 @@ fun SettingsPage(a: MainActivity) {
         }), warn = notifOff, icon = Ic.bell, end = { Sw(on) }) {
             when {
                 !notif && notifOff -> a.showSheet(MainActivity.PermSheet(tr(R.string.notif_off_h), tr(R.string.notif_off_p), tr(R.string.mic_off_go), icon = Ic.bell) { a.notifSettings() })
-                !notif -> { app.conversation.updateSettings { it.copy(notifAsked = true, notifyAnswers = true) }; a.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2) }
+                !notif -> { app.conversation.updateSettings { it.copy(notifAsked = true, notifyAnswers = true) }; a.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2) }
                 !sysOn -> a.notifSettings()
                 else -> app.conversation.updateSettings { it.copy(notifyAnswers = !it.notifyAnswers) }
             }
@@ -160,10 +172,10 @@ fun SettingsPage(a: MainActivity) {
         Item(tr(R.string.set_actions), if (blockedN > 0) tr(R.string.set_actions_no_access, blockedN) else tr(R.string.set_actions_counts, pol.count { it == Policy.AUTO }, pol.count { it == Policy.ASK }, pol.count { it == Policy.OFF }),
             warn = blockedN > 0, icon = Ic.shield) { a.go("actions") }
         Divider()
-        val upd by ru.poneslas.vahter.update.Updates.state.collectAsState()
-        val newVer = (upd as? ru.poneslas.vahter.update.Updates.State.Available)?.r?.version
+        val upd by Updates.state.collectAsState()
+        val newVer = (upd as? Updates.State.Available)?.r?.version
         Item(tr(R.string.set_about), if (newVer != null) tr(R.string.set_about_new, newVer) else tr(R.string.set_about_version, a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""),
-            icon = Ic.info, end = if (newVer != null) ({ androidx.compose.foundation.layout.Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Ink.local)) }) else null) { a.go("about") }
+            icon = Ic.info, end = if (newVer != null) ({ Box(Modifier.size(8.dp).clip(CircleShape).background(Ink.local)) }) else null) { a.go("about") }
     }
 }
 
@@ -211,7 +223,7 @@ fun BrainPage(a: MainActivity, id: String) {
     LaunchedEffect(keyV) {
         if (!app.hasKey(b.id)) { auto = null; return@LaunchedEffect }
         autoRun = true
-        val r = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.apiBrain(b).check(app.storedKey(b.id).orEmpty()) }
+        val r = withContext(Dispatchers.IO) { app.apiBrain(b).check(app.storedKey(b.id).orEmpty()) }
         auto = r.ok to r.text; autoRun = false
     }
     LaunchedEffect(ctl.status) { if (ctl.status?.first == true) editing = false }
@@ -221,7 +233,7 @@ fun BrainPage(a: MainActivity, id: String) {
         a.showSheet(MainActivity.PermSheet(tr(R.string.key_unsaved_h), tr(R.string.key_unsaved_p), tr(R.string.hermes_connect), icon = Ic.lock,
             later = tr(R.string.key_unsaved_no), onLater = { ctl.key = ""; a.hideSheet(); a.back() }) { a.hideSheet(); ctl.connect(scope) })
     }
-    androidx.activity.compose.BackHandler(dirty) { leave() }
+    BackHandler(dirty) { leave() }
     TopBar(b.title, tr(R.string.set_brain_api), onBack = ::leave)
     FormPage {
         PageSection(tr(R.string.conn_section)) {
@@ -260,7 +272,7 @@ private fun KeyInline(ctl: KeyCtl, onCancel: (() -> Unit)?, onConnect: () -> Uni
         Field(ctl.key, tr(R.string.key_ph), bad = bad, paste = { clipboard.getText()?.text?.trim()?.let { ctl.key = it } }) { ctl.key = it.trim() }
         Text(if (bad) ctl.status!!.second else tr(R.string.key_where), fontSize = 12.5.sp, color = if (bad) Ink.danger else Ink.soft, modifier = Modifier.padding(start = 2.dp, top = 6.dp))
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-            onCancel?.let { ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_cancel), onClick = it) }
+            onCancel?.let { TextButton(tr(R.string.ui_cancel), onClick = it) }
             PrimaryButton(if (ctl.checking) tr(R.string.key_connecting) else tr(R.string.hermes_connect), enabled = ctl.canCheck, onClick = onConnect)
         }
     }
@@ -321,7 +333,7 @@ class HermesCtl {
     var status by mutableStateOf<Pair<Boolean, String>?>(null)
     val canConnect get() = !checking && url.length > 8 && token.length > 10
 
-    fun connect(scope: kotlinx.coroutines.CoroutineScope, link: HermesLink, save: Boolean) {
+    fun connect(scope: CoroutineScope, link: HermesLink, save: Boolean) {
         val app = App.instance
         checking = true; status = null
         scope.launch {
@@ -452,7 +464,7 @@ fun CallPage(a: MainActivity) {
     val known = side != SideKey.State.UNKNOWN
     val probe = state.settings.sideProbe
     var tileAdded by remember { mutableStateOf(false) }
-    val sheetUp by ru.poneslas.vahter.assistant.Sheet.visible.collectAsState()
+    val sheetUp by Sheet.visible.collectAsState()
     LaunchedEffect(sheetUp) { if (sheetUp && !known) app.conversation.updateSettings { it.copy(sideProbe = true) } }   // лист открылся, пока здесь, — кнопка работает
     TopBar(tr(R.string.set_call), onBack = a::back)
     FormPage {
@@ -465,7 +477,7 @@ fun CallPage(a: MainActivity) {
                 if (known) Item(tr(R.string.set_side_key), if (side == SideKey.State.ASSISTANT) tr(R.string.call_ok) else SideKey.now(a), warn = side != SideKey.State.ASSISTANT, icon = Ic.btn) { SideKey.open(a) }
                 else Item(tr(R.string.set_call_way), tr(R.string.sidekey_call_any), icon = Ic.btn)
                 Item(tr(R.string.sidekey_tile), tr(if (tileAdded) R.string.sidekey_tile_done else R.string.sidekey_tile_sub), icon = Ic.list) {
-                    if (!tileAdded) ru.poneslas.vahter.assistant.VahterTile.request(a) { tileAdded = it }
+                    if (!tileAdded) VahterTile.request(a) { tileAdded = it }
                 }
             }
             MNote(tr(if (known) R.string.call_note_samsung else R.string.call_note_other))
@@ -476,8 +488,8 @@ fun CallPage(a: MainActivity) {
                 Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
                     Text(tr(when (probe) { true -> R.string.call_probe_yes; false -> R.string.call_probe_no; null -> R.string.sidekey_probe }), fontSize = 15.sp, color = Ink.ink)
                     if (probe == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
-                        ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_no)) { app.conversation.updateSettings { it.copy(sideProbe = false) } }
-                        ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_yes)) { app.conversation.updateSettings { it.copy(sideProbe = true) } }
+                        TextButton(tr(R.string.ui_no)) { app.conversation.updateSettings { it.copy(sideProbe = false) } }
+                        TextButton(tr(R.string.ui_yes)) { app.conversation.updateSettings { it.copy(sideProbe = true) } }
                     } else Box(Modifier.padding(bottom = 8.dp))
                 }
             }
@@ -489,36 +501,36 @@ fun CallPage(a: MainActivity) {
 @Composable
 fun AboutPage(a: MainActivity) {
     val ver = a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: ""
-    val up by ru.poneslas.vahter.update.Updates.state.collectAsState()
-    LaunchedEffect(Unit) { ru.poneslas.vahter.update.Updates.checkNow(a) }
-    val U = ru.poneslas.vahter.update.Updates
+    val up by Updates.state.collectAsState()
+    LaunchedEffect(Unit) { Updates.checkNow(a) }
+    val U = Updates
     TopBar(tr(R.string.set_about), onBack = a::back)
     FormPage {
         Column(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            ru.poneslas.vahter.ui.OursIcon(64.dp, 20.dp)
+            OursIcon(64.dp, 20.dp)
             Text(ver, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = Ink.ink, modifier = Modifier.padding(top = 10.dp))
             Text(when (up) {
-                is ru.poneslas.vahter.update.Updates.State.Checking -> tr(R.string.upd_checking)
-                is ru.poneslas.vahter.update.Updates.State.UpToDate -> tr(R.string.upd_latest)
-                is ru.poneslas.vahter.update.Updates.State.CheckFailed -> tr(R.string.upd_failed)
+                is Updates.State.Checking -> tr(R.string.upd_checking)
+                is Updates.State.UpToDate -> tr(R.string.upd_latest)
+                is Updates.State.CheckFailed -> tr(R.string.upd_failed)
                 else -> tr(R.string.about_stable)
             }, fontSize = 13.sp, color = Ink.soft)
         }
         when (val st = up) {
-            is ru.poneslas.vahter.update.Updates.State.Available -> PageSection(tr(R.string.upd_available, st.r.version)) {
+            is Updates.State.Available -> PageSection(tr(R.string.upd_available, st.r.version)) {
                 if (st.r.notes.isNotBlank()) Text(st.r.notes, fontSize = 14.sp, color = Ink.ink, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
                 Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_now)) { U.download(a) } }
             }
-            is ru.poneslas.vahter.update.Updates.State.Downloading -> PageSection(tr(R.string.upd_downloading, st.r.version, st.pct)) {
+            is Updates.State.Downloading -> PageSection(tr(R.string.upd_downloading, st.r.version, st.pct)) {
                 Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
-                    ru.poneslas.vahter.ui.Progress(st.pct)
-                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { ru.poneslas.vahter.ui.TextButton(tr(R.string.ui_cancel)) { U.cancel() } }
+                    Progress(st.pct)
+                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) { TextButton(tr(R.string.ui_cancel)) { U.cancel() } }
                 }
             }
-            is ru.poneslas.vahter.update.Updates.State.ReadyToInstall -> PageSection(tr(R.string.upd_available, st.r.version), if (st.needsPermission) tr(R.string.upd_need_perm) else null) {
+            is Updates.State.ReadyToInstall -> PageSection(tr(R.string.upd_available, st.r.version), if (st.needsPermission) tr(R.string.upd_need_perm) else null) {
                 Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_install)) { U.install(a) } }
             }
-            is ru.poneslas.vahter.update.Updates.State.DownloadFailed -> PageSection(tr(R.string.upd_available, st.r.version), tr(if (st.badFile) R.string.upd_bad_file else R.string.upd_net_fail)) {
+            is Updates.State.DownloadFailed -> PageSection(tr(R.string.upd_available, st.r.version), tr(if (st.badFile) R.string.upd_bad_file else R.string.upd_net_fail)) {
                 Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) { PrimaryButton(tr(R.string.upd_retry)) { U.download(a) } }
             }
             else -> {}

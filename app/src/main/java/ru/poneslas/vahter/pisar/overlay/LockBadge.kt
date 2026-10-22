@@ -8,6 +8,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.view.View
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
+import android.view.animation.DecelerateInterpolator
 
 /**
  * The lock above the floating button while it records: an open lock with an arrow up
@@ -32,9 +35,9 @@ class LockBadge(
             anim?.cancel()
             if (value && !was) {
                 morph = 0f
-                anim = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+                anim = ValueAnimator.ofFloat(0f, 1f).apply {
                     duration = 220
-                    interpolator = android.view.animation.DecelerateInterpolator()
+                    interpolator = DecelerateInterpolator()
                     addUpdateListener { morph = it.animatedValue as Float; invalidate() }
                     start()
                 }
@@ -44,7 +47,7 @@ class LockBadge(
 
     /** Вахтёр: 0 — открытая таблетка, 1 — закрытый кружок. */
     private var morph = 0f
-    private var anim: android.animation.ValueAnimator? = null
+    private var anim: ValueAnimator? = null
 
     /** Below the button (no room above): the arrow points down and the lock is at the bottom. */
     var pointsDown = false
@@ -80,7 +83,7 @@ class LockBadge(
         val pad = SHADOW_DP * density
         val w = width.toFloat()
         val cx = w / 2f
-        val color = if (locked) android.animation.ArgbEvaluator().evaluate(morph, 0xFF5C6358.toInt(), 0xFF2E6B30.toInt()) as Int else 0xFF5C6358.toInt()
+        val color = if (locked) ArgbEvaluator().evaluate(morph, 0xFF5C6358.toInt(), 0xFF2E6B30.toInt()) as Int else 0xFF5C6358.toInt()
         icon.color = color
         stroke.color = color
 

@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import ru.poneslas.vahter.R
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 /**
  * The model download, kept out of the screen that started it: turning the phone recreates
@@ -49,9 +52,9 @@ object ModelDownload {
                             State.Done
                         }
                     } catch (e: Throwable) {
-                        if (e is java.net.UnknownHostException ||
-                            e is java.net.ConnectException ||
-                            e is java.net.SocketTimeoutException
+                        if (e is UnknownHostException ||
+                            e is ConnectException ||
+                            e is SocketTimeoutException
                         ) {
                             // A DNS or connection failure reads like a server problem; it is the phone's network.
                             State.Failed(app.getString(R.string.download_no_network))

@@ -8,6 +8,8 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Только отладочная сборка: прогнать WAV (16 кГц, моно, PCM16) через распознавание приложения.
@@ -25,7 +27,7 @@ class DebugAsr : BroadcastReceiver() {
                 val pcm = ByteBuffer.wrap(bytes, 44, bytes.size - 44).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
                 val audio = ShortArray(pcm.remaining()) { pcm.get(it) }
                 val t = System.currentTimeMillis()
-                val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.voice.transcribeForTest(audio) }
+                val text = withContext(Dispatchers.IO) { app.voice.transcribeForTest(audio) }
                 Log.i("VahterAsr", "${audio.size / 16000.0} с → ${System.currentTimeMillis() - t} мс: $text")
             } catch (e: Throwable) {
                 Log.e("VahterAsr", "ошибка", e)

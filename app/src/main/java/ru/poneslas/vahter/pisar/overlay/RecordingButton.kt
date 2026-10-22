@@ -16,6 +16,7 @@ import android.view.ViewConfiguration
 import ru.poneslas.vahter.R
 import kotlin.math.abs
 import kotlin.math.hypot
+import android.graphics.Typeface
 
 class RecordingButton(
     context: Context,
@@ -193,7 +194,7 @@ class RecordingButton(
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            typeface = Typeface.DEFAULT_BOLD
         }
     private val barPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }

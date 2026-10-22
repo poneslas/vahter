@@ -57,6 +57,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.graphics.lerp
+import ru.poneslas.vahter.assistant.SheetSt
+import ru.poneslas.vahter.assistant.VMark
 
 /**
  * Сцены мастера первого запуска (сценарий — docs/design/prototype/intro.css, те же фазы). Каждый экран мастера сначала
@@ -168,7 +170,7 @@ private fun Clock(t: Float, n: Int, until: Float, color: Color) {
 fun DictEq(alpha: Float, bars: Int = 9, maxH: Float = 16f, w: Dp = 3.dp, calm: Boolean = false) {
     if (alpha <= 0f) return
     Box(Modifier.graphicsLayer { this.alpha = alpha }) {
-        ru.poneslas.vahter.assistant.VMark(if (calm) ru.poneslas.vahter.assistant.SheetSt.RECOG else ru.poneslas.vahter.assistant.SheetSt.REC, if (maxH > 20f) 52.dp else 18.dp, fake = true)
+        VMark(if (calm) SheetSt.RECOG else SheetSt.REC, if (maxH > 20f) 52.dp else 18.dp, fake = true)
     }
 }
 

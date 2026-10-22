@@ -16,6 +16,13 @@ import ru.poneslas.vahter.R
 import ru.poneslas.vahter.app.MainActivity
 import ru.poneslas.vahter.tr
 import ru.poneslas.vahter.ui.VahterTheme
+import android.app.KeyguardManager
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.graphics.Color
+import android.widget.Toast
+import androidx.compose.runtime.mutableIntStateOf
+import ru.poneslas.vahter.core.Modes
 
 /**
  * Лист — прозрачный экран своей задачи, как AssistantOverlayActivity у Claude (Архитектура 3). Сессия помощника только
@@ -43,7 +50,7 @@ class SheetActivity : MainActivity() {
     /** Запрошено закрытие: лист уезжает вниз и только потом [finish] (SheetScreen). */
     val closing = mutableStateOf(false)
     /** Растёт при каждом вызове (новый экран или повторный вызов): лист выезжает снизу. Возврат свайпом — без выезда. */
-    val shows = androidx.compose.runtime.mutableIntStateOf(1)
+    val shows = mutableIntStateOf(1)
 
     private var permThen: ((Boolean) -> Unit)? = null
     private val perms = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
@@ -57,7 +64,7 @@ class SheetActivity : MainActivity() {
         // Над блокировкой — только если сессия пустила (настройка «На заблокированном экране»); погас экран — лист закрыт.
         setShowWhenLocked(true)
         Sheet.activity = this
-        registerReceiver(screenOff, android.content.IntentFilter(Intent.ACTION_SCREEN_OFF), RECEIVER_NOT_EXPORTED)
+        registerReceiver(screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF), RECEIVER_NOT_EXPORTED)
         // Системный «Назад»: в камере — как ✕ камеры (заморожен кадр — переснять), иначе — закрыть лист (баг №9).
         // Развёрнутый: страницы ловят «Назад» сами (Screen), сюда доходит только мастер — свернуть.
         onBackPressedDispatcher.addCallback(this) {
@@ -68,7 +75,7 @@ class SheetActivity : MainActivity() {
     }
 
     override fun start() {
-        enableEdgeToEdge(SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT))
         fromSheet = true
         setContent {
             if (expanded.value) VahterTheme { Screen() } else SheetScreen(
@@ -110,7 +117,7 @@ class SheetActivity : MainActivity() {
         App.instance.conversation.touch()                  // «30 минут без дела» — от последнего ухода с листа
         Sheet.camera.value = false
         Sheet.sideCue.value = false
-        if (Sheet.firstClose && !expanded.value) { Sheet.firstClose = false; android.widget.Toast.makeText(this, tr(R.string.sheet_first_close), android.widget.Toast.LENGTH_LONG).show() }
+        if (Sheet.firstClose && !expanded.value) { Sheet.firstClose = false; Toast.makeText(this, tr(R.string.sheet_first_close), Toast.LENGTH_LONG).show() }
         Sheet.visible.value = false
     }
 
@@ -143,8 +150,8 @@ class SheetActivity : MainActivity() {
             if (settings && !newMode) sheetReturn = "settings"
             if (askPerm != null) { askMicThenSheet = true; askMic() }
         }
-        val kg = getSystemService(android.app.KeyguardManager::class.java)
-        if (kg.isKeyguardLocked) kg.requestDismissKeyguard(this, object : android.app.KeyguardManager.KeyguardDismissCallback() {
+        val kg = getSystemService(KeyguardManager::class.java)
+        if (kg.isKeyguardLocked) kg.requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
             override fun onDismissSucceeded() { expandAsk.value = true }
         }) else expandAsk.value = true
     }
@@ -179,7 +186,7 @@ class SheetActivity : MainActivity() {
     /** Конец мастера в развёрнутом листе — сам лист с «Вам чего?» и подсказками (MainActivity.finishOnboarding). */
     override fun finishOnboarding() {
         App.instance.conversation.updateSettings { it.copy(onboarded = true) }
-        App.instance.conversation.selectMode(ru.poneslas.vahter.core.Modes.MAIN)
+        App.instance.conversation.selectMode(Modes.MAIN)
         Sheet.firstSheet.value = true; Sheet.sideCue.value = true; Sheet.firstClose = true
         collapse()
     }
@@ -201,7 +208,7 @@ class SheetActivity : MainActivity() {
     }
 
     /** Экран погас — лист закрываем, запись останавливаем (иначе микрофон пишет в кармане; над блокировкой лист не остаётся). */
-    private val screenOff = object : android.content.BroadcastReceiver() {
+    private val screenOff = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) { if (!expanded.value) finishNow() }
     }
 }

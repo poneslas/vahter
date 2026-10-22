@@ -103,6 +103,15 @@ import ru.poneslas.vahter.ui.TextButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import ru.poneslas.vahter.ui.seconds
+import android.Manifest
+import android.content.pm.PackageManager
+import android.provider.Settings
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import kotlin.math.sin
+import kotlinx.coroutines.delay
 
 /**
  * Что сейчас делает лист (ui.js, sheetSt): ждёт, слушает, распознаёт, звонит наверх, мозг отвечает. Цвет один — янтарный:
@@ -123,7 +132,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
     var live by remember { mutableStateOf<String?>(null) }
     val camera by Sheet.camera.collectAsState()
     fun openCamera() {
-        if (host.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) onNeedPerm(android.Manifest.permission.CAMERA)
+        if (host.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) onNeedPerm(Manifest.permission.CAMERA)
         else Sheet.camera.value = true
     }
     var camFull by remember { mutableStateOf(false) }
@@ -173,10 +182,10 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         val glowLv = remember { mutableFloatStateOf(0f) }
         LaunchedEffect(st == SheetSt.REC) {
             if (st != SheetSt.REC) { glowLv.floatValue = 0f; return@LaunchedEffect }
-            while (true) { val l = app.voice.level; val v = glowLv.floatValue; glowLv.floatValue = if (l > v) v + (l - v) * .6f else v * .88f + l * .12f; kotlinx.coroutines.delay(32) }
+            while (true) { val l = app.voice.level; val v = glowLv.floatValue; glowLv.floatValue = if (l > v) v + (l - v) * .6f else v * .88f + l * .12f; delay(32) }
         }
         // Разворот в приложение и обратно: [grow] 0 — лист, 1 — полный экран.
-        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        val scope = rememberCoroutineScope()
         // Свернули из приложения (тот же экран, SheetActivity.collapse): лист садится с полного экрана на свою прошлую высоту.
         // Высоты листа ещё нет (экран создан заново) — садиться не с чего: просто лист, иначе он остался бы невидимым (0.8.3).
         val shrink = remember { (Sheet.shrinkOnShow && host.sheetPx > 0).also { if (!it) Sheet.shrinkOnShow = false } }
@@ -247,7 +256,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                 // Отпустили: дальше трети пути или резкий взмах — закрыть / развернуть, иначе — на место.
                 val drag = remember { floatArrayOf(0f) }
                 val tracker = remember { VelocityTracker() }
-                val full by androidx.compose.runtime.rememberUpdatedState(fullPx)
+                val full by rememberUpdatedState(fullPx)
                 val dragArea = Modifier.pointerInput(Unit) {
                     val fling = 1200.dp.toPx()
                     fun settle() {
@@ -335,10 +344,10 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                         onAddMode = onAddMode,
                         onLive = { live = it },
                         autoListen = Sheet.autoListen,
-                        onNeedMic = { onNeedPerm(android.Manifest.permission.RECORD_AUDIO) },
+                        onNeedMic = { onNeedPerm(Manifest.permission.RECORD_AUDIO) },
                         onCamera = ::openCamera,
                         onGallery = { PickerActivity.launch(host) },
-                        onFile = if (state.current.brain == ru.poneslas.vahter.core.Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(host) }) else null,
+                        onFile = if (state.current.brain == Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(host) }) else null,
                     )
                 }
             }
@@ -360,9 +369,9 @@ private fun DrawScope.glow(st: SheetSt, k: Float, t: Float, lv: Float = 0f) {
         SheetSt.REC -> Triple(.55f + .45f * lv, 320f * (.92f + .2f * lv), 0f)
         SheetSt.RECOG, SheetSt.THINK -> Triple(.85f, 260f, 1.8f)
         SheetSt.UP -> Triple(.9f, 260f, 1.8f)
-        SheetSt.IDLE -> Triple(.4f + .25f * (.5f + .5f * kotlin.math.sin(t / 4f * 2 * Math.PI.toFloat())), 260f, 0f)
+        SheetSt.IDLE -> Triple(.4f + .25f * (.5f + .5f * sin(t / 4f * 2 * Math.PI.toFloat())), 260f, 0f)
     }
-    val pulse = if (period > 0f) 1f + .12f * (.5f + .5f * kotlin.math.sin(t / period * 2 * Math.PI.toFloat())) else 1f
+    val pulse = if (period > 0f) 1f + .12f * (.5f + .5f * sin(t / period * 2 * Math.PI.toFloat())) else 1f
     val c = Ink.local
     val h = hDp * density * pulse
     val center = Offset(size.width / 2, size.height)
@@ -382,7 +391,7 @@ private fun DrawScope.glow(st: SheetSt, k: Float, t: Float, lv: Float = 0f) {
 @Composable
 fun VMark(st: SheetSt, size: Dp, still: Boolean = false, fake: Boolean = false, sleep: Float? = null, color: Color = Ink.local) {
     val t = if (still) 0f else seconds()
-    val reduce = still || android.provider.Settings.Global.getFloat(LocalContext.current.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    val reduce = still || Settings.Global.getFloat(LocalContext.current.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     // Громкость: вверх сразу, вниз плавно; замолчали — оседает.
     var lvl by remember { mutableFloatStateOf(0f) }
     val rec = st == SheetSt.REC && sleep == null
@@ -396,7 +405,7 @@ fun VMark(st: SheetSt, size: Dp, still: Boolean = false, fake: Boolean = false, 
                 left--; syl
             }
             lvl = if (l > lvl) lvl + (l - lvl) * .6f else lvl * .88f + l * .12f
-            kotlinx.coroutines.delay(32)
+            delay(32)
         }
     }
     Canvas(Modifier.size(size)) {
@@ -410,7 +419,7 @@ fun VMark(st: SheetSt, size: Dp, still: Boolean = false, fake: Boolean = false, 
         val core = when {
             sleep != null -> .9f
             rec -> .85f + .6f * lvl
-            else -> .9f + .14f * (.5f + .5f * kotlin.math.sin(wave(3.2f) * 2 * Math.PI.toFloat()))
+            else -> .9f + .14f * (.5f + .5f * sin(wave(3.2f) * 2 * Math.PI.toFloat()))
         }
         val r0 = w * .19f * core
         if (sleep == null) drawCircle(Brush.radialGradient(listOf(c.copy(alpha = if (rec) .3f + .3f * lvl else .45f), c.copy(alpha = 0f)), center = mid, radius = r0 + w * .35f), radius = r0 + w * .35f, center = mid)
@@ -422,7 +431,7 @@ fun VMark(st: SheetSt, size: Dp, still: Boolean = false, fake: Boolean = false, 
                 drawCircle(Color(0xFFD5D9D0), r1 - s1 / 2, mid, style = Stroke(s1))
                 val sw = 4.dp.toPx()
                 drawCircle(Color(0xFFE7EAE2), r2 - sw / 2, mid, style = Stroke(sw))
-                drawArc(color, -90f, 360f * sleep.coerceIn(0f, 1f), false, Offset(sw / 2, sw / 2), androidx.compose.ui.geometry.Size(w - sw, w - sw), style = Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                drawArc(color, -90f, 360f * sleep.coerceIn(0f, 1f), false, Offset(sw / 2, sw / 2), Size(w - sw, w - sw), style = Stroke(sw, cap = StrokeCap.Round))
             }
             rec -> {
                 drawCircle(c.copy(alpha = .45f + .45f * lvl), (r1 - s1 / 2) * (1f + .3f * lvl), mid, style = Stroke(s1))
@@ -515,7 +524,7 @@ private fun SheetStrip(noBrain: Boolean, onConnect: () -> Unit) {
 @Composable
 private fun SideCue(modifier: Modifier) {
     val known = SideKey.read(LocalContext.current) != SideKey.State.UNKNOWN
-    LaunchedEffect(Unit) { kotlinx.coroutines.delay(6000); Sheet.sideCue.value = false }
+    LaunchedEffect(Unit) { delay(6000); Sheet.sideCue.value = false }
     Row(modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)).padding(top = 150.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Text(tr(if (known) R.string.sheet_cue_side else R.string.sheet_cue_home), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White,

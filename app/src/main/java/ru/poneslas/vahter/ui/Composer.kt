@@ -75,6 +75,20 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import android.Manifest
+import android.app.Activity
+import android.os.SystemClock
+import android.view.View
+import androidx.compose.animation.core.animate
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import ru.poneslas.vahter.assistant.SheetSt
+import ru.poneslas.vahter.assistant.VMark
 
 /** Последний отработанный вызов кнопкой (баг №8: после камеры строка ввода создаётся заново и не должна слушать снова). */
 private var autoSeen = 0
@@ -117,7 +131,7 @@ fun VoiceRow(
     var inward by remember { mutableFloatStateOf(0f) }
     var rise by remember { mutableFloatStateOf(0f) }
 
-    val button = remember { RecordingButton(ctx).apply { visibility = android.view.View.VISIBLE; alpha = 1f; scaleX = 1f; scaleY = 1f; movable = false; sizeScale = SCALE; inwardSign = -1f; lockSign = -1f; level = { voice.level } } }
+    val button = remember { RecordingButton(ctx).apply { visibility = View.VISIBLE; alpha = 1f; scaleX = 1f; scaleY = 1f; movable = false; sizeScale = SCALE; inwardSign = -1f; lockSign = -1f; level = { voice.level } } }
     val bar = remember { RecordingBar(ctx).apply { side = -1 } }
     val lockView = remember { LockBadge(ctx) }
 
@@ -183,7 +197,7 @@ fun VoiceRow(
         // Защёлкнулся: замок анимирует сам (LockBadge), кнопка плавно опускается на место, отдача — «подтверждение».
         button.onLock = {
             bar.handsFree = true; lockView.locked = true; lockView.progress = 0f; inward = 0f
-            scope.launch { androidx.compose.animation.core.animate(rise, 0f, animationSpec = androidx.compose.animation.core.tween(200)) { v, _ -> rise = v } }
+            scope.launch { animate(rise, 0f, animationSpec = tween(200)) { v, _ -> rise = v } }
             button.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
         button.onCancel = { finish(send = false) }
@@ -273,13 +287,13 @@ fun Composer(
         LaunchedEffect(state.mode) { menu = false }
         Box(Modifier.padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)) {
             if (menu) {
-                val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 6.dp.roundToPx() }
-                androidx.compose.ui.window.Popup(popupPositionProvider = object : androidx.compose.ui.window.PopupPositionProvider {
-                    override fun calculatePosition(anchorBounds: androidx.compose.ui.unit.IntRect, windowSize: androidx.compose.ui.unit.IntSize,
-                        layoutDirection: androidx.compose.ui.unit.LayoutDirection, popupContentSize: androidx.compose.ui.unit.IntSize) =
-                        androidx.compose.ui.unit.IntOffset(anchorBounds.left, anchorBounds.top - popupContentSize.height - gap)
-                }, onDismissRequest = { menu = false; menuGone = android.os.SystemClock.uptimeMillis() }, properties = androidx.compose.ui.window.PopupProperties(focusable = true)) {
-                    Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).widthIn(min = 230.dp, max = 320.dp)
+                val gap = with(LocalDensity.current) { 6.dp.roundToPx() }
+                Popup(popupPositionProvider = object : PopupPositionProvider {
+                    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize,
+                        layoutDirection: LayoutDirection, popupContentSize: IntSize) =
+                        IntOffset(anchorBounds.left, anchorBounds.top - popupContentSize.height - gap)
+                }, onDismissRequest = { menu = false; menuGone = SystemClock.uptimeMillis() }, properties = PopupProperties(focusable = true)) {
+                    Column(Modifier.width(IntrinsicSize.Max).widthIn(min = 230.dp, max = 320.dp)
                         .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x730E1A36), spotColor = Color(0x730E1A36))
                         .clip(RoundedCornerShape(18.dp)).background(Ink.surf).border(1.dp, Ink.line, RoundedCornerShape(18.dp)).padding(6.dp)) {
                         if (onCamera != null && !photoMain) PickItem(Ic.cam, tr(R.string.cmp_camera), tr(R.string.cmp_camera_sub)) { menu = false; onCamera() }
@@ -298,7 +312,7 @@ fun Composer(
                             .border(1.dp, Ink.line, RoundedCornerShape(24.dp)).padding(start = if (canAttach) 4.dp else 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_attach)) { if (android.os.SystemClock.uptimeMillis() - menuGone > 300) menu = !menu }
+                        if (canAttach) InTool(Ic.clip, tr(R.string.cmp_attach)) { if (SystemClock.uptimeMillis() - menuGone > 300) menu = !menu }
                         LaunchedEffect(canAttach) { if (!canAttach) menu = false }
                         Box(Modifier.weight(1f)) {
                             if (state.draft.isEmpty()) Text(placeholder ?: state.current.placeholder, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
@@ -360,7 +374,7 @@ fun RecPill(modifier: Modifier = Modifier) {
     val phase by RecUi.phase.collectAsState()
     if (phase == RecUi.Phase.IDLE) return
     Box(modifier.height(58.dp), contentAlignment = Alignment.Center) {
-        ru.poneslas.vahter.assistant.VMark(if (phase == RecUi.Phase.LISTENING) ru.poneslas.vahter.assistant.SheetSt.REC else ru.poneslas.vahter.assistant.SheetSt.RECOG, 46.dp)
+        VMark(if (phase == RecUi.Phase.LISTENING) SheetSt.REC else SheetSt.RECOG, 46.dp)
     }
 }
 
@@ -419,7 +433,7 @@ fun TryVoice() {
             trailing = null,
             onText = { t -> text = (text + " " + t).trim(); msg = null },
             onMessage = { msg = it },
-            onNeedMic = { (ctx as? android.app.Activity)?.requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 1) },
+            onNeedMic = { (ctx as? Activity)?.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) },
         )
         msg?.let { Text(it, fontSize = 13.sp, color = Ink.soft, modifier = Modifier.padding(top = 6.dp)) }
     }

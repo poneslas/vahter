@@ -22,12 +22,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ru.poneslas.vahter.assistant.SheetSt
+import ru.poneslas.vahter.assistant.VMark
 
 /** Значок «Вахтёр» (ui.js, oursIcon; .ours): бледно-янтарная плитка, в ней знак — ядро и два кольца. [live] — знак «слушает» (вступление). */
 @Composable
 fun OursIcon(size: Dp, radius: Dp = size * 0.31f, live: Boolean = false) {
     Box(Modifier.size(size).clip(RoundedCornerShape(radius))
         .background(Brush.radialGradient(0f to Color(0xFFFFF8E6), .55f to Color(0xFFFBEFD2), 1f to Color(0xFFF5DFA8))), contentAlignment = Alignment.Center) {
-        ru.poneslas.vahter.assistant.VMark(if (live) ru.poneslas.vahter.assistant.SheetSt.REC else ru.poneslas.vahter.assistant.SheetSt.IDLE, size * .74f, still = !live, fake = live)
+        VMark(if (live) SheetSt.REC else SheetSt.IDLE, size * .74f, still = !live, fake = live)
     }
 }

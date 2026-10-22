@@ -49,6 +49,7 @@ import ru.poneslas.vahter.ui.IconBtn
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.CoroutineScope
 
 /** Состояние ключа: поле, проверка, итог. В мастере «Подключить» — главная кнопка внизу, поэтому состояние снаружи. */
 class KeyCtl(val brain: BrainDesc) {
@@ -57,7 +58,7 @@ class KeyCtl(val brain: BrainDesc) {
     /** Итог одной строкой: true — подключено (text = «отвечает за 0,4 с»), false — что не так. */
     var status by mutableStateOf<Pair<Boolean, String>?>(null)
     val canCheck get() = !checking && key.length > 10
-    fun connect(scope: kotlinx.coroutines.CoroutineScope, onDone: (() -> Unit)? = null) {
+    fun connect(scope: CoroutineScope, onDone: (() -> Unit)? = null) {
         if (!canCheck) return
         val app = App.instance
         val k = key

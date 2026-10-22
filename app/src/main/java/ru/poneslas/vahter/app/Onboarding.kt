@@ -86,6 +86,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.runtime.setValue
 import ru.poneslas.vahter.ui.seconds
+import android.os.SystemClock
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import kotlin.math.sin
+import ru.poneslas.vahter.assistant.SheetSt
+import ru.poneslas.vahter.assistant.VMark
 
 /**
  * Первый запуск — один мастер (ui.js, onb; Продукт 5.13): каждый экран сначала объясняет живой сценой (ui/Intro.kt),
@@ -95,7 +103,7 @@ import ru.poneslas.vahter.ui.seconds
  */
 @Composable
 fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
-    var step by androidx.compose.runtime.saveable.rememberSaveable(start) { mutableIntStateOf(start) }
+    var step by rememberSaveable(start) { mutableIntStateOf(start) }
     val app = App.instance
     val ctx = activity
     val keyV by app.keyVersion.collectAsState()
@@ -126,10 +134,10 @@ fun Onboarding(activity: MainActivity, start: Int = 0, onDone: () -> Unit) {
     // Назад по мастеру: системный «Назад» и свайп вправо; свайп влево — вперёд, только если на экране уже можно «Далее».
     // На пробе голоса свайпа нет: у кнопки микрофона жест «влево — отмена». Голос не качали — проба пропускается и назад.
     val back: () -> Unit = { if (step > 0) { step -= if (step == 4 && !installed && running == null) 2 else 1; key.status = null } }
-    androidx.activity.compose.BackHandler(step > 0) { back() }
-    val canNext = androidx.compose.runtime.rememberUpdatedState { primary?.second === next }
-    val swipeBack = androidx.compose.runtime.rememberUpdatedState(back)
-    val swipeNext = androidx.compose.runtime.rememberUpdatedState(next)
+    BackHandler(step > 0) { back() }
+    val canNext = rememberUpdatedState { primary?.second === next }
+    val swipeBack = rememberUpdatedState(back)
+    val swipeNext = rememberUpdatedState(next)
     val swipe = if (step == 3) Modifier else Modifier.pointerInput(step) {
         var dx = 0f
         detectHorizontalDragGestures(onDragStart = { dx = 0f }, onHorizontalDrag = { _, d -> dx += d }, onDragEnd = {
@@ -302,12 +310,12 @@ private data class Shot(val text: String, val ms: Long)
 @Composable
 private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Boolean, mic: Boolean) {
     val app = App.instance
-    val shots = remember { androidx.compose.runtime.mutableStateListOf<Shot>() }
+    val shots = remember { mutableStateListOf<Shot>() }
     var msg by remember { mutableStateOf<String?>(null) }
     val phase by RecUi.phase.collectAsState()
     // Время от отпускания (начало распознавания) до текста — его и показываем.
     var t0 by remember { mutableStateOf(0L) }
-    LaunchedEffect(phase) { if (phase == RecUi.Phase.PROCESSING) t0 = android.os.SystemClock.uptimeMillis() }
+    LaunchedEffect(phase) { if (phase == RecUi.Phase.PROCESSING) t0 = SystemClock.uptimeMillis() }
     // Докачалось, пока человек на этом экране, — шов лопается (один раз).
     val freed = remember { Animatable(1f) }
     var wasLoading by remember { mutableStateOf(!installed) }
@@ -335,9 +343,9 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
         }
         // Знак Вахтёра — тот же, что в листе (ui.js, .tsun): качается — ядро серое, внешнее кольцо — шкала; докачалось — загорается
         // с прыжком; слушает — живой от громкости; распознаёт — пунктирное кольцо.
-        val pop = if (freed.value < 1f) { val f = (freed.value / .55f).coerceIn(0f, 1f); .8f + .2f * f + .12f * kotlin.math.sin(f * Math.PI.toFloat()) } else 1f
+        val pop = if (freed.value < 1f) { val f = (freed.value / .55f).coerceIn(0f, 1f); .8f + .2f * f + .12f * sin(f * Math.PI.toFloat()) } else 1f
         Box(Modifier.height(132.dp).graphicsLayer { scaleX = pop; scaleY = pop }, contentAlignment = Alignment.Center) {
-            ru.poneslas.vahter.assistant.VMark(when { rec -> ru.poneslas.vahter.assistant.SheetSt.REC; proc -> ru.poneslas.vahter.assistant.SheetSt.RECOG; else -> ru.poneslas.vahter.assistant.SheetSt.IDLE },
+            VMark(when { rec -> SheetSt.REC; proc -> SheetSt.RECOG; else -> SheetSt.IDLE },
                 118.dp, sleep = if (!installed) (pct ?: 0) / 100f else null)
         }
         // строка процентов — всегда в резерве: докачалось — текст ниже не прыгает
@@ -368,7 +376,7 @@ private fun ColumnScope.TryStep(activity: MainActivity, pct: Int?, installed: Bo
             field = { Text(tr(R.string.try_tips), fontSize = 13.sp, color = Ink.faint, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth().padding(end = 14.dp)) },
             trailing = null,
-            onText = { t -> shots += Shot(t, (android.os.SystemClock.uptimeMillis() - t0).coerceAtLeast(1)); msg = null },
+            onText = { t -> shots += Shot(t, (SystemClock.uptimeMillis() - t0).coerceAtLeast(1)); msg = null },
             onMessage = { msg = it },
             onNeedMic = activity::askMic,
         )

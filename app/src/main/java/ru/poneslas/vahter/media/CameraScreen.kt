@@ -95,6 +95,13 @@ import ru.poneslas.vahter.voice.Voice
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Shader
+import androidx.lifecycle.Observer
+import kotlinx.coroutines.delay
 
 /** Снятый кадр: картинка с превью + пометки + обрезка (в долях кадра). */
 class Frame(val bitmap: Bitmap, val marks: List<Attachments.Mark>, val crop: Attachments.Crop?)
@@ -150,12 +157,12 @@ fun CameraPanel(
     DisposableEffect(Unit) { onDispose { runCatching { provider?.unbindAll() } } }
     // Картинка не пошла за 4 с — сказать словами, а не держать чёрный экран.
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(4000)
+        delay(4000)
         if (preview.previewStreamState.value != PreviewView.StreamState.STREAMING && error == null) error = errNoPicture
     }
     // Картинка всё же пошла (медленная камера) — предупреждение снимаем.
     DisposableEffect(preview) {
-        val o = androidx.lifecycle.Observer<PreviewView.StreamState> { st -> if (st == PreviewView.StreamState.STREAMING && error == errNoPicture) error = null }
+        val o = Observer<PreviewView.StreamState> { st -> if (st == PreviewView.StreamState.STREAMING && error == errNoPicture) error = null }
         preview.previewStreamState.observeForever(o)
         onDispose { preview.previewStreamState.removeObserver(o) }
     }
@@ -440,20 +447,20 @@ private fun CBtn(icon: Int, label: String, onClick: () -> Unit) {
     }
 }
 
-suspend fun cameraProvider(ctx: android.content.Context): ProcessCameraProvider = suspendCancellableCoroutine { c ->
+suspend fun cameraProvider(ctx: Context): ProcessCameraProvider = suspendCancellableCoroutine { c ->
     val f = ProcessCameraProvider.getInstance(ctx)
     f.addListener({ runCatching { f.get() }.onSuccess { c.resume(it) }.onFailure { c.resumeWithException(it) } }, ContextCompat.getMainExecutor(ctx))
 }
 
 /** Только отладочная сборка: у эмулятора камера без картинки — тестовый кадр, чтобы проверить обрезку и пометки. */
-private fun testFrame(ctx: android.content.Context, w: Int, h: Int): Bitmap? {
-    if (ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE == 0 || w <= 0 || h <= 0) return null
+private fun testFrame(ctx: Context, w: Int, h: Int): Bitmap? {
+    if (ctx.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0 || w <= 0 || h <= 0) return null
     val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
     val c = android.graphics.Canvas(b)
-    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    p.shader = android.graphics.LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF36506B.toInt(), 0xFFE8A317.toInt(), android.graphics.Shader.TileMode.CLAMP)
+    val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    p.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF36506B.toInt(), 0xFFE8A317.toInt(), Shader.TileMode.CLAMP)
     c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
-    p.shader = null; p.color = 0xFFFFFFFF.toInt(); p.textSize = w / 12f; p.textAlign = android.graphics.Paint.Align.CENTER
+    p.shader = null; p.color = 0xFFFFFFFF.toInt(); p.textSize = w / 12f; p.textAlign = Paint.Align.CENTER
     c.drawText(tr(R.string.cam_test_frame), w / 2f, h / 2f, p)
     return b
 }

@@ -18,6 +18,10 @@ import ru.poneslas.vahter.core.Modes
 import ru.poneslas.vahter.core.Primary
 import ru.poneslas.vahter.tr
 import ru.poneslas.vahter.R
+import android.Manifest
+import android.app.KeyguardManager
+import android.content.pm.PackageManager
+import java.util.concurrent.CopyOnWriteArrayList
 
 /** Сервис помощника. Живёт, пока Вахтёр выбран цифровым помощником. */
 class AssistService : VoiceInteractionService() {
@@ -61,7 +65,7 @@ object Sheet {
     @Volatile var session: AssistSession? = null
     /** Экран листа, пока он жив (на экране или в своей задаче за другим приложением). */
     @Volatile var activity: SheetActivity? = null
-    val prepareHooks = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+    val prepareHooks = CopyOnWriteArrayList<() -> Unit>()
     /** Счётчик «начать запись без рук» — меняется при вызове кнопкой. */
     val autoListen = MutableStateFlow(0)
     /** Камера в листе открыта. */
@@ -121,7 +125,7 @@ class AssistSession(context: Context) : VoiceInteractionSession(context) {
         val settings = conv.state.value.settings
         val src = args?.getString("src")
         // На заблокированном экране по умолчанию ничего не открывается: сначала разблокировка (Продукт 5.7).
-        val locked = context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
+        val locked = context.getSystemService(KeyguardManager::class.java).isKeyguardLocked
         if (locked && settings.lockScope == LockScope.OFF) {
             runCatching { startAssistantActivity(Intent(context, UnlockActivity::class.java)) }
             hide()
@@ -148,13 +152,13 @@ class AssistSession(context: Context) : VoiceInteractionSession(context) {
             Sheet.camera.value = false
             // Главное действие режима при вызове: фото — сразу камера; голос — сразу слушает, если включено «Слушать сразу при вызове».
             if (cur.primary == Primary.PHOTO && cur.accepts.photo &&
-                context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
+                context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
             // Голос не скачан — не слушаем и не пишем об этом: строка над лентой уже говорит «Голос не скачан · Скачать».
             else if (cur.primary == Primary.VOICE && settings.listenOnCall && app.voice.installed.value) Sheet.autoListen.value++
         }
         if (Sheet.cameraAfterShow) {
             Sheet.cameraAfterShow = false
-            if (context.checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
+            if (context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) Sheet.camera.value = true
         }
         // Лист — экран своей задачи; уже открыт (за другим приложением) — тот же экран выходит вперёд (onNewIntent).
         // Обычный запуск, не startAssistantActivity: задача «помощника» (ACTIVITY_TYPE_ASSISTANT) лаунчер пропускает при

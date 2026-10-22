@@ -32,6 +32,13 @@ import ru.poneslas.vahter.ui.VahterTheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import ru.poneslas.vahter.update.Updates
 
 /**
  * Приложение — тот же разговор, что в листе, на весь экран; плюс настройки (Продукт 5.1, 5.11).
@@ -75,13 +82,13 @@ open class MainActivity : ComponentActivity() {
      * и снова системное; после второго система больше не спрашивает — наше окно ведёт в настройки разрешений.
      */
     fun askMic() {
-        val mic = android.Manifest.permission.RECORD_AUDIO
-        if (checkSelfPermission(mic) == android.content.pm.PackageManager.PERMISSION_GRANTED) { if (askMicThenSheet) { askMicThenSheet = false; collapse() }; return }
+        val mic = Manifest.permission.RECORD_AUDIO
+        if (checkSelfPermission(mic) == PackageManager.PERMISSION_GRANTED) { if (askMicThenSheet) { askMicThenSheet = false; collapse() }; return }
         when {
             shouldShowRequestPermissionRationale(mic) -> permSheet = PermSheet(tr(R.string.mic_why_h), tr(R.string.mic_why_p), tr(R.string.mic_why_go)) { requestMic() }
             App.instance.conversation.state.value.settings.micAsked -> permSheet = PermSheet(tr(R.string.mic_off_h), tr(R.string.mic_off_p), tr(R.string.mic_off_go)) {
                 askMicThenSheet = false
-                startActivity(Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)))
+                startActivity(Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
             }
             else -> requestMic()
         }
@@ -89,7 +96,7 @@ open class MainActivity : ComponentActivity() {
 
     private fun requestMic() {
         App.instance.conversation.updateSettings { it.copy(micAsked = true) }
-        requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQ_MIC)
+        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_MIC)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray, deviceId: Int) {
@@ -97,8 +104,8 @@ open class MainActivity : ComponentActivity() {
         resumed.intValue++   // ответ на системное окно (микрофон, уведомления) — перечитать состояние строк
         if (requestCode == REQ_MIC && askMicThenSheet) {
             // камеру просили из листа и разрешили — лист вернётся уже с камерой
-            val cam = permissions.indexOf(android.Manifest.permission.CAMERA)
-            if (cam >= 0 && grantResults.getOrNull(cam) == android.content.pm.PackageManager.PERMISSION_GRANTED) Sheet.cameraAfterShow = true
+            val cam = permissions.indexOf(Manifest.permission.CAMERA)
+            if (cam >= 0 && grantResults.getOrNull(cam) == PackageManager.PERMISSION_GRANTED) Sheet.cameraAfterShow = true
             askMicThenSheet = false; collapse()
         }
     }
@@ -108,14 +115,14 @@ open class MainActivity : ComponentActivity() {
 
     /** Приложение на экране (для уведомлений и дочитывания хода); у листа — только развёрнутого. */
     protected open val appShown get() = true
-    override fun onResume() { App.instance.conversation.freshen(); ru.poneslas.vahter.update.Updates.onAppResume(this); super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
+    override fun onResume() { App.instance.conversation.freshen(); Updates.onAppResume(this); super.onResume(); App.instance.appVisible.value = appShown; resumed.intValue++ }
     override fun onPause() { super.onPause(); App.instance.appVisible.value = false }
 
     protected open fun readIntent(i: Intent) {
         sheetReturn = null
         // Разрешение микрофона спрашиваем из приложения: из листа системное окно на S24 уходит под лист.
         // Из листа — после ответа вернуть лист; из приложения — остаться.
-        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == android.Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
+        i.getStringExtra(EXTRA_ASK_PERM)?.let { perms -> askMicThenSheet = fromSheet; if (perms == Manifest.permission.RECORD_AUDIO) askMic() else requestPermissions(perms.split(",").toTypedArray(), REQ_MIC) }
         route(i)
     }
 
@@ -188,9 +195,9 @@ open class MainActivity : ComponentActivity() {
                 } else {
                     // Каждая страница стопки помнит своё состояние (прокрутку): «Назад» в настройки — туда же, где был, а не в начало.
                     // Ушла из стопки — забываем, чтобы при новом заходе страница открылась сначала.
-                    val holder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
-                    val kept = androidx.compose.runtime.remember { mutableSetOf<String>() }
-                    androidx.compose.runtime.SideEffect { (kept - stack.toSet()).forEach { holder.removeState(it); kept.remove(it) }; kept += stack }
+                    val holder = rememberSaveableStateHolder()
+                    val kept = remember { mutableSetOf<String>() }
+                    SideEffect { (kept - stack.toSet()).forEach { holder.removeState(it); kept.remove(it) }; kept += stack }
                     holder.SaveableStateProvider(page) { when {
                         page == "chat" -> Chat(this@MainActivity)
                         page == "settings" -> SettingsPage(this@MainActivity)

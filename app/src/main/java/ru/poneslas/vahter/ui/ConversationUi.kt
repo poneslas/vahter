@@ -71,6 +71,17 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.platform.LocalDensity
+import java.io.File
+import kotlin.math.abs
 
 /** Промпт режима над лентой (ui.js, promptHtml): серая полоска, две строки, карандаш → страница режима. У Ассистента промпта нет — полоски нет. */
 @Composable
@@ -211,12 +222,12 @@ private fun actIcon(e: String): Int? = when (e) {
  * состояние). Отмена, если она есть, — долгим нажатием на карточку («Отменить»), второй кнопкой не занимаем. Ошибка — красный
  * значок и текстовая кнопка, что сделать («Разрешить»).
  */
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     if (item.at != null && item.state != "undone") LaunchedEffect(item.id, item.at) {
-        while (true) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(if (item.countdown) 1000 else 30_000) }
+        while (true) { now = System.currentTimeMillis(); delay(if (item.countdown) 1000 else 30_000) }
     }
     val onPhone = tr(R.string.conv_on_phone)
     val sub = buildString {
@@ -263,8 +274,8 @@ private fun ActItem(item: FeedItem.Act, onAct: (FeedItem.Act, Boolean) -> Unit) 
                 item.button?.let { b -> Text(b, color = Ink.localD, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.clickable { onAct(item, false) }.padding(horizontal = 2.dp, vertical = 4.dp)) }
             item.action != null && live -> roundBtn(Ic.openext, item.button ?: tr(R.string.ui_open)) { onAct(item, false) }
         }
-        androidx.compose.material3.DropdownMenu(menu, { menu = false }, containerColor = Ink.surf, shape = RoundedCornerShape(16.dp)) {
-            androidx.compose.material3.DropdownMenuItem(text = { Text(item.undo ?: tr(R.string.act_cancel), fontSize = 15.sp) }, onClick = { menu = false; onAct(item, true) })
+        DropdownMenu(menu, { menu = false }, containerColor = Ink.surf, shape = RoundedCornerShape(16.dp)) {
+            DropdownMenuItem(text = { Text(item.undo ?: tr(R.string.act_cancel), fontSize = 15.sp) }, onClick = { menu = false; onAct(item, true) })
         }
     }
 }
@@ -332,7 +343,7 @@ private fun FilesItem(item: FeedItem.Files) {
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(f.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val size = f.path?.let { java.io.File(it).length() }
+                    val size = f.path?.let { File(it).length() }
                     Text(f.note ?: (if (size != null) sizeText(size) else ""), fontSize = 12.sp, color = if (f.note != null) Ink.danger else Ink.soft)
                 }
                 if (f.path != null) Text(tr(R.string.feed_open), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Ink.serverD)
@@ -348,13 +359,13 @@ private fun sizeText(b: Long) = if (b < 1024 * 1024) tr(R.string.feed_size_kb, (
  * название; ряд едет под ней, выделенным сразу становится режим в центре; сам режим переключается, когда ряд остановился.
  * Тап — тот же выбор. «+» в ряду нет — новый режим создаётся в настройках.
  */
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
     val tabs = state.tabs
-    val list = androidx.compose.foundation.lazy.rememberLazyListState()
+    val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val fling = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(list, androidx.compose.foundation.gestures.snapping.SnapPosition.Center)
+    val fling = rememberSnapFlingBehavior(list, SnapPosition.Center)
     val onSelectNow by rememberUpdatedState(onSelect)
     var ours by remember { mutableStateOf(false) }   // прокрутку начали мы (центрирование), а не палец — выбор не трогаем
     // сдвиг, ставящий вкладку по центру ряда
@@ -376,18 +387,18 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit) {
         snapshotFlow { list.isScrollInProgress }.collect { moving ->
             if (moving || ours) return@collect
             val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-            val near = info.visibleItemsInfo.minByOrNull { kotlin.math.abs(it.offset + it.size / 2f - mid) } ?: return@collect
+            val near = info.visibleItemsInfo.minByOrNull { abs(it.offset + it.size / 2f - mid) } ?: return@collect
             tabs.getOrNull(near.index)?.let { if (it.id != state.mode) onSelectNow(it.id) }
         }
     }
     // кто сейчас под линзой и какой он ширины — каждый кадр прокрутки
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val under by remember { androidx.compose.runtime.derivedStateOf {
+    val density = LocalDensity.current
+    val under by remember { derivedStateOf {
         val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-        info.visibleItemsInfo.minByOrNull { kotlin.math.abs(it.offset + it.size / 2f - mid) }
+        info.visibleItemsInfo.minByOrNull { abs(it.offset + it.size / 2f - mid) }
     } }
     val lit = under?.index ?: sel
-    val lensW by androidx.compose.animation.core.animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
+    val lensW by animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
     BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp), contentAlignment = Alignment.Center) {
         Box(Modifier.width(lensW).height(30.dp).clip(RoundedCornerShape(50)).background(Ink.ink))   // линза — на месте
         val side = maxWidth / 2 - 40.dp

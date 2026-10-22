@@ -13,6 +13,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import kotlinx.coroutines.CancellationException
 
 class ModelManager(
     context: Context,
@@ -194,7 +195,7 @@ class ModelManager(
                 destination.delete()
                 downloadFile(url = url, destination = destination, expectedSha256 = expectedSha256, onProgress = onProgress)
                 return
-            } catch (error: kotlinx.coroutines.CancellationException) {
+            } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
                 if (lastError == null) lastError = error

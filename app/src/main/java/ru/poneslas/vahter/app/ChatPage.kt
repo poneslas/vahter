@@ -37,6 +37,7 @@ import ru.poneslas.vahter.ui.TopBar
 import ru.poneslas.vahter.ui.IconBtn
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import ru.poneslas.vahter.ui.composerPlaceholder
 
 /** Главный экран приложения — тот же разговор, что в листе, на весь экран (ui.js, chat). */
 
@@ -77,7 +78,7 @@ fun ColumnScope.Chat(a: MainActivity) {
     LiveLine(live)
     Composer(
         state = state, voice = app.voice,
-        placeholder = ru.poneslas.vahter.ui.composerPlaceholder(state, connected),
+        placeholder = composerPlaceholder(state, connected),
         onDraft = app.conversation::setDraft,
         onSend = { t, v -> app.conversation.send(t, v) },
         onSelectMode = app.conversation::selectMode,
@@ -85,7 +86,7 @@ fun ColumnScope.Chat(a: MainActivity) {
         onLive = { live = it },
         onNeedMic = a::askMic,
         onGallery = { PickerActivity.launch(a) },
-        onFile = if (state.current.brain == ru.poneslas.vahter.core.Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(a) }) else null,
+        onFile = if (state.current.brain == Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(a) }) else null,
     )
     Spacer(Modifier.navigationBarsPadding())
 }
