@@ -2,6 +2,7 @@
 // Правки — только пакет, строки и то, что помечено «Вахтёр:».
 package ru.poneslas.vahter.pisar.audio
 
+import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -14,6 +15,8 @@ import kotlin.math.min
 
 class AudioRecorder(
     var onTimeout: (() -> Unit)? = null,
+    // Вахтёр: контекст с цепочкой атрибуции — системный распознаватель пишет от имени вызвавшего приложения.
+    private val context: Context? = null,
 ) {
     companion object {
         const val SAMPLE_RATE = 16_000
@@ -74,13 +77,31 @@ class AudioRecorder(
 
             val record =
                 try {
-                    AudioRecord(
-                        MediaRecorder.AudioSource.MIC,
-                        SAMPLE_RATE,
-                        CHANNEL_CONFIG,
-                        AUDIO_FORMAT,
-                        bufferSize,
-                    )
+                    // Вахтёр: с контекстом — через Builder (только он принимает контекст).
+                    if (context != null) {
+                        AudioRecord.Builder()
+                            .setContext(context)
+                            .setAudioSource(MediaRecorder.AudioSource.MIC)
+                            .setAudioFormat(
+                                AudioFormat.Builder()
+                                    .setSampleRate(SAMPLE_RATE)
+                                    .setChannelMask(CHANNEL_CONFIG)
+                                    .setEncoding(AUDIO_FORMAT)
+                                    .build(),
+                            )
+                            .setBufferSizeInBytes(bufferSize)
+                            .build()
+                    } else {
+                        AudioRecord(
+                            MediaRecorder.AudioSource.MIC,
+                            SAMPLE_RATE,
+                            CHANNEL_CONFIG,
+                            AUDIO_FORMAT,
+                            bufferSize,
+                        )
+                    }
+                } catch (_: UnsupportedOperationException) {
+                    return false
                 } catch (_: SecurityException) {
                     return false
                 } catch (_: IllegalArgumentException) {

@@ -82,8 +82,9 @@
             android:name=".assistant.SessionService"
             android:exported="true"
             android:permission="android.permission.BIND_VOICE_INTERACTION" />
+        <!-- Системный распознаватель (GigaAM на телефоне); без него роль помощника слетает при обновлении. -->
         <service
-            android:name=".assistant.StubRecognitionService"
+            android:name=".voice.RecognizerService"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.speech.RecognitionService" />

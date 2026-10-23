@@ -6,8 +6,6 @@ import android.os.Bundle
 import android.service.voice.VoiceInteractionService
 import android.service.voice.VoiceInteractionSession
 import android.service.voice.VoiceInteractionSessionService
-import android.speech.RecognitionService
-import android.speech.SpeechRecognizer
 import android.view.View
 import kotlinx.coroutines.flow.MutableStateFlow
 import ru.poneslas.vahter.app.MainActivity
@@ -47,15 +45,6 @@ class AssistService : VoiceInteractionService() {
 
 class SessionService : VoiceInteractionSessionService() {
     override fun onNewSession(args: Bundle?): VoiceInteractionSession = AssistSession(this)
-}
-
-/** Пустой RecognitionService: без него роль помощника сбрасывается при обновлении (проверено пробником). */
-class StubRecognitionService : RecognitionService() {
-    override fun onStartListening(recognizerIntent: Intent?, listener: Callback?) {
-        listener?.error(SpeechRecognizer.ERROR_CLIENT)
-    }
-    override fun onCancel(listener: Callback?) {}
-    override fun onStopListening(listener: Callback?) {}
 }
 
 /** Связь сервиса, сессии и приложения — всё в одном процессе. */

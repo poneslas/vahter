@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Проверка распознавателя: микрофон нужен вызывающему приложению. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Видеть установленные клавиатуры (Samsung, Gboard) и открыть их настройки. -->
+    <queries>
+        <intent>
+            <action android:name="android.view.InputMethod" />
+        </intent>
+        <!-- Без этого SpeechRecognizer не видит службу распознавания (Android 11+). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+    <application
+        android:label="Пробник распознавания"
+        android:theme="@android:style/Theme.DeviceDefault.DayNight">
+
+        <!-- Клавиатурный прогон 0.1–0.3: опыты закончены, из списка приложений убран. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".RecognizerCheckActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Голосовая клавиатура без клавиш: подтип voice, как у «Голосового ввода Google». -->
+        <service
+            android:name=".VoiceIme"
+            android:label="Вахтёр — голосовой ввод"
+            android:exported="true"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method" />
+        </service>
+
+        <service
+            android:name=".VoiceImeKeyboard"
+            android:label="Вахтёр — как клавиатура"
+            android:exported="true"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method_keyboard" />
+        </service>
+    </application>
+</manifest>

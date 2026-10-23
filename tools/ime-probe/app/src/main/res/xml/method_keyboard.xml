@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Второй вариант: та же панель, но для Android это обычная клавиатура (mode keyboard) — на случай, если голосовые в список выбора не попадают. -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsSwitchingToNextInputMethod="true">
+    <subtype
+        android:label="Русский"
+        android:languageTag="ru-RU"
+        android:imeSubtypeLocale="ru_RU"
+        android:imeSubtypeMode="keyboard"
+        android:overridesImplicitlyEnabledSubtype="true" />
+</input-method>

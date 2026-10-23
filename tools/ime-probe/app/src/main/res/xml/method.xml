@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Не auxiliary: чтобы Вахтёра можно было выбрать и обычным переключением клавиатуры.
+     overridesImplicitlyEnabledSubtype: в 0.1 Вахтёра не было в списке выбора — гипотеза: Android не включил голосовые варианты. -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsSwitchingToNextInputMethod="true">
+    <subtype
+        android:label="Русский (голос)"
+        android:languageTag="ru-RU"
+        android:imeSubtypeLocale="ru_RU"
+        android:imeSubtypeMode="voice"
+        android:isAuxiliary="false"
+        android:overridesImplicitlyEnabledSubtype="true" />
+    <subtype
+        android:label="English (voice)"
+        android:languageTag="en-US"
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="voice"
+        android:isAuxiliary="false"
+        android:overridesImplicitlyEnabledSubtype="true" />
+</input-method>

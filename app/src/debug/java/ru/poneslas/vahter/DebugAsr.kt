@@ -27,7 +27,7 @@ class DebugAsr : BroadcastReceiver() {
                 val pcm = ByteBuffer.wrap(bytes, 44, bytes.size - 44).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
                 val audio = ShortArray(pcm.remaining()) { pcm.get(it) }
                 val t = System.currentTimeMillis()
-                val text = withContext(Dispatchers.IO) { app.voice.transcribeForTest(audio) }
+                val text = withContext(Dispatchers.IO) { app.voice.transcribe(audio) }
                 Log.i("VahterAsr", "${audio.size / 16000.0} с → ${System.currentTimeMillis() - t} мс: $text")
             } catch (e: Throwable) {
                 Log.e("VahterAsr", "ошибка", e)

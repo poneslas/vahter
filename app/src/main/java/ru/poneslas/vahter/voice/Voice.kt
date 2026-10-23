@@ -85,5 +85,6 @@ class Voice(private val context: Context, private val scope: CoroutineScope) {
         scope.launch(Dispatchers.IO) { runCatching { recognizer.transcribe(ShortArray(AudioRecorder.SAMPLE_RATE)) } }
     }
 
-    fun transcribeForTest(pcm: ShortArray): String = recognizer.transcribe(pcm)
+    /** Распознать готовую запись — для системного распознавателя ([RecognizerService]) и отладки. */
+    fun transcribe(pcm: ShortArray): String = recognizer.transcribe(pcm)
 }
