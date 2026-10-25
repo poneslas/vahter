@@ -67,9 +67,9 @@ function itemHtml(it,inSheet){
       <small class="upst ${u.st==='fail'?'err':''}">${st}${u.st==='fail'?` · <button class="lnk" data-act="upretry" data-id="${it.id}">Повторить</button>`:''}</small>
       ${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>уйдёт вместе с фото</small></div>`:`<small class="uphint">Можно дописать вопрос — уйдёт вместе с фото</small>`}</div>` }
   if (it.t==='me' && it.img && it.up && it.up.st==='cancel') return '';
-  if (it.t==='me' && it.img && it.img.kind==='file') return `<div class="meimg"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span></div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
-  if (it.t==='me' && it.img) return `<div class="meimg"><div class="thw" style="${thumbStyle(it.img)}">${thumbHtml(it.img)}</div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}<small>${it.via}</small></div>`:`<small style="font-size:10.5px;color:var(--faint)">${it.via}</small>`}</div>`;
-  if (it.t==='me') return `<div class="me">${esc(it.x)}<small>${it.via||'голос'}</small></div>`;
+  if (it.t==='me' && it.img && it.img.kind==='file') return `<div class="meimg"><div class="fcard">${I.doc}<span><b>${esc(it.img.name)}</b><small>${it.img.size}</small></span></div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}</div>`:''}</div>`;
+  if (it.t==='me' && it.img) return `<div class="meimg"><div class="thw" style="${thumbStyle(it.img)}">${thumbHtml(it.img)}</div>${it.x?`<div class="me" style="max-width:100%">${esc(it.x)}</div>`:''}</div>`;
+  if (it.t==='me') return `<div class="me">${esc(it.x)}</div>`;
   if (it.t==='ai' && it.speak) return `<div class="ai"><div class="md">${it.x}</div></div><button class="speak" data-act="speaksoon" aria-disabled="true">🔊 Озвучить · скоро</button>`;
   if (it.t==='ai'){
     const clip = it.long && inSheet;

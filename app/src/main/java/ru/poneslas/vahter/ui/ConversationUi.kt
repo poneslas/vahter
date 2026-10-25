@@ -185,13 +185,13 @@ private fun MeItem(item: FeedItem.Me, onCancel: (Long) -> Unit) {
                 if (item.status != null) {
                     Text(item.status, fontSize = 11.5.sp, color = Ink.soft)
                     if (item.text.isEmpty()) Text(tr(R.string.feed_add_question), fontSize = 11.5.sp, color = Ink.faint)
-                } else if (item.text.isEmpty()) Text(item.via, fontSize = 10.5.sp, color = Ink.faint)
+                }
             }
             if (item.text.isNotEmpty()) Column(
                 Modifier.widthIn(max = maxW).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)).background(Ink.me).padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
+                // Подписи «голос / клавиатура» под репликой нет (25.10): лишнее.
                 Text(item.text, color = Ink.ink)
-                Text(item.via, fontSize = 10.5.sp, lineHeight = 1.3.em, color = Ink.faint, modifier = Modifier.align(Alignment.End))
             }
         }
     }
