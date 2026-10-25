@@ -117,13 +117,15 @@ class Conversation(
      * «30 минут без дела» — чистый лист (Продукт 5.17): у каждого режима, где с последнего использования прошло больше 30 минут,
      * старое уходит под «Прошлый разговор». Зовётся при каждом показе листа и приложения и при выборе режима — не только
      * при вызове кнопкой (раньше проверка жила в onShow сессии и открытие из уведомления или приложения её пропускало).
+     * Мозг начинает с чистого листа вместе с экраном: история режима для модели очищается (25.10 — Гастрогид отвечал «опять
+     * не меню» на старые, невидимые фото, и каждое старое фото заново уходило с каждым вопросом). Лента не стирается.
      */
     fun freshen(now: Long = System.currentTimeMillis()) = edit { s ->
-        val upd = s.feeds.mapNotNull { (id, feed) ->
-            val last = s.modeUse[id] ?: 0L   // до 0.9.4 отметок не было — старая переписка один раз уходит под «Прошлый разговор»
-            if (now - last > IDLE_MS && feed.size > (s.fresh[id] ?: 0)) id to feed.size else null
-        }
-        if (upd.isEmpty()) s else s.copy(fresh = s.fresh + upd)
+        // до 0.9.4 отметок не было — старая переписка один раз уходит под «Прошлый разговор»
+        fun idle(id: String) = now - (s.modeUse[id] ?: 0L) > IDLE_MS
+        val upd = s.feeds.mapNotNull { (id, feed) -> if (idle(id) && feed.size > (s.fresh[id] ?: 0)) id to feed.size else null }
+        val forget = s.histories.filter { (id, h) -> h.isNotEmpty() && idle(id) }.keys
+        if (upd.isEmpty() && forget.isEmpty()) s else s.copy(fresh = s.fresh + upd, histories = s.histories - forget)
     }
 
     private fun push(modeId: String, item: FeedItem) = edit { it.copy(feeds = it.feeds + (modeId to (it.feeds[modeId].orEmpty() + item))) }
