@@ -417,7 +417,7 @@ function orbText(){ const m=curMode(), A=m.accepts, photoMain=m.primary==='photo
 const stagedHere = () => !!(S.staged && S.staged.mode===S.mode);
 function stagedHtml(){ if(!stagedHere()||!S.ov||S.ov.full) return ''; const g=S.staged.img;
   const [pic,title] = g.kind==='file' ? [`<span class="stgp f">${I.doc}</span>`, esc(g.name)] : g.kind==='album' ? [`<span class="stgp"><i class="th ${g.items[0].cls}"></i><em>${g.items.length}</em></span>`, `${g.items.length} фото`] : [`<span class="stgp"><i class="th ${g.cls}"></i></span>`, 'Фото'];
-  return `<div class="stg">${pic}<span class="stgt"><b>${title}</b><small>${S.ov.text?'напишите и отправьте':'смахните солнышко вверх — уйдёт сразу'}</small></span><button class="stgx" data-act="stgx" aria-label="Убрать вложение">${I.x}</button></div>` }
+  return `<div class="stg">${pic}<span class="stgt"><b>${title}</b><small>${S.ov.text?'Уйдёт вместе с текстом':'Вверх — отправить сразу'}</small></span><button class="stgx" data-act="stgx" aria-label="Убрать вложение">${I.x}</button></div>` }
 function orbHtml(){
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo, r=S.rec;
   const back = S.ov.orbIn&&!r ? (S.ov.orbIn=false, ' back') : '';   // солнышко возвращается после «улёта»
