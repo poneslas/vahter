@@ -24,7 +24,6 @@ data class Saved(
     val modeUse: Map<String, Long> = emptyMap(),
     /** С какого элемента ленты начинается текущий разговор режима; раньше — «Прошлый разговор» (переживает перезапуск). */
     val fresh: Map<String, Int> = emptyMap(),
-    val notes: List<Note> = emptyList(),
     /** Журнала действий больше нет (22.10) — поле оставлено, чтобы читались старые файлы. */
     val journal: List<JournalEntry> = emptyList(),
     /** Сессии режимов в Hermes (ключ — id режима); история этих режимов живёт на сервере. */

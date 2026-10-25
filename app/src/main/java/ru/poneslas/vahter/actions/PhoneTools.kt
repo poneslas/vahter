@@ -20,10 +20,8 @@ import ru.poneslas.vahter.brain.ToolSpec
 import ru.poneslas.vahter.core.FeedItem
 import ru.poneslas.vahter.core.LockScope
 import ru.poneslas.vahter.core.Mode
-import ru.poneslas.vahter.core.Note
 import ru.poneslas.vahter.core.Policy
 import ru.poneslas.vahter.core.Settings
-import ru.poneslas.vahter.ui.Note
 import ru.poneslas.vahter.trp
 
 /**
@@ -38,10 +36,6 @@ class PhoneTools(
     private val confirm: suspend (title: String, detail: String) -> Boolean,
     /** Строка итога в ленте (id назначает разговор). */
     private val report: (FeedItem.Act) -> Unit,
-    /** Заметки и места (note_*, place_*): прочитать, сохранить, забыть. */
-    private val notes: () -> List<Note>,
-    private val saveNote: (Note) -> Unit,
-    private val deleteNote: (Long) -> Unit,
     /** Когда должны прозвенеть таймеры, которые ставили мы (по строкам разговора). */
     private val timers: () -> List<Long>,
 ) : ToolHost {
@@ -73,13 +67,6 @@ class PhoneTools(
         spec("media_control", tr(R.string.act_media_desc),
             """"action":{"type":"string","enum":["play","pause","toggle","next","previous"]}""", "\"action\""),
         spec("location_get", tr(R.string.act_location_desc), ""),
-        spec("place_save", tr(R.string.act_place_save_desc),
-            """"name":{"type":"string"}""", "\"name\""),
-        spec("place_list", tr(R.string.act_places_desc), ""),
-        spec("place_delete", tr(R.string.act_place_forget_desc), """"name":{"type":"string"}""", "\"name\""),
-        spec("note_add", tr(R.string.act_note_save_desc), """"text":{"type":"string"}""", "\"text\""),
-        spec("note_find", tr(R.string.act_note_find_desc), """"query":{"type":"string"}"""),
-        spec("note_delete", tr(R.string.act_note_forget_desc), """"query":{"type":"string","description":"Слова из заметки"}""", "\"query\""),
         spec("app_open", tr(R.string.act_app_open_desc), """"name":{"type":"string"}""", "\"name\""),
         spec("settings_open", tr(R.string.act_settings_open_desc),
             """"screen":{"type":"string","enum":[${Phone.settingsScreens.keys.joinToString(",") { "\"$it\"" }}]}""", "\"screen\""),
@@ -255,48 +242,6 @@ class PhoneTools(
                 act("📍", tr(R.string.act_location_done, addr ?: "%.4f, %.4f".format(l.latitude, l.longitude)), tr(R.string.act_location_accuracy, l.accuracy.toInt()), tr(R.string.act_location_map), tr(R.string.act_location_map_action, l.latitude, l.longitude), state = "info")
                 res(true) { put("lat", l.latitude); put("lon", l.longitude); put("accuracy_m", l.accuracy.toInt()); addr?.let { put("address", it) } }
             }
-        }
-        "place_save" -> {
-            val nm = a.str("name") ?: return err("no_name", tr(R.string.act_place_need_name))
-            val l = Phone.location(context) ?: return err("no_location", tr(R.string.act_location_failed))
-            val addr = Phone.address(context, l)
-            val id = System.currentTimeMillis()
-            saveNote(Note(id, nm, id, place = true, lat = l.latitude, lon = l.longitude, address = addr))
-            act("📍", tr(R.string.act_place_saved, nm), addr ?: "%.4f, %.4f".format(l.latitude, l.longitude), tr(R.string.act_location_map), "map:${l.latitude}:${l.longitude}:$nm", undo = tr(R.string.act_delete), undoAction = "note:del:$id")
-            res(true)
-        }
-        "place_list" -> {
-            val places = notes().filter { it.place }
-            val here = if (places.isNotEmpty()) Phone.location(context) else null
-            act("📍", tr(R.string.act_places_title, places.size), if (places.isEmpty()) tr(R.string.act_places_none) else places.take(3).joinToString(", ") { it.text }, state = "info")
-            buildJsonObject {
-                put("ok", true)
-                put("places", buildJsonArray { places.takeLast(30).forEach { p -> add(buildJsonObject {
-                    put("name", p.text); put("saved", Phone.iso(p.at)); p.address?.let { put("address", it) }
-                    if (here != null && p.lat != null && p.lon != null) put("distance_m", Phone.distanceMeters(here.latitude, here.longitude, p.lat, p.lon).toInt())
-                }) } })
-            }.toString()
-        }
-        "note_add" -> {
-            val text = a.str("text") ?: return err("no_text", tr(R.string.act_note_empty))
-            val id = System.currentTimeMillis()
-            saveNote(Note(id, text, id))
-            act("📝", tr(R.string.act_note_saved), text.take(80), undo = tr(R.string.act_delete), undoAction = "note:del:$id"); res(true)
-        }
-        "note_find" -> {
-            val q = a.str("query")?.lowercase()
-            val found = notes().filter { !it.place && (q == null || q.split(' ').any { w -> w.length > 2 && it.text.lowercase().contains(w.take(5)) }) }.takeLast(20)
-            act("📝", tr(R.string.act_notes_title, found.size), found.lastOrNull()?.text?.take(60) ?: tr(R.string.act_notes_none), state = "info")
-            buildJsonObject { put("ok", true); put("notes", buildJsonArray { found.forEach { add(buildJsonObject { put("text", it.text); put("saved", Phone.iso(it.at)) }) } }) }.toString()
-        }
-        "note_delete", "place_delete" -> {
-            val place = fn == "place_delete"
-            val q = (a.str("query") ?: a.str("name"))?.lowercase() ?: return err("no_query", tr(R.string.act_forget_what))
-            val n = notes().filter { it.place == place }.lastOrNull { nt -> q.split(' ').filter { it.length > 2 }.ifEmpty { listOf(q) }.any { nt.text.lowercase().contains(it.take(5)) } }
-                ?: return err("not_found", if (place) tr(R.string.act_place_not_found) else tr(R.string.act_note_not_found))
-            deleteNote(n.id)
-            act(if (place) "📍" else "📝", if (place) tr(R.string.act_place_forgot, n.text) else tr(R.string.act_note_deleted), if (place) (n.address ?: "") else n.text.take(80))
-            res(true)
         }
         "app_open" -> {
             val nm = a.str("name") ?: return err("no_name", tr(R.string.act_app_need_name))

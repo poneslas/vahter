@@ -77,8 +77,6 @@ const TOOLS=[
   ['dnd.set','Не беспокоить','Телефон','auto',{perm:'dnd',icon:'dnd'}],
   ['media.control','Музыка','Телефон','auto',{icon:'music',sub:'Пауза, дальше, назад'}],
   ['location.get','Местоположение','Телефон','ask',{perm:'location',icon:'pin'}],
-  ['place.save','Сохранённые места','Телефон','auto',{icon:'pin'}],
-  ['note.remember','Заметки','Телефон','auto',{icon:'note'}],
   ['app.open','Приложения и настройки','Приложения и связь','auto',{icon:'apps',sub:'Открыть по названию'}],
   ['call.dial','Звонки','Приложения и связь','ask',{perm:'contacts',icon:'phone'}],
   ['message.draft','Сообщения','Приложения и связь','ask',{always:true,perm:'contacts',icon:'msg'}],

@@ -211,10 +211,6 @@ sealed interface FeedItem {
 @Serializable
 data class FileRef(val name: String, val path: String? = null, val note: String? = null)
 
-/** Заметка или сохранённое место — хранится на телефоне, мозг находит через note_find / place_list. */
-@Serializable
-data class Note(val id: Long, val text: String, val at: Long, val place: Boolean = false, val lat: Double? = null, val lon: Double? = null, val address: String? = null)
-
 /** Запись журнала действий (Архитектура Б.3): что, кто попросил, с какой фразы, чем кончилось. Только на телефоне. */
 @Serializable
 data class JournalEntry(

@@ -95,10 +95,10 @@ class ApiBrain(
 
     private fun stepTitle(name: String) = when (name) {
         "alarm_set" -> tr(R.string.brain_step_alarm_set); "alarm_dismiss" -> tr(R.string.brain_step_alarm_off); "alarm_next" -> tr(R.string.brain_step_alarm_next)
-        "timer_set" -> tr(R.string.brain_step_timer_set); "timer_stop" -> tr(R.string.brain_step_timer_off); "calendar_delete" -> tr(R.string.brain_step_cal_del); "note_delete", "place_delete" -> tr(R.string.brain_step_forget); "calendar_query" -> tr(R.string.brain_step_cal_query); "calendar_add" -> tr(R.string.brain_step_cal_add)
+        "timer_set" -> tr(R.string.brain_step_timer_set); "timer_stop" -> tr(R.string.brain_step_timer_off); "calendar_delete" -> tr(R.string.brain_step_cal_del); "calendar_query" -> tr(R.string.brain_step_cal_query); "calendar_add" -> tr(R.string.brain_step_cal_add)
         "torch_set" -> tr(R.string.reg_torch); "volume_set" -> tr(R.string.reg_volume); "dnd_set" -> tr(R.string.phone_screen_dnd); "media_control" -> tr(R.string.brain_step_media)
-        "location_get" -> tr(R.string.brain_step_location); "place_save" -> tr(R.string.brain_step_place_save); "place_list" -> tr(R.string.brain_step_places)
-        "note_add" -> tr(R.string.brain_step_note_save); "note_find" -> tr(R.string.brain_step_note_find); "app_open" -> tr(R.string.brain_step_app_open); "settings_open" -> tr(R.string.brain_step_settings_open)
+        "location_get" -> tr(R.string.brain_step_location)
+        "app_open" -> tr(R.string.brain_step_app_open); "settings_open" -> tr(R.string.brain_step_settings_open)
         "call_dial" -> tr(R.string.brain_step_call); "message_draft" -> tr(R.string.brain_step_message)
         else -> tr(R.string.brain_step_generic)
     }

@@ -322,13 +322,16 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     PromptStrip(state.current, onEditMode)
                     SheetStrip(state.mode == Modes.MAIN && !connected && brain.kind == BrainDesc.Kind.API) { host.openApp(settings = false, brain = true) }
                     if (g > 0f) Spacer(Modifier.weight(1f))
+                    // Места мало (открыта клавиатура, промпт в две строки, «Звоню наверх», запись) — ужимается лента или сцена,
+                    // а не строка ввода: раньше поле сплющивалось в полоску, а запись уезжала под клавиатуру.
+                    val yields = if (g == 0f) Modifier.weight(1f, fill = false) else Modifier
                     // Пустой лист — не меньше ~54% экрана (ui.js, .s2.isempty): сцене достаётся всё, кроме ряда, строки ввода и вкладок.
-                    if (empty) Box(Modifier.fillMaxWidth().heightIn(min = with(d) { (fullPx * .54f).toDp() } - 236.dp), contentAlignment = Alignment.Center) {
+                    if (empty) Box(yields.fillMaxWidth().heightIn(min = with(d) { (fullPx * .54f).toDp() } - 236.dp), contentAlignment = Alignment.Center) {
                         Scene(st, state, st == SheetSt.IDLE, connected, start,
                             onSay = { app.conversation.send(it, tr(R.string.sheet_via_tap)) }, onPrev = { expandNow() })
                     } else {
                         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp), from = start)
+                            modifier = yields.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp), from = start)
                         UpLine(state)
                     }
                     if (!(empty && st != SheetSt.IDLE)) LiveLine(live)   // запись — живой знак своей строкой, на ленту не наезжает

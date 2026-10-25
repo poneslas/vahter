@@ -201,10 +201,6 @@ object Phone {
         }
     }
 
-    fun distanceMeters(aLat: Double, aLon: Double, bLat: Double, bLon: Double): Float {
-        val r = FloatArray(1); Location.distanceBetween(aLat, aLon, bLat, bLon, r); return r[0]
-    }
-
     fun openMap(ctx: Context, lat: Double, lon: Double, label: String) =
         Launch.activity(ctx, Intent(Intent.ACTION_VIEW, Uri.parse("geo:$lat,$lon?q=$lat,$lon(${Uri.encode(label)})")))
 

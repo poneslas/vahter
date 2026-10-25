@@ -326,9 +326,6 @@ class Conversation(
             context, settings = { _state.value.settings },
             confirm = { title, detail -> confirm(modeId, title, detail) },
             report = { a -> push(modeId, a.copy(id = nextId())) },
-            notes = { _state.value.saved.notes },
-            saveNote = { n -> edit { it.copy(notes = (it.notes + n).takeLast(500)) } },
-            deleteNote = ::deleteNote,
             timers = { _state.value.saved.feeds.values.flatten().filterIsInstance<FeedItem.Act>().filter { it.countdown && it.state == "done" }.mapNotNull { it.at } },
         )
     }
@@ -462,8 +459,6 @@ class Conversation(
         return true
     }
 
-    private fun deleteNote(id: Long) = edit { it.copy(notes = it.notes.filterNot { n -> n.id == id }) }
-
     /** Карточка «Поставить / Отмена» и ожидание ответа. */
     private suspend fun confirm(modeId: String, title: String, detail: String): Boolean {
         val id = nextId()
@@ -532,7 +527,6 @@ class Conversation(
             "dnd" -> P.dndRestore(context, parts[1].toInt()).isSuccess
             "alarm" -> PhoneActions.setAlarm(context, parts[2].toInt(), parts[3].toInt()).isSuccess
             "media" -> P.media(context, parts[1]).isSuccess
-            "note" -> { deleteNote(parts[2].toLong()); true }
             else -> false
         }
         // Отменили — строка гаснет и говорит, что сделано; модель узнаёт из истории режима.
