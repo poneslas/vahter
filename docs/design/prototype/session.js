@@ -24,6 +24,15 @@ function openCamera(first){
     if (!S.ov) S.ov={pop:false}; S.ov.live=msg; S.ov.liveQ=false; trace('Камера в листе тоже требует разрешения. Окно разрешения из листа на S24 уходит под лист — спрашиваем через приложение, потом камера в листе стартует без повторного вопроса.','p'); return render() }
   S.camRet={ov:S.ov, screen:S.screen}; S.cam={subj:S.camSubj||(S.mode==='translate'||S.mode==='m-4c1e'?'menu':'tea'),taken:false,first:!!first,tool:null,frozen:false,marks:[],crop:null,frames:[],editIdx:null}; S.nextKey = S.mode==='translate'?'spicy':'price'; S.screen='cam2';
   trace(first?`Режим «${curMode().title}» открывается сразу камерой (настройка режима). Спуск — снимок уходит сам; зажать микрофон — снимок уйдёт с вопросом.`:'Камера — CameraX прямо в листе: на эмуляторе видоискатель через ~320 мс после вызова (пробник). Запасной путь — своя активность, ~530 мс.','p'); render() }
+/** Выбрано в системном окне. В листе «солнышко» вложение ждёт (карточка над солнышком), иначе — уходит сразу, как было. */
+function attachPicked(img, via){
+  if (SHEET_UI==='orb' && S.ov && !S.ov.full){ S.staged={mode:S.mode,img,via}; trace('Вложение ждёт над солнышком: смахнуть вверх — уйдёт сразу; нажать или держать — сказать к нему; ✎ — написать.','p'); return render() }
+  return uploadPhoto(img,'',via) }
+function sendStaged(text, how){ const st=S.staged; if(!st) return; S.staged=null; if(S.ov){ S.ov.text=false; S.ov.orbIn=true }
+  return uploadPhoto(st.img, text, how ? `${how} · ${st.via}` : st.via) }
+/** Смахнул солнышко вверх: оно сжимается и улетает вместе с карточкой, вложение уходит без слов; солнышко возвращается на место. */
+async function flyStaged(){ $('#scr .orbrow .orb')?.classList.add('fly'); $('#scr .stg')?.classList.add('fly');
+  trace('Смахнул солнышко вверх — вложение ушло сразу, без комментария.','p'); await wait(460); sendStaged('','') }
 function uploadPhoto(img, q, via){
   const modeId=S.mode, F=S.feed; const b={t:'me',x:q||'',via:via||'фото',img,up:{st:S.w.net==='none'?'wait':'up',pct:0,t0:Date.now()},mode:modeId,id:'u'+Date.now()};
   F.push(b); S.pendingUp=b; render(); runUpload(b); return b }

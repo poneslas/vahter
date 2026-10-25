@@ -30,7 +30,7 @@ document.addEventListener('click', async e=>{
   if (t.dataset.radio){ const D=S.dialog; S.dialog=null; if(D.key==='__tool'){ S.policy[S.editTool]=t.dataset.radio; S.keepScroll=true; return render() } if(D.key==='__brain'){ const m=modeById(S.editMode); if(m.brain!==t.dataset.radio){ m.brain=t.dataset.radio; S.feeds[m.id]=[]; trace(`Мозг режима «${esc(m.title)}» — ${brainById(m.brain).title}. Разговор начат заново: историю между мозгами не переносим.`,'p') } return render() } S.settings[D.key]=t.dataset.radio; return render() }
   if (t.dataset.dlgclose!==undefined){ S.dialog=null; return render() }
   if (t.dataset.pickitem && S.picker==='gallery'){ const v=t.dataset.pickitem; S.pickSel=S.pickSel||[]; const i=S.pickSel.indexOf(v); if(i>=0) S.pickSel.splice(i,1); else if(S.pickSel.length<(brainOf().caps.maxImages||10)) S.pickSel.push(v); return render() }
-  if (t.dataset.pickitem){ const v=t.dataset.pickitem; const img=S.picker==='gallery'?{kind:'photo',cls:v}:{kind:'file',name:v.split('|')[0],size:v.split('|')[1]}; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; uploadPhoto(img,'',img.kind==='file'?'файл':'фото'); trace(img.kind==='file'?'Файл из системного выбора — уходит Hermes как документ, грузится прямо в пузыре.':'Фото из галереи — так же, как со спуска камеры.','p'); return }
+  if (t.dataset.pickitem){ const v=t.dataset.pickitem; const img=S.picker==='gallery'?{kind:'photo',cls:v}:{kind:'file',name:v.split('|')[0],size:v.split('|')[1]}; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; attachPicked(img,img.kind==='file'?'файл':'фото'); trace(img.kind==='file'?'Файл из системного выбора — уходит Hermes как документ, грузится прямо в пузыре.':'Фото из галереи — так же, как со спуска камеры.','p'); return }
   if (t.dataset.shortcut){ S.shortcuts=false; setMode(t.dataset.shortcut,'Ярлык'); trace(`Ярлык на иконке (долгое нажатие) → сразу режим «${curMode().title}». В Android это статические ярлыки приложения; их же можно вынести на рабочий стол.`,'p'); return openOverlay('ярлык') }
   if (t.dataset.shot){ S.camSubj=t.dataset.shot; if(S.cam) S.cam.subj=t.dataset.shot; return render() }
   if (t.dataset.say) return quickSay(t.dataset.say);
@@ -124,7 +124,7 @@ document.addEventListener('click', async e=>{
     case 'returnpick': S.dialog={title:'Запоминать режим',radio:RETURN_OPTS.map(o=>o.slice(0,2)),cur:S.settings.returnToAssistant,key:'returnToAssistant'}; return render();
     case 'attach': S.attachMenu=!S.attachMenu; S.keepScroll=true; return render();
     case 'gallery': case 'file': S.attachMenu=false; S.pickRet={screen:S.screen,ov:S.ov,page:S.page}; S.picker=a; S.ov=null; S.screen='syspick'; trace('Лист на время выбора прячется (иначе на S24 окно выбора откроется под ним), после выбора возвращается с вложением — проверено на S24.','p'); return render();
-    case 'pickdone': { const sel=S.pickSel||[]; S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; const items=sel.map(cls=>({cls,marks:[],crop:null})); uploadPhoto(items.length>1?{kind:'album',items}:{kind:'photo',...items[0]},'',items.length>1?`альбом · ${items.length}`:'фото'); trace(items.length>1?`Несколько фото из галереи — одна реплика, ${items.length} картинки.`:'Фото из галереи — как со спуска камеры.','p'); return }
+    case 'pickdone': { const sel=S.pickSel||[]; S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; const items=sel.map(cls=>({cls,marks:[],crop:null})); attachPicked(items.length>1?{kind:'album',items}:{kind:'photo',...items[0]},items.length>1?`альбом · ${items.length}`:'фото'); trace(items.length>1?`Несколько фото из галереи — одна реплика, ${items.length} картинки.`:'Фото из галереи — как со спуска камеры.','p'); return }
     case 'pickback': S.pickSel=[]; S.screen=S.pickRet.screen; S.ov=S.pickRet.ov; S.page=S.pickRet.page; S.picker=null; return render();
     case 'camera': S.attachMenu=false; return openCamera(false);
     case 'camsend': return shotGo('');
@@ -154,7 +154,9 @@ document.addEventListener('click', async e=>{
       trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
-    case 'csend': { const v=(S.draft||'').trim(); if(!v) return; if(S.ov) S.ov.text=false; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
+    case 'stgx': S.staged=null; if(S.ov) S.ov.text=false; trace('Вложение убрано — ничего не ушло.'); S.keepScroll=true; return render();
+    case 'stgedit': { S.ov.text=true; S.keepScroll=true; render(); const el=$('#cin'); if(el) el.focus(); return }
+    case 'csend': { const v=(S.draft||'').trim(); if(!v && !(stagedHere()&&orbUi())) return; if(S.ov) S.ov.text=false; if(!v){ trace('Вложение ушло без комментария.','p'); return sendStaged('','') } const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
     case 'recsend': return finishRec('send');
     case 'reccancel': return finishRec('cancel');
     case 'recedit': return finishRec('edit');

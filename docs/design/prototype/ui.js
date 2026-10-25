@@ -141,7 +141,7 @@ function composerHtml(o={}){
   // кнопка красная с ореолами; над ней белый замок. Без рук — на кнопке «Отправить», замок закрыт (зелёный кружок).
   const bar=(hint,op)=>`<div class="fld recbar"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${op}">${hint}</span></div>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
-    return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
+    return `<div class="cwrap">${orbUi()?'':`<div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div>`}<div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
   if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
   if (o.into==='try') return `<div class="cwrap"><div class="composer"><div class="tryhint">вверх — без рук · влево — отмена</div>${o.pulse?mic.replace('class="micbtn','class="micbtn pulse'):mic}</div></div>`;
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
@@ -150,9 +150,10 @@ function composerHtml(o={}){
   const tools = canAttach?`<button class="intool" data-act="attach" aria-label="Прикрепить" aria-expanded="${S.attachMenu}">${I.clip}</button>`:'';
   // есть текст — большая кнопка становится «Отправить» (как в Telegram); в поле справа — только микрофон фото-режима
   const right = S.draft ? '' : (photoMain&&A.voice ? `<button class="intool" data-mic aria-label="Зажмите и спросите голосом">${I.mic}</button>` : '');
-  const big = S.draft ? `<button class="micbtn sendmode" data-act="csend" aria-label="Отправить">${I.send}</button>` : photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
+  const stg = stagedHere() && orbUi();
+  const big = S.draft||stg ? `<button class="micbtn sendmode" data-act="csend" aria-label="Отправить">${I.send}</button>` : photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
   const up = S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
-  const place = up ? (S.pendingUp.img.kind==='file'?'Вопрос к файлу':'Вопрос к фото') : m.id==='main' ? ph : m.placeholder;
+  const place = stg ? (S.staged.img.kind==='file'?'Комментарий к файлу':'Комментарий к фото') : up ? (S.pendingUp.img.kind==='file'?'Вопрос к файлу':'Вопрос к фото') : m.id==='main' ? ph : m.placeholder;
   return `<div class="cwrap"><div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}${attachMenu()}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${right}</div>${big}</div>${modeTabs()}</div>`;
 }
 function chat(){
@@ -408,19 +409,28 @@ function sideCue(){ if (!S.sideCue || !S.ov) return ''; return `<div class="side
 let SHEET_UI = (()=>{ try{ return localStorage.getItem('vahter.sheetui')||'orb' }catch{ return 'orb' } })();
 const orbUi = () => SHEET_UI==='orb' && !!S.ov && !S.ov.full;
 function orbText(){ const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
-  const up=S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
-  return !!S.draft || !!(S.ov&&S.ov.text) || !!up || (!photoMain && !(A.voice&&voiceOk())) }
+  // отправленное вложение грузится — поле не нужно: солнышко сразу снова главное (сказанное в это время приклеится к вложению)
+  return !!S.draft || !!(S.ov&&S.ov.text) || (!photoMain && !stagedHere() && !(A.voice&&voiceOk())) }
+/** Вложение со скрепки в листе «солнышко» не уходит само — ждёт: смахнуть солнышко вверх — уйдёт сразу, нажать или держать — сказать к нему. */
+const stagedHere = () => !!(S.staged && S.staged.mode===S.mode);
+function stagedHtml(){ if(!stagedHere()||!S.ov||S.ov.full) return ''; const g=S.staged.img;
+  const [pic,title] = g.kind==='file' ? [`<span class="stgp f">${I.doc}</span>`, esc(g.name)] : g.kind==='album' ? [`<span class="stgp"><i class="th ${g.items[0].cls}"></i><em>${g.items.length}</em></span>`, `${g.items.length} фото`] : [`<span class="stgp"><i class="th ${g.cls}"></i></span>`, 'Фото'];
+  return `<div class="stg">${pic}<span class="stgt"><b>${title}</b><small>${S.ov.text?'напишите и отправьте':'смахните солнышко вверх — уйдёт сразу'}</small></span><button class="stgx" data-act="stgx" aria-label="Убрать вложение">${I.x}</button></div>` }
 function orbHtml(){
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo, r=S.rec;
-  const orb=(attr,ic,label)=>`<button class="orb" ${attr} aria-label="${label}">${vMark()}<span class="oic">${ic}</span></button>`;
+  const back = S.ov.orbIn&&!r ? (S.ov.orbIn=false, ' back') : '';   // солнышко возвращается после «улёта»
+  const orb=(attr,ic,label)=>`<button class="orb${back}" ${attr} aria-label="${label}">${vMark()}<span class="oic">${ic}</span></button>`;
   const side=(attr,ic,label)=>`<button class="obtn" ${attr} aria-label="${label}">${ic}</button>`;
   const ghost='<span class="obtn ghost"></span>', time=`<div class="orbtm"><span class="rdot"></span><span class="tm">${recTime()}</span></div>`;
   // держит палец: на месте скрепки и камеры — цели «отмена» и «правка», над солнышком — замок (только пока держит)
-  if (r && r.mode==='hold'){ const g=r.g||{x:0,y:0,r:0}; const fresh=Date.now()-r.t0<250;
-    return `<div class="cwrap orbw"><div class="orbrow"><span class="obtn cue ${g.x>35?'near':''}" aria-hidden="true">${I.x}</span><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="micwrap" style="transform:translate(${Math.min(g.r||0,70)-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${orb('data-mic',I.mic,'Говорите')}</div><span class="obtn cue ${(g.r||0)>35?'near':''}" aria-hidden="true">${I.edit}</span></div>${time}</div>` }
+  // замка в этом листе нет (25.10): без рук — короткое нажатие; вверх солнышко смахивают только с вложением — «отправить сразу»
+  if (r && r.mode==='hold'){ const g=r.g||{x:0,y:0,r:0};
+    return `<div class="cwrap orbw"><div class="orbrow"><span class="obtn cue ${g.x>35?'near':''}" aria-hidden="true">${I.x}</span><div class="micwrap" style="transform:translateX(${Math.min(g.r||0,70)-Math.min(g.x,70)}px)">${orb('data-mic',I.mic,'Говорите')}</div><span class="obtn cue ${(g.r||0)>35?'near':''}" aria-hidden="true">${I.edit}</span></div>${time}</div>` }
   // без рук: ✕ · солнышко-«Отправить» · ✎ (замка уже нет)
   if (r){ const gx=r.lg||0;
     return `<div class="cwrap orbw"><div class="orbrow">${side('data-act="reccancel"',I.x,'Отменить')}<div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)">${orb('data-recsend',I.send,'Отправить; потяните влево — отменить')}</div>${side('data-act="recedit"',I.edit,'Остановить и поправить текст')}</div>${time}</div>` }
+  // с вложением: солнышко — сказать к нему (смахнуть вверх — отправить сразу), справа ✎ — написать
+  if (stagedHere()) return `<div class="cwrap orbw"><div class="orbrow"><span class="oanc">${side(`data-act="attach" aria-expanded="${!!S.attachMenu}"`,I.clip,'Прикрепить')}${attachMenu()}</span><div class="micwrap"><span class="oswipe" aria-hidden="true">⌃</span>${orb('data-mic',I.mic,'Нажмите и скажите к вложению; смахните вверх — отправить сразу')}</div>${side('data-act="stgedit"',I.edit,'Написать к вложению')}</div>${modeTabs()}</div>`;
   const center = photoMain ? orb('data-act="camera"',I.cam,'Камера') : orb('data-mic',I.mic,'Зажмите и говорите; короткое нажатие — без рук');
   const right = photoMain ? (A.voice?side('data-mic',I.mic,'Зажмите и спросите голосом'):ghost) : A.photo ? side('data-act="camera"',I.cam,'Камера') : ghost;
   const left = A.photo||A.file ? `<span class="oanc">${side(`data-act="attach" aria-expanded="${!!S.attachMenu}"`,I.clip,'Прикрепить')}${attachMenu()}</span>` : ghost;
@@ -439,7 +449,7 @@ function overlay(){
       <button class="grab" data-act="expand" aria-label="Развернуть"></button>
       <span class="sbtns"><button class="cbtn" data-act="gear" aria-label="Настройки">${I.gear}</button><button class="cbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button><button class="cbtn" data-act="close" aria-label="Закрыть">${I.x}</button></span></div>
     ${SHEET_UI==='orb'&&!O.full?'':promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(!O.full)}</div>
-    ${(empty||orbOn)&&(S.rec||S.recog)?'':liveHtml()}${composerHtml()}
+    ${(empty||orbOn)&&(S.rec||S.recog)?'':liveHtml()}${stagedHtml()}${composerHtml()}
   </div>${sideCue()}</div>`;
 }
 function dialog(){ const D=S.dialog; if(!D) return '';

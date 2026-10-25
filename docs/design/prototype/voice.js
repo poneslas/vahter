@@ -87,21 +87,29 @@ document.addEventListener('pointermove',e=>{ if(!pl||!S.rec) return; const k=dev
 const lockedUp=()=>{ if(!pl) return; const moved=(S.rec&&S.rec.lg)||0; pl=null; if(!S.rec) return; if(moved<12) return finishRec('send'); S.rec.lg=0; S.keepScroll=true; render() };
 document.addEventListener('pointerup',lockedUp); document.addEventListener('pointercancel',lockedUp);
 let pd=null;
-document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
+document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return;
+  // солнышко с ждущим вложением: сначала понять жест — вверх «отправить сразу», иначе — говорить
+  if (m.classList.contains('orb') && orbUi() && stagedHere()){ pd={x:e.clientX,y:e.clientY,t:Date.now(),wait:true}; const my=pd; my.tm=setTimeout(()=>{ if(pd===my&&my.wait){ my.wait=false; startRec('hold') } },220); return }
+  pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
 document.addEventListener('dragstart',e=>{ if(e.target.closest&&e.target.closest('[data-mic]')) e.preventDefault() });
-document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const k=devScale(); const dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k;
+document.addEventListener('pointermove',e=>{
+  if (pd && pd.wait){ const k=devScale(), dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k; const mw=$('#scr .orbrow .micwrap'); if(mw) mw.style.transform=`translateY(${-Math.max(0,Math.min(dy,60))}px)`;
+    if (dy>45){ clearTimeout(pd.tm); pd=null; flyStaged() } else if (Math.abs(dx)>14){ clearTimeout(pd.tm); pd.wait=false; startRec('hold') } return }
+  if(!pd||!S.rec||S.rec.mode!=='hold') return; const k=devScale(); const dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k;
   if (!pd.axis && Math.hypot(dx,dy)>8) pd.axis = Math.abs(dy)>=Math.abs(dx) ? 'y' : dx>0 ? 'x' : 'r';   // направление выбирается один раз, как в Telegram
   const rx = pd.axis==='r' && orbUi() ? Math.max(0,-dx) : 0;   // вправо — на ✎, только в листе «солнышко»
-  S.rec.g={x:pd.axis==='x'?Math.max(0,dx):0, y:pd.axis==='y'?Math.max(0,dy):0, r:rx};
+  S.rec.g={x:pd.axis==='x'?Math.max(0,dx):0, y:pd.axis==='y'&&!orbUi()?Math.max(0,dy):0, r:rx};
   const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${Math.min(rx,70)-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;
   const cues=document.querySelectorAll('#scr .orbrow .cue'); if(cues.length===2){ cues[0].classList.toggle('near',S.rec.g.x>35); cues[1].classList.toggle('near',rx>35) }
   const lc=$('#scr .lockcue'); if(lc){ lc.style.setProperty('--ly',Math.min(S.rec.g.y,45)+'px'); lc.classList.toggle('near',S.rec.g.y>22) }
   const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-S.rec.g.x/70);
   // Замочек — только в разговоре и в пробах диктовки; в поле промпта (настройки) удержал — сказал — отпустил.
-  if (pd.axis==='y' && dy>45 && S.rec.into!=='prompt'){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Круг микрофона стал «Отправить», влево — отмена.','p'); S.keepScroll=true; render() }
+  if (pd.axis==='y' && dy>45 && S.rec.into!=='prompt' && !orbUi()){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Круг микрофона стал «Отправить», влево — отмена.','p'); S.keepScroll=true; render() }
   else if (pd.axis==='x' && dx>70){ pd=null; finishRec('cancel') }
   else if (pd.axis==='r' && rx>70){ pd=null; finishRec('edit') } });
-function micRelease(){ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
+function micRelease(){ if(!pd) return;
+  if (pd.wait){ clearTimeout(pd.tm); pd=null; startRec('hold'); if(S.rec){ S.rec.mode='locked'; trace('Нажал солнышко — слушаю без рук: скажите к вложению и нажмите солнышко — уйдёт вместе с ним.','p'); S.keepScroll=true; render() } return }
+  const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
   if (dt<260 && S.rec.into!=='prompt'){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
   finishRec('release') }
 document.addEventListener('pointerup',micRelease); document.addEventListener('pointercancel',micRelease); window.addEventListener('blur',micRelease);
