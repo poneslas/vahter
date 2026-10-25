@@ -21,6 +21,7 @@ const PHR={
 };
 const guessKey = v => { v=v.toLowerCase(); return /беспокоить/.test(v)?'dnd':/позвони/.test(v)?'call':/фонар/.test(v)?'torch':/алярм/.test(v)?'alarmfz':/таймер/.test(v)?'timer':/будильник/.test(v)?'alarm':/перенеси/.test(v)?'move':/бэкап|backup/.test(v)?'backup':/логотип/.test(v)?'logo':/лог/.test(v)?'logs':/столик/.test(v)?'table':'ask' };
 async function deliver(text, via){
+  if (S.ov) S.ov.text=false;   // отправлено — в листе снова солнышко, поле было нужно только для этого сообщения
   if (stagedHere() && text) return sendStaged(text, via);   // лист «солнышко»: сказанное или написанное уходит вместе с ждущим вложением
   const P=S.pendingUp; if (P && P.mode===S.mode && (P.up.st==='up'||P.up.st==='wait'||P.up.st==='fail') && text){ P.x=(P.x?P.x+' ':'')+text; P.via=via+(P.img.kind==='file'?' · с файлом':' · с фото'); S.keepScroll=true; trace('Вложение ещё грузится — вопрос приклеен к нему и уйдёт одним сообщением.','p'); return render() }
   const key0=guessKey(text);

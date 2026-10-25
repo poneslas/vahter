@@ -139,10 +139,12 @@ function composerHtml(o={}){
   const mic=`<button class="micbtn ${voiceOk()?'':'off'} ${S.rec&&S.rec.mode==='hold'?'recmic':''} ${S.recog?'proc':''}" data-mic${into} aria-label="Зажмите, чтобы говорить; короткое нажатие — запись без рук">${I.mic}</button>`;
   // Запись — как в приложении (кнопка, полоса и замок Писаря, pisar/overlay): белая полоса «● 0:07 ‹ ‹ Отмена», к кнопке — без скругления;
   // кнопка красная с ореолами; над ней белый замок. Без рук — на кнопке «Отправить», замок закрыт (зелёный кружок).
+  // лист «солнышко», режим поля: большая кнопка — то же солнышко (второго знака над полем нет)
+  const sun = h => orbUi() ? h.replace(/<button class="micbtn([^"]*)"([^>]*)>/g,(x,c,a)=>`<button class="micbtn orbbtn${c}"${a}>${vMark()}`).replace('<span class="sendw">Отправить</span>',I.send) : h;
   const bar=(hint,op)=>`<div class="fld recbar"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${op}">${hint}</span></div>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
-    return `<div class="cwrap">${orbUi()?'':`<div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div>`}<div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
-  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
+    return sun(`<div class="cwrap">${orbUi()?'':`<div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div>`}<div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>`) }
+  if (S.rec){ const gx=S.rec.lg||0; return sun(`<div class="cwrap"><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>`) }
   if (o.into==='try') return `<div class="cwrap"><div class="composer"><div class="tryhint">вверх — без рук · влево — отмена</div>${o.pulse?mic.replace('class="micbtn','class="micbtn pulse'):mic}</div></div>`;
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
@@ -154,7 +156,7 @@ function composerHtml(o={}){
   const big = S.draft||stg ? `<button class="micbtn sendmode" data-act="csend" aria-label="Отправить">${I.send}</button>` : photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
   const up = S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
   const place = stg ? (S.staged.img.kind==='file'?'Комментарий к файлу':'Комментарий к фото') : up ? (S.pendingUp.img.kind==='file'?'Вопрос к файлу':'Вопрос к фото') : m.id==='main' ? ph : m.placeholder;
-  return `<div class="cwrap"><div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}${attachMenu()}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${right}</div>${big}</div>${modeTabs()}</div>`;
+  return sun(`<div class="cwrap"><div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}${attachMenu()}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${right}</div>${big}</div>${modeTabs()}</div>`);
 }
 function chat(){
   const [d,t]=linkState();
@@ -393,7 +395,7 @@ function sheetEmpty(){
   const chips = main&&st==='idle'&&!(sheetFrom()>0) ?
     `<div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div>` : '';
   const prev = sheetFrom()>0&&st==='idle' ? (()=>{ const n=S.feed.slice(0,sheetFrom()).filter(x=>x.t==='me'||x.t==='ai').length; return `<button class="prevconv" data-act="expand">${I.hist}<span>Прошлый разговор · ${n} сообщ.</span>${I.chev}</button>` })() : '';
-  return `<div class="feed scenef"><div class="scene">${orbOn?'':vMark('big')}<b>${cap}</b>${sub?`<small>${sub}</small>`:''}${chips}${prev}</div></div>` }
+  return `<div class="feed scenef"><div class="scene">${orbUi()?'':vMark('big')}<b>${cap}</b>${sub?`<small>${sub}</small>`:''}${chips}${prev}</div></div>` }
 /** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
 function sheetStrip(){
   if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
@@ -445,11 +447,11 @@ function overlay(){
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet s2 ${anim} ${O.pop?'pop':''} ${empty?'isempty':''}" data-st="${st}" style="${style}">
     <div class="glow"></div>
     <div class="ftop topbar"><button class="iconbtn" aria-label="Свернуть в лист">${I.down}</button><div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div><button class="iconbtn">${I.gear}</button><button class="iconbtn">${I.more}</button></div>
-    <div class="shead">${empty?'<span></span>':`<span class="sst">${orbOn?'':vMark('mini')}${d?`<span>${t}</span>`:''}</span>`}
+    <div class="shead">${empty?'<span></span>':`<span class="sst">${orbUi()?'':vMark('mini')}${d?`<span>${t}</span>`:''}</span>`}
       <button class="grab" data-act="expand" aria-label="Развернуть"></button>
       <span class="sbtns"><button class="cbtn" data-act="gear" aria-label="Настройки">${I.gear}</button><button class="cbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button><button class="cbtn" data-act="close" aria-label="Закрыть">${I.x}</button></span></div>
     ${SHEET_UI==='orb'&&!O.full?'':promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(!O.full)}</div>
-    ${(empty||orbOn)&&(S.rec||S.recog)?'':liveHtml()}${stagedHtml()}${composerHtml()}
+    ${(empty||orbUi())&&(S.rec||S.recog)?'':liveHtml()}${stagedHtml()}${composerHtml()}
   </div>${sideCue()}</div>`;
 }
 function dialog(){ const D=S.dialog; if(!D) return '';
