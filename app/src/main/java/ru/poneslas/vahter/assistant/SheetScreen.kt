@@ -78,6 +78,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.CubicBezierEasing
@@ -169,6 +170,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
         val start = (state.saved.fresh[state.mode] ?: 0).coerceAtMost(state.feed.size)
         val empty = state.feed.size <= start
         val phase by RecUi.phase.collectAsState()
+        val stagedNow = OrbSheet.staged.collectAsState().value?.takeIf { it.modeId == state.mode }   // ждёт вложение — подсказки не нужны
         val st = when {
             phase == RecUi.Phase.LISTENING -> SheetSt.REC
             phase == RecUi.Phase.PROCESSING -> SheetSt.RECOG
@@ -293,7 +295,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     // слева: маленький знак и строка связи — только если что-то не так; в пустом листе — ничего
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         if (!empty) {
-                            VMark(if (st == SheetSt.REC) SheetSt.IDLE else st, 18.dp, still = st == SheetSt.REC)   // живой — один, над полем
+                            // лист «солнышко»: знак живёт на кнопке — в шапке его нет
+                            if (!OrbSheet.ON) VMark(if (st == SheetSt.REC) SheetSt.IDLE else st, 18.dp, still = st == SheetSt.REC)   // живой — один, над полем
                             if (!connected) {
                                 Spacer(Modifier.width(7.dp))
                                 Text(tr(R.string.sheet_no_key).trim().removePrefix("·").trim(), fontSize = 12.sp, color = Ink.soft, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -319,7 +322,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     cameraPanel(Modifier.weight(1f).padding(top = 6.dp), false)
                     ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
-                    PromptStrip(state.current, onEditMode)
+                    if (!OrbSheet.ON || g > 0f) PromptStrip(state.current, onEditMode)   // «солнышко»: промпт — только в полном экране
                     SheetStrip(state.mode == Modes.MAIN && !connected && brain.kind == BrainDesc.Kind.API) { host.openApp(settings = false, brain = true) }
                     if (g > 0f) Spacer(Modifier.weight(1f))
                     // Места мало (открыта клавиатура, промпт в две строки, «Звоню наверх», запись) — ужимается лента или сцена,
@@ -327,15 +330,16 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     val yields = if (g == 0f) Modifier.weight(1f, fill = false) else Modifier
                     // Пустой лист — не меньше ~54% экрана (ui.js, .s2.isempty): сцене достаётся всё, кроме ряда, строки ввода и вкладок.
                     if (empty) Box(yields.fillMaxWidth().heightIn(min = with(d) { (fullPx * .54f).toDp() } - 236.dp), contentAlignment = Alignment.Center) {
-                        Scene(st, state, st == SheetSt.IDLE, connected, start,
+                        Scene(st, state, st == SheetSt.IDLE && (!OrbSheet.ON || start == 0 && stagedNow == null), connected, start,
                             onSay = { app.conversation.send(it, tr(R.string.sheet_via_tap)) }, onPrev = { expandNow() })
                     } else {
                         Feed(state, onAct = { a, undo -> app.conversation.onActButton(a, undo) }, onCard = { c, a -> app.conversation.onCardButton(c, a) }, onCancelAttach = app.conversation::cancelAttach,
                             modifier = yields.fillMaxWidth().heightIn(min = 56.dp, max = 420.dp), from = start)
                         UpLine(state)
                     }
-                    if (!(empty && st != SheetSt.IDLE)) LiveLine(live)   // запись — живой знак своей строкой, на ленту не наезжает
-                    Composer(
+                    if (!(empty && st != SheetSt.IDLE)) LiveLine(live, pill = !OrbSheet.ON)   // запись — живой знак своей строкой, на ленту не наезжает
+                    if (OrbSheet.ON) OrbBottom(state, st, connected, host, onAddMode, onNeedPerm, ::openCamera) { live = it }
+                    else Composer(
                         state = state,
                         voice = app.voice,
                         // В листе «Вам чего?» — заголовком сцены; в поле — подсказка режима.
@@ -468,10 +472,10 @@ private fun Scene(st: SheetSt, state: Conversation.State, chips: Boolean, brain:
         else -> (if (main) tr(R.string.sheet_hello) else state.current.title) to (if (main) "" else state.current.hint)
     }
     Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        VMark(st, 72.dp)
-        Spacer(Modifier.height(18.dp))
+        // «солнышко»: знак — внизу, на кнопке; в сцене его нет, подсказки «Отпустите — и отправлю» тоже (это видно по кнопке)
+        if (!OrbSheet.ON) { VMark(st, 72.dp); Spacer(Modifier.height(18.dp)) }
         Text(cap, fontSize = 23.sp, fontWeight = FontWeight.Medium, color = Ink.ink, textAlign = TextAlign.Center)
-        if (sub.isNotEmpty()) Text(sub, fontSize = 13.5.sp, color = Ink.soft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+        if (sub.isNotEmpty() && !(OrbSheet.ON && (st == SheetSt.REC || st == SheetSt.RECOG))) Text(sub, fontSize = 13.5.sp, color = Ink.soft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
         if (chips && main) FlowRow(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // три чипа: два в ряд, третий — по центру второго. Без мозга — только то, что телефон делает сам; с мозгом таймер уступает вопросу
             (if (brain) listOf(R.string.sheet_chip_alarm, R.string.sheet_chip_torch, R.string.sheet_chip_brain)
@@ -538,3 +542,41 @@ private fun SideCue(modifier: Modifier) {
 
 @Composable private fun imeBottom(d: Density) = WindowInsets.ime.getBottom(d)
 @Composable private fun navBottom(d: Density) = WindowInsets.navigationBars.getBottom(d)
+
+/**
+ * Низ листа «солнышко»: солнышко с рядом ([OrbBar]) или поле с маленьким солнышком ([OrbField]) — поле только когда нужно:
+ * правка надиктованного, текст к вложению, в поле уже есть текст, голоса нет. Смена — солнышко «втягивается» в кнопку поля и обратно.
+ */
+@Composable
+private fun OrbBottom(state: Conversation.State, st: SheetSt, connected: Boolean, host: SheetActivity, onAddMode: () -> Unit,
+                      onNeedPerm: (String) -> Unit, openCamera: () -> Unit, onLive: (String?) -> Unit) {
+    val app = App.instance
+    val textFlag by OrbSheet.text.collectAsState()
+    val installed by app.voice.installed.collectAsState()
+    val m = state.current
+    val photoMain = m.primary == Primary.PHOTO && m.accepts.photo
+    val textMode = state.draft.isNotEmpty() || textFlag || (!photoMain && !(m.accepts.voice && installed))
+    val onGallery = if (m.accepts.photo) ({ PickerActivity.launch(host, stage = true) }) else null
+    val onFile = if (state.current.brain == Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(host, stage = true) }) else null
+    fun send(text: String, via: String) {
+        if (OrbSheet.stagedFor(state.mode) != null) OrbSheet.sendStaged(text, via) else app.conversation.send(text, via)
+        OrbSheet.text.value = false
+    }
+    androidx.compose.animation.AnimatedContent(textMode, transitionSpec = {
+        if (targetState) (androidx.compose.animation.fadeIn(tween(200, 60)) + androidx.compose.animation.slideInVertically(tween(260, easing = CubicBezierEasing(.3f, .8f, .3f, 1f))) { it / 3 }) togetherWith
+            (androidx.compose.animation.fadeOut(tween(140)) + androidx.compose.animation.scaleOut(tween(200), .55f))
+        else (androidx.compose.animation.fadeIn(tween(160, 80)) + androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(.55f, 420f), .55f)) togetherWith
+            (androidx.compose.animation.fadeOut(tween(140)) + androidx.compose.animation.slideOutVertically(tween(200)) { it / 3 })
+    }, label = "orb") { field ->
+        if (field) OrbField(state, app.voice, st, onDraft = app.conversation::setDraft, onSend = ::send,
+            onSelectMode = app.conversation::selectMode, onAddMode = onAddMode, onLive = onLive,
+            onNeedMic = { onNeedPerm(Manifest.permission.RECORD_AUDIO) }, onGallery = onGallery, onFile = onFile, focus = textFlag,
+            placeholder = if (!connected) tr(R.string.cmp_hint_no_brain) else null)
+        else OrbBar(state, app.voice, st, onSend = ::send,
+            onEdit = { t -> app.conversation.setDraft((state.draft + " " + t).trim()); OrbSheet.text.value = true },
+            onWrite = { OrbSheet.text.value = true },
+            onSelectMode = app.conversation::selectMode, onAddMode = onAddMode, onLive = onLive,
+            onNeedMic = { onNeedPerm(Manifest.permission.RECORD_AUDIO) },
+            onCamera = if (m.accepts.photo) openCamera else null, onGallery = onGallery, onFile = onFile, autoListen = Sheet.autoListen)
+    }
+}

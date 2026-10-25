@@ -1,5 +1,7 @@
 package ru.poneslas.vahter.media
 
+import ru.poneslas.vahter.assistant.OrbSheet
+import ru.poneslas.vahter.assistant.Staged
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.tr
 import android.content.Context
@@ -23,6 +25,8 @@ class PickerActivity : ComponentActivity() {
         app.scope.launch {
             val files = uris.mapNotNull { runCatching { Attachments.fromUri(applicationContext, it) }.getOrNull() }
             finish()
+            // лист «солнышко»: вложение не уходит само — ждёт над солнышком (смахнуть вверх — сразу, сказать — вместе)
+            if (files.isNotEmpty() && stage) { OrbSheet.staged.value = Staged(app.conversation.state.value.mode, files.map { it.path }, if (files.size > 1) tr(R.string.sheet_via_album, files.size) else tr(R.string.sheet_via_photo)); return@launch }
             if (files.isNotEmpty()) app.conversation.attach(files.map { it.path }, if (files.size > 1) tr(R.string.sheet_via_album, files.size) else tr(R.string.sheet_via_photo))
         }
     }
@@ -38,9 +42,12 @@ class PickerActivity : ComponentActivity() {
                 out to name
             }.getOrNull() }
             finish()
+            if (got != null && stage) { OrbSheet.staged.value = Staged(app.conversation.state.value.mode, emptyList(), "", got.first, got.second); return@launch }
             got?.let { (f, n) -> app.conversation.sendFile(f, n) }
         }
     }
+
+    private val stage get() = intent.getBooleanExtra("stage", false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,11 +59,11 @@ class PickerActivity : ComponentActivity() {
 
     companion object {
         /** Выбор фото поверх листа или приложения: батут — в их задаче, экран под ним остаётся и сам получает вложения. */
-        fun launch(ctx: Context) =
-            ctx.startActivity(Intent(ctx, PickerActivity::class.java))
+        fun launch(ctx: Context, stage: Boolean = false) =
+            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("stage", stage))
 
         /** Документ для Hermes — тот же батут поверх листа или приложения. */
-        fun launchFile(ctx: Context) =
-            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("file", true))
+        fun launchFile(ctx: Context, stage: Boolean = false) =
+            ctx.startActivity(Intent(ctx, PickerActivity::class.java).putExtra("file", true).putExtra("stage", stage))
     }
 }

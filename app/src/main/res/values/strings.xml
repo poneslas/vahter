@@ -749,4 +749,18 @@
     <string name="hermes_check_tls">Сертификат сервера недействителен.</string>
     <string name="mode_brain_pick">Мозг режима</string>
     <string name="mode_brain_hermes_off">Hermes не подключён</string>
+    <!-- лист «солнышко» (прототип 25.10) -->
+    <string name="orb_swipe_hint">Вверх — отправить сразу</string>
+    <string name="orb_write_hint">Уйдёт вместе с текстом</string>
+    <string name="orb_photo">Фото</string>
+    <string name="orb_photos">%1$d\u00A0фото</string>
+    <string name="orb_comment_photo">Комментарий к фото</string>
+    <string name="orb_comment_file">Комментарий к файлу</string>
+    <string name="orb_cancel">Отменить</string>
+    <string name="orb_edit">Поправить текст</string>
+    <string name="orb_write">Написать</string>
+    <string name="orb_remove">Убрать вложение</string>
+    <string name="orb_talk">Говорить</string>
+    <string name="orb_talk_staged">Сказать к вложению</string>
+    <string name="orb_slide_cancel">‹ ‹  Отмена</string>
 </resources>
