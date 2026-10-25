@@ -128,9 +128,10 @@ function chatMenu(){ if(!S.chatMenu) return ''; const empty=!S.feed.length;
   return `<div class="cmenu" role="menu"><button role="menuitem" data-act="cm:edit">Изменить режим</button><button role="menuitem" data-act="cm:restart" ${empty?'disabled':''}>Начать заново</button></div>` }
 function attachMenu(){ if(!S.attachMenu) return ''; const m=curMode(), A=m.accepts, photoMain=m.primary==='photo';
   const it=(act,ic,t,s)=>`<button data-act="${act}"><span class="mi2">${ic}</span><span><b>${t}</b><small>${s}</small></span></button>`;
-  return `<div class="mpicker" role="menu">${A.photo&&!photoMain?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
+  return `<div class="mpicker" role="menu">${A.photo&&!photoMain&&!(orbUi()&&!orbText())?it('camera',I.cam,'Камера','снять и отправить'):''}${A.photo?it('gallery',I.image,'Галерея','системный выбор фото'):''}${A.file?it('file',I.doc,'Файл','PDF, таблица, документ'):''}</div>` }
 /** o.into='try' — проба диктовки в первом запуске: та же кнопка и те же жесты, без вкладок режимов и вложений. */
 function composerHtml(o={}){
+  if (!o.into && orbUi() && !orbText()) return orbHtml();
   const tabs=o.into?'':modeTabs(), into=o.into?` data-into="${o.into}"`:'';
   // «Вам чего?» — только в пустом разговоре, пока ничего не спрашивали: шутка не должна надоедать
   // В листе «Вам чего?» — заголовком сцены, в поле — подсказка режима; в пустом разговоре приложения — в поле.
@@ -208,7 +209,7 @@ function modePage(){ const m=modeById(S.editMode); if(!m){ S.page='settings'; re
         : `<button class="dmic" data-mic data-into="prompt" aria-label="Надиктовать">${I.mic}</button><span class="dhint">Зажмите и надиктуйте — допишется в конец. Можно поправить руками.</span>`}</div>`}${(()=>{ const d=BUILTIN_MODES.find(b=>b.id===m.id); return d&&!main&&m.prompt!==d.prompt?`<div style="text-align:right"><button class="tbtn" data-act="promptreset">Вернуть как было</button></div>`:'' })()}</div>
     ${main||m.builtin?'':`${field('hint','Для чего — одной строкой','Например: выберу блюдо по меню')}<p class="mnote" style="margin:-8px 2px 0">Видно в настройках и в пустом листе под названием режима.</p>${field('placeholder','Подсказка в поле ввода','Вопрос к фото')}`}
     <div><div class="lh">Принимает</div><div class="chips">${tog('voice','Голос',I.mic,main)}${tog('text','Текст',I.kbd,true)}${tog('photo','Фото',I.cam)}${tog('file','Файл',I.doc)}</div></div>
-    ${A.photo&&!main?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки — сразу видоискатель. Спросить голосом — микрофон в поле.':'Большая кнопка — микрофон. С боковой кнопки — сразу слушает.'}</p></div>`:''}
+    ${A.photo&&(!main||SHEET_UI==='orb')?`<div><div class="lh">Главное</div><div class="seg2">${[['voice',I.mic+'Голос'],['photo',I.cam+'Фото']].map(([v,t])=>`<button data-mprimary="${v}" aria-pressed="${m.primary===v}">${t}</button>`).join('')}</div><p class="mnote">${m.primary==='photo'?'Большая кнопка — камера. С боковой кнопки — сразу видоискатель. Спросить голосом — микрофон в поле.':'Большая кнопка — микрофон. С боковой кнопки — сразу слушает.'}</p></div>`:''}
     <div class="setcard">${main?li(I.shield,'Действия телефона','Все'):sw(m.tools,'tools','Действия телефона',m.tools?'Включены':'Выключены · ответ быстрее',I.shield)}${li(I.wave,'Язык речи','Русский')}${li(I.wave,'Озвучка ответа','Позже','',false,'<span class="sw off" aria-disabled="true" style="opacity:.4"></span>')}</div>
     <div class="setcard">${li(brainOf(m).kind==='api'?I.spark:I.srv,'Мозг',brainOf(m).title+(m.accepts.photo?' · нужен со зрением':''),'brainpick')}</div>
     <p class="mnote">${brainOf(m).kind==='api'?'История режима хранится на телефоне и целиком уходит мозгу с каждой репликой. Смена мозга начинает разговор заново.':`В Hermes это отдельная сессия: <code>vahter:dm:&lt;телефон&gt;${main?'':':'+m.id}</code>. Промпт подмешивается в каждый ход.`}</p>
@@ -381,15 +382,16 @@ function vMark(cls=''){ return `<span class="vmark ${cls}" aria-hidden="true"><i
 function sheetSt(){ if(S.rec) return 'rec'; if(S.recog) return 'recog'; if(S.busy||(S.ov&&S.ov.live&&/st h/.test(S.ov.live))) return 'think'; return 'idle' }
 /** Пустой лист — сцена, как у ассистентов: знак по центру и одна фраза. Чипы — только в первый раз (финал мастера). */
 function sheetEmpty(){
-  const st=sheetSt(), m=curMode(), main=m.id==='main';
+  const st=sheetSt(), m=curMode(), main=m.id==='main', orbOn=orbUi()&&!orbText();
   const cap = st==='rec'?'Слушаю':st==='recog'?'Распознаю на телефоне':main?'Вам чего?':esc(m.title);
-  const sub = st==='rec'?'Отпустите — и отправлю':st==='recog'?'Голос не уходит с телефона':main?'':esc(m.hint||'');
+  // в листе «солнышко» знак живёт внизу, на кнопке — в сцене его нет; подсказки «Отпустите — и отправлю» тоже нет: это видно по кнопке
+  const sub = orbOn ? (st==='idle'&&!main?esc(m.hint||''):'') : st==='rec'?'Отпустите — и отправлю':st==='recog'?'Голос не уходит с телефона':main?'':esc(m.hint||'');
   // три чипа: два в ряд, третий — по центру второго ряда. Без мозга — только то, что телефон делает сам; с мозгом таймер уступает вопросу
   const c=['⏰ Будильник на 7', brainReady()?'🔦 Включи фонарик':'⏱ Таймер на 5 минут', brainReady()?'Что посмотреть в Казани?':'🔦 Включи фонарик'];
   const chips = main&&st==='idle' ?   // подсказки — всегда на пустом листе Ассистента (22.10), не только после мастера
     `<div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div>` : '';
   const prev = sheetFrom()>0&&st==='idle' ? (()=>{ const n=S.feed.slice(0,sheetFrom()).filter(x=>x.t==='me'||x.t==='ai').length; return `<button class="prevconv" data-act="expand">${I.hist}<span>Прошлый разговор · ${n} сообщ.</span>${I.chev}</button>` })() : '';
-  return `<div class="feed scenef"><div class="scene">${vMark('big')}<b>${cap}</b>${sub?`<small>${sub}</small>`:''}${chips}${prev}</div></div>` }
+  return `<div class="feed scenef"><div class="scene">${orbOn?'':vMark('big')}<b>${cap}</b>${sub?`<small>${sub}</small>`:''}${chips}${prev}</div></div>` }
 /** Строка в листе, пока мозга нет: без шутки, со ссылкой на экран мозга (назад — снова лист). */
 function sheetStrip(){
   if (S.w.model==='loading') return `<div class="ostrip"><span>${I.dl}</span><p>Распознавание качается — ${S.modelPct} %, пока клавиатура</p></div>`;
@@ -398,20 +400,45 @@ function sheetStrip(){
   if (curMode().id==='main' && !brainReady() && brainOf().kind==='api') return `<div class="ostrip"><span>🧠</span><p>Мозг не подключён — пока только команды телефона</p><button class="tbtn" data-act="brainfromsheet">Подключить</button></div>`;
   return '' }
 function sideCue(){ if (!S.sideCue || !S.ov) return ''; return `<div class="sidecue">${S.w.profile==='unknown'?'Так же — долгое нажатие «Домой»':'Так открывается по боковой кнопке'}<i></i></div>` }
+/* ───────── лист «солнышко» (25.10) ─────────
+   Главная кнопка листа — солнышко по центру: держать — говорить (или снять, если в режиме главное — камера). Слева скрепка, справа второе
+   (камера или микрофон). Поле ввода в листе — только когда нужно: вложение ждёт вопроса, правка надиктованного (✎), голоса нет.
+   Пока держишь: ↑ замок, ← отмена, → ✎ правка; после замка — ✕ · отправить · ✎. Полный экран — как было. Переключатель: обвязка, «Мир → Лист». */
+let SHEET_UI = (()=>{ try{ return localStorage.getItem('vahter.sheetui')||'orb' }catch{ return 'orb' } })();
+const orbUi = () => SHEET_UI==='orb' && !!S.ov && !S.ov.full;
+function orbText(){ const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
+  const up=S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
+  return !!S.draft || !!(S.ov&&S.ov.text) || !!up || (!photoMain && !(A.voice&&voiceOk())) }
+function orbHtml(){
+  const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo, r=S.rec;
+  const orb=(attr,ic,label)=>`<button class="orb" ${attr} aria-label="${label}">${vMark()}<span class="oic">${ic}</span></button>`;
+  const side=(attr,ic,label)=>`<button class="obtn" ${attr} aria-label="${label}">${ic}</button>`;
+  const ghost='<span class="obtn ghost"></span>', time=`<div class="orbtm"><span class="rdot"></span><span class="tm">${recTime()}</span></div>`;
+  // держит палец: на месте скрепки и камеры — цели «отмена» и «правка», над солнышком — замок (только пока держит)
+  if (r && r.mode==='hold'){ const g=r.g||{x:0,y:0,r:0}; const fresh=Date.now()-r.t0<250;
+    return `<div class="cwrap orbw"><div class="orbrow"><span class="obtn cue ${g.x>35?'near':''}" aria-hidden="true">${I.x}</span><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="micwrap" style="transform:translate(${Math.min(g.r||0,70)-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${orb('data-mic',I.mic,'Говорите')}</div><span class="obtn cue ${(g.r||0)>35?'near':''}" aria-hidden="true">${I.edit}</span></div>${time}</div>` }
+  // без рук: ✕ · солнышко-«Отправить» · ✎ (замка уже нет)
+  if (r){ const gx=r.lg||0;
+    return `<div class="cwrap orbw"><div class="orbrow">${side('data-act="reccancel"',I.x,'Отменить')}<div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)">${orb('data-recsend',I.send,'Отправить; потяните влево — отменить')}</div>${side('data-act="recedit"',I.edit,'Остановить и поправить текст')}</div>${time}</div>` }
+  const center = photoMain ? orb('data-act="camera"',I.cam,'Камера') : orb('data-mic',I.mic,'Зажмите и говорите; короткое нажатие — без рук');
+  const right = photoMain ? (A.voice?side('data-mic',I.mic,'Зажмите и спросите голосом'):ghost) : A.photo ? side('data-act="camera"',I.cam,'Камера') : ghost;
+  const left = A.photo||A.file ? `<span class="oanc">${side(`data-act="attach" aria-expanded="${!!S.attachMenu}"`,I.clip,'Прикрепить')}${attachMenu()}</span>` : ghost;
+  return `<div class="cwrap orbw"><div class="orbrow">${left}${center}${right}</div>${modeTabs()}</div>`;
+}
 /* Лист без шапки: слева — маленький знак (и строка связи, только если что-то не так), по центру ручка, справа — круглые кнопки.
    В полном экране сверху проявляется шапка приложения — та же, что в chat(), чтобы подмена на экран приложения была незаметной. */
 function overlay(){
-  const O=S.ov; if(!O) return ''; const [d,t]=linkState(); const st=sheetSt(), empty=!sheetItems().length;
+  const O=S.ov; if(!O) return ''; const [d,t]=linkState(); const st=sheetSt(), empty=!sheetItems().length, orbOn=orbUi()&&!orbText();
   const anim = O.full ? `full grow` : O.shrink ? 'shrink' : '';
   const style = O.full ? `--from:${O.fromH||400}px` : O.shrink ? `--to:${O.shrinkTo||400}px` : '';
   return `<div class="ov"><div class="dim" data-act="dim" style="${O.full?'opacity:0':''}"></div><div class="sheet s2 ${anim} ${O.pop?'pop':''} ${empty?'isempty':''}" data-st="${st}" style="${style}">
     <div class="glow"></div>
     <div class="ftop topbar"><button class="iconbtn" aria-label="Свернуть в лист">${I.down}</button><div class="t"><b>${curMode().title}</b><small><span class="ldot ${d}"></span>${brainOf().title} · ${t}</small></div><button class="iconbtn">${I.gear}</button><button class="iconbtn">${I.more}</button></div>
-    <div class="shead">${empty?'<span></span>':`<span class="sst">${vMark('mini')}${d?`<span>${t}</span>`:''}</span>`}
+    <div class="shead">${empty?'<span></span>':`<span class="sst">${orbOn?'':vMark('mini')}${d?`<span>${t}</span>`:''}</span>`}
       <button class="grab" data-act="expand" aria-label="Развернуть"></button>
       <span class="sbtns"><button class="cbtn" data-act="gear" aria-label="Настройки">${I.gear}</button><button class="cbtn" data-act="expand" aria-label="Развернуть в приложение">${I.expand}</button><button class="cbtn" data-act="close" aria-label="Закрыть">${I.x}</button></span></div>
-    ${promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(!O.full)}</div>
-    ${empty&&(S.rec||S.recog)?'':liveHtml()}${composerHtml()}
+    ${SHEET_UI==='orb'&&!O.full?'':promptHtml()}${sheetStrip()}<div class="scroll" id="oscroll">${feedHtml(!O.full)}</div>
+    ${(empty||orbOn)&&(S.rec||S.recog)?'':liveHtml()}${composerHtml()}
   </div>${sideCue()}</div>`;
 }
 function dialog(){ const D=S.dialog; if(!D) return '';

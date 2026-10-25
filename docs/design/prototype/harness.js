@@ -15,9 +15,13 @@ function renderWorld(){
     + `<label>Загрузка фото</label><div class="seg">${[['fast','быстро'],['slow','медленно'],['fail','обрыв']].map(x=>`<button data-up="${x[0]}" aria-pressed="${(S.upSpeed||'fast')===x[0]}">${x[1]}</button>`).join('')}</div>`
     + `<label>В кадре камеры</label><div class="seg">${[['tea','Товар'],['menu','Меню']].map(x=>`<button data-shot="${x[0]}" aria-pressed="${(S.cam?S.cam.subj:S.camSubj||'tea')===x[0]}">${x[1]}</button>`).join('')}</div>`
    +`<label>Сбой подключения</label><div class="seg">${[['','нет'],['dns','адрес'],['tls','сертификат'],['plugin','нет плагина'],['expired','ссылка устарела']].map(x=>`<button data-fail="${x[0]}" aria-pressed="${(S.failNext||'')===x[0]}">${x[1]}</button>`).join('')}</div>`;
+  $('#world').innerHTML += `<label>Лист</label><div class="seg">${[['orb','Солнышко'],['classic','Как было']].map(x=>`<button data-sheetui="${x[0]}" aria-pressed="${SHEET_UI===x[0]}">${x[1]}</button>`).join('')}</div>`;
   const canSay = !S.busy && (S.ov || (S.screen==='app'&&S.onboarded&&S.page==='chat'));
   document.querySelectorAll('#say button').forEach(b=>b.disabled=!canSay);
 }
+// Лист «солнышко» (25.10) или как было — переключатель вариантов, помнится между запусками
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-sheetui]'); if(!b) return; SHEET_UI=b.dataset.sheetui; try{ localStorage.setItem('vahter.sheetui',SHEET_UI) }catch{}
+  trace(SHEET_UI==='orb'?'Лист «солнышко»: главная кнопка — солнышко (голос или камера), слева скрепка; поле — только с вложением или после ✎.':'Лист как было: поле ввода и кнопка микрофона.','p'); S.attachMenu=false; render() });
 function setWorld(k,v){
   S.w[k]=v; S.dismissed=null;
   if (k==='model'){ if(v==='loading'){ if(!S.modelPct||S.modelPct>=100) S.modelPct=12; startDl(true) } if(v==='ready') S.modelPct=100; if(v==='none') S.modelPct=0 }

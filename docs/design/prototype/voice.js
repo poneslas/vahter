@@ -53,6 +53,10 @@ async function finishRec(how){
   if (how==='cancel' || !text){ trace(how==='cancel'?'Отменено жестом влево или крестиком — ничего не ушло.':'Пусто — ничего не отправлено.'); return render() }
   if (S.screen==='cam2' && S.cam){ trace('Отпустил микрофон на камере — снимок и вопрос уходят вместе одним сообщением.','p'); return shotGo(text) }
   await recognize();
+  // ✎ (лист «солнышко»): надиктованное не уходит, а встаёт в поле — поправить и отправить
+  if (how==='edit'){ S.draft = r.into==='append'&&S.draft ? S.draft+' '+text : text; S.draftVoice=true; if(S.ov) S.ov.text=true;
+    trace('Потянул на ✎ — надиктованное не ушло, а встало в поле: поправьте и отправьте.','p'); S.keepScroll=true; render();
+    const el=$('#cin'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length) } return }
   if (how==='release') how='send';   // отпустил — отправить; если в поле был текст, он уходит вместе с голосом
   const full = r.into==='append' ? (S.draft+' '+text) : text; S.draft=''; S.draftVoice=false;
   trace(r.mode==='hold'?'Отпустил — отправлено (push-to-talk, как в Писаре). Чистовик GigaAM уже с пунктуацией.':'«Отправить» из замочка — отправлено.','p');
@@ -86,14 +90,17 @@ let pd=null;
 document.addEventListener('pointerdown',e=>{ const m=e.target.closest('[data-mic]'); if(!m) return; e.preventDefault(); if(S.rec&&S.rec.mode==='locked') return; pd={x:e.clientX,y:e.clientY,t:Date.now()}; startRec('hold', m.dataset.into) });
 document.addEventListener('dragstart',e=>{ if(e.target.closest&&e.target.closest('[data-mic]')) e.preventDefault() });
 document.addEventListener('pointermove',e=>{ if(!pd||!S.rec||S.rec.mode!=='hold') return; const k=devScale(); const dy=(pd.y-e.clientY)/k, dx=(pd.x-e.clientX)/k;
-  if (!pd.axis && Math.hypot(dx,dy)>8) pd.axis = Math.abs(dy)>=Math.abs(dx) ? 'y' : 'x';   // направление выбирается один раз, как в Telegram
-  S.rec.g={x:pd.axis==='x'?Math.max(0,dx):0, y:pd.axis==='y'?Math.max(0,dy):0};
-  const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;
+  if (!pd.axis && Math.hypot(dx,dy)>8) pd.axis = Math.abs(dy)>=Math.abs(dx) ? 'y' : dx>0 ? 'x' : 'r';   // направление выбирается один раз, как в Telegram
+  const rx = pd.axis==='r' && orbUi() ? Math.max(0,-dx) : 0;   // вправо — на ✎, только в листе «солнышко»
+  S.rec.g={x:pd.axis==='x'?Math.max(0,dx):0, y:pd.axis==='y'?Math.max(0,dy):0, r:rx};
+  const mw=$('#scr .micwrap'); if(mw) mw.style.transform=`translate(${Math.min(rx,70)-Math.min(S.rec.g.x,70)}px,${-Math.min(S.rec.g.y,45)}px)`;
+  const cues=document.querySelectorAll('#scr .orbrow .cue'); if(cues.length===2){ cues[0].classList.toggle('near',S.rec.g.x>35); cues[1].classList.toggle('near',rx>35) }
   const lc=$('#scr .lockcue'); if(lc){ lc.style.setProperty('--ly',Math.min(S.rec.g.y,45)+'px'); lc.classList.toggle('near',S.rec.g.y>22) }
   const sl=$('#scr .slide'); if(sl) sl.style.opacity=Math.max(.25,1-S.rec.g.x/70);
   // Замочек — только в разговоре и в пробах диктовки; в поле промпта (настройки) удержал — сказал — отпустил.
   if (pd.axis==='y' && dy>45 && S.rec.into!=='prompt'){ S.rec.mode='locked'; pd=null; trace('Потянул вверх — замочек: запись идёт без пальца. Круг микрофона стал «Отправить», влево — отмена.','p'); S.keepScroll=true; render() }
-  else if (pd.axis==='x' && dx>70){ pd=null; finishRec('cancel') } });
+  else if (pd.axis==='x' && dx>70){ pd=null; finishRec('cancel') }
+  else if (pd.axis==='r' && rx>70){ pd=null; finishRec('edit') } });
 function micRelease(){ if(!pd) return; const dt=Date.now()-pd.t; pd=null; if(!S.rec||S.rec.mode!=='hold') return;
   if (dt<260 && S.rec.into!=='prompt'){ S.rec.mode='locked'; trace('Короткое нажатие — сразу запись без рук (замочек).','p'); S.keepScroll=true; return render() }
   finishRec('release') }

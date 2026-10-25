@@ -154,9 +154,10 @@ document.addEventListener('click', async e=>{
       trace('«Свернуть» (или системный жест «Назад»): экран приложения закрывается (finish), сервис ассистента снова показывает лист (showSession) поверх того приложения, где вы были. Разговор тот же — он один.','p'); return }
     case 'close': return closeOverlay();
     case 'dim': trace('Нажатие по затемнению лист не закрывает — чтобы не терять его случайно.'); return;
-    case 'csend': { const v=(S.draft||'').trim(); if(!v) return; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
+    case 'csend': { const v=(S.draft||'').trim(); if(!v) return; if(S.ov) S.ov.text=false; const via=S.draftVoice?'голос, правка':'клавиатура'; S.draft=''; S.draftVoice=false; return deliver(v,via) }
     case 'recsend': return finishRec('send');
     case 'reccancel': return finishRec('cancel');
+    case 'recedit': return finishRec('edit');
     case 'togglesteps': { const it=S.feed.find(f=>String(f.id)===t.dataset.id); if(it){ it.open=!it.open; S.keepScroll=true; render() } return }
     case 'openfile': trace(`«${t.dataset.name}»: скачивание по нажатию по короткой ссылке, затем системный просмотрщик или «Поделиться».`); return;
     case 'unlock': S.w.locked=false; S.screen='home'; return render();
@@ -166,7 +167,7 @@ document.addEventListener('click', async e=>{
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ if(e.target.id==='cin'){ S.draft=e.target.value; $('[data-act=csend]')?.click() } if(e.target.id==='addr') $('[data-act=addrgo]')?.click() } });
 document.addEventListener('change',e=>{ if(e.target.dataset&&e.target.dataset.mfield){ S.keepScroll=true; render() } });
 document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.mfield){ const m=modeById(S.editMode); m[e.target.dataset.mfield]=e.target.value; return }
-  if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); el.focus(); el.setSelectionRange(el.value.length,el.value.length) } }
+  if(e.target.dataset&&e.target.dataset.prompt){ const m=modeById(e.target.dataset.prompt); m.prompt=e.target.value; grow(e.target); return } if(e.target.id==='cin'){ const had=!!S.draft; S.draft=e.target.value; if(had!==!!S.draft){ S.keepScroll=true; render(); const el=$('#cin'); if(!el) return; el.focus(); el.setSelectionRange(el.value.length,el.value.length) } }
   // свой эмодзи: первая графема из поля
   if(e.target.id==='emoin'){ const v=e.target.value.trim(); if(!v) return;
     const g=[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)][0].segment; modeById(S.editMode).icon='emoji:'+g; S.emojiPick=false; S.keepScroll=true; render() } });
