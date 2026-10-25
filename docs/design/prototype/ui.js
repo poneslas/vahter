@@ -388,7 +388,8 @@ function sheetEmpty(){
   const sub = orbOn ? (st==='idle'&&!main?esc(m.hint||''):'') : st==='rec'?'Отпустите — и отправлю':st==='recog'?'Голос не уходит с телефона':main?'':esc(m.hint||'');
   // три чипа: два в ряд, третий — по центру второго ряда. Без мозга — только то, что телефон делает сам; с мозгом таймер уступает вопросу
   const c=['⏰ Будильник на 7', brainReady()?'🔦 Включи фонарик':'⏱ Таймер на 5 минут', brainReady()?'Что посмотреть в Казани?':'🔦 Включи фонарик'];
-  const chips = main&&st==='idle' ?   // подсказки — всегда на пустом листе Ассистента (22.10), не только после мастера
+  // подсказки — только для нового разговора Ассистента (25.10): если есть прошлый разговор, вернуться к нему ценнее, подсказки уже видели
+  const chips = main&&st==='idle'&&!(sheetFrom()>0) ?
     `<div class="chips">${c.map(x=>`<button class="chip" data-saytext="${x.replace(/^\S+ (?=[А-Я])/,'')}">${x}</button>`).join('')}</div>` : '';
   const prev = sheetFrom()>0&&st==='idle' ? (()=>{ const n=S.feed.slice(0,sheetFrom()).filter(x=>x.t==='me'||x.t==='ai').length; return `<button class="prevconv" data-act="expand">${I.hist}<span>Прошлый разговор · ${n} сообщ.</span>${I.chev}</button>` })() : '';
   return `<div class="feed scenef"><div class="scene">${orbOn?'':vMark('big')}<b>${cap}</b>${sub?`<small>${sub}</small>`:''}${chips}${prev}</div></div>` }
