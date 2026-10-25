@@ -108,6 +108,8 @@ class Conversation(
     fun updateSettings(f: (Settings) -> Settings) = edit { it.copy(settings = f(it.settings)) }
     fun updateModes(f: (List<Mode>) -> List<Mode>) = edit { it.copy(modes = f(it.modes)) }
     fun touch() = edit { it.copy(lastUse = System.currentTimeMillis()) }
+    /** Нажали «Ответ готов»: открыть режим с ответом. Ответ мог ждать дольше 30 минут — он не должен уйти под «Прошлый разговор». */
+    fun openAnswer(id: String) { edit { it.copy(modeUse = it.modeUse + (id to System.currentTimeMillis())) }; selectMode(id) }
     /** В режиме что-то сказали или прислали — от этого считается «30 минут без дела» для его истории (просмотр не считается). */
     private fun spoke(modeId: String) { freshen(); edit { it.copy(lastUse = System.currentTimeMillis(), modeUse = it.modeUse + (modeId to System.currentTimeMillis())) } }
 
@@ -409,7 +411,8 @@ class Conversation(
                 edit { st -> st.copy(feeds = st.feeds + (modeId to st.feeds[modeId].orEmpty().map { if (it is FeedItem.Ai && !it.done) it.copy(done = true, text = it.text.trimEnd()) else it }),
                     hermesRuns = if (ended) st.hermesRuns - modeId else st.hermesRuns) }
                 _state.update { it.copy(busyModes = it.busyModes - modeId) }
-                if (answer.isNotBlank()) onAnswer(mode, answer.toString())
+                // Пришедший ответ — тоже дело в режиме: долгая команда Hermes не уводит его под «Прошлый разговор».
+                if (answer.isNotBlank()) { edit { it.copy(modeUse = it.modeUse + (modeId to System.currentTimeMillis())) }; onAnswer(mode, answer.toString()) }
             }
         }
     }

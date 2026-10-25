@@ -7,19 +7,19 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import ru.poneslas.vahter.App
-import ru.poneslas.vahter.app.MainActivity
+import ru.poneslas.vahter.assistant.TileOpen
 import ru.poneslas.vahter.assistant.Sheet
 import ru.poneslas.vahter.core.LockScope
 import ru.poneslas.vahter.core.Mode
+import ru.poneslas.vahter.ui.mdBlocks
+import ru.poneslas.vahter.ui.mdInline
 
 /**
  * «Задал и ушёл»: запрос дожимается в процессе (проверено на S24 — 90/90 после закрытия листа),
- * ответ — уведомлением телефона; нажатие открывает лист в нужном режиме. Своего пуш-сервера нет.
+ * ответ — уведомлением телефона; нажатие открывает лист в нужном режиме ([TileOpen]). Своего пуш-сервера нет.
  * На заблокированном экране (если не «Открывать») — без текста: «Ответ готов».
  */
 object Notifier {
@@ -45,10 +45,16 @@ object Notifier {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         if (!nm.areNotificationsEnabled()) return
         val locked = ctx.getSystemService(KeyguardManager::class.java).isKeyguardLocked
+        // Ответ — разметка: в уведомлении без «**» и «#», без пустых строк. Ответ Hermes часто начинается с пустых строк —
+        // раньше первые две строки были пустыми и уведомление показывало одно название режима.
+        val plain = mdBlocks(text).joinToString("\n") { (kind, t) -> if (kind == 'l') "• " + mdInline(t).text else mdInline(t).text }
+            .ifBlank { tr(R.string.ntf_answer_ready) }
         val hide = locked && App.instance.conversation.state.value.settings.lockScope != LockScope.ON
-        val open = PendingIntent.getBroadcast(
+        // Сразу экран, не приёмник: с Android 12 экран из приёмника уведомления не запускается («трамплин»), и если процесс
+        // к нажатию уже выгружен (лист не поднять из сервиса помощника), ничего не открывалось.
+        val open = PendingIntent.getActivity(
             ctx, mode.id.hashCode(),
-            Intent(ctx, OpenSheetReceiver::class.java).putExtra("mode", mode.id),
+            Intent(ctx, TileOpen::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra(TileOpen.EXTRA_MODE, mode.id),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val public = Notification.Builder(ctx, CHANNEL).setSmallIcon(android.R.drawable.sym_action_chat)
@@ -56,24 +62,13 @@ object Notifier {
         val n = Notification.Builder(ctx, CHANNEL)
             .setSmallIcon(android.R.drawable.sym_action_chat)
             .setContentTitle(mode.title)
-            .setContentText(if (hide) tr(R.string.ntf_answer_ready) else text.lineSequence().take(2).joinToString(" ").take(200))
-            .setStyle(if (hide) null else Notification.BigTextStyle().bigText(text.take(1000)))
+            .setContentText(if (hide) tr(R.string.ntf_answer_ready) else plain.replace('\n', ' ').take(200))
+            .setStyle(if (hide) null else Notification.BigTextStyle().bigText(plain.take(1000)))
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setPublicVersion(public)
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()
         nm.notify(mode.id.hashCode(), n)
-    }
-}
-
-/** Нажатие на уведомление: showSession из процесса помощника разрешён (AOSP; П12/П23 на S24). */
-class OpenSheetReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        intent.getStringExtra("mode")?.let { App.instance.conversation.selectMode(it) }
-        // Баг №10: из уведомления — на разговор с ответом, без камеры и без записи.
-        if (Sheet.show(Bundle().apply { putString("src", "notification") }) == null) {
-            context.startActivity(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }
     }
 }

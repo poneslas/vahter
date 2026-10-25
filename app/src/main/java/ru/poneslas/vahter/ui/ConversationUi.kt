@@ -5,6 +5,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshotFlow
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.actions.Launch
@@ -374,14 +375,27 @@ private fun sizeText(b: Long) = if (b < 1024 * 1024) tr(R.string.feed_size_kb, (
 /** «+» в конце ряда вкладок. */
 private val ADD_W = 30.dp
 
+/**
+ * Снап — под линзу, то есть в середину всего ряда. Встроенный Center берёт середину между полями, а поле справа короче
+ * на «+»: ряд вставал на 20 dp правее линзы, потом доезжал вторым движением, а если его прервать (диктовка) — так и оставался.
+ */
+private object UnderLens : SnapPosition {
+    override fun position(layoutSize: Int, itemSize: Int, beforeContentPadding: Int, afterContentPadding: Int, itemIndex: Int, itemCount: Int) =
+        (layoutSize - itemSize) / 2 - beforeContentPadding
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: (() -> Unit)? = null) {
     val tabs = state.tabs
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val fling = rememberSnapFlingBehavior(list, SnapPosition.Center)
+    val fling = rememberSnapFlingBehavior(list, UnderLens)
     val onSelectNow by rememberUpdatedState(onSelect)
+    // Свежие вкладки и режим — для эффектов ниже, которые живут дольше одного кадра. Раньше они видели состояние первого
+    // показа: вернуться свайпом в режим, с которого открыли лист, было нельзя — ряд «замирал» (баг: листалка залипает).
+    val tabsNow by rememberUpdatedState(tabs)
+    val modeNow by rememberUpdatedState(state.mode)
     var ours by remember { mutableStateOf(false) }   // прокрутку начали мы (центрирование), а не палец — выбор не трогаем
     // сдвиг, ставящий вкладку по центру ряда
     fun centerDelta(i: Int): Float? {
@@ -402,15 +416,18 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: (() -
         snapshotFlow { list.isScrollInProgress }.collect { moving ->
             if (moving || ours) return@collect
             val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-            val near = info.visibleItemsInfo.filter { it.index < tabs.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) } ?: return@collect
-            tabs.getOrNull(near.index)?.let { if (it.id != state.mode) onSelectNow(it.id) }
+            val near = info.visibleItemsInfo.filter { it.index < tabsNow.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) } ?: return@collect
+            val tab = tabsNow.getOrNull(near.index) ?: return@collect
+            if (tab.id != modeNow) onSelectNow(tab.id)
+            // Ряд остановился не под линзой (прокрутку прервали) — доставить вкладку на место, чтобы не оставался сдвинутым.
+            else if (abs(near.offset + near.size / 2f - mid) > 1f) scope.launch { runCatching { center(near.index, animate = true) } }
         }
     }
     // кто сейчас под линзой и какой он ширины — каждый кадр прокрутки
     val density = LocalDensity.current
     val under by remember { derivedStateOf {
         val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-        info.visibleItemsInfo.filter { it.index < tabs.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) }
+        info.visibleItemsInfo.filter { it.index < tabsNow.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) }
     } }
     val lit = under?.index ?: sel
     val lensW by animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")

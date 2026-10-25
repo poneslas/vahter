@@ -113,7 +113,6 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <receiver android:name=".notify.OpenSheetReceiver" android:exported="false" />
         <!-- Файлы от Hermes лежат в кэше (hermes/); «Открыть» отдаёт их системе через FileProvider -->
         <provider
             android:name="androidx.core.content.FileProvider"

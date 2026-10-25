@@ -9,6 +9,8 @@ import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import ru.poneslas.vahter.App
 import android.service.quicksettings.TileService
 import ru.poneslas.vahter.R
 import ru.poneslas.vahter.app.MainActivity
@@ -38,13 +40,34 @@ class VahterTile : TileService() {
     }
 }
 
-/** Прозрачная активность плитки и действия «Помощь» (ACTION_ASSIST, так зовут помощника некоторые прошивки): открыть лист и сразу закрыться. */
+/**
+ * Прозрачная активность плитки, действия «Помощь» (ACTION_ASSIST, так зовут помощника некоторые прошивки) и уведомления
+ * «Ответ готов»: открыть лист и сразу закрыться. Из уведомления — на разговор с ответом, без камеры и без записи (баг №10).
+ * Процесс могли выгрузить до нажатия: сервис помощника система подключает заново не сразу — ждём его до [WAIT_MS],
+ * не дождались (или Вахтёр не помощник) — открывается приложение.
+ */
 class TileOpen : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val src = if (intent?.action == Intent.ACTION_ASSIST) "assist" else "tile"
-        if (Sheet.service != null) Sheet.show(Bundle().apply { putString("src", src) })
-        else startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        finish()
+        val mode = intent?.getStringExtra(EXTRA_MODE)
+        val src = when {
+            mode != null -> "notification"
+            intent?.action == Intent.ACTION_ASSIST -> "assist"
+            else -> "tile"
+        }
+        mode?.let { App.instance.conversation.openAnswer(it) }
+        val until = SystemClock.uptimeMillis() + if (mode != null) WAIT_MS else 0
+        fun open() {
+            if (Sheet.service == null && SystemClock.uptimeMillis() < until) { window.decorView.postDelayed(::open, 100); return }
+            if (Sheet.service != null) Sheet.show(Bundle().apply { putString("src", src) })
+            else startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            finish()
+        }
+        open()
+    }
+
+    companion object {
+        const val EXTRA_MODE = "mode"
+        private const val WAIT_MS = 1500L
     }
 }
