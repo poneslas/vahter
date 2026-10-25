@@ -48,7 +48,7 @@ function feedHtml(inSheet){
   if (!S.feed.length && curMode().hint && S.mode!=='main') return `<div class="feed"><div class="empty" style="padding:10px 4px">${esc(curMode().hint)}</div></div>`;
   if (!S.feed.length) return `<div class="feed"><div class="empty">В любом приложении зажмите боковую кнопку или проведите от нижнего угла к центру — или напишите здесь.<div class="chips" style="margin-top:12px">${['Таймер на пять минут','Что у меня завтра?','Как настроить бэкап сервера?'].map(x=>`<button class="chip" data-saytext="${x}">${x}</button>`).join('')}</div></div></div>`;
   const f=sheetFrom(), sep=!inSheet&&f>0&&f<S.feed.length;
-  return `<div class="feed">${items.map((it,i)=>(sep&&i===f?`<div class="newconv"><span>Новый разговор · из листа</span></div>`:'')+itemHtml(it,inSheet)).join('')}</div>`;
+  return `<div class="feed">${items.map((it,i)=>(sep&&i===f?`<div class="newconv"><span>Новый разговор</span></div>`:'')+itemHtml(it,inSheet)).join('')}</div>`;
 }
 /** Карточка действия по её описанию (model.js, ACT_CARDS): значок, итог, подробность, одна кнопка-значок. */
 function actHtml(it){ const C=ACT_CARDS[it.i]||{}; const title=C.title?C.title(it):it.x;
@@ -141,7 +141,7 @@ function composerHtml(o={}){
   const bar=(hint,op)=>`<div class="fld recbar"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${op}">${hint}</span></div>`;
   if (S.rec && S.rec.mode==='hold'){ const g=S.rec.g||{x:0,y:0}; const fresh=Date.now()-S.rec.t0<250;
     return `<div class="cwrap"><div class="lockcue ${fresh?'in':''} ${g.y>22?'near':''}" style="--ly:${Math.min(g.y,45)}px">${I.lock}<span class="arr">⌃</span></div><div class="composer rec">${bar('‹ ‹&nbsp; Отмена',Math.max(.25,1-g.x/70))}<div class="micwrap" style="transform:translate(${-Math.min(g.x,70)}px,${-Math.min(g.y,45)}px)">${mic}</div></div>${tabs}</div>` }
-  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="lockcue shut">${I.lock}</div><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
+  if (S.rec){ const gx=S.rec.lg||0; return `<div class="cwrap"><div class="composer rec"><button class="fld recbar lnkc" data-act="reccancel"><span class="rdot"></span><span class="tm">${recTime()}</span><span class="slide" style="opacity:${Math.max(.25,1-gx/70)}">‹ ‹&nbsp; Отмена</span></button><div class="micwrap" style="transform:translateX(${-Math.min(gx,70)}px)"><button class="micbtn recmic sendmode" data-recsend aria-label="Отправить; потяните влево — отменить"><span class="sendw">Отправить</span></button></div></div>${tabs}</div>` }
   if (o.into==='try') return `<div class="cwrap"><div class="composer"><div class="tryhint">вверх — без рук · влево — отмена</div>${o.pulse?mic.replace('class="micbtn','class="micbtn pulse'):mic}</div></div>`;
   const m=curMode(), A=m.accepts, photoMain=m.primary==='photo'&&A.photo;
   // слева в поле — только скрепка; справа в поле — отправка (есть текст) или микрофон (если большая кнопка — камера)
@@ -152,7 +152,7 @@ function composerHtml(o={}){
   const big = S.draft ? `<button class="micbtn sendmode" data-act="csend" aria-label="Отправить">${I.send}</button>` : photoMain ? `<button class="micbtn" data-act="camera" aria-label="Камера">${I.cam}</button>` : A.voice ? mic : '';
   const up = S.pendingUp&&S.pendingUp.mode===S.mode&&S.pendingUp.up.st!=='sent';
   const place = up ? (S.pendingUp.img.kind==='file'?'Вопрос к файлу':'Вопрос к фото') : m.id==='main' ? ph : m.placeholder;
-  return `<div class="cwrap">${attachMenu()}<div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${right}</div>${big}</div>${modeTabs()}</div>`;
+  return `<div class="cwrap"><div class="composer"><div class="fld" style="${tools?'padding-left:4px':''}">${tools}${attachMenu()}<input id="cin" value="${esc(S.draft)}" placeholder="${S.draft?'':esc(place)}" autocomplete="off">${right}</div>${big}</div>${modeTabs()}</div>`;
 }
 function chat(){
   const [d,t]=linkState();

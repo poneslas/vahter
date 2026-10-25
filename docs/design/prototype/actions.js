@@ -2,6 +2,8 @@
 /* ───────── клики ───────── */
 // Меню ⋮ закрывается нажатием мимо него.
 document.addEventListener('click', e=>{ if(S.chatMenu && !e.target.closest('.cmenu,[data-act=chatmenu]')){ S.chatMenu=false; S.keepScroll=true; render() } }, true);
+// Меню скрепки — так же: нажатие мимо закрывает.
+document.addEventListener('click', e=>{ if(S.attachMenu && !e.target.closest('.mpicker,[data-act=attach]')){ S.attachMenu=false; S.keepScroll=true; render() } }, true);
 document.addEventListener('click', async e=>{
   const t=e.target.closest('[data-perm],[data-permfix],[data-sysperm],[data-frame],[data-framedel],[data-ctool],[data-tool],[data-jid],[data-menable],[data-maccept],[data-mprimary],[data-mbool],[data-micon],[data-radio],[data-dlgclose],[data-pickitem],[data-up],[data-ptab],[data-micperm],[data-primary],[data-idle],[data-pickmode],[data-toggle],[data-shortcut],[data-shot],[data-act],[data-open],[data-dlg],[data-role],[data-side],[data-chip],[data-cardbtn],[data-undo],[data-actbtn],[data-w],[data-fail],[data-preset],[data-say],[data-ev],[data-saytext]'); if(!t) return;
   if (t && t.dataset.ptab) return setPtab(t.dataset.ptab)

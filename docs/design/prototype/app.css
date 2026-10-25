@@ -96,7 +96,10 @@ h1{font-family:var(--display);font-size:28px;line-height:1.1;margin:0 0 6px;font
 .mchip{flex:none;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:6px 12px;font-size:13px;display:flex;align-items:center;gap:6px}
 .mchip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .mchip.add{color:var(--soft);padding:6px 10px}
-.mpicker{position:absolute;left:10px;bottom:72px;min-width:230px;background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:0 18px 40px -16px rgba(14,26,54,.45);z-index:6;animation:up .18s}
+/* Меню скрепки — как меню Material 3: раскрывается от якоря (над полем, у самого края, по левому краю скрепки), поверх ленты с тенью, закрывается нажатием мимо. */
+.composer .fld{position:relative}
+.mpicker{position:absolute;left:4px;bottom:calc(100% + 4px);min-width:230px;max-width:280px;background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:0 1px 2px rgba(14,26,54,.22),0 4px 14px 2px rgba(14,26,54,.16);z-index:6;transform-origin:left bottom;animation:mopen .15s ease-out}
+@keyframes mopen{from{transform:scale(.92);opacity:0}}
 .mpicker button{display:flex;gap:12px;align-items:center;width:100%;border:0;background:none;padding:9px 10px;border-radius:12px;text-align:left}
 .mpicker button[aria-pressed=true]{background:#ECEEE8}
 .mpicker b{display:block;font-weight:600;font-size:14px}.mpicker small{display:block;font-size:12px;color:var(--soft)}
@@ -522,7 +525,6 @@ svg.marks .cropdim{fill:rgba(0,0,0,.55)}svg.marks .croprect{fill:none;stroke:#ff
 .recbar .tm{font-size:15px;color:#1A1C19;font-weight:500}
 .recbar .slide{flex:1;margin:0;text-align:center;font-size:14px;color:#7B8276}
 .lockcue .ic{width:18px;height:18px}
-.lockcue.shut{height:44px;width:44px;border-radius:50%;justify-content:center;color:#2E6B30;padding:0}
 .live.recl{min-height:0;padding:2px 16px 4px;display:flex;justify-content:center;align-items:center}
 .micbtn.proc{position:relative}
 .micbtn.proc::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--local);border-right-color:var(--local);animation:spin .9s linear infinite}
