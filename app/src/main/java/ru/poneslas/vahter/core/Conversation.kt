@@ -111,7 +111,16 @@ class Conversation(
     /** Нажали «Ответ готов»: открыть режим с ответом. Ответ мог ждать дольше 30 минут — он не должен уйти под «Прошлый разговор». */
     fun openAnswer(id: String) { edit { it.copy(modeUse = it.modeUse + (id to System.currentTimeMillis())) }; selectMode(id) }
     /** В режиме что-то сказали или прислали — от этого считается «30 минут без дела» для его истории (просмотр не считается). */
-    private fun spoke(modeId: String) { freshen(); edit { it.copy(lastUse = System.currentTimeMillis(), modeUse = it.modeUse + (modeId to System.currentTimeMillis())) } }
+    /** Над новой репликой на экране пусто (всё — под «Прошлым разговором») — мозг тоже начинает с нуля: он знает то, что видно.
+     *  Проверка при каждой реплике, а не только в [freshen]: лист мог очиститься раньше (до 1.0.11 — без очистки истории). */
+    private fun spoke(modeId: String) {
+        freshen()
+        edit { s ->
+            val clean = s.feeds[modeId].orEmpty().size <= (s.fresh[modeId] ?: 0)
+            s.copy(lastUse = System.currentTimeMillis(), modeUse = s.modeUse + (modeId to System.currentTimeMillis()),
+                histories = if (clean) s.histories - modeId else s.histories)
+        }
+    }
 
     /**
      * «30 минут без дела» — чистый лист (Продукт 5.17): у каждого режима, где с последнего использования прошло больше 30 минут,
