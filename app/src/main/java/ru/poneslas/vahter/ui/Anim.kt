@@ -34,3 +34,22 @@ fun seconds(): Float {
     val t by tr.animateFloat(0f, 100f, infiniteRepeatable(tween(100_000, easing = LinearEasing), RepeatMode.Restart), label = "s")
     return t
 }
+
+
+/**
+ * Часы, которые идут, только пока есть жизнь: [active] — сейчас что-то происходит (запись, ответ, касание), иначе ещё [linger] мс
+ * и стоп — кадры больше не рисуются (батарея: солнышко и свечение в покое замирают, 26.10). [wake] — разбудить ещё на [linger]
+ * (сменилась иконка, режим). Время не прыгает: продолжает с того места, где замерло.
+ */
+@Composable
+fun livelyClock(active: Boolean, wake: Any? = null, linger: Long = 6000L): androidx.compose.runtime.State<Float> {
+    val t = androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    androidx.compose.runtime.LaunchedEffect(active, wake) {
+        val until = if (active) Long.MAX_VALUE else android.os.SystemClock.uptimeMillis() + linger
+        var last = androidx.compose.runtime.withFrameNanos { it }
+        while (android.os.SystemClock.uptimeMillis() < until) {
+            androidx.compose.runtime.withFrameNanos { n -> t.floatValue += ((n - last) / 1e9f).coerceAtMost(.1f); last = n }
+        }
+    }
+    return t
+}

@@ -19,7 +19,7 @@ android {
         targetSdk = 36
         // Версия — год.месяц.номер сборки в месяце (с 25.10.2026): 26.10.1, 26.10.2, … 26.11.1. Правится только имя,
         // код выводится из него: 26.10.1 → 261001 (растёт сам; до 99 сборок в месяц).
-        versionName = "26.10.6"
+        versionName = "26.10.7"
         versionCode = versionName!!.split('.').map { it.toInt() }.let { (y, m, n) -> require(n in 1..99); y * 10000 + m * 100 + n }
         ndk { abiFilters += "arm64-v8a" } // распознавание: только arm64 — S24 и эмулятор на Apple Silicon
     }

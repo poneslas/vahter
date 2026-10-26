@@ -240,7 +240,17 @@ fun CameraPanel(
     val shadow = TextStyle(shadow = Shadow(Color(0xCC000000), blurRadius = 8f))
     val red = Color(0xFFFF3B30)
 
-    Column(modifier.then(if (full) Modifier.background(Color(0xFF0B0D12)) else Modifier)) {
+    // Забытая камера закрывается сама: 2 минуты без касаний, ничего не снято и не слушает — видоискатель держит камеру и батарею.
+    var touched by remember { mutableStateOf(android.os.SystemClock.uptimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(5000)
+            val idle = android.os.SystemClock.uptimeMillis() - touched > 120_000
+            if (idle && frames.isEmpty() && frozen == null && !listening && !asking && !busy) { onClose(); break }
+        }
+    }
+    Column(modifier.then(if (full) Modifier.background(Color(0xFF0B0D12)) else Modifier)
+        .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial); touched = android.os.SystemClock.uptimeMillis() } } }) {
         // ── видоискатель ──
         // в листе — карточка ~37 % экрана: кадр виден, лист не во весь рост (весь экран — по ⤢)
         val vfH = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .37f).dp

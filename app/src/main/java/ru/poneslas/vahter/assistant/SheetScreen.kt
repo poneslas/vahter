@@ -180,7 +180,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             else -> SheetSt.IDLE
         }
         // Часы свечения: читаются в drawBehind — перерисовка каждый кадр без перекомпоновки.
-        val glowT = seconds()
+        // в листе «солнышко» свечение в покое замирает через 6 с (батарея); живёт, пока лист что-то делает
+        val glowClock = ru.poneslas.vahter.ui.livelyClock(active = st != SheetSt.IDLE || !OrbSheet.ON, wake = state.mode)
         // громкость для свечения в записи — та же, что у знака: вверх сразу, вниз плавно
         val glowLv = remember { mutableFloatStateOf(0f) }
         LaunchedEffect(st == SheetSt.REC) {
@@ -245,7 +246,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     .graphicsLayer { alpha = if (shrink && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height + pull.value }
                     .shadow(24.dp, RoundedCornerShape(topStart = corner, topEnd = corner), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = corner, topEnd = corner)).background(Ink.paper)
-                    .then(if (camera && !OrbSheet.ON) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT, glowLv.floatValue) })
+                    .then(if (camera && !OrbSheet.ON) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowClock.value, glowLv.floatValue) })
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                     .padding(bottom = bottomPad),
             ) {

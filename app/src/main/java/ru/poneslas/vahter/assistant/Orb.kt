@@ -579,24 +579,23 @@ private fun Modifier.fieldGestures(canSend: () -> Boolean, onSendText: () -> Uni
 @Composable
 fun Sun(st: SheetSt, size: Dp, icon: Int, pressed: Boolean, label: String, dim: Boolean, modifier: Modifier = Modifier, trail: Float = 0f, active: Boolean = false) {
     val reduce = android.provider.Settings.Global.getFloat(LocalContext.current.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-    // часы кадров и громкость: вверх сразу, вниз плавно (как у знака); волны — моменты всплесков
-    var t by remember { mutableFloatStateOf(0f) }
+    // часы: идут, пока солнышко живёт (запись, ответ, касание, полёт) и ещё 6 с после — в покое кадры не рисуются (батарея)
+    val rec = st == SheetSt.REC
+    val clock = ru.poneslas.vahter.ui.livelyClock(active = st != SheetSt.IDLE || pressed || active || trail > 0f, wake = icon)
+    // громкость (вверх сразу, вниз плавно) и волны на всплесках голоса — только пока слушает
     var lvl by remember { mutableFloatStateOf(0f) }
     val waves = remember { mutableStateListOf<Float>() }
-    val rec = st == SheetSt.REC
-    val recNow by androidx.compose.runtime.rememberUpdatedState(rec)
-    LaunchedEffect(Unit) {
-        val start = withFrameNanos { it }
+    LaunchedEffect(rec) {
+        if (!rec) { lvl = 0f; waves.clear(); return@LaunchedEffect }
         var lastWave = 0f; var avg = 0f
         while (true) {
-            withFrameNanos { now ->
-                val nt = (now - start) / 1e9f
-                val l = if (recNow) App.instance.voice.level else 0f
+            withFrameNanos {
+                val nt = clock.value
+                val l = App.instance.voice.level
                 lvl = if (l > lvl) lvl + (l - lvl) * .55f else lvl * .9f + l * .1f
                 avg = avg * .96f + lvl * .04f
-                if (recNow && !reduce && lvl > .3f && lvl > avg * 1.35f && nt - lastWave > .26f) { waves.add(nt); lastWave = nt }
+                if (!reduce && lvl > .3f && lvl > avg * 1.35f && nt - lastWave > .26f) { waves.add(nt); lastWave = nt }
                 waves.removeAll { nt - it > 1.1f }
-                t = nt
             }
         }
     }
@@ -604,7 +603,7 @@ fun Sun(st: SheetSt, size: Dp, icon: Int, pressed: Boolean, label: String, dim: 
     val press by animateFloatAsState(if (active) 1.06f else if (pressed) .92f else 1f, spring(.5f, 600f), label = "press")
     val sweep by animateFloatAsState(if (st == SheetSt.RECOG || st == SheetSt.THINK || st == SheetSt.UP) 1f else 0f, tween(260), label = "spin")
     Box(modifier.size(size).semantics { contentDescription = label }.graphicsLayer { scaleX = press; scaleY = press }
-        .drawBehind { sun(t, lvl, rec, sweep, waves, dim, trail, reduce) }, contentAlignment = Alignment.Center) {
+        .drawBehind { sun(clock.value, lvl, rec, sweep, waves, dim, trail, reduce) }, contentAlignment = Alignment.Center) {
         AnimatedContent(icon, transitionSpec = { (fadeIn(tween(160)) + scaleIn(tween(220), .6f)) togetherWith (fadeOut(tween(100)) + scaleOut(tween(140), .6f)) }, label = "icon") { ic ->
             Icon(painterResource(ic), null, Modifier.size(size * .26f), tint = Color.White)
         }
@@ -659,3 +658,4 @@ private fun DrawScope.sun(t: Float, lv: Float, rec: Boolean, spin: Float, waves:
         }
     }
 }
+

@@ -425,12 +425,14 @@ fun ModeTabs(state: Conversation.State, onSelect: (String) -> Unit, onAdd: (() -
     }
     // кто сейчас под линзой и какой он ширины — каждый кадр прокрутки
     val density = LocalDensity.current
+    // Числа, а не LazyListItemInfo: у каждой раскладки свой новый объект, derivedStateOf считал его изменением — ряд
+    // перекомпоновывался, перекладывался и снова «менялся», 60 раз в секунду даже в покое (батарея, 26.10).
     val under by remember { derivedStateOf {
         val info = list.layoutInfo; val mid = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-        info.visibleItemsInfo.filter { it.index < tabsNow.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) }
+        info.visibleItemsInfo.filter { it.index < tabsNow.size }.minByOrNull { abs(it.offset + it.size / 2f - mid) }?.let { it.index to it.size }
     } }
-    val lit = under?.index ?: sel
-    val lensW by animateDpAsState(with(density) { (under?.size ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
+    val lit = under?.first ?: sel
+    val lensW by animateDpAsState(with(density) { (under?.second ?: 0).toDp() }.coerceAtLeast(40.dp), label = "lens")
     BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp), contentAlignment = Alignment.Center) {
         Box(Modifier.width(lensW).height(30.dp).clip(RoundedCornerShape(50)).background(Ink.ink))   // линза — на месте
         val side = maxWidth / 2 - 16.dp   // поле по краям: и короткая вкладка (от 32 dp) встаёт точно под линзу
