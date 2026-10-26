@@ -204,6 +204,7 @@ fun CameraPanel(
     val flash = remember { androidx.compose.animation.core.Animatable(0f) }
     val camSink = remember { object : ru.poneslas.vahter.assistant.CaptureSink {
         override val editable = false
+        override val simple = true   // видоискатель: ткнул — без рук, держишь — с руками; отмена — только ✕
         var onText: (String) -> Unit = {}
         var onCancel: () -> Unit = {}
         override fun text(text: String, how: ru.poneslas.vahter.assistant.How) = onText(text)
@@ -428,7 +429,7 @@ fun CameraPanel(
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     // слева «＋ ещё кадр»; в записи — «✕» отмена (кадр снова живой)
                     Box(Modifier.size(56.dp).alpha(if (canAdd || listening) 1f else .4f), contentAlignment = Alignment.Center) {
-                        if (listening) SideBtn(Ic.x, stringResource(R.string.orb_cancel), near = ru.poneslas.vahter.assistant.Capture.state.nearCancel) { ru.poneslas.vahter.assistant.Capture.send(ru.poneslas.vahter.assistant.Ev.TapCancel) }
+                        if (capRec == ru.poneslas.vahter.assistant.Rec.FREE) SideBtn(Ic.x, stringResource(R.string.orb_cancel), near = ru.poneslas.vahter.assistant.Capture.state.nearCancel) { ru.poneslas.vahter.assistant.Capture.send(ru.poneslas.vahter.assistant.Ev.TapCancel) }
                         else SideBtn(Ic.plus, stringResource(R.string.cam_add)) { if (canAdd && commit()) live() }
                     }
                     var pressed by remember { mutableStateOf(false) }

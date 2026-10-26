@@ -33,8 +33,10 @@ import kotlin.math.abs
  *   вложение — нет или ждёт в своём режиме (OrbSheet.staged);
  *   камера   — выключена · живой кадр · снятый кадр (CameraPanel).
  * [Machine] — чистая логика переходов (тесты: SheetMachineTest), [Capture] — исполнитель: микрофон, распознавание, отдача.
- * Жесты на любой кнопке записи одни: держишь — говоришь, влево — отмена, вправо — правка (где есть поле), короткое нажатие — без рук;
- * без рук: нажать — отправить, влево — отмена, вправо или ✎ — правка.
+ * Правило (26.10, Продукт 5.18): скрытые жесты — только ускорители, никогда не единственный путь.
+ *   Голосовые режимы — полный набор: держишь — говоришь, короткое нажатие — без рук; ✕ и ✎ кнопками; вбок — ускорители (влево отмена, вправо правка).
+ *   Фото-режимы и видоискатель — простой микрофон ([RecState.simple]): ткнул — без рук, держишь — с руками, закончил — ушло;
+ *   без рук видна только ✕; ни правки, ни жестов вбок.
  */
 
 enum class Rec { IDLE, HOLD, FREE, RECOG }
@@ -62,6 +64,8 @@ data class RecState(
     val editable: Boolean = true,
     /** Сколько тянуть вправо до правки, dp: у кнопки у края экрана места меньше 70 — порог ближе (микрофон фото-режима). */
     val editAt: Float = Gesture.EDIT_DP,
+    /** Простой микрофон (фото-режимы, видоискатель): без правки и без жестов вбок, отмена — только кнопкой ✕. */
+    val simple: Boolean = false,
     val pressing: Boolean = false,
     val x: Float = 0f,
     val nearCancel: Boolean = false,
@@ -76,10 +80,10 @@ sealed interface Effect {
 
 /** События записи: палец на кнопке, сдвиг, отпустили, кнопки ✕ / ✎ / «слушать без рук», смена режима, готово. */
 sealed interface Ev {
-    data class Down(val editable: Boolean, val editAt: Float = Gesture.EDIT_DP) : Ev
+    data class Down(val editable: Boolean, val editAt: Float = Gesture.EDIT_DP, val simple: Boolean = false) : Ev
     data class Drag(val xDp: Float) : Ev
     data class Up(val heldMs: Long, val moved: Boolean) : Ev
-    data class Free(val editable: Boolean) : Ev
+    data class Free(val editable: Boolean, val simple: Boolean = false) : Ev
     data object TapCancel : Ev
     data object TapEdit : Ev
     data object ModeChanged : Ev
@@ -92,12 +96,12 @@ sealed interface Ev {
 object Machine {
     fun reduce(s: RecState, e: Ev): Pair<RecState, Effect?> = when (e) {
         is Ev.Down -> when (s.rec) {
-            Rec.IDLE -> RecState(Rec.HOLD, editable = e.editable, editAt = e.editAt, pressing = true) to Effect.Start(free = false)
+            Rec.IDLE -> RecState(Rec.HOLD, editable = e.editable && !e.simple, editAt = e.editAt, simple = e.simple, pressing = true) to Effect.Start(free = false)
             Rec.FREE -> s.copy(pressing = true, editAt = e.editAt) to null
             else -> s to null
         }
-        is Ev.Free -> if (s.rec == Rec.IDLE) RecState(Rec.FREE, editable = e.editable) to Effect.Start(free = true) else s to null
-        is Ev.Drag -> if (s.rec != Rec.HOLD && !(s.rec == Rec.FREE && s.pressing)) s to null else {
+        is Ev.Free -> if (s.rec == Rec.IDLE) RecState(Rec.FREE, editable = e.editable && !e.simple, simple = e.simple) to Effect.Start(free = true) else s to null
+        is Ev.Drag -> if (s.simple || s.rec != Rec.HOLD && !(s.rec == Rec.FREE && s.pressing)) s to null else {
             val x = if (s.editable) e.xDp else e.xDp.coerceAtMost(0f)
             when {
                 x < -Gesture.CANCEL_DP -> RecState() to Effect.Stop(How.CANCEL)
@@ -107,8 +111,8 @@ object Machine {
         }
         is Ev.Up -> when {
             s.rec == Rec.HOLD && e.heldMs < Gesture.TAP_MS && !e.moved -> s.copy(rec = Rec.FREE, pressing = false, x = 0f, nearCancel = false, nearEdit = false) to null
-            s.rec == Rec.HOLD -> RecState(Rec.RECOG, editable = s.editable) to Effect.Stop(How.SEND)
-            s.rec == Rec.FREE && s.pressing && !e.moved -> RecState(Rec.RECOG, editable = s.editable) to Effect.Stop(How.SEND)
+            s.rec == Rec.HOLD -> RecState(Rec.RECOG, editable = s.editable, simple = s.simple) to Effect.Stop(How.SEND)
+            s.rec == Rec.FREE && s.pressing && (!e.moved || s.simple) -> RecState(Rec.RECOG, editable = s.editable, simple = s.simple) to Effect.Stop(How.SEND)
             s.rec == Rec.FREE -> s.copy(pressing = false, x = 0f, nearCancel = false, nearEdit = false) to null
             else -> s to null
         }
@@ -123,6 +127,8 @@ object Machine {
 /** Куда уходит распознанное: лист (по умолчанию) или камера, пока она открыта. */
 interface CaptureSink {
     val editable: Boolean
+    /** Простой микрофон: фото-режим или видоискатель. */
+    val simple: Boolean get() = false
     fun text(text: String, how: How)
     fun cancelled() {}
 }
@@ -148,6 +154,7 @@ object Capture {
     private val voice get() = App.instance.voice
     private val sink get() = camera ?: sheet
     val editable get() = sink?.editable ?: true
+    val simple get() = sink?.simple ?: false
     val recording get() = state.rec == Rec.HOLD || state.rec == Rec.FREE
 
     fun send(e: Ev) {
@@ -238,7 +245,7 @@ fun editRoom(rightDp: Float) = (rightDp - 14f).coerceIn(36f, Gesture.EDIT_DP)
 suspend fun androidx.compose.ui.input.pointer.AwaitPointerEventScope.trackCapture(at: Long, before: () -> Unit = {}, startX: Float = 0f, editAt: Float = Gesture.EDIT_DP) {
     if (Capture.state.rec == Rec.RECOG) return
     if (Capture.state.rec == Rec.IDLE) before()
-    Capture.send(Ev.Down(Capture.editable, editAt))
+    Capture.send(Ev.Down(Capture.editable, editAt, Capture.simple))
     if (Capture.state.rec == Rec.IDLE) return   // не стартовал (нет микрофона, голоса)
     val slop = viewConfiguration.touchSlop
     var x = startX; var moved = abs(x) > slop

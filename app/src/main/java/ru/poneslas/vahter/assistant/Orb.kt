@@ -166,6 +166,8 @@ object OrbSheet {
     /** Распознанное в листе: «отправить» — с тем, что уже в поле; «править» — в поле, поле открыто. */
     val sink = object : CaptureSink {
         override val editable = true
+        // фото-режим (камера в центре): микрофон простой — без правки и жестов вбок
+        override val simple: Boolean get() = App.instance.conversation.state.value.current.let { it.primary == Primary.PHOTO && it.accepts.photo }
         override fun text(text: String, how: How) {
             val conv = App.instance.conversation
             val st = conv.state.value
@@ -210,7 +212,7 @@ fun OrbBar(
 
     // Вызов боковой кнопкой: сразу слушает без рук (в голосовом режиме).
     val auto by autoListen.collectAsState()
-    LaunchedEffect(auto) { if (auto > orbAutoSeen) { orbAutoSeen = auto; if (!photoMain) Capture.send(Ev.Free(Capture.editable)) } }
+    LaunchedEffect(auto) { if (auto > orbAutoSeen) { orbAutoSeen = auto; if (!photoMain) Capture.send(Ev.Free(Capture.editable, Capture.simple)) } }
 
     // Солнышко за пальцем: пока держат — сразу, отпустили — пружинкой на место.
     val dx by animateFloatAsState(cap.x, if (cap.pressing) snap() else spring(.6f, Spring.StiffnessMediumLow), label = "dx")
@@ -257,7 +259,9 @@ fun OrbBar(
         Box(Modifier.fillMaxWidth().height(124.dp), contentAlignment = Alignment.Center) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 36.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 // слева: скрепка → в записи «✕» (держат — цель, без рук — кнопка)
+                val simple = cap.simple
                 val left = when {
+                    rec == Rec.HOLD && simple -> ""
                     rec == Rec.HOLD -> "xcue"; rec == Rec.FREE -> "x"
                     mode.accepts.photo && onGallery != null || onFile != null -> "clip"; else -> ""
                 }
@@ -295,6 +299,7 @@ fun OrbBar(
                 }
                 // справа: камера (или микрофон фото-режима — та же кнопка записи), с вложением — ✎; в записи — «✎»
                 val right = when {
+                    recording && simple -> "mic"   // простой микрофон: остаётся микрофоном, подсвечен
                     rec == Rec.HOLD -> "ecue"; rec == Rec.FREE -> "e"
                     staged != null -> "write"
                     photoMain && mode.accepts.voice -> "mic"
@@ -304,7 +309,7 @@ fun OrbBar(
                     when (k) {
                         "ecue", "e" -> SideBtn(Ic.edit, tr(R.string.orb_edit), cue = k == "ecue", near = cap.nearEdit) { Capture.send(Ev.TapEdit) }
                         "write" -> SideBtn(Ic.edit, tr(R.string.orb_write), onClick = onWrite)
-                        "mic" -> SideBtn(Ic.mic, tr(R.string.orb_talk), tap = false, modifier = Modifier.captureButton())
+                        "mic" -> SideBtn(Ic.mic, tr(R.string.orb_talk), near = recording, tap = false, modifier = Modifier.captureButton())
                         "cam" -> SideBtn(Ic.cam, tr(R.string.cmp_camera)) { onCamera?.invoke() }
                     }
                 }
@@ -360,7 +365,7 @@ private fun Modifier.orbGestures(
             }
             // отпустили, жест не начался: лёгкое нажатие — слушаю без рук; недотянули вверх — солнышко назад
             if (axis == 2) cs.launch { lift.animateTo(0f, spring(.5f, 500f)) }
-            else Capture.send(Ev.Free(Capture.editable))
+            else Capture.send(Ev.Free(Capture.editable, Capture.simple))
         } finally { onPre(false) }
     }
 }

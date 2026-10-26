@@ -106,6 +106,24 @@ class SheetMachineTest {
         assertTrue(e.size == 1)
     }
 
+    // Простой микрофон (фото-режимы, видоискатель): без жестов вбок и правки; отпустил или ткнул ещё раз — ушло; отмена — кнопкой.
+    @Test fun `простой микрофон — держишь и отпустил, ушло, вбок ничего`() {
+        val (s, e) = run(Ev.Down(true, simple = true), Ev.Drag(-120f), Ev.Drag(120f))
+        assertEquals(Rec.HOLD, s.rec); assertFalse(s.editable); assertFalse(s.nearCancel); assertFalse(s.nearEdit)
+        assertEquals(listOf<Effect>(Effect.Start(false)), e)
+        assertEquals(Effect.Stop(How.SEND), run(Ev.Up(900, moved = true), from = s).second.single())
+    }
+
+    @Test fun `простой микрофон — ткнул, без рук, ткнул солнышко — ушло, ✕ — отмена, ✎ нет`() {
+        val (free, _) = run(Ev.Down(true, simple = true), Ev.Up(100, false))
+        assertEquals(Rec.FREE, free.rec)
+        assertEquals(Effect.Stop(How.SEND), run(Ev.Down(true, simple = true), Ev.Drag(60f), Ev.Up(300, moved = true), from = free).second.last())
+        assertEquals(Effect.Stop(How.CANCEL), run(Ev.TapCancel, from = free).second.single())
+        assertTrue(run(Ev.TapEdit, from = free).second.isEmpty())
+        val (f2, _) = run(Ev.Free(true, simple = true))
+        assertTrue(f2.simple); assertFalse(f2.editable)
+    }
+
     // Баг 26.10: «Что это?» → свайп → Ассистент: мелькало поле. Правило одно и не зависит от пути.
     @Test fun `солнышко или поле`() {
         assertFalse(SurfaceRules.field("", opened = false, voiceReady = true, acceptsVoice = true, photoMain = false))   // Ассистент — солнышко
