@@ -176,14 +176,16 @@ fun ZoomBar(z: ZoomCtl, modifier: Modifier = Modifier) {
 private fun Lenses(z: ZoomCtl) {
     // активный объектив — последний, до которого дошёл зум; на нём — текущее увеличение
     val active = z.marks.indexOfLast { z.ratio >= it * .97f }.coerceAtLeast(0)
-    Row(Modifier.clip(RoundedCornerShape(50)).background(Color(0x59000000)).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+    // как в камере iPhone (26.10): подложки нет; цифры белые с лёгкой тенью — читаются и на белом; активный — небольшой
+    // полупрозрачный тёмный кружок и жёлтое (светлый янтарь солнышка) текущее увеличение
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
         z.marks.forEachIndexed { i, m ->
             val on = i == active
-            Box(Modifier.size(if (on) 40.dp else 34.dp).clip(CircleShape).background(if (on) Color(0xE6FFFFFF) else Color.Transparent)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = zoomLabel(m)) { z.glideTo(m) },
+            Box(Modifier.size(38.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = zoomLabel(m)) { z.glideTo(m) },
                 contentAlignment = Alignment.Center) {
-                Text(if (on) zoomLabel(z.ratio) else zoomLabel(m, x = false), fontSize = if (on) 13.sp else 12.sp,
-                    fontWeight = FontWeight.SemiBold, color = if (on) Ink.localD else Color.White)
+                if (on) Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0x66000000)))
+                Text(if (on) zoomLabel(z.ratio) else zoomLabel(m, x = false), fontSize = 12.5.sp,
+                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium, color = if (on) Yellow else Color.White, style = Soft)
             }
         }
     }
@@ -194,7 +196,7 @@ private fun Lenses(z: ZoomCtl) {
 @Composable
 private fun Ruler(z: ZoomCtl) {
     val tm = rememberTextMeasurer()
-    Box(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 12.dp).clip(RoundedCornerShape(18.dp)).background(Color(0x66000000))) {
+    Box(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 12.dp)) {
         Canvas(Modifier.fillMaxWidth().height(64.dp)) { ruler(z, tm) }
     }
 }
@@ -211,21 +213,31 @@ private fun DrawScope.ruler(z: ZoomCtl, tm: TextMeasurer) {
         val px = cx + (t - ln(z.ratio)) * per
         if (px in 0f..size.width) {
             val edge = 1f - (abs(px - cx) / cx).coerceIn(0f, 1f)
-            drawLine(Color.White.copy(alpha = .25f + .45f * edge), Offset(px, base - 6.dp.toPx()), Offset(px, base), 1.dp.toPx())
+            shadowLine(Color.White.copy(alpha = .3f + .5f * edge), Offset(px, base - 6.dp.toPx()), Offset(px, base), 1.dp.toPx())
         }
         t += .1f
     }
     // объективы: длинная риска и подпись
     z.marks.forEach { m ->
         val px = x(m); if (px < -40f || px > size.width + 40f) return@forEach
-        drawLine(Color.White, Offset(px, base - 12.dp.toPx()), Offset(px, base), 1.5.dp.toPx())
-        val l = tm.measure(zoomLabel(m), TextStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium))
+        shadowLine(Color.White, Offset(px, base - 12.dp.toPx()), Offset(px, base), 1.5.dp.toPx())
+        val l = tm.measure(zoomLabel(m), Soft.copy(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium))
         drawText(l, topLeft = Offset(px - l.size.width / 2, base - 14.dp.toPx() - l.size.height))
     }
     // риска по центру и текущее увеличение — янтарём
-    drawLine(Ink.local, Offset(cx, base - 18.dp.toPx()), Offset(cx, base + 4.dp.toPx()), 2.5.dp.toPx())
-    val cur = tm.measure(zoomLabel(z.ratio), TextStyle(color = Ink.local, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
+    shadowLine(Yellow, Offset(cx, base - 18.dp.toPx()), Offset(cx, base + 4.dp.toPx()), 2.dp.toPx())
+    val cur = tm.measure(zoomLabel(z.ratio), Soft.copy(color = Yellow, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
     drawText(cur, topLeft = Offset(cx - cur.size.width / 2, 4.dp.toPx()))
+}
+
+/** Жёлтый активного зума — светлый янтарь солнышка (близко к жёлтому камеры iPhone). Тень — чтобы читалось на светлом. */
+private val Yellow = Color(0xFFFFC94A)
+private val Soft = TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0x80000000), Offset(0f, 1f), 4f))
+
+/** Риска с тенью: тёмная подложка на пиксель ниже — видно и на белом. */
+private fun DrawScope.shadowLine(c: Color, a: Offset, b: Offset, w: Float) {
+    drawLine(Color.Black.copy(alpha = .28f * c.alpha), a + Offset(0f, 1f), b + Offset(0f, 1f), w + 1f)
+    drawLine(c, a, b, w)
 }
 
 /** Фокус по касанию: камера наводится и меряет свет в точке, колечко сжимается к ней и гаснет. */
