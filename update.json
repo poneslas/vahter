@@ -1,12 +1,12 @@
 {
-  "version": "1.0.5",
-  "versionCode": 46,
+  "version": "26.10.7",
+  "versionCode": 261007,
   "apk": {
-    "url": "https://github.com/poneslas/vahter/releases/download/v1.0.5/vahter-1.0.5.apk",
-    "sha256": "9fdbfd34ebc3b8fd5dc9caed1960e97db6418af88dd77eefaa7408427c53bdb3",
-    "size": 44354691
+    "url": "https://github.com/poneslas/vahter/releases/download/v26.10.7/vahter-26.10.7.apk",
+    "sha256": "8ad13428b08734212fdfcbfcc301d3bb11099faeaedf8b40abc0d5210315a402",
+    "size": 44555423
   },
   "notes": {
-    "ru": "Подсказки под «Вам чего?» — всегда на пустом листе Ассистента"
+    "ru": "Лист «солнышко»: одна главная кнопка, зум в камере, экономия батареи"
   }
 }
