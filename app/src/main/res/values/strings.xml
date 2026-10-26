@@ -762,5 +762,6 @@
     <string name="orb_remove">Убрать вложение</string>
     <string name="orb_talk">Говорить</string>
     <string name="orb_talk_staged">Сказать к вложению</string>
+    <string name="cam_listen_frame">Слушаю — про этот кадр</string>
     <string name="orb_slide_cancel">‹ ‹  Отмена</string>
 </resources>

@@ -75,6 +75,7 @@ import ru.poneslas.vahter.core.Conversation
 import ru.poneslas.vahter.pisar.model.ModelDownload
 import ru.poneslas.vahter.app.SideKey
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.animation.core.tween
@@ -546,39 +547,49 @@ private fun SideCue(modifier: Modifier) {
 @Composable private fun navBottom(d: Density) = WindowInsets.navigationBars.getBottom(d)
 
 /**
- * Низ листа «солнышко»: солнышко с рядом ([OrbBar]) или поле с маленьким солнышком ([OrbField]) — поле только когда нужно:
- * правка надиктованного, текст к вложению, в поле уже есть текст, голоса нет. Смена — солнышко «втягивается» в кнопку поля и обратно.
+ * Низ листа «солнышко»: солнышко с рядом ([OrbBar]) или поле с маленьким солнышком ([OrbField]) — по одному правилу ([SurfaceRules]):
+ * поле — если в нём текст, его открыли в этом режиме (✎, «написать», правка надиктованного) или голоса нет. Запись — одна на всех ([Capture]).
+ * Смена «солнышко ↔ поле» — солнышко «втягивается» в кнопку поля и обратно.
  */
 @Composable
 private fun OrbBottom(state: Conversation.State, st: SheetSt, connected: Boolean, host: SheetActivity, onAddMode: () -> Unit,
                       onNeedPerm: (String) -> Unit, openCamera: () -> Unit, onLive: (String?) -> Unit) {
     val app = App.instance
-    val textFlag by OrbSheet.text.collectAsState()
+    val opened by OrbSheet.field.collectAsState()
     val installed by app.voice.installed.collectAsState()
     val m = state.current
     val photoMain = m.primary == Primary.PHOTO && m.accepts.photo
-    val textMode = state.draft.isNotEmpty() || textFlag || (!photoMain && !(m.accepts.voice && installed))
+    val textMode = SurfaceRules.field(state.draft, state.mode in opened, installed, m.accepts.voice, photoMain)
     val onGallery = if (m.accepts.photo) ({ PickerActivity.launch(host, stage = true) }) else null
     val onFile = if (state.current.brain == Brains.hermes.id && app.hermesLink() != null) ({ PickerActivity.launchFile(host, stage = true) }) else null
-    fun send(text: String, via: String) {
-        if (OrbSheet.stagedFor(state.mode) != null) OrbSheet.sendStaged(text, via) else app.conversation.send(text, via)
-        OrbSheet.text.value = false
+
+    // Запись — одна на лист: куда отдавать, кого спросить про микрофон, где вибрировать; ошибки — короткой строкой.
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        Capture.sheet = OrbSheet.sink; Capture.view = view
+        Capture.onNeedMic = { onNeedPerm(Manifest.permission.RECORD_AUDIO) }
+        onDispose { Capture.reset(); OrbSheet.field.value = emptySet(); if (Capture.sheet === OrbSheet.sink) Capture.sheet = null }
     }
+    val msg by Capture.message.collectAsState()
+    LaunchedEffect(msg) { msg?.let { onLive(it); delay(2800); onLive(null); Capture.message.value = null } }
+    // Смена режима выбрасывает запись — ничего не уходит. Микрофон остановили снаружи — солнышко на место.
+    var lastMode by remember { mutableStateOf(state.mode) }
+    LaunchedEffect(state.mode) { if (state.mode != lastMode) { lastMode = state.mode; Capture.send(Ev.ModeChanged) } }
+    val micOn by app.voice.recording.collectAsState()
+    LaunchedEffect(micOn) { if (!micOn) Capture.lost() }
+
     androidx.compose.animation.AnimatedContent(textMode, transitionSpec = {
         if (targetState) (androidx.compose.animation.fadeIn(tween(200, 60)) + androidx.compose.animation.slideInVertically(tween(260, easing = CubicBezierEasing(.3f, .8f, .3f, 1f))) { it / 3 }) togetherWith
             (androidx.compose.animation.fadeOut(tween(140)) + androidx.compose.animation.scaleOut(tween(200), .55f))
         else (androidx.compose.animation.fadeIn(tween(160, 80)) + androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(.55f, 420f), .55f)) togetherWith
             (androidx.compose.animation.fadeOut(tween(140)) + androidx.compose.animation.slideOutVertically(tween(200)) { it / 3 })
     }, label = "orb") { field ->
-        if (field) OrbField(state, app.voice, st, onDraft = app.conversation::setDraft, onSend = ::send,
-            onSelectMode = app.conversation::selectMode, onAddMode = onAddMode, onLive = onLive,
-            onNeedMic = { onNeedPerm(Manifest.permission.RECORD_AUDIO) }, onGallery = onGallery, onFile = onFile, focus = textFlag,
+        if (field) OrbField(state, st, onDraft = app.conversation::setDraft,
+            onSelectMode = app.conversation::selectMode, onAddMode = onAddMode,
+            onGallery = onGallery, onFile = onFile, focus = state.mode in opened,
             placeholder = if (!connected) tr(R.string.cmp_hint_no_brain) else null)
-        else OrbBar(state, app.voice, st, onSend = ::send,
-            onEdit = { t -> app.conversation.setDraft((state.draft + " " + t).trim()); OrbSheet.text.value = true },
-            onWrite = { OrbSheet.text.value = true },
-            onSelectMode = app.conversation::selectMode, onAddMode = onAddMode, onLive = onLive,
-            onNeedMic = { onNeedPerm(Manifest.permission.RECORD_AUDIO) },
+        else OrbBar(state, app.voice, st, onWrite = { OrbSheet.openField(state.mode) },
+            onSelectMode = app.conversation::selectMode, onAddMode = onAddMode,
             onCamera = if (m.accepts.photo) openCamera else null, onGallery = onGallery, onFile = onFile, autoListen = Sheet.autoListen)
     }
 }

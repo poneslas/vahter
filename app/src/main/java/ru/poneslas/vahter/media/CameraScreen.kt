@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -94,6 +95,8 @@ import ru.poneslas.vahter.assistant.Sheet
 import ru.poneslas.vahter.assistant.SheetSt
 import ru.poneslas.vahter.assistant.Sun
 import ru.poneslas.vahter.assistant.SideBtn
+import ru.poneslas.vahter.assistant.captureButton
+import ru.poneslas.vahter.assistant.trackCapture
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.gestures.calculateZoom
 import ru.poneslas.vahter.voice.Voice
@@ -195,8 +198,20 @@ fun CameraPanel(
     // Вопрос голосом к снимку: зажал — пишет, отпустил — текст уходит вместе с кадрами.
     val voice = App.instance.voice
     var question by remember { mutableStateOf("") }
-    var listening by remember { mutableStateOf(false) }
-    var asking by remember { mutableStateOf(false) }
+    // Голос в видоискателе — та же запись, что в листе ([Capture]), но про кадр: нажал микрофон — кадр замер (вспышка),
+    // говоришь про него, отпустил — уходят кадр и вопрос одним сообщением. Отменил — кадр снова живой.
+    var frozeByVoice by remember { mutableStateOf(false) }
+    val flash = remember { androidx.compose.animation.core.Animatable(0f) }
+    val camSink = remember { object : ru.poneslas.vahter.assistant.CaptureSink {
+        override val editable = false
+        var onText: (String) -> Unit = {}
+        var onCancel: () -> Unit = {}
+        override fun text(text: String, how: ru.poneslas.vahter.assistant.How) = onText(text)
+        override fun cancelled() = onCancel()
+    } }
+    val capRec = ru.poneslas.vahter.assistant.Capture.state.rec
+    val listening = capRec == ru.poneslas.vahter.assistant.Rec.HOLD || capRec == ru.poneslas.vahter.assistant.Rec.FREE
+    val asking = capRec == ru.poneslas.vahter.assistant.Rec.RECOG
 
     fun send(q: String) {
         if (busy) return
@@ -212,7 +227,13 @@ fun CameraPanel(
         Sheet.cameraBack = { if (tool == "crop") tool = null else if (frozen != null) live() else if (full) onCollapse() else onClose() }
         onDispose { Sheet.cameraBack = null }
     }
-    DisposableEffect(Unit) { onDispose { if (voice.recording.value) voice.cancel() } }
+    // сообщения записи («Ничего не расслышал…», нет голоса) — строкой на кадре, как прочие ошибки камеры
+    val capMsg by ru.poneslas.vahter.assistant.Capture.message.collectAsState()
+    LaunchedEffect(capMsg) { capMsg?.let { error = it; ru.poneslas.vahter.assistant.Capture.message.value = null } }
+    DisposableEffect(Unit) {
+        ru.poneslas.vahter.assistant.Capture.camera = camSink
+        onDispose { if (ru.poneslas.vahter.assistant.Capture.camera === camSink) { ru.poneslas.vahter.assistant.Capture.reset(); ru.poneslas.vahter.assistant.Capture.camera = null } }
+    }
 
     val white = Color.White
     val shadow = TextStyle(shadow = Shadow(Color(0xCC000000), blurRadius = 8f))
@@ -331,6 +352,8 @@ fun CameraPanel(
                 crop?.let { c -> drawCrop(toScr(c.x, c.y), toScr(c.x + c.w, c.y + c.h), editing = tool == "crop", grid = cropDragging) }
                 if (bmp == null) focusRing(ring)
             }
+            // вспышка: кадр замер для вопроса
+            if (flash.value > 0f) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = flash.value)))
             // зум: кнопки объективов, при щипке — шкала (одно и то же: отметки шкалы — объективы)
             if (bmp == null && tool == null && error == null && !listening && !asking && question.isEmpty())
                 ZoomBar(zoom, Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp))
@@ -351,7 +374,7 @@ fun CameraPanel(
             }
             if (frozen == null) error?.let { Text(it, color = white, fontSize = 15.sp, style = shadow, modifier = Modifier.align(Alignment.Center).padding(24.dp)) }
             if (listening || asking || question.isNotEmpty())
-                Text(if (listening) stringResource(R.string.ui_listening) else if (asking) stringResource(R.string.cam_recognizing) else question,
+                Text(if (listening) stringResource(R.string.cam_listen_frame) else if (asking) stringResource(R.string.cam_recognizing) else question,
                     color = white, fontSize = 19.sp, fontWeight = FontWeight.Medium, style = shadow,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(start = 20.dp, end = 20.dp, bottom = 18.dp))
         }
@@ -391,36 +414,41 @@ fun CameraPanel(
             // Солнышко: нажать — снять и отправить (с кадрами из ленты); держать — спросить голосом, отпустил — ушло вместе.
             val canAdd = editIdx != null || frames.size < maxImages - 1
             val count = frames.size + if (editIdx == null) 1 else 0
-            fun listen(): Boolean {
-                if (!voice.hasMic() || !voice.installed.value) { error = if (!voice.hasMic()) errNeedMic else errNeedVoice; return false }
-                listening = voice.start(); return listening
+            // до записи: кадр замирает (если ещё живой) — вопрос про то, что видно сейчас
+            fun freeze() {
+                if (frozen != null || tool != null) return
+                frozen = grab() ?: return
+                frozeByVoice = true
+                scope.launch { flash.snapTo(.85f); flash.animateTo(0f, androidx.compose.animation.core.tween(260)) }
             }
-            fun ask() {
-                if (!listening) return
-                listening = false; asking = true
-                scope.launch { val r = voice.stop(); asking = false; if (r is Voice.Result.Text) { question = r.text; send(r.text) } }
-            }
+            camSink.onText = { q -> frozeByVoice = false; question = q; send(q) }
+            camSink.onCancel = { if (frozeByVoice) { frozeByVoice = false; live() } }
             val st = when { listening -> SheetSt.REC; asking -> SheetSt.RECOG; busy -> SheetSt.THINK; else -> SheetSt.IDLE }
             Box(Modifier.fillMaxWidth().height(if (full) 124.dp else 116.dp), contentAlignment = Alignment.Center) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Box(Modifier.size(56.dp).alpha(if (canAdd) 1f else .4f), contentAlignment = Alignment.Center) {
-                        SideBtn(Ic.plus, stringResource(R.string.cam_add)) { if (canAdd && commit()) live() }
+                    // слева «＋ ещё кадр»; в записи — «✕» отмена (кадр снова живой)
+                    Box(Modifier.size(56.dp).alpha(if (canAdd || listening) 1f else .4f), contentAlignment = Alignment.Center) {
+                        if (listening) SideBtn(Ic.x, stringResource(R.string.orb_cancel), near = ru.poneslas.vahter.assistant.Capture.state.nearCancel) { ru.poneslas.vahter.assistant.Capture.send(ru.poneslas.vahter.assistant.Ev.TapCancel) }
+                        else SideBtn(Ic.plus, stringResource(R.string.cam_add)) { if (canAdd && commit()) live() }
                     }
                     var pressed by remember { mutableStateOf(false) }
                     Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
-                        Sun(st, 92.dp, if (frozen != null || frames.isNotEmpty()) Ic.send else Ic.cam, pressed = pressed, active = listening,
+                        val icon = when { capRec == ru.poneslas.vahter.assistant.Rec.FREE -> Ic.send; listening -> Ic.mic; frozen != null || frames.isNotEmpty() -> Ic.send; else -> Ic.cam }
+                        Sun(st, 92.dp, icon, pressed = pressed || ru.poneslas.vahter.assistant.Capture.state.pressing, active = listening,
                             label = stringResource(if (frames.isEmpty()) R.string.ui_send else R.string.cam_send_all), dim = false,
                             modifier = Modifier.pointerInput(Unit) {
                                 awaitEachGesture {
                                     awaitFirstDown()
+                                    val at = android.os.SystemClock.uptimeMillis()
+                                    // без рук: нажатие — отправить (общая запись); распознаёт — ждать
+                                    if (ru.poneslas.vahter.assistant.Capture.state.rec != ru.poneslas.vahter.assistant.Rec.IDLE) { trackCapture(at); return@awaitEachGesture }
                                     pressed = true
                                     try {
-                                        if (listening) { waitForUpOrCancellation(); ask(); return@awaitEachGesture }   // без рук: нажатие — отправить
                                         var timedOut = false
-                                        val up = withTimeoutOrNull(260) { waitForUpOrCancellation() }.also { if (it == null) timedOut = true }
+                                        val up = withTimeoutOrNull(ru.poneslas.vahter.assistant.Gesture.TAP_MS) { waitForUpOrCancellation() }.also { if (it == null) timedOut = true }
                                         if (!timedOut) { if (up != null && !busy) send(question); return@awaitEachGesture }
-                                        if (!listen()) { waitForUpOrCancellation(); return@awaitEachGesture }
-                                        waitForUpOrCancellation(); ask()
+                                        pressed = false
+                                        trackCapture(at, before = ::freeze)   // держат — вопрос про этот кадр
                                     } finally { pressed = false }
                                 }
                             })
@@ -428,7 +456,7 @@ fun CameraPanel(
                             .background(Ink.ink).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) { Text("$count", fontSize = 13.sp, color = white, fontWeight = FontWeight.SemiBold) }
                     }
                     Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
-                        SideBtn(Ic.mic, stringResource(R.string.cam_ask_voice), near = listening) { if (listening) ask() else listen() }
+                        SideBtn(Ic.mic, stringResource(R.string.cam_ask_voice), near = listening, tap = false, modifier = Modifier.captureButton(before = ::freeze))
                     }
                 }
             }

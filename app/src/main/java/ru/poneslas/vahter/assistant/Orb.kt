@@ -27,6 +27,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,12 +136,14 @@ object OrbSheet {
     /** Лист «солнышко» включён (прототипная ветка). */
     const val ON = true
     val staged = MutableStateFlow<Staged?>(null)
-    /** Поле ввода в листе открыто (правка надиктованного, текст к вложению). Сбрасывается после отправки. */
-    val text = MutableStateFlow(false)
+    /** Режимы, где поле ввода открыто вручную (✎, «написать», правка надиктованного). У каждого режима своё; после отправки — закрыто. */
+    val field = MutableStateFlow<Set<String>>(emptySet())
     /** Солнышко только что улетело — следующее появление с «возвратом». */
     @Volatile var back = false
 
     fun stagedFor(mode: String) = staged.value?.takeIf { it.modeId == mode }
+    fun openField(mode: String) { field.value = field.value + mode }
+    fun closeField(mode: String) { field.value = field.value - mode }
 
     /** Вложение уходит: фото — пузырём с вопросом одной репликой (Conversation.attach + send), файл — Hermes (sendFile). */
     fun sendStaged(text: String, via: String) {
@@ -148,106 +152,32 @@ object OrbSheet {
         val conv = App.instance.conversation
         if (s.file != null) { conv.setDraft(text); conv.sendFile(s.file, s.name ?: "file") }
         else { conv.attach(s.paths, if (text.isBlank()) s.via else "$via · ${s.via}"); conv.send(text, via) }
-        this.text.value = false
+        closeField(s.modeId)
+    }
+
+    /** Отправить из листа: с ждущим вложением — вместе с ним; после отправки поле режима закрывается — снова солнышко. */
+    fun send(text: String, via: String) {
+        val conv = App.instance.conversation
+        val mode = conv.state.value.mode
+        if (stagedFor(mode) != null) sendStaged(text, via) else conv.send(text, via)
+        closeField(mode)
+    }
+
+    /** Распознанное в листе: «отправить» — с тем, что уже в поле; «править» — в поле, поле открыто. */
+    val sink = object : CaptureSink {
+        override val editable = true
+        override fun text(text: String, how: How) {
+            val conv = App.instance.conversation
+            val st = conv.state.value
+            val full = (st.draft + " " + text).trim()
+            if (how == How.EDIT) { conv.setDraft(full); openField(st.mode) }
+            else send(full, tr(R.string.sheet_via_voice))
+        }
     }
 }
-
-private enum class Rec { IDLE, HOLD, FREE, RECOG }
 
 /** Последний вызов кнопкой, отработанный солнышком (как autoSeen у строки ввода). */
 private var orbAutoSeen = 0
-
-/**
- * Запись голоса солнышком: тот же Voice (Писарь), что у кнопки строки ввода, — свой набор жестов. Состояние в Compose,
- * жесты читают его через этот объект (pointerInput живёт дольше одной перекомпоновки).
- */
-@Stable
-private class OrbEngine(val voice: Voice, val scope: CoroutineScope, val view: View) {
-    var rec by mutableStateOf(Rec.IDLE)
-    var t0 by mutableLongStateOf(0L)
-    /** Сдвиг солнышка пальцем (px): x — влево отмена / вправо правка, lift — вверх (только с вложением). */
-    val dx = Animatable(0f)
-    val lift = Animatable(0f)
-    var nearCancel by mutableStateOf(false)
-    var nearEdit by mutableStateOf(false)
-    var pressed by mutableStateOf(false)
-
-    var onText: (String) -> Unit = {}
-    var onEdit: (String) -> Unit = {}
-    var onMessage: (String) -> Unit = {}
-    var onNeedMic: () -> Unit = {}
-
-    fun buzz(c: Int) { view.performHapticFeedback(c) }
-    private val tick = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.GESTURE_THRESHOLD_ACTIVATE else HapticFeedbackConstants.CLOCK_TICK
-
-    fun ready(): Boolean {
-        if (!voice.hasMic()) { onNeedMic(); return false }
-        if (!voice.installed.value) { onMessage(tr(R.string.cmp_no_voice)); return false }
-        return true
-    }
-
-    fun start(free: Boolean): Boolean {
-        if (voice.recording.value) return true
-        if (!ready()) return false
-        if (!voice.start()) { onMessage(tr(R.string.cmp_mic_failed)); return false }
-        rec = if (free) Rec.FREE else Rec.HOLD
-        t0 = SystemClock.uptimeMillis()
-        RecUi.phase.value = RecUi.Phase.LISTENING
-        buzz(HapticFeedbackConstants.VIRTUAL_KEY)
-        return true
-    }
-
-    enum class How { SEND, EDIT, CANCEL }
-
-    fun finish(how: How) {
-        nearCancel = false; nearEdit = false
-        scope.launch { dx.animateTo(0f, spring(.6f, Spring.StiffnessMediumLow)) }
-        if (!voice.recording.value) { rec = Rec.IDLE; RecUi.phase.value = RecUi.Phase.IDLE; return }
-        if (how == How.CANCEL) {
-            voice.cancel(); rec = Rec.IDLE; RecUi.phase.value = RecUi.Phase.IDLE
-            buzz(if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS); return
-        }
-        rec = Rec.RECOG; RecUi.phase.value = RecUi.Phase.PROCESSING
-        buzz(if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
-        scope.launch {
-            val r = voice.stop()
-            rec = Rec.IDLE; RecUi.phase.value = RecUi.Phase.IDLE
-            when (r) {
-                is Voice.Result.Text -> if (how == How.EDIT) onEdit(r.text) else onText(r.text)
-                Voice.Result.TooShort -> Unit
-                Voice.Result.Empty -> onMessage(tr(R.string.cmp_empty_record))
-                is Voice.Result.Failed -> onMessage(tr(R.string.cmp_not_recognized, r.message))
-            }
-        }
-    }
-
-    /** Палец тянет солнышко вбок во время записи: цели «отмена» и «правка» откликаются щелчком на пороге. */
-    suspend fun drag(x: Float, near: Float, edit: Boolean) {
-        if (rec != Rec.HOLD && rec != Rec.FREE) return   // палец уже отпустили — запоздавший сдвиг не подсвечивает цели
-        dx.snapTo((if (edit) x else x.coerceAtMost(0f)) * .9f)
-        val c = x < -near; val e = edit && x > near
-        if (c != nearCancel) { nearCancel = c; if (c) buzz(tick) }
-        if (e != nearEdit) { nearEdit = e; if (e) buzz(tick) }
-    }
-}
-
-@Composable
-private fun rememberEngine(voice: Voice, onText: (String) -> Unit, onEdit: (String) -> Unit, onMessage: (String) -> Unit, onNeedMic: () -> Unit): OrbEngine {
-    val scope = rememberCoroutineScope()
-    val view = LocalView.current
-    val e = remember { OrbEngine(voice, scope, view) }
-    e.onText = onText; e.onEdit = onEdit; e.onMessage = onMessage; e.onNeedMic = onNeedMic
-    DisposableEffect(e) {
-        val mine: () -> Unit = { e.finish(OrbEngine.How.SEND) }
-        voice.onTimeout = mine
-        // смена «солнышко ↔ поле»: обе части живут вместе миг — чужой обработчик не трогать
-        onDispose { if (e.rec == Rec.HOLD || e.rec == Rec.FREE) { voice.cancel(); RecUi.phase.value = RecUi.Phase.IDLE }; if (voice.onTimeout === mine) voice.onTimeout = null }
-    }
-    // Микрофон остановили снаружи (лист спрятан, экран погас) — солнышко на место.
-    val micOn by voice.recording.collectAsState()
-    LaunchedEffect(micOn) { if (!micOn && (e.rec == Rec.HOLD || e.rec == Rec.FREE)) { e.rec = Rec.IDLE; RecUi.phase.value = RecUi.Phase.IDLE } }
-    return e
-}
 
 /** Мягкая «ведущая» кривая: разгон к улёту, как у отправки в мессенджерах. */
 private val FlyEase = CubicBezierEasing(.55f, 0f, .75f, .2f)
@@ -255,20 +185,16 @@ private val SoftEase = CubicBezierEasing(.3f, .8f, .3f, 1f)
 
 /**
  * Нижняя часть листа «солнышко»: ждущее вложение, ряд [скрепка · солнышко · второе], под ним вкладки режимов (в записи — время).
- * [st] — что делает лист (солнышко показывает его само: слушает, распознаёт, звонит наверх, думает).
+ * [st] — что делает лист (солнышко показывает его само: слушает, распознаёт, звонит наверх, думает). Запись — [Capture].
  */
 @Composable
 fun OrbBar(
     state: Conversation.State,
     voice: Voice,
     st: SheetSt,
-    onSend: (String, String) -> Unit,
-    onEdit: (String) -> Unit,
     onWrite: () -> Unit,
     onSelectMode: (String) -> Unit,
     onAddMode: () -> Unit,
-    onLive: (String?) -> Unit,
-    onNeedMic: () -> Unit,
     onCamera: (() -> Unit)?,
     onGallery: (() -> Unit)?,
     onFile: (() -> Unit)?,
@@ -276,29 +202,32 @@ fun OrbBar(
 ) {
     val scope = rememberCoroutineScope()
     val d = LocalDensity.current
-    fun flash(t: String) { scope.launch { onLive(t); delay(2800); onLive(null) } }
-    val e = rememberEngine(voice, onText = { onSend(it, tr(R.string.sheet_via_voice)) }, onEdit = onEdit, onMessage = ::flash, onNeedMic = onNeedMic)
     val mode = state.current
     val photoMain = mode.primary == Primary.PHOTO && mode.accepts.photo && onCamera != null
     val stagedAll by OrbSheet.staged.collectAsState()
     val staged = stagedAll?.takeIf { it.modeId == state.mode }
+    val cap = Capture.state
 
-    // Вызов боковой кнопкой: сразу слушает без рук. Смена режима выбрасывает запись — ничего не уходит.
+    // Вызов боковой кнопкой: сразу слушает без рук (в голосовом режиме).
     val auto by autoListen.collectAsState()
-    LaunchedEffect(auto) { if (auto > orbAutoSeen) { orbAutoSeen = auto; if (!photoMain) e.start(free = true) } }
-    var lastMode by remember { mutableStateOf(state.mode) }
-    LaunchedEffect(state.mode) { if (state.mode != lastMode) { lastMode = state.mode; if (voice.recording.value) e.finish(OrbEngine.How.CANCEL) } }
+    LaunchedEffect(auto) { if (auto > orbAutoSeen) { orbAutoSeen = auto; if (!photoMain) Capture.send(Ev.Free(Capture.editable)) } }
+
+    // Солнышко за пальцем: пока держат — сразу, отпустили — пружинкой на место.
+    val dx by animateFloatAsState(cap.x, if (cap.pressing) snap() else spring(.6f, Spring.StiffnessMediumLow), label = "dx")
+    val lift = remember { Animatable(0f) }
+    var pre by remember { mutableStateOf(false) }   // палец на солнышке с вложением, жест ещё не понят
 
     // Улёт (смахнули вверх с вложением): 0..1 — солнышко сжимается и улетает вместе с карточкой; потом возвращается с пружинкой.
     val fly = remember { Animatable(0f) }
     var flown by remember { mutableStateOf(false) }
     val back = remember { Animatable(if (OrbSheet.back) 0f else 1f) }
     LaunchedEffect(Unit) { if (OrbSheet.back) { OrbSheet.back = false; back.animateTo(1f, spring(.5f, 380f)) } }
+    val view = LocalView.current
     suspend fun flyAway() {
-        e.buzz(if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
+        view.performHapticFeedback(if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
         fly.animateTo(1f, tween(480, easing = FlyEase))
         flown = true
-        e.lift.snapTo(0f)
+        lift.snapTo(0f)
         OrbSheet.sendStaged("", "")
         back.snapTo(0f); fly.snapTo(0f)
         delay(90)
@@ -306,7 +235,7 @@ fun OrbBar(
         flown = false
     }
 
-    val rec = e.rec
+    val rec = cap.rec
     val recording = rec == Rec.HOLD || rec == Rec.FREE
     Column(Modifier.fillMaxWidth()) {
         // карточка помнит последнее вложение — на выходе ей есть что показать; улетевшая не мигает обратно (alpha 0, место сжимается)
@@ -319,7 +248,7 @@ fun OrbBar(
                 StagedCard(s, hint = tr(R.string.orb_swipe_hint), onRemove = { OrbSheet.staged.value = null },
                     modifier = Modifier.graphicsLayer {
                         val p = fly.value
-                        translationY = -e.lift.value * .6f - 170.dp.toPx() * p
+                        translationY = -lift.value * .6f - 170.dp.toPx() * p
                         scaleX = 1f - .4f * p; scaleY = 1f - .4f * p
                         alpha = if (flown) 0f else 1f - p
                     })
@@ -327,14 +256,14 @@ fun OrbBar(
         }
         Box(Modifier.fillMaxWidth().height(124.dp), contentAlignment = Alignment.Center) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 36.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                // слева: скрепка → в записи «✕» (цель «отмена»), без рук — кнопка «✕»
+                // слева: скрепка → в записи «✕» (держат — цель, без рук — кнопка)
                 val left = when {
                     rec == Rec.HOLD -> "xcue"; rec == Rec.FREE -> "x"
                     mode.accepts.photo && onGallery != null || onFile != null -> "clip"; else -> ""
                 }
                 Slot(left) { k ->
                     when (k) {
-                        "xcue", "x" -> SideBtn(Ic.x, tr(R.string.orb_cancel), cue = k == "xcue", near = e.nearCancel) { e.finish(OrbEngine.How.CANCEL) }
+                        "xcue", "x" -> SideBtn(Ic.x, tr(R.string.orb_cancel), cue = k == "xcue", near = cap.nearCancel) { Capture.send(Ev.TapCancel) }
                         "clip" -> AttachBtn(onGallery, onFile)
                     }
                 }
@@ -346,7 +275,7 @@ fun OrbBar(
                         photoMain && staged == null -> Ic.cam
                         else -> Ic.mic
                     }
-                    Sun(st, 92.dp, icon, pressed = e.pressed,
+                    Sun(st, 92.dp, icon, pressed = cap.pressing || pre, active = recording,
                         label = when { rec == Rec.FREE -> tr(R.string.ui_send); staged != null -> tr(R.string.orb_talk_staged); photoMain -> tr(R.string.cmp_camera); else -> tr(R.string.orb_talk) },
                         dim = !photoMain && !voice.installed.collectAsState().value,
                         modifier = Modifier
@@ -354,18 +283,17 @@ fun OrbBar(
                                 val p = fly.value
                                 val squash = (p / .2f).coerceAtMost(1f)
                                 val q = ((p - .2f) / .8f).coerceIn(0f, 1f)
-                                translationX = e.dx.value
-                                translationY = -e.lift.value + 6.dp.toPx() * squash - 320.dp.toPx() * q
+                                translationX = dx * density
+                                translationY = -lift.value + 6.dp.toPx() * squash - 320.dp.toPx() * q
                                 val s = (1f - .14f * squash - .7f * q) * (.3f + .7f * back.value)
                                 scaleX = s; scaleY = s * (1f + .08f * q)   // в полёте чуть вытягивается
                                 alpha = (1f - q * q) * back.value.coerceIn(0f, 1f)
                             }
-                            .orbGestures(e, staged = staged != null, photoMain = photoMain, onCamera = onCamera,
-                                onFly = { scope.launch { flyAway() } }, cancelPx = with(d) { 70.dp.toPx() }, editPx = with(d) { 70.dp.toPx() },
-                                nearPx = with(d) { 38.dp.toPx() }, flyPx = with(d) { 56.dp.toPx() }),
-                        trail = fly.value, active = recording)
+                            .orbGestures(staged = staged != null, photoMain = photoMain, onCamera = onCamera, lift = lift, onPre = { pre = it },
+                                onFly = { scope.launch { flyAway() } }, flyPx = with(d) { 56.dp.toPx() }, cs = scope),
+                        trail = fly.value)
                 }
-                // справа: камера (или микрофон фото-режима), с вложением — ✎; в записи — цель/кнопка «✎»
+                // справа: камера (или микрофон фото-режима — та же кнопка записи), с вложением — ✎; в записи — «✎»
                 val right = when {
                     rec == Rec.HOLD -> "ecue"; rec == Rec.FREE -> "e"
                     staged != null -> "write"
@@ -374,93 +302,66 @@ fun OrbBar(
                 }
                 Slot(right) { k ->
                     when (k) {
-                        "ecue", "e" -> SideBtn(Ic.edit, tr(R.string.orb_edit), cue = k == "ecue", near = e.nearEdit) { e.finish(OrbEngine.How.EDIT) }
+                        "ecue", "e" -> SideBtn(Ic.edit, tr(R.string.orb_edit), cue = k == "ecue", near = cap.nearEdit) { Capture.send(Ev.TapEdit) }
                         "write" -> SideBtn(Ic.edit, tr(R.string.orb_write), onClick = onWrite)
-                        "mic" -> SideBtn(Ic.mic, tr(R.string.cmp_mic_handsfree)) { e.start(free = true) }
+                        "mic" -> SideBtn(Ic.mic, tr(R.string.orb_talk), tap = false, modifier = Modifier.captureButton())
                         "cam" -> SideBtn(Ic.cam, tr(R.string.cmp_camera)) { onCamera?.invoke() }
                     }
                 }
             }
             androidx.compose.animation.AnimatedVisibility(visible = staged != null && !recording && rec != Rec.RECOG && !flown, Modifier.align(Alignment.TopCenter),
                 enter = fadeIn(tween(200, 150)), exit = fadeOut(tween(100))) {
-                SwipeHint(Modifier.graphicsLayer { translationY = -e.lift.value })
+                SwipeHint(Modifier.graphicsLayer { translationY = -lift.value })
             }
         }
         // вкладки режимов; в записи на их месте — время (режим в записи не переключают)
         AnimatedContent(recording, transitionSpec = { fadeIn(tween(160)) togetherWith fadeOut(tween(120)) }, label = "tabs") { r ->
-            if (r) RecTime(e.t0) else ModeTabs(state, onSelectMode, onAddMode)
+            if (r) RecTime(Capture.t0) else ModeTabs(state, onSelectMode, onAddMode)
         }
     }
 }
 
-/** Жесты солнышка. С вложением сначала понять жест: вверх — отправить сразу, иначе — говорить (через 220 мс или сдвиг вбок). */
+/**
+ * Жесты большого солнышка. Камера в центре: нажатие — снять. С вложением сначала понять жест: вверх — отправить сразу,
+ * иначе (220 мс или сдвиг вбок) — запись, дальше как у любой кнопки записи ([trackCapture]). Без вложения — сразу запись.
+ */
 private fun Modifier.orbGestures(
-    e: OrbEngine, staged: Boolean, photoMain: Boolean, onCamera: (() -> Unit)?, onFly: () -> Unit,
-    cancelPx: Float, editPx: Float, nearPx: Float, flyPx: Float,
+    staged: Boolean, photoMain: Boolean, onCamera: (() -> Unit)?, lift: Animatable<Float, *>, onPre: (Boolean) -> Unit, onFly: () -> Unit, flyPx: Float, cs: CoroutineScope,
 ) = pointerInput(staged, photoMain) {
     val slop = viewConfiguration.touchSlop
     awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
-        down.consume()
-        e.pressed = true
+        awaitFirstDown(requireUnconsumed = false).consume()
+        val at = SystemClock.uptimeMillis()
+        val rec = Capture.state.rec
+        // без рук или камера в центре: своё
+        if (rec == Rec.FREE) { trackCapture(at); return@awaitEachGesture }
+        if (rec != Rec.IDLE) return@awaitEachGesture
+        if (photoMain && !staged) {
+            while (true) { val c = awaitPointerEvent().changes.first(); if (!c.pressed) break }
+            onCamera?.invoke(); return@awaitEachGesture
+        }
+        if (!staged) { trackCapture(at); return@awaitEachGesture }
+        onPre(true)
         try {
-            // без рук: нажатие — отправить, потянуть влево — отмена
-            if (e.rec == Rec.FREE) {
-                var x = 0f
-                while (true) {
-                    val ev = awaitPointerEvent(); val c = ev.changes.first()
-                    if (!c.pressed) break
-                    x += c.positionChange().x; c.consume()
-                    e.scope.launch { e.drag(x, nearPx, edit = false) }
-                    if (x < -cancelPx) { e.finish(OrbEngine.How.CANCEL); return@awaitEachGesture }
-                }
-                if (abs(x) < slop) e.finish(OrbEngine.How.SEND) else e.scope.launch { e.dx.animateTo(0f, spring(.6f)) ; e.nearCancel = false }
-                return@awaitEachGesture
-            }
-            if (e.rec != Rec.IDLE) return@awaitEachGesture
-            // камера в центре: нажатие — снять (видоискатель в листе)
-            if (photoMain && !staged) {
-                while (true) { val c = awaitPointerEvent().changes.first(); if (!c.pressed) break }
-                onCamera?.invoke(); return@awaitEachGesture
-            }
-            val downAt = SystemClock.uptimeMillis()
-            var started = if (staged) false else e.start(free = false)
-            if (!staged && !started) return@awaitEachGesture
             var x = 0f; var y = 0f; var axis = 0   // 1 — вбок, 2 — вверх
             while (true) {
-                val wait = if (staged && !started) (220 - (SystemClock.uptimeMillis() - downAt)).coerceAtLeast(1) else Long.MAX_VALUE
+                val wait = (220 - (SystemClock.uptimeMillis() - at)).coerceAtLeast(1)
                 val ev = withTimeoutOrNull(wait) { awaitPointerEvent() }
-                if (ev == null) { if (axis != 2) { started = e.start(free = false); if (!started) return@awaitEachGesture }; continue }
+                if (ev == null) { if (axis != 2) { onPre(false); trackCapture(at, startX = x); return@awaitEachGesture }; continue }
                 val c = ev.changes.first()
                 if (!c.pressed) break
                 val p = c.positionChange(); x += p.x; y += p.y; c.consume()
                 if (axis == 0 && hypot(x, y) > slop) axis = if (-y > abs(x)) 2 else 1
-                if (staged && !started) {
-                    if (axis == 2) {
-                        val up = (-y).coerceAtLeast(0f)
-                        e.scope.launch { e.lift.snapTo(up * .85f) }
-                        if (up > flyPx) { onFly(); return@awaitEachGesture }
-                    } else if (axis == 1) { started = e.start(free = false); if (!started) return@awaitEachGesture }
-                } else if (started && axis == 1) {
-                    e.scope.launch { e.drag(x, nearPx, edit = true) }
-                    if (x < -cancelPx) { e.finish(OrbEngine.How.CANCEL); return@awaitEachGesture }
-                    if (x > editPx) { e.finish(OrbEngine.How.EDIT); return@awaitEachGesture }
-                }
+                if (axis == 2) {
+                    val up = (-y).coerceAtLeast(0f)
+                    cs.launch { lift.snapTo(up * .85f) }
+                    if (up > flyPx) { onFly(); return@awaitEachGesture }
+                } else if (axis == 1) { onPre(false); trackCapture(at, startX = x); return@awaitEachGesture }
             }
-            // отпустили
-            if (!started) {
-                // с вложением: лёгкое нажатие — слушаю без рук; недотянули вверх — солнышко назад
-                if (axis == 2) { e.scope.launch { e.lift.animateTo(0f, spring(.5f, 500f)) } }
-                else e.start(free = true)
-                return@awaitEachGesture
-            }
-            val dt = SystemClock.uptimeMillis() - downAt
-            if (dt < 260 && axis == 0) {
-                e.rec = Rec.FREE   // короткое нажатие — без рук
-                e.buzz(if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
-            } else e.finish(OrbEngine.How.SEND)
-            e.scope.launch { e.dx.animateTo(0f, spring(.6f)) }
-        } finally { e.pressed = false }
+            // отпустили, жест не начался: лёгкое нажатие — слушаю без рук; недотянули вверх — солнышко назад
+            if (axis == 2) cs.launch { lift.animateTo(0f, spring(.5f, 500f)) }
+            else Capture.send(Ev.Free(Capture.editable))
+        } finally { onPre(false) }
     }
 }
 
@@ -471,11 +372,11 @@ private fun Modifier.orbGestures(
 
 /** Боковая кнопка ряда: 52, белая. [cue] — цель жеста (без нажатия), [near] — палец дотянул: тёмная и чуть больше. */
 @Composable
-internal fun SideBtn(icon: Int, label: String, cue: Boolean = false, near: Boolean = false, onClick: () -> Unit) {
+internal fun SideBtn(icon: Int, label: String, cue: Boolean = false, near: Boolean = false, modifier: Modifier = Modifier, tap: Boolean = true, onClick: () -> Unit = {}) {
     val k by animateFloatAsState(if (near) 1.14f else 1f, spring(.45f, 600f), label = "near")
     val bg = if (near) Ink.ink else Ink.surf
-    Box(Modifier.size(52.dp).graphicsLayer { scaleX = k; scaleY = k }.clip(CircleShape).background(bg)
-        .then(if (cue) Modifier else Modifier.border(1.dp, Ink.line, CircleShape).clickable(onClickLabel = label, onClick = onClick))
+    Box(modifier.size(52.dp).graphicsLayer { scaleX = k; scaleY = k }.clip(CircleShape).background(bg)
+        .then(if (cue) Modifier else Modifier.border(1.dp, Ink.line, CircleShape).then(if (tap) Modifier.clickable(onClickLabel = label, onClick = onClick) else Modifier))
         .semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
         Icon(painterResource(icon), null, Modifier.size(21.dp), tint = if (near) Color.White else if (cue) Ink.soft else Ink.ink)
     }
@@ -565,38 +466,30 @@ private fun thumb(path: String): android.graphics.Bitmap? {
 @Composable
 fun OrbField(
     state: Conversation.State,
-    voice: Voice,
     st: SheetSt,
     onDraft: (String) -> Unit,
-    onSend: (String, String) -> Unit,
     onSelectMode: (String) -> Unit,
     onAddMode: () -> Unit,
-    onLive: (String?) -> Unit,
-    onNeedMic: () -> Unit,
     onGallery: (() -> Unit)?,
     onFile: (() -> Unit)?,
     focus: Boolean,
     placeholder: String?,
 ) {
-    val scope = rememberCoroutineScope()
-    val d = LocalDensity.current
-    fun flash(t: String) { scope.launch { onLive(t); delay(2800); onLive(null) } }
-    val e = rememberEngine(voice, onText = { onSend((state.draft + " " + it).trim(), tr(R.string.sheet_via_voice)) },
-        onEdit = { onDraft((state.draft + " " + it).trim()) }, onMessage = ::flash, onNeedMic = onNeedMic)
     val stagedAll by OrbSheet.staged.collectAsState()
     val staged = stagedAll?.takeIf { it.modeId == state.mode }
     val hasText = state.draft.isNotBlank()
     val draftNow by androidx.compose.runtime.rememberUpdatedState(state.draft)
+    val modeNow by androidx.compose.runtime.rememberUpdatedState(state.mode)
     val fr = remember { FocusRequester() }
-    var hadFocus by remember { mutableStateOf(false) }
     // «Назад» прячет клавиатуру, а фокус остаётся — смотрим на саму клавиатуру: была и спрятали при пустом поле — к солнышку
     val ime = WindowInsets.isImeVisible
     var imeSeen by remember { mutableStateOf(false) }
-    LaunchedEffect(ime) { if (ime) imeSeen = true else if (imeSeen && draftNow.isBlank()) { imeSeen = false; delay(120); OrbSheet.text.value = false } }
+    LaunchedEffect(ime) { if (ime) imeSeen = true else if (imeSeen && draftNow.isBlank()) { imeSeen = false; delay(120); OrbSheet.closeField(modeNow) } }
     LaunchedEffect(focus) { if (focus) runCatching { delay(120); fr.requestFocus() } }
-    val recording = e.rec == Rec.HOLD || e.rec == Rec.FREE
-    val modeNow by androidx.compose.runtime.rememberUpdatedState(state.mode)
-    val sendNow by androidx.compose.runtime.rememberUpdatedState(onSend)
+    val cap = Capture.state
+    val recording = cap.rec == Rec.HOLD || cap.rec == Rec.FREE
+    val dx by animateFloatAsState(cap.x.coerceAtMost(0f), if (cap.pressing) snap() else spring(.6f, Spring.StiffnessMediumLow), label = "fdx")
+    var pre by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         if (staged != null) StagedCard(staged, tr(R.string.orb_write_hint), onRemove = { OrbSheet.staged.value = null })
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 10.dp, top = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -604,11 +497,11 @@ fun OrbField(
                 .padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 AnimatedContent(recording, transitionSpec = { fadeIn(tween(140)) togetherWith fadeOut(tween(100)) }, label = "fld", modifier = Modifier.weight(1f)) { r ->
                     if (r) Row(Modifier.fillMaxWidth().height(40.dp).padding(start = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RecTimeInline(e.t0)
+                        RecTimeInline(Capture.t0)
                         Spacer(Modifier.weight(1f))
                         // как полоса Писаря: «‹ ‹ Отмена»; без рук — нажимается
-                        Text(tr(R.string.orb_slide_cancel), fontSize = 14.sp, color = if (e.nearCancel) Ink.ink else Ink.faint,
-                            modifier = if (e.rec == Rec.FREE) Modifier.clip(RoundedCornerShape(12.dp)).clickable { e.finish(OrbEngine.How.CANCEL) }.padding(horizontal = 8.dp, vertical = 6.dp) else Modifier)
+                        Text(tr(R.string.orb_slide_cancel), fontSize = 14.sp, color = if (cap.nearCancel) Ink.ink else Ink.faint,
+                            modifier = if (cap.rec == Rec.FREE) Modifier.clip(RoundedCornerShape(12.dp)).clickable { Capture.send(Ev.TapCancel) }.padding(horizontal = 8.dp, vertical = 6.dp) else Modifier)
                         Spacer(Modifier.weight(1f))
                     } else Row(verticalAlignment = Alignment.CenterVertically) {
                         if (onGallery != null || onFile != null) {
@@ -627,22 +520,18 @@ fun OrbField(
                             val ph = placeholder ?: if (staged != null) tr(if (staged.file != null) R.string.orb_comment_file else R.string.orb_comment_photo) else state.current.placeholder
                             if (state.draft.isEmpty()) Text(ph, color = Ink.faint, fontSize = 14.5.sp, maxLines = 1)
                             BasicTextField(state.draft, onDraft, textStyle = BaseText.copy(fontSize = 14.5.sp), cursorBrush = SolidColor(Ink.ink),
-                                maxLines = 5, modifier = Modifier.fillMaxWidth().focusRequester(fr).onFocusChanged {
-                                    // спрятали клавиатуру с пустым полем — назад к солнышку (поле было нужно только для этого)
-                                    if (it.isFocused) hadFocus = true
-                                    else if (hadFocus && draftNow.isBlank()) { hadFocus = false; OrbSheet.text.value = false }
-                                })
+                                maxLines = 5, modifier = Modifier.fillMaxWidth().focusRequester(fr))
                         }
                     }
                 }
             }
             Spacer(Modifier.width(6.dp))
             val canSend = hasText || staged != null
-            Sun(st, 60.dp, if (canSend && !recording || e.rec == Rec.FREE) Ic.send else Ic.mic, pressed = e.pressed, active = recording,
+            Sun(st, 60.dp, if (canSend && !recording || cap.rec == Rec.FREE) Ic.send else Ic.mic, pressed = cap.pressing || pre, active = recording,
                 label = if (canSend) tr(R.string.ui_send) else tr(R.string.orb_talk), dim = false,
-                modifier = Modifier.graphicsLayer { translationX = e.dx.value.coerceAtMost(0f) }
-                    .fieldGestures(e, canSend = { draftNow.isNotBlank() || OrbSheet.stagedFor(modeNow) != null },
-                        onSendText = { sendNow(draftNow, tr(R.string.cmp_via_keyboard)) }, cancelPx = with(d) { 70.dp.toPx() }, nearPx = with(d) { 38.dp.toPx() }))
+                modifier = Modifier.graphicsLayer { translationX = dx * density }
+                    .fieldGestures(canSend = { draftNow.isNotBlank() || OrbSheet.stagedFor(modeNow) != null },
+                        onSendText = { OrbSheet.send(draftNow, tr(R.string.cmp_via_keyboard)) }, onPre = { pre = it }))
         }
         AnimatedContent(recording, transitionSpec = { fadeIn(tween(160)) togetherWith fadeOut(tween(120)) }, label = "tabs2") { r ->
             if (r) Spacer(Modifier.height(42.dp)) else ModeTabs(state, onSelectMode, onAddMode)
@@ -660,39 +549,20 @@ private fun RecTimeInline(t0: Long) {
     Text("%d:%02d".format(s / 60, s % 60), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Ink.ink)
 }
 
-/** Солнышко у поля: есть что отправить — нажатие отправляет (держать — сказать ещё и отправить вместе); пусто — как большое. */
-private fun Modifier.fieldGestures(e: OrbEngine, canSend: () -> Boolean, onSendText: () -> Unit, cancelPx: Float, nearPx: Float) = pointerInput(Unit) {
-    val slop = viewConfiguration.touchSlop
+/** Солнышко у поля: есть что отправить — нажатие отправляет, держать дольше 260 мс — сказать ещё и отправить вместе; пусто — запись сразу. */
+private fun Modifier.fieldGestures(canSend: () -> Boolean, onSendText: () -> Unit, onPre: (Boolean) -> Unit) = pointerInput(Unit) {
     awaitEachGesture {
         awaitFirstDown(requireUnconsumed = false).consume()
-        e.pressed = true
+        val at = SystemClock.uptimeMillis()
+        if (Capture.state.rec != Rec.IDLE || !canSend()) { trackCapture(at); return@awaitEachGesture }
+        onPre(true)
         try {
-            if (e.rec == Rec.FREE) {
-                var x = 0f
-                while (true) { val c = awaitPointerEvent().changes.first(); if (!c.pressed) break; x += c.positionChange().x; c.consume()
-                    e.scope.launch { e.drag(x, nearPx, edit = false) }; if (x < -cancelPx) { e.finish(OrbEngine.How.CANCEL); return@awaitEachGesture } }
-                if (abs(x) < slop) e.finish(OrbEngine.How.SEND) else e.scope.launch { e.dx.animateTo(0f, spring(.6f)); e.nearCancel = false }
-                return@awaitEachGesture
-            }
-            if (e.rec != Rec.IDLE) return@awaitEachGesture
-            val downAt = SystemClock.uptimeMillis()
-            val send = canSend()
-            // есть текст: запись — только если держат дольше 260 мс (иначе это «Отправить»)
-            var started = if (send) false else e.start(free = false)
-            if (!send && !started) return@awaitEachGesture
-            var x = 0f
-            while (true) {
-                val wait = if (send && !started) (260 - (SystemClock.uptimeMillis() - downAt)).coerceAtLeast(1) else Long.MAX_VALUE
-                val ev = withTimeoutOrNull(wait) { awaitPointerEvent() }
-                if (ev == null) { started = e.start(free = false); if (!started) return@awaitEachGesture; continue }
-                val c = ev.changes.first(); if (!c.pressed) break
-                x += c.positionChange().x; c.consume()
-                if (started) { e.scope.launch { e.drag(x, nearPx, edit = false) }; if (x < -cancelPx) { e.finish(OrbEngine.How.CANCEL); return@awaitEachGesture } }
-            }
-            if (!started) { onSendText(); return@awaitEachGesture }
-            val dt = SystemClock.uptimeMillis() - downAt
-            if (!send && dt < 260 && abs(x) < slop) { e.rec = Rec.FREE; e.buzz(HapticFeedbackConstants.VIRTUAL_KEY) } else e.finish(OrbEngine.How.SEND)
-        } finally { e.pressed = false }
+            val up = withTimeoutOrNull(Gesture.TAP_MS) { waitForUpOrCancellation() }
+            if (up != null) { onSendText(); return@awaitEachGesture }
+            onPre(false)
+            // таймаут — держат: запись, отпустил — уходит вместе с текстом
+            trackCapture(at)
+        } finally { onPre(false) }
     }
 }
 
