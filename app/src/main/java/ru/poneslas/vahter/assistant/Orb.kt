@@ -471,7 +471,7 @@ private fun Modifier.orbGestures(
 
 /** Боковая кнопка ряда: 52, белая. [cue] — цель жеста (без нажатия), [near] — палец дотянул: тёмная и чуть больше. */
 @Composable
-private fun SideBtn(icon: Int, label: String, cue: Boolean = false, near: Boolean = false, onClick: () -> Unit) {
+internal fun SideBtn(icon: Int, label: String, cue: Boolean = false, near: Boolean = false, onClick: () -> Unit) {
     val k by animateFloatAsState(if (near) 1.14f else 1f, spring(.45f, 600f), label = "near")
     val bg = if (near) Ink.ink else Ink.surf
     Box(Modifier.size(52.dp).graphicsLayer { scaleX = k; scaleY = k }.clip(CircleShape).background(bg)

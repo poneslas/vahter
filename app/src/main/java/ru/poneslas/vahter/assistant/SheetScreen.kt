@@ -234,6 +234,8 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
             Column(
                 Modifier.fillMaxWidth()
                     .then(when {
+                        // «солнышко»: камера — карточка, лист по содержимому (раньше — почти во весь экран)
+                        camera && OrbSheet.ON -> Modifier
                         camera -> Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)).padding(top = 80.dp).fillMaxHeight()
                         g > 0f && natural > 0 -> Modifier.height(with(d) { (natural + (fullPx - natural) * g).toInt().toDp() })
                         else -> Modifier
@@ -242,7 +244,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     .graphicsLayer { alpha = if (shrink && natural == 0) 0f else 1f; translationY = (1f - enter.value) * size.height + pull.value }
                     .shadow(24.dp, RoundedCornerShape(topStart = corner, topEnd = corner), ambientColor = Color(0x660E1A36), spotColor = Color(0x660E1A36))
                     .clip(RoundedCornerShape(topStart = corner, topEnd = corner)).background(Ink.paper)
-                    .then(if (camera) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT, glowLv.floatValue) })
+                    .then(if (camera && !OrbSheet.ON) Modifier else Modifier.drawBehind { glow(st, 1f - g, glowT, glowLv.floatValue) })
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                     .padding(bottom = bottomPad),
             ) {
@@ -319,7 +321,7 @@ fun SheetScreen(onClose: () -> Unit, onExpand: () -> Unit, onSettings: () -> Uni
                     }
                 }
                 if (camera) {
-                    cameraPanel(Modifier.weight(1f).padding(top = 6.dp), false)
+                    cameraPanel(if (OrbSheet.ON) Modifier.padding(top = 6.dp) else Modifier.weight(1f).padding(top = 6.dp), false)
                     ModeTabs(state, app.conversation::selectMode, onAddMode)
                 } else {
                     if (!OrbSheet.ON || g > 0f) PromptStrip(state.current, onEditMode)   // «солнышко»: промпт — только в полном экране

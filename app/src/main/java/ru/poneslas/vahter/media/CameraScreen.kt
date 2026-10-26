@@ -91,6 +91,11 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import ru.poneslas.vahter.assistant.Sheet
+import ru.poneslas.vahter.assistant.SheetSt
+import ru.poneslas.vahter.assistant.Sun
+import ru.poneslas.vahter.assistant.SideBtn
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.gestures.calculateZoom
 import ru.poneslas.vahter.voice.Voice
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.getValue
@@ -136,6 +141,8 @@ fun CameraPanel(
     var cropDragging by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var provider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    val zoom = remember { ZoomCtl(scope, ctx) }
+    val ring = remember { FocusRing() }
     val errUnavailable = stringResource(R.string.cam_unavailable)
     val errNoPicture = stringResource(R.string.cam_no_picture)
     val errNoFrame = stringResource(R.string.cam_no_frame)
@@ -151,7 +158,9 @@ fun CameraPanel(
             val sel = listOf(CameraSelector.DEFAULT_BACK_CAMERA, CameraSelector.DEFAULT_FRONT_CAMERA)
                 .firstOrNull { runCatching { p.hasCamera(it) }.getOrDefault(false) }
                 ?: p.availableCameraInfos.firstOrNull()?.cameraSelector ?: CameraSelector.DEFAULT_BACK_CAMERA
-            p.bindToLifecycle(owner, sel, pv)
+            val cam = p.bindToLifecycle(owner, sel, pv)
+            zoom.bind(cam)
+            cam.cameraInfo.zoomState.observe(owner) { st -> zoom.onState(st.zoomRatio, st.minZoomRatio, st.maxZoomRatio) }
         } catch (t: Throwable) { error = errUnavailable.format(t.message ?: t.javaClass.simpleName) }
     }
     DisposableEffect(Unit) { onDispose { runCatching { provider?.unbindAll() } } }
@@ -211,8 +220,10 @@ fun CameraPanel(
 
     Column(modifier.then(if (full) Modifier.background(Color(0xFF0B0D12)) else Modifier)) {
         // ── видоискатель ──
+        // в листе — карточка ~37 % экрана: кадр виден, лист не во весь рост (весь экран — по ⤢)
+        val vfH = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .37f).dp
         BoxWithConstraints(
-            Modifier.weight(1f).fillMaxWidth()
+            (if (full) Modifier.weight(1f) else Modifier.height(vfH)).fillMaxWidth()
                 .then(if (full) Modifier else Modifier.padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)))
                 .background(Color(0xFF0B0D12)),
         ) {
@@ -273,6 +284,22 @@ fun CameraPanel(
                         }
                         cropDragging = false
                     }
+                    // живой кадр: два пальца — зум со шкалой, касание — фокус
+                    null -> if (frozen == null) awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        var pinched = false; var moved = false
+                        while (true) {
+                            val e = awaitPointerEvent()
+                            val on = e.changes.filter { it.pressed }
+                            if (on.isEmpty()) break
+                            if (on.size >= 2) {
+                                val zc = e.calculateZoom()
+                                if (zc != 1f) { pinched = true; zoom.set(zoom.ratio * zc) }
+                                e.changes.forEach { it.consume() }
+                            } else if ((on[0].position - down.position).getDistance() > viewConfiguration.touchSlop) moved = true
+                        }
+                        if (!pinched && !moved) focusAt(zoom.camera, preview, down.position, ring, scope)
+                    }
                     "circle", "arrow" -> detectDragGestures(
                         onDragStart = { draft = listOf(it) },
                         onDrag = { c, _ -> draft = draft + c.position },
@@ -302,7 +329,11 @@ fun CameraPanel(
                     "circle" -> drawPath(Path().apply { draft.forEachIndexed { i, o -> if (i == 0) moveTo(o.x, o.y) else lineTo(o.x, o.y) } }, red, style = Stroke(sw, cap = StrokeCap.Round, join = StrokeJoin.Round))
                 }
                 crop?.let { c -> drawCrop(toScr(c.x, c.y), toScr(c.x + c.w, c.y + c.h), editing = tool == "crop", grid = cropDragging) }
+                if (bmp == null) focusRing(ring)
             }
+            // зум: кнопки объективов, при щипке — шкала (одно и то же: отметки шкалы — объективы)
+            if (bmp == null && tool == null && error == null && !listening && !asking && question.isEmpty())
+                ZoomBar(zoom, Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp))
 
             // Поверх видоискателя — только то, что относится к кадру: переснять, отменить пометку, подсказка, вопрос.
             val top = if (full) Modifier.windowInsetsPadding(WindowInsets.safeDrawing) else Modifier
@@ -356,39 +387,49 @@ fun CameraPanel(
                     ToolChip(stringResource(t), ic, tool == k, onDark) { pick(k) }
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                val canAdd = editIdx != null || frames.size < maxImages - 1
-                // В листе кнопки ряда меньше («Отправить» 64, «＋» и микрофон 52) — вкладки режимов под рядом не наезжают; на весь экран — 72 и 56.
-                val big = if (full) 72.dp else 64.dp; val small = if (full) 56.dp else 52.dp
-                Round(Ic.plus, stringResource(R.string.cam_add), enabled = canAdd, onDark = onDark, size = small) { if (commit()) live() }
-                val count = frames.size + if (editIdx == null) 1 else 0
-                Box {
-                    Box(Modifier.size(big).clip(CircleShape).background(if (onDark) white else Ink.ink)
-                        .clickable(enabled = !busy, onClickLabel = stringResource(if (frames.isEmpty()) R.string.ui_send else R.string.cam_send_all)) { send(question) },
-                        contentAlignment = Alignment.Center) {
-                        if (busy) Text("…", fontSize = 26.sp, color = if (onDark) Ink.ink else white)
-                        else Icon(painterResource(Ic.send), null, Modifier.size(28.dp), tint = if (onDark) Ink.ink else white)
+            // Ряд — тот же, что в листе «солнышко» (те же места и размеры): «＋ ещё кадр» · солнышко-спуск · микрофон.
+            // Солнышко: нажать — снять и отправить (с кадрами из ленты); держать — спросить голосом, отпустил — ушло вместе.
+            val canAdd = editIdx != null || frames.size < maxImages - 1
+            val count = frames.size + if (editIdx == null) 1 else 0
+            fun listen(): Boolean {
+                if (!voice.hasMic() || !voice.installed.value) { error = if (!voice.hasMic()) errNeedMic else errNeedVoice; return false }
+                listening = voice.start(); return listening
+            }
+            fun ask() {
+                if (!listening) return
+                listening = false; asking = true
+                scope.launch { val r = voice.stop(); asking = false; if (r is Voice.Result.Text) { question = r.text; send(r.text) } }
+            }
+            val st = when { listening -> SheetSt.REC; asking -> SheetSt.RECOG; busy -> SheetSt.THINK; else -> SheetSt.IDLE }
+            Box(Modifier.fillMaxWidth().height(if (full) 124.dp else 116.dp), contentAlignment = Alignment.Center) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Box(Modifier.size(56.dp).alpha(if (canAdd) 1f else .4f), contentAlignment = Alignment.Center) {
+                        SideBtn(Ic.plus, stringResource(R.string.cam_add)) { if (canAdd && commit()) live() }
                     }
-                    if (count > 1) Box(Modifier.align(Alignment.TopEnd).offset(4.dp, (-4).dp).heightIn(min = 24.dp).widthIn(min = 24.dp).clip(RoundedCornerShape(12.dp))
-                        .background(Ink.local).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) { Text("$count", fontSize = 13.sp, color = Ink.ink, fontWeight = FontWeight.SemiBold) }
-                }
-                // Микрофон: зажать и спросить голосом — вопрос уйдёт вместе со снимком.
-                Box(Modifier.size(small).clip(CircleShape).background(if (listening) Ink.local else if (onDark) Color(0x2EFFFFFF) else Ink.chipBg)
-                    .pointerInput(Unit) {
-                        awaitEachGesture {
-                            awaitFirstDown()
-                            if (!voice.hasMic() || !voice.installed.value) { error = if (!voice.hasMic()) errNeedMic else errNeedVoice; waitForUpOrCancellation(); return@awaitEachGesture }
-                            listening = voice.start()
-                            waitForUpOrCancellation()
-                            if (!listening) return@awaitEachGesture
-                            listening = false; asking = true
-                            scope.launch {
-                                val r = voice.stop(); asking = false
-                                if (r is Voice.Result.Text) { question = r.text; send(r.text) }
-                            }
-                        }
-                    }, contentAlignment = Alignment.Center) {
-                    Icon(painterResource(Ic.mic), stringResource(R.string.cam_ask_voice), Modifier.size(24.dp), tint = fg)
+                    var pressed by remember { mutableStateOf(false) }
+                    Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+                        Sun(st, 92.dp, if (frozen != null || frames.isNotEmpty()) Ic.send else Ic.cam, pressed = pressed, active = listening,
+                            label = stringResource(if (frames.isEmpty()) R.string.ui_send else R.string.cam_send_all), dim = false,
+                            modifier = Modifier.pointerInput(Unit) {
+                                awaitEachGesture {
+                                    awaitFirstDown()
+                                    pressed = true
+                                    try {
+                                        if (listening) { waitForUpOrCancellation(); ask(); return@awaitEachGesture }   // без рук: нажатие — отправить
+                                        var timedOut = false
+                                        val up = withTimeoutOrNull(260) { waitForUpOrCancellation() }.also { if (it == null) timedOut = true }
+                                        if (!timedOut) { if (up != null && !busy) send(question); return@awaitEachGesture }
+                                        if (!listen()) { waitForUpOrCancellation(); return@awaitEachGesture }
+                                        waitForUpOrCancellation(); ask()
+                                    } finally { pressed = false }
+                                }
+                            })
+                        if (count > 1) Box(Modifier.align(Alignment.TopEnd).offset((-4).dp, 8.dp).heightIn(min = 24.dp).widthIn(min = 24.dp).clip(RoundedCornerShape(12.dp))
+                            .background(Ink.ink).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) { Text("$count", fontSize = 13.sp, color = white, fontWeight = FontWeight.SemiBold) }
+                    }
+                    Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
+                        SideBtn(Ic.mic, stringResource(R.string.cam_ask_voice), near = listening) { if (listening) ask() else listen() }
+                    }
                 }
             }
         }
